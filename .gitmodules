@@ -1,0 +1,3 @@
+[submodule "backend/utils"]
+	path = backend/utils
+	url = https://github.com/maldwg/BICEP-utils
