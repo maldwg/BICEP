@@ -1,0 +1,45 @@
+services:
+  angular:
+    build:
+      context: ./frontend
+    ports:
+      - 8080:80
+    networks:
+      - bicep
+  grafana:
+    build:
+      context: ./grafana
+    ports:
+      - 3000:3000
+    networks:
+      - bicep
+  prometheus:
+    build:
+      context: ./prometheus
+    ports: 
+      - 9090:9090
+    networks:
+      - bicep
+  core:
+    build:
+      context: ./backend/core
+    volumes:
+      - ./backend/core/app:/opt/backend
+    command: fastapi run main.py
+    ports:
+      - 8000:8000
+    networks:
+      - bicep
+  database:
+    build:
+      context: ./database
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+    ports:
+      - 3306:3306
+    networks:
+      - bicep
+networks:
+  bicep:
+    driver: bridge
+
