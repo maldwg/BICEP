@@ -6,6 +6,8 @@ services:
       - 8080:80
     networks:
       - bicep
+    environment:
+      - BACKEND_URL=http://core:8000
   grafana:
     build:
       context: ./grafana
@@ -25,11 +27,17 @@ services:
       context: ./backend/core
     volumes:
       - ./backend/core/app:/opt/backend
-    command: fastapi run main.py
+    command: fastapi dev main.py --host 0.0.0.0 --port 8000
     ports:
       - 8000:8000
     networks:
       - bicep
+    environment:
+      - DATABASE_URL=mariadb
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=root
+      - DATABASE_NAME=bicep
+      - PROMETHEUS_URL=prometheus:9090
   database:
     build:
       context: ./database

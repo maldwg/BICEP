@@ -1,7 +1,7 @@
 FROM alpine:latest
 
 RUN apk add --update py-pip
-RUN apk add python3 py-pip
+RUN apk add python3 py-pip gcc py3-mysqlclient
 
 RUN mkdir /opt/backend
 COPY ./requirements.txt /opt/backend/requirements.txt
@@ -10,6 +10,3 @@ RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 RUN pip3 install -r /opt/backend/requirements.txt
 
 WORKDIR /opt/backend
-
-# fastapi run main.py
-
