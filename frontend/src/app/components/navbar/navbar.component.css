@@ -1,0 +1,15 @@
+.example-icon {
+    padding: 0 14px;
+  }
+  
+  .example-spacer {
+    flex: 1 1 auto;
+  }
+  
+.anchor {
+    text-align: center;
+    text-decoration: none;
+    color: #FFBF00;
+    margin-right: 2%;
+    padding: 0.75%;
+}
