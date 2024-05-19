@@ -1,3 +1,4 @@
 fastapi[all]
 sqlalchemy
 prometheus_client
+docker

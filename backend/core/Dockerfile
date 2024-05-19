@@ -9,4 +9,6 @@ COPY ./requirements.txt /opt/backend/requirements.txt
 RUN rm /usr/lib/python3.11/EXTERNALLY-MANAGED 
 RUN pip3 install -r /opt/backend/requirements.txt
 
+COPY ./test-config.yaml /tmp/test-config.yaml
+
 WORKDIR /opt/backend

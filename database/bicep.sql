@@ -5,7 +5,7 @@ USE bicep;
 CREATE TABLE IF NOT EXISTS ids_tool(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
-    type VARCHAR(64) NOT NULL,
+    ids_type VARCHAR(64) NOT NULL,
     analysis_method VARCHAR(64) NOT NULL 
 );
 
@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS configuration(
 
 CREATE TABLE IF NOT EXISTS ids_container (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    name varchar(64) NOT NULL,
     url VARCHAR(255) NOT NULL,
     port INT NOT NULL,
     status VARCHAR(32) NOT NULL,
@@ -54,5 +55,5 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 );
 
 
-INSERT INTO ids_tool (name, type, analysis_method) VALUES ('suricata', 'NIDS', 'Signature-based');
-INSERT INTO ids_tool (name, type, analysis_method) VALUES ('slips', 'NIDS', 'Anomaly-based');
+INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('suricata', 'NIDS', 'Signature-based');
+INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('slips', 'NIDS', 'Anomaly-based');

@@ -33,7 +33,7 @@ services:
     networks:
       - bicep
     environment:
-      - DATABASE_URL=mariadb
+      - DATABASE_URL=bicep-database-1
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
