@@ -1,3 +1,3 @@
 export const environment = {
-    backendUrl: process.env["BACKEND_URL"] || 'undefined-backend.com'
+    backendUrl: process.env["BACKEND_URL"] || 'http://undefined-backend.com'
   };

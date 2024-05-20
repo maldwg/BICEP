@@ -17,3 +17,6 @@ class Configuration(Base):
 def get_config_by_id(db: Session, config_id: int):
     return db.query(Configuration).filter(Configuration.id == config_id).first()
     
+
+def get_all_configurations(db: Session):
+    return db.query(Configuration).all()

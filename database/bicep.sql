@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS ids_tool(
 
 CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    configuration BLOB NOT NULL,
+    configuration LONGBLOB NOT NULL,
     description VARCHAR(2048) NOT NULL
 );
 

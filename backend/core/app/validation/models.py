@@ -4,7 +4,7 @@ class IdsContainerCreate(BaseModel):
     """
         Class to validate input from the frontend
     """
-    url: str
+    host: str
     description: str
-    configuration_id: int
-    ids_tool_id: int
+    configurationId: int
+    idsToolId: int

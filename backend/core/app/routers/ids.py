@@ -14,11 +14,11 @@ router = APIRouter(
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     free_port=find_free_port()
     ids_container = IdsContainer(
-        url=data.url,
+        url=data.host,
         port=free_port,
         description=data.description,
-        configuration_id=data.configuration_id,
-        ids_tool_id=data.ids_tool_id,
+        configuration_id=data.configurationId,
+        ids_tool_id=data.idsToolId,
         status=STATUS.ACTIVE
         )
     await ids_container.setup(db)
@@ -29,6 +29,13 @@ async def remove_container(container_id: int, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
     await container.teardown(db)
     return {"message": "teardown done"}
+
+
+
+
+
+
+
 
 
 @router.get("/testfile")

@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ids
-
+from .routers import crud, ids
 app = FastAPI()
 
 origins = [
-    "*",
+    "*"
 ]
 
 app.add_middleware(
@@ -18,6 +17,7 @@ app.add_middleware(
 
 
 app.include_router(ids.router)
+app.include_router(crud.router)
 
 @app.get("/")
 async def main():

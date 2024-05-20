@@ -17,3 +17,7 @@ class IdsTool(Base):
 
 def get_ids_by_id(db: Session, ids_id: int):
     return db.query(IdsTool).filter(IdsTool.id == ids_id).first()
+
+
+def get_all_tools(db: Session):
+    return db.query(IdsTool).all()
