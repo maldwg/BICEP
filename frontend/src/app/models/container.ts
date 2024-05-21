@@ -1,5 +1,6 @@
 export interface Container{
     id: number,
+    name: string,
     host: string,
     port: number,
     status: string,

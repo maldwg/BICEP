@@ -17,7 +17,7 @@
                         <mat-form-field>
                             <mat-label>Configuration</mat-label>
                             <mat-select [formControl]="idsForm.controls.config" required>
-                                <mat-option *ngFor="let c of configurations" value={{c.id}}>{{c.id}}</mat-option>
+                                <mat-option *ngFor="let c of configurations" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
                             </mat-select>
                         </mat-form-field>
                     </div>

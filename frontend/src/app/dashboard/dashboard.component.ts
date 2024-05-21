@@ -31,6 +31,7 @@ export class DashboardComponent implements OnInit {
       .subscribe(data =>  {
         this.containerList = data.map(container => ({
           id: container.id,
+          name: container.name,
           host: container.host,
           port: container.port,
           status: container.status,

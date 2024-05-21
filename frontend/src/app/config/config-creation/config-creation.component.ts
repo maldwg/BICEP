@@ -56,10 +56,6 @@ export class ConfigCreationComponent implements OnInit{
     this.dialogRef.close();
   }
 
-  // TODO: FIx file upload issues
-  // TODO: start with ensemble
-
-
   onFileSelected(event: any) {
     console.log(event)
     const file:File = event.target.files[0];
