@@ -31,6 +31,8 @@ export class SetupComponent implements OnInit {
 
   configurations: Configuration[] = [];
   idsTools: IdsTool[] = [];
+  userChoice = "";
+
 
   constructor(
     private idsService: IdsService,
@@ -73,6 +75,10 @@ export class SetupComponent implements OnInit {
           id: tool.id, name: tool.name, idsType: tool.idsType, analysisMethod: tool.analysisMethod
         }));
       });
+  }
+
+  setUserChoice(choice: string){
+    this.userChoice = choice;
   }
 
 }

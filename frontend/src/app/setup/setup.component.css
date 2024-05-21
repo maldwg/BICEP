@@ -9,7 +9,8 @@
   row-gap: 0px;
   grid-template-columns: auto;
   justify-content: center;
-  margin: auto
+  margin: auto;
+  padding: 2%;
 }
 
 .grid-item {
@@ -27,4 +28,12 @@
 
 .custom-button {
   border-radius: 20px;
+}
+
+.grid-container-setup-choice{
+  display: grid;
+  column-gap: 5%;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  margin: auto
 }

@@ -1,8 +1,31 @@
 <div class="component-header-div">
-    <h1>Configure new IDS</h1>
+    <h1>Configure new IDS or Ensemble</h1>
+</div>
+<div *ngIf="userChoice !== ''" class="grid-container-setup-choice">
+    <button color="accent" mat-flat-button (click)="setUserChoice('')">back</button>
+</div>
+<div class="grid-container-setup-choice" *ngIf="userChoice === ''">
+    <div class="grid-item">
+        <mat-card (click)="setUserChoice('ensemble')">
+            <mat-card-content class="mat-elevation-z8">
+                Ensemble
+            </mat-card-content>
+        </mat-card>
+    </div>
+    <div class="grid-item">
+        <mat-card (click)="setUserChoice('ids')">
+            <mat-card-content class="mat-elevation-z8">
+                IDS
+            </mat-card-content>
+        </mat-card>
+    </div>
 </div>
 
-<div class="grid-container">
+
+<div class="grid-container" *ngIf="userChoice === 'ensemble'">
+</div>
+
+<div class="grid-container" *ngIf="userChoice === 'ids'">
     <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
         <mat-card>
             <mat-card-content class="mat-elevation-z8">
