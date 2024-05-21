@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { IdsTool } from '../../models/ids';
-import { ContainerSetupData } from '../../models/container';
+import { Container, ContainerSetupData } from '../../models/container';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -28,5 +28,15 @@ export class IdsService {
   getAllIdsTools(): Observable<IdsTool[]> {
     let path = "/crud/ids-tool/all";
     return this.http.get<IdsTool[]>(environment.backendUrl+path);
+  }
+
+  getAllIdsContainer(): Observable<Container[]>{
+    let path = "/crud/container/all"
+    return this.http.get<Container[]>(environment.backendUrl+path);
+  }
+
+  removeContainerById(id: number) {
+    let path = "/crud/container/remove/";
+    return this.http.delete(environment.backendUrl+path+id);
   }
 }

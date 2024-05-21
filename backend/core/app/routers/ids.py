@@ -14,7 +14,7 @@ router = APIRouter(
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     free_port=find_free_port()
     ids_container = IdsContainer(
-        url=data.host,
+        host=data.host,
         port=free_port,
         description=data.description,
         configuration_id=data.configurationId,
@@ -43,6 +43,6 @@ async def inject_test(db = Depends(get_db)):
     file="/tmp/test-config.yaml"
     with open('/tmp/test-config.yaml', 'rb') as file:
         binary_data = file.read()
-    c = Configuration(description="test", configuration=binary_data)
+    c = Configuration(name="testfile" ,description="test", configuration=binary_data)
     db.add(c)
     db.commit()

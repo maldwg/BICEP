@@ -14,7 +14,7 @@ class IdsContainer(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False) 
-    url = Column(String(255), nullable=False)
+    host = Column(String(255), nullable=False)
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
@@ -44,4 +44,10 @@ def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()
     
 
+def get_all_container(db: Session):
+    return db.query(IdsContainer).all()
 
+def remove_container_by_id(db: Session, id):
+    container = get_container_by_id(db, id)
+    db.delete(container)
+    db.commit()

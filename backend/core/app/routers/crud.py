@@ -1,19 +1,47 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 from ..dependencies import get_db
-from ..models.configuration import get_all_configurations
+from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration
 from ..models.ids_tool import get_all_tools
+from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id
+from ..docker import remove_docker_container
+from ..validation.models import ConfigurationCreate
+
 router = APIRouter(
     prefix="/crud"
 )
-
 
 
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):
     return get_all_configurations(db)
 
+@router.delete("/configuration/{id}")
+async def remove_config( id: int, db=Depends(get_db)):
+    remove_configuration_by_id(db, id)
+
+@router.post("/configuration/add")
+async def add_new_config(configuration: UploadFile, configuration_input: ConfigurationCreate,  db=Depends(get_db)):
+    print(configuration.filename)
+    configuration = Configuration(
+        name=configuration_input.name,
+        description=configuration_input.description,
+        configuration=configuration
+    )
+    add_config(db, configuration)
+    return {"message": "configuration added successfully"}
 
 
 @router.get("/ids-tool/all")
 async def get_all_ids_tools(db=Depends(get_db)):
     return get_all_tools(db)
+
+@router.get("/container/all")
+async def get_all_ids_container(db=Depends(get_db)):
+    return get_all_container(db)
+
+@router.delete("/container/remove/{id}")
+async def remove_container(id: int, db=Depends(get_db)):
+    container = get_container_by_id(db, id)
+    await remove_docker_container(container)
+    remove_container_by_id(db, id)
+    return {"message": "container removed successfully"}

@@ -1,0 +1,34 @@
+<div class="grid-container">
+  <h2 mat-dialog-title>Create new Configuration</h2>
+  <mat-dialog-content>
+      <form [formGroup]="configForm">
+        <div class="grid-item">
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput required [formControl]="configForm.controls.name">
+          </mat-form-field>
+        </div>
+        <div class="grid-item">
+          <mat-form-field>
+            <mat-label>Description</mat-label>
+            <input matInput required [formControl]="configForm.controls.description">
+          </mat-form-field>
+        </div>
+        <div class="grid-item">
+          <input type="file" class="file-input" required (change)="onFileSelected($event)" #fileUpload>
+          <div class="file-upload">
+            {{fileName || "No file uploaded yet."}}
+            <button mat-mini-fab color="primary" class="upload-btn"
+              (click)="fileUpload.click()">
+                <mat-icon>attach_file</mat-icon>
+            </button>
+          </div>
+        </div>
+      </form>
+  </mat-dialog-content>
+  <mat-dialog-actions class="grid-item">
+      <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
+      <button class="action-button" mat-flat-button (click)="save()" color="success" cdkFocusInitial>Save</button>
+  </mat-dialog-actions>
+</div>
+

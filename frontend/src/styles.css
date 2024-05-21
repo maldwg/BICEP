@@ -4,3 +4,13 @@
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
+.component-header-div {
+    margin: auto;
+    padding: 2%;
+    text-decoration: underline;
+}
+
+.custom-button {
+    border-radius: 20px;
+  }
+

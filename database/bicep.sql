@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS ids_tool(
 
 CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(32) NOT NULL,
     configuration LONGBLOB NOT NULL,
     description VARCHAR(2048) NOT NULL
 );
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS configuration(
 CREATE TABLE IF NOT EXISTS ids_container (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name varchar(64) NOT NULL,
-    url VARCHAR(255) NOT NULL,
+    host VARCHAR(255) NOT NULL,
     port INT NOT NULL,
     status VARCHAR(32) NOT NULL,
     description VARCHAR(2048),

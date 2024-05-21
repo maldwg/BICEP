@@ -12,7 +12,6 @@ import { ContainerSetupData } from '../models/container';
 import { Configuration } from '../models/configuration';
 import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
-import { describe } from 'node:test';
 
 @Component({
   selector: 'app-setup',

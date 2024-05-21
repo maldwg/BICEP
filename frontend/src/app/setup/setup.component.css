@@ -20,6 +20,9 @@
 .submit-button-div {
   padding-top: 10%;
   margin: auto;
+  display: flex;
+  justify-content: center;
+  
 }
 
 .custom-button {

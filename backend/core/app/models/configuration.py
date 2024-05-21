@@ -8,6 +8,7 @@ class Configuration(Base):
     __tablename__ = "configuration"
 
     id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False)
     configuration = Column(BLOB, nullable=False)
     description = Column(String(2048))
 
@@ -20,3 +21,12 @@ def get_config_by_id(db: Session, config_id: int):
 
 def get_all_configurations(db: Session):
     return db.query(Configuration).all()
+
+def remove_configuration_by_id(db, id):
+    config = get_config_by_id(db, id)
+    db.delete(config)
+    db.commit()
+
+def add_config(db: Session, configuration: Configuration):
+    db.add(configuration)
+    db.commit()
