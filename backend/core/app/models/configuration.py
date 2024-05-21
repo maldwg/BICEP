@@ -8,7 +8,7 @@ class Configuration(Base):
     __tablename__ = "configuration"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(64), nullable=False)
     configuration = Column(BLOB, nullable=False)
     description = Column(String(2048))
 

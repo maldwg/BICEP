@@ -27,5 +27,10 @@
 
 .grid-item-first-row{
   grid-column: 1/-1;
-  padding-bottom: 10%;
+  padding-bottom: 5%;
+}
+
+.config-button-div{
+  margin: auto;
+  padding-bottom: 5%;
 }

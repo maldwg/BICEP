@@ -1,20 +1,19 @@
 <div class="component-header-div">
     <h1> Overview on existing configurations </h1>
 </div>
+<div class="config-button-div">
+    <button class="mat-elevation-z8 grid-item-first-row" color="primary" mat-flat-button (click)="newConfig()">New configuration</button>
+</div>
 <div class="grid-container" >
-    <div class="grid-item grid-item-first-row">
-        <button class="mat-elevation-z8" color="primary" mat-flat-button (click)="newConfig()">New configuration</button>
-    </div>
     <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
         <mat-card>
             <mat-card-header>
                 <mat-card-title>
-                    configuration name
+                    {{configuration.name}}
                 </mat-card-title>
             </mat-card-header>
             <mat-card-content>
                 <div>ID: {{configuration.id}} </div>
-                <div>Name: name </div>
                 <div>Description: {{configuration.description}} </div>
             </mat-card-content>
             <mat-card-actions>

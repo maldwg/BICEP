@@ -1,14 +1,14 @@
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, UploadFile, Form
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration
 from ..models.ids_tool import get_all_tools
 from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id
 from ..docker import remove_docker_container
-from ..validation.models import ConfigurationCreate
 
 router = APIRouter(
     prefix="/crud"
 )
+
 
 
 @router.get("/configuration/all")
@@ -20,12 +20,12 @@ async def remove_config( id: int, db=Depends(get_db)):
     remove_configuration_by_id(db, id)
 
 @router.post("/configuration/add")
-async def add_new_config(configuration: UploadFile, configuration_input: ConfigurationCreate,  db=Depends(get_db)):
-    print(configuration.filename)
+async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...),  db=Depends(get_db)):
+    content = await configuration.read()
     configuration = Configuration(
-        name=configuration_input.name,
-        description=configuration_input.description,
-        configuration=configuration
+        name=name,
+        description=description,
+        configuration=content
     )
     add_config(db, configuration)
     return {"message": "configuration added successfully"}

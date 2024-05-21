@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { ConfigService } from '../services/config/config.service';
 import { Configuration, ConfigurationSetupData } from '../models/configuration';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,7 @@ import {
   MatDialogClose,
 } from '@angular/material/dialog';
 import { ReadVResult } from 'fs';
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-config',
   standalone: true,
@@ -28,7 +29,7 @@ export class ConfigComponent implements OnInit{
 
   constructor(
     private configService: ConfigService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
   ) {  }
 
   ngOnInit(): void {
@@ -41,6 +42,7 @@ export class ConfigComponent implements OnInit{
       .subscribe(data => {
         this.configurationList = data.map(config => ({
           id: config.id,
+          name: config.name,
           description: config.description,
           configuration: config.configuration
         }));
@@ -48,7 +50,8 @@ export class ConfigComponent implements OnInit{
     }
 
   remove(configuration: Configuration){
-    this.configService.removeConfiguration(configuration.id);
+    this.configService.removeConfiguration(configuration.id)
+      .subscribe(() => console.log("Removed configuration"));
     this.configurationList = this.configurationList.filter(config => config !== configuration);
   }
 
@@ -61,7 +64,6 @@ export class ConfigComponent implements OnInit{
 
     dialogRef.afterClosed().subscribe(res => {
       if (res != null) {
-        console.log("configuration: "+res.configuration)
         let newConfiguration: ConfigurationSetupData = {
           name: res.name,
           description: res.description,
@@ -72,6 +74,7 @@ export class ConfigComponent implements OnInit{
 
       }
       console.log('The dialog was closed');
+      window.location.reload();
     });
   }
 

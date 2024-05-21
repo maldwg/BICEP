@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS ids_tool(
 
 CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(32) NOT NULL,
+    name VARCHAR(64) NOT NULL,
     configuration LONGBLOB NOT NULL,
     description VARCHAR(2048) NOT NULL
 );
@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS ids_container (
 
 CREATE TABLE IF NOT EXISTS data_set(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    dataset BLOB NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    dataset LONGBLOB NOT NULL,
     description VARCHAR(2048)
 );
 

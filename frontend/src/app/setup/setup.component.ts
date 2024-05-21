@@ -61,7 +61,7 @@ export class SetupComponent implements OnInit {
     this.configService.getAllConfigurations()
       .subscribe(data => {
         this.configurations = data.map(config => ({
-          id: config.id, configuration: config.configuration, description: config.description
+          id: config.id, name: config.name, configuration: config.configuration, description: config.description
         })); 
       });
   }

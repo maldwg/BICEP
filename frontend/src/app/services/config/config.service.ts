@@ -3,6 +3,7 @@ import { Configuration, ConfigurationSetupData } from '../../models/configuratio
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
+import { ContainerSetupData } from '../../models/container';
 
 @Injectable({
   providedIn: 'root'
@@ -22,12 +23,16 @@ export class ConfigService {
 
   removeConfiguration(id: number) {
     let path = "/crud/configuration/";
-    this.http.delete(environment.backendUrl+path+id);
+    return this.http.delete(environment.backendUrl+path+id);
   }
 
   addConfiguration(configuration: ConfigurationSetupData): Observable<ConfigurationSetupData>{
     let path = "/crud/configuration/add"
-    return this.http.post<ConfigurationSetupData>(environment.backendUrl+path, configuration);
+    const formData = new FormData();
+    formData.append("name", configuration.name);
+    formData.append("description", configuration.description);
+    formData.append("configuration", configuration.configuration);
+    return this.http.post<ConfigurationSetupData>(environment.backendUrl+path, formData);
   }
 
 }
