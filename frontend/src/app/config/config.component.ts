@@ -72,9 +72,8 @@ export class ConfigComponent implements OnInit{
         this.configService.addConfiguration(newConfiguration)
           .subscribe(() => console.log("Added configuration"));
 
-      }
-      console.log('The dialog was closed');
-      window.location.reload();
+          window.location.reload();
+      }      
     });
   }
 

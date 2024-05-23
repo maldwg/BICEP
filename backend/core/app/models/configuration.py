@@ -12,7 +12,7 @@ class Configuration(Base):
     configuration = Column(BLOB, nullable=False)
     description = Column(String(2048))
 
-    containers = relationship("IdsContainer", back_populates="configuration")
+    container = relationship("IdsContainer", back_populates="configuration")
 
 
 def get_config_by_id(db: Session, config_id: int):

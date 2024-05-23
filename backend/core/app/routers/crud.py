@@ -4,6 +4,8 @@ from ..models.configuration import get_all_configurations, remove_configuration_
 from ..models.ids_tool import get_all_tools
 from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id
 from ..docker import remove_docker_container
+from ..models.ensemble import get_all_ids_ensembles
+from ..models.ensemble_technique import get_all_ensemble_techniques
 
 router = APIRouter(
     prefix="/crud"
@@ -39,9 +41,11 @@ async def get_all_ids_tools(db=Depends(get_db)):
 async def get_all_ids_container(db=Depends(get_db)):
     return get_all_container(db)
 
-@router.delete("/container/remove/{id}")
-async def remove_container(id: int, db=Depends(get_db)):
-    container = get_container_by_id(db, id)
-    await remove_docker_container(container)
-    remove_container_by_id(db, id)
-    return {"message": "container removed successfully"}
+
+@router.get("/ensemble/technique/all")
+async def get_ensemble_techniques(db=Depends(get_db)):
+    return get_all_ensemble_techniques(db)
+
+@router.get("/ensemble/all")
+async def get_ensembles(db=Depends(get_db)):
+    return get_all_ids_ensembles(db)

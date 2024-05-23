@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS configuration(
     description VARCHAR(2048) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ensemble_technique(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
+    description VARCHAR(2048) NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS ids_container (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -42,8 +47,12 @@ CREATE TABLE IF NOT EXISTS data_set(
 
 CREATE TABLE IF NOT EXISTS ensemble(
     id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
     status VARCHAR(32) NOT NULL,
-    description VARCHAR(2048) 
+    description VARCHAR(2048),
+    technique_id INT NOT NULL,
+
+    FOREIGN KEY (technique_id) REFERENCES ensemble_technique(id)
 );
 
 
@@ -57,5 +66,7 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 );
 
 
-INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('suricata', 'NIDS', 'Signature-based');
-INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('slips', 'NIDS', 'Anomaly-based');
+INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('Suricata', 'NIDS', 'Signature-based');
+INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('Slips', 'NIDS', 'Anomaly-based');
+
+INSERT INTO ensemble_technique (name, description) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight');

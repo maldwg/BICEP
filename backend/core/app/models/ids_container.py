@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship, Session
 
 from .configuration import get_config_by_id
 from .ids_tool import get_ids_by_id
+# important, otherwise error when getting all ensemble
+from .ensemble_ids import *
 from ..docker import *
 from ..utils import STATUS
 
@@ -21,8 +23,9 @@ class IdsContainer(Base):
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
 
-    configuration = relationship('Configuration', back_populates='containers')
-    ids_tool = relationship('IdsTool', back_populates='containers')
+    configuration = relationship('Configuration', back_populates='container')
+    ids_tool = relationship('IdsTool', back_populates='container')
+    ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
 
 
     async def setup(self, db):
@@ -30,7 +33,7 @@ class IdsContainer(Base):
         self.name = f"{ids_tool.name}-{self.port}"
         config = get_config_by_id(db, self.configuration_id)
         await start_docker_container(self, ids_tool, config)
-        self.status = STATUS.IDLE
+        self.status = STATUS.IDLE.value
         db.add(self)
         db.commit()
         db.refresh(self)

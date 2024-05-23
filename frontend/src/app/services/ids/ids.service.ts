@@ -36,7 +36,7 @@ export class IdsService {
   }
 
   removeContainerById(id: number) {
-    let path = "/crud/container/remove/";
+    let path = "/ids/remove/";
     return this.http.delete(environment.backendUrl+path+id);
   }
 }

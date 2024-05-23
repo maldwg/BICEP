@@ -8,3 +8,13 @@ class IdsContainerCreate(BaseModel):
     description: str
     configurationId: int
     idsToolId: int
+
+class EnsembleCreate(BaseModel):
+    """
+    Class to validate input for Ensemble creation
+    """
+
+    name: str
+    description: str
+    technique: int
+    container_ids: list[int]

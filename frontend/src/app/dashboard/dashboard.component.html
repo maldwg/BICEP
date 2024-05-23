@@ -1,26 +1,71 @@
-<div class="component-header-div" >
-    <h1>Overview on current container and ensembles</h1>
-</div>
-<div class="grid-container">
-    <div class="grid-item" *ngFor="let container of containerList" class="mat-elevation-z8">
-        <mat-card >
-            <mat-card-header>
-                <mat-card-title >
-                    {{container.name}}
-                </mat-card-title>
-            </mat-card-header>
-            <mat-card-content >
-                    <div>Host: {{container.host}}</div>
-                    <div>Port: {{container.port}}</div>
-                    <div>IDS Tool: {{container.idsTooId}}</div>
-                    <div>Configuration: {{container.configurationId}}</div>
-                    <div>Description: {{container.description}}</div>
-                    <div>Status: {{container.status}} </div>
-            </mat-card-content>
-            <mat-card-actions>
-                <button (click)="edit()" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
-                <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
-            </mat-card-actions>
-        </mat-card>
+<div class="panel-grid-div">
+
+    <mat-expansion-panel class="panel-grid-item">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Ensembles
+            </mat-panel-title>
+            <mat-panel-description>
+                Overview on current Ensembles
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="grid-container">
+            <div class="grid-item" *ngFor="let ensemble of ensembleList" class="mat-elevation-z8">
+                <mat-card >
+                    <mat-card-header>
+                        <mat-card-title >
+                            {{ensemble.name}}
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content >
+                            <div>Id: {{ensemble.id}} </div>
+                            <div>Ensemble technique: {{ensemble.techniqueId}}</div>
+                            <div>Description: {{ensemble.description}}</div>
+                            <div>Status: {{ensemble.status}} </div>
+                    </mat-card-content>
+                    <mat-card-actions>
+                        <button (click)="edit()" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                        <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+        
+    </mat-expansion-panel>
+
+<mat-expansion-panel class="panel-grid-item">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Containers
+            </mat-panel-title>
+            <mat-panel-description>
+                Overview on current Containers
+            </mat-panel-description>
+    </mat-expansion-panel-header>
+    <div class="grid-container">
+        <div class="grid-item" *ngFor="let container of containerList" class="mat-elevation-z8">
+            <mat-card >
+                <mat-card-header>
+                    <mat-card-title >
+                        {{container.name}}
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content >
+                        <div>Host: {{container.host}}</div>
+                        <div>Port: {{container.port}}</div>
+                        <div>IDS Tool: {{container.idsTooId}}</div>
+                        <div>Configuration: {{container.configurationId}}</div>
+                        <div>Description: {{container.description}}</div>
+                        <div>Status: {{container.status}} </div>
+                </mat-card-content>
+                <mat-card-actions>
+                    <button (click)="edit()" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                    <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
+                </mat-card-actions>
+            </mat-card>
+        </div>
     </div>
+</mat-expansion-panel>
+
+
 </div>

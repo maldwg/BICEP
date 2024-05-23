@@ -12,7 +12,7 @@ class IdsTool(Base):
     ids_type = Column(String(64), nullable=False)
     analysis_method = Column(String(64), nullable=False)
 
-    containers = relationship("IdsContainer", back_populates="ids_tool")
+    container = relationship("IdsContainer", back_populates="ids_tool")
 
 
 def get_ids_by_id(db: Session, ids_id: int):

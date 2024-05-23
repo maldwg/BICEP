@@ -11,13 +11,15 @@ class Ids(object):
     image = ""
     config_path=""
 
+# TODO: refactor so that image is in the table not here
+# TODO: config path is in ids logic not here
 class Suricata(Ids):
-    name = "suricata"
+    name = "Suricata"
     image = "maxldwg/bicep-suricata"
     config_path = "/opt/suricata.yaml"
 
 class Slips(Ids):
-    name = "slips"
+    name = "Slips"
     image = "maxldwg/bicep-slips"
     config_path = "/opt/slips.yaml"
 
