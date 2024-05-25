@@ -9,7 +9,7 @@ import { IdsService } from '../services/ids/ids.service';
 import { ConfigService } from '../services/config/config.service';
 import { Router } from '@angular/router';
 import { Container, ContainerSetupData } from '../models/container';
-import { Configuration } from '../models/configuration';
+import { Configuration, fileTpyes } from '../models/configuration';
 import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
 import { Ensemble, EnsembleSetupData, EnsembleTechnqiue } from '../models/ensemble';
@@ -40,8 +40,8 @@ export class SetupComponent implements OnInit {
     technique: new FormControl(""),
   });
 
-
-  configurations: Configuration[] = [];
+  idsConfigs: Configuration[] = [];
+  ruleSets: Configuration[] = [];
   idsTools: IdsTool[] = [];
   containers: Container[] = [];
   ensembles: Ensemble[] = [];
@@ -57,11 +57,13 @@ export class SetupComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-   this.getAllConfigs();
    this.getAllIdsTools();
    this.getAllContainer();
    this.getAllEnemsebles();
    this.getAllTechniques();
+   this.getConfigurations();
+   this.getRuleSets();
+
   }
 
   onSubmit(): void {
@@ -84,7 +86,7 @@ export class SetupComponent implements OnInit {
         name: this.ensembleForm.value.name!,
         description: this.ensembleForm.value.description!,
         technique: parseInt(this.ensembleForm.value.technique!),
-        containerIds: this.ensembleForm.value.containers!
+        container_ids: this.ensembleForm.value.containers!
       }
       console.log(this.ensembleForm.value.containers);
       this.ensembleService.sendEnsembleData(ensembleData)
@@ -93,11 +95,31 @@ export class SetupComponent implements OnInit {
       this.router.navigate(["/"])
   }
 
-  getAllConfigs() {
-    this.configService.getAllConfigurations()
+  // getAllConfigs() {
+  //   this.configService.getAllConfigurations()
+  //     .subscribe(data => {
+  //       this.configurations = data.map(config => ({
+  //         id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
+  //       })); 
+  //     });
+  // }
+
+  getConfigurations() {
+    let type: string = fileTpyes.configuration;
+    this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
-        this.configurations = data.map(config => ({
-          id: config.id, name: config.name, configuration: config.configuration, description: config.description
+        this.idsConfigs = data.map(config => ({
+          id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
+        })); 
+      });
+  }
+
+  getRuleSets() {
+    let type: string = fileTpyes.ruleSet;
+    this.configService.getAllConfigurationsByType(type)
+      .subscribe(data => {
+        this.ruleSets = data.map(config => ({
+          id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
         })); 
       });
   }
@@ -121,7 +143,7 @@ export class SetupComponent implements OnInit {
           port: container.port,
           status: container.status,
           configurationId: container.configurationId,
-          idsTooId: container.idsTooId,
+          idsToolId: container.idsToolId,
           description: container.description
         }))
       })

@@ -10,6 +10,7 @@ class Configuration(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(64), nullable=False)
     configuration = Column(BLOB, nullable=False)
+    file_type = Column(String(32), nullable=False)
     description = Column(String(2048))
 
     container = relationship("IdsContainer", back_populates="configuration")
@@ -30,3 +31,7 @@ def remove_configuration_by_id(db, id):
 def add_config(db: Session, configuration: Configuration):
     db.add(configuration)
     db.commit()
+
+
+def get_all_configurations_by_type(db: Session, file_type: str):
+    return db.query(Configuration).filter(Configuration.file_type == file_type).all()

@@ -26,6 +26,7 @@ import { Router } from '@angular/router';
 export class ConfigComponent implements OnInit{
 
   configurationList: Configuration[] = [];
+  fileTypeList: string[] = [];
 
   constructor(
     private configService: ConfigService,
@@ -36,6 +37,9 @@ export class ConfigComponent implements OnInit{
     this.getAllConfigs();
   }
 
+  // TODO: POLISH: split into different types
+  // TODO: setup: onlfy configuration and if NIDS or so also ruleset
+// TODO: Polish: add progressbar or so by upload
 
   getAllConfigs(){
     this.configService.getAllConfigurations()
@@ -44,10 +48,13 @@ export class ConfigComponent implements OnInit{
           id: config.id,
           name: config.name,
           description: config.description,
-          configuration: config.configuration
+          configuration: config.configuration,
+          file_type: config.file_type
         }));
       });
     }
+
+
 
   remove(configuration: Configuration){
     this.configService.removeConfiguration(configuration.id)
@@ -67,7 +74,9 @@ export class ConfigComponent implements OnInit{
         let newConfiguration: ConfigurationSetupData = {
           name: res.name,
           description: res.description,
-          configuration: res.configuration
+          configuration: res.configuration,
+          fileType: res.fileType,
+
         };
         this.configService.addConfiguration(newConfiguration)
           .subscribe(() => console.log("Added configuration"));

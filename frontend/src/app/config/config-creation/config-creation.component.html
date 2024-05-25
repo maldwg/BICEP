@@ -15,6 +15,14 @@
           </mat-form-field>
         </div>
         <div class="grid-item">
+          <mat-form-field>
+            <mat-label>File type</mat-label>
+            <mat-select [formControl]="configForm.controls.fileType" required>
+              <mat-option *ngFor="let type of fileTypeList" value={{type}}>{{type}}</mat-option>
+          </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="grid-item">
           <input type="file" class="file-input" required (change)="onFileSelected($event)" #fileUpload>
           <div class="file-upload">
             {{fileName || "No file uploaded yet."}}

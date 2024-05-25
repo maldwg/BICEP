@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     configuration LONGBLOB NOT NULL,
+    file_type VARCHAR(32) NOT NULL,
     description VARCHAR(2048) NOT NULL
 );
 
@@ -36,13 +37,6 @@ CREATE TABLE IF NOT EXISTS ids_container (
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),
     FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id)
 
-);
-
-CREATE TABLE IF NOT EXISTS data_set(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(64) NOT NULL,
-    dataset LONGBLOB NOT NULL,
-    description VARCHAR(2048)
 );
 
 CREATE TABLE IF NOT EXISTS ensemble(

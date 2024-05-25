@@ -6,6 +6,11 @@ class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
 
+
+class FILE_TYPES(Enum):
+    CONFIG = "configuration"
+    TEST_DATA = "test-data"
+    RULE_SET = "rule-set"
 class Ids(object):
     name = ""
     image = ""

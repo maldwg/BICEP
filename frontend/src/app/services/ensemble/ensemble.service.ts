@@ -21,7 +21,6 @@ export class EnsembleService {
 
   }
 
-
   getAllEnsembles(): Observable<Ensemble[]> {
     let path = "/crud/ensemble/all"
     return this.http.get<Ensemble[]>(environment.backendUrl+path);

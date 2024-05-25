@@ -21,6 +21,16 @@ export class ConfigService {
     return this.http.get<Configuration[]>(environment.backendUrl+path);
   }
 
+  getAllConfigurationsByType(fileType: string): Observable<Configuration[]>{
+    let path = "/crud/configuration/all/"+fileType;
+    return this.http.get<Configuration[]>(environment.backendUrl+path);
+  }
+
+  getAllFileTypes(): Observable<string[]>{
+    let path = "/crud/configuration/file-types";
+    return this.http.get<string[]>(environment.backendUrl+path);
+  }
+
   removeConfiguration(id: number) {
     let path = "/crud/configuration/";
     return this.http.delete(environment.backendUrl+path+id);
@@ -32,6 +42,7 @@ export class ConfigService {
     formData.append("name", configuration.name);
     formData.append("description", configuration.description);
     formData.append("configuration", configuration.configuration);
+    formData.append("file_type", configuration.fileType);
     return this.http.post<ConfigurationSetupData>(environment.backendUrl+path, formData);
   }
 

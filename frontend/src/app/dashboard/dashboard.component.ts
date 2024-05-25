@@ -8,6 +8,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { Ensemble } from '../models/ensemble';
 import {MatExpansionModule} from '@angular/material/expansion';
+import {
+  MatDialog,
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+  MatDialogTitle,
+  MatDialogContent,
+  MatDialogActions,
+  MatDialogClose,
+} from '@angular/material/dialog';
+import { IdsEditComponent } from './ids-edit/ids-edit.component';
+import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -23,6 +34,8 @@ export class DashboardComponent implements OnInit {
 
   constructor (
     private idsService: IdsService,
+    public idsDialog: MatDialog,
+    public EnsembleDialog: MatDialog,
     private ensembleService: EnsembleService
     
   ) {}
@@ -44,7 +57,7 @@ export class DashboardComponent implements OnInit {
           status: container.status,
           description: container.description,
           configurationId: container.configurationId,
-          idsTooId: container.idsTooId 
+          idsToolId: container.idsToolId 
         }));
       });
   }
@@ -62,8 +75,28 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  edit(){
-    
+  editEnsemble(ensemble: Ensemble){
+    const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
+      height: "50%",
+      width: "50%",
+      data: ensemble
+    });
+    dialogRef.afterClosed().subscribe(res => {
+      console.log(res)
+    })
+  }
+
+  edit(container: Container){
+    const dialogRef = this.idsDialog.open(IdsEditComponent, {
+      height: "50%",
+      width: "50%",
+      data: container
+    });
+
+    dialogRef.afterClosed().subscribe(res => {
+      console.log(res)
+    })
+
   }
 
   removeEnsemble(ensembleToRemove: Ensemble){

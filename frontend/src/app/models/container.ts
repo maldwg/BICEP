@@ -6,7 +6,7 @@ export interface Container{
     status: string,
     description: string,
     configurationId: number,
-    idsTooId: number
+    idsToolId: number
 }
 
 export interface ContainerSetupData{

@@ -24,7 +24,7 @@
                             <div>Status: {{ensemble.status}} </div>
                     </mat-card-content>
                     <mat-card-actions>
-                        <button (click)="edit()" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                        <button (click)="editEnsemble(ensemble)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
                         <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
                     </mat-card-actions>
                 </mat-card>
@@ -53,13 +53,13 @@
                 <mat-card-content >
                         <div>Host: {{container.host}}</div>
                         <div>Port: {{container.port}}</div>
-                        <div>IDS Tool: {{container.idsTooId}}</div>
+                        <div>IDS Tool: {{container.idsToolId}}</div>
                         <div>Configuration: {{container.configurationId}}</div>
                         <div>Description: {{container.description}}</div>
                         <div>Status: {{container.status}} </div>
                 </mat-card-content>
                 <mat-card-actions>
-                    <button (click)="edit()" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                    <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
                     <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
                 </mat-card-actions>
             </mat-card>

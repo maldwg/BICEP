@@ -1,0 +1,53 @@
+
+<div class="grid-container">
+    <form [formGroup]="idsEdit" (ngSubmit)="saveChanges()">
+        <mat-card>
+            <mat-card-content class="mat-elevation-z8">
+                <div class="grid-item">
+                    <mat-form-field>
+                        <mat-label>Name</mat-label>
+                        <input matInput value={{data.name}} readonly="" required>
+                    </mat-form-field>
+                </div>
+                    <div class="grid-item">
+                        <mat-form-field>
+                            <mat-label>Target host</mat-label>
+                            <input matInput value={{data.host}} readonly="" required>
+                        </mat-form-field>
+                    </div>
+                    <div class="grid-item">
+                        <mat-form-field>
+                            <mat-label>Port</mat-label>
+                            <input matInput value={{data.port}} readonly="" required>
+                        </mat-form-field>
+                    </div>
+                    <div class="grid-item">
+                        <mat-form-field>
+                            <mat-label>Configuration</mat-label>
+                            <mat-select [formControl]="idsEdit.controls.config" required>
+                                <mat-option *ngFor="let c of configurations" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="grid-item">
+                        <mat-form-field>
+                            <mat-label>IDS Tool</mat-label>
+                            <input matInput value={{data.idsToolId}} readonly="" required>
+                        </mat-form-field>
+                    </div>
+                    <div class="grid-item">
+                        <mat-form-field>
+                            <mat-label>Description</mat-label>
+                            <textarea matInput [formControl]="idsEdit.controls.description" required></textarea>
+                        </mat-form-field>
+                    </div>
+            </mat-card-content>
+        </mat-card>
+        <div class="submit-button-div">
+            <button type="submit" class="custom-button mat-elevation-z8" mat-flat-button
+                color="primary">Save</button>
+            <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
+                color="primary">Exit</button>
+        </div>
+    </form>
+</div>
