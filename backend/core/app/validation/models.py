@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class IdsContainerCreate(BaseModel):
     """
@@ -6,8 +7,9 @@ class IdsContainerCreate(BaseModel):
     """
     host: str
     description: str
-    configurationId: int
-    idsToolId: int
+    configuration_id: int
+    ids_tool_id: int
+    ruleset_id: Optional[int] = None
 
 class EnsembleCreate(BaseModel):
     """

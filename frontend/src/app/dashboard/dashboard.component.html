@@ -19,7 +19,7 @@
                     </mat-card-header>
                     <mat-card-content >
                             <div>Id: {{ensemble.id}} </div>
-                            <div>Ensemble technique: {{ensemble.techniqueId}}</div>
+                            <div>Ensemble technique: {{ensemble.technique_id}}</div>
                             <div>Description: {{ensemble.description}}</div>
                             <div>Status: {{ensemble.status}} </div>
                     </mat-card-content>
@@ -53,8 +53,9 @@
                 <mat-card-content >
                         <div>Host: {{container.host}}</div>
                         <div>Port: {{container.port}}</div>
-                        <div>IDS Tool: {{container.idsToolId}}</div>
-                        <div>Configuration: {{container.configurationId}}</div>
+                        <div>IDS Tool: {{container.ids_tool_id}}</div>
+                        <div>Configuration: {{container.configuration_id}}</div>
+                        <div *ngIf="container.ruleset_id">Ruleset: {{container.ruleset_id}}</div>
                         <div>Description: {{container.description}}</div>
                         <div>Status: {{container.status}} </div>
                 </mat-card-content>

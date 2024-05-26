@@ -13,13 +13,18 @@ router = APIRouter(
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     free_port=find_free_port()
+    if data.ruleset_id:
+        ruleset_id = data.ruleset_id
+    else:
+        ruleset_id = None
     ids_container = IdsContainer(
         host=data.host,
         port=free_port,
         description=data.description,
-        configuration_id=data.configurationId,
-        ids_tool_id=data.idsToolId,
-        status=STATUS.ACTIVE.value
+        configuration_id=data.configuration_id,
+        ids_tool_id=data.ids_tool_id,
+        status=STATUS.ACTIVE.value,
+        ruleset_id=ruleset_id
         )
     await ids_container.setup(db)
     return {"message": "setup done"}

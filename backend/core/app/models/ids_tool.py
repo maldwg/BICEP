@@ -11,6 +11,7 @@ class IdsTool(Base):
     name = Column(String(64), nullable=False)
     ids_type = Column(String(64), nullable=False)
     analysis_method = Column(String(64), nullable=False)
+    requires_ruleset = Column(Boolean, nullable=False)
 
     container = relationship("IdsContainer", back_populates="ids_tool")
 

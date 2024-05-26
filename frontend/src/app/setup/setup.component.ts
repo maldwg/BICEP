@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -31,6 +31,7 @@ export class SetupComponent implements OnInit {
     description: new FormControl(""),
     config: new FormControl(""),
     idsTool: new FormControl(""),
+    ruleset: new FormControl(""),
   });
 
   ensembleForm = new FormGroup({
@@ -47,6 +48,7 @@ export class SetupComponent implements OnInit {
   ensembles: Ensemble[] = [];
   ensembleTechniques: EnsembleTechnqiue[] = [];
   userChoice = "";
+  requiresRuleset = false;
 
 
   constructor(
@@ -56,6 +58,7 @@ export class SetupComponent implements OnInit {
     private router: Router,
   ) {}
 
+
   ngOnInit(): void {
    this.getAllIdsTools();
    this.getAllContainer();
@@ -64,15 +67,23 @@ export class SetupComponent implements OnInit {
    this.getConfigurations();
    this.getRuleSets();
 
+
+
+   this.idsForm.controls.idsTool.valueChanges.subscribe((toolId) => {
+    const selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
+    this.requiresRuleset = selectedTool ? selectedTool.requires_ruleset : false;
+  }); 
+
   }
 
   onSubmit(): void {
     if (this.idsForm.valid){
       let containerData: ContainerSetupData = {
         host: this.idsForm.value.host!,
-        idsToolId: parseInt(this.idsForm.value.idsTool!),
-        configurationId: parseInt(this.idsForm.value.config!),
+        ids_tool_id: parseInt(this.idsForm.value.idsTool!),
+        configuration_id: parseInt(this.idsForm.value.config!),
         description: this.idsForm.value.description!,
+        ruleset_id: this.idsForm.value.ruleset ? parseInt( this.idsForm.value.ruleset ) : undefined 
       };    
       this.idsService.sendContainerSetupData(containerData)
         .subscribe();
@@ -94,15 +105,6 @@ export class SetupComponent implements OnInit {
     }
       this.router.navigate(["/"])
   }
-
-  // getAllConfigs() {
-  //   this.configService.getAllConfigurations()
-  //     .subscribe(data => {
-  //       this.configurations = data.map(config => ({
-  //         id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
-  //       })); 
-  //     });
-  // }
 
   getConfigurations() {
     let type: string = fileTpyes.configuration;
@@ -128,7 +130,7 @@ export class SetupComponent implements OnInit {
     this.idsService.getAllIdsTools()
       .subscribe(data => {
         this.idsTools = data.map( tool => ({
-          id: tool.id, name: tool.name, idsType: tool.idsType, analysisMethod: tool.analysisMethod
+          id: tool.id, name: tool.name, idsType: tool.idsType, analysis_method: tool.analysis_method, requires_ruleset: tool.requires_ruleset
         }));
       });
   }
@@ -142,9 +144,10 @@ export class SetupComponent implements OnInit {
           host: container.host,
           port: container.port,
           status: container.status,
-          configurationId: container.configurationId,
-          idsToolId: container.idsToolId,
-          description: container.description
+          configuration_id: container.configuration_id,
+          ids_tool_id: container.ids_tool_id,
+          description: container.description,
+          ruleset_id: container.ruleset_id
         }))
       })
   }
@@ -168,7 +171,7 @@ export class SetupComponent implements OnInit {
           id: ensemble.id,
           name: ensemble.name,
           description: ensemble.description,
-          techniqueId: ensemble.techniqueId,
+          technique_id: ensemble.technique_id,
           status: ensemble.status
         }));
       });

@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, func, distinct
 from sqlalchemy.orm import relationship, Session
 
-from .configuration import get_config_by_id
+
 from .ids_tool import get_ids_by_id
 # important, otherwise error when getting all ensemble
 from .ensemble_ids import *
@@ -22,17 +22,22 @@ class IdsContainer(Base):
     description = Column(String(2048))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
+    ruleset_id = Column(Integer, ForeignKey("configuration.id"))
 
-    configuration = relationship('Configuration', back_populates='container')
+    configuration = relationship('Configuration', back_populates='container', foreign_keys=[configuration_id])
     ids_tool = relationship('IdsTool', back_populates='container')
     ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
-
+    ruleset = relationship('Configuration', back_populates='containerRuleset', foreign_keys=[ruleset_id])
 
     async def setup(self, db):
+        from .configuration import get_config_by_id
         ids_tool = get_ids_by_id(db, self.ids_tool_id)
         self.name = f"{ids_tool.name}-{self.port}"
         config = get_config_by_id(db, self.configuration_id)
-        await start_docker_container(self, ids_tool, config)
+        rulseset = None
+        if ids_tool.requires_ruleset:
+            rulseset = get_config_by_id(db, self.ruleset_id)
+        await start_docker_container(self, ids_tool, config, rulseset)
         self.status = STATUS.IDLE.value
         db.add(self)
         db.commit()

@@ -14,7 +14,7 @@ def get_docker_client(host: str, port: int = 2375):
         client = docker.DockerClient(base_url=host_url)
     return client
 
-async def start_docker_container(ids_container, ids_tool, config):
+async def start_docker_container(ids_container, ids_tool, config, ruleset):
     client = get_docker_client(ids_container.host)
     if ids_tool.name == Slips.name:
         ids_properties = Slips()
@@ -29,8 +29,11 @@ async def start_docker_container(ids_container, ids_tool, config):
         detach=True
     )
     await inject_config(ids_container, config, ids_properties)
+    if ruleset != None:
+        await inject_config(ids_container, ruleset, ids_properties)
     client.close()
 
+# TODO: ids_tool needs path for config and optional for ruleset
 async def inject_config(ids_container, config, properties):
     if properties.name == Suricata.name:
         file_path = "/tmp/suricata.yaml"

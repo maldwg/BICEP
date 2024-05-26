@@ -75,7 +75,7 @@ export class ConfigComponent implements OnInit{
           name: res.name,
           description: res.description,
           configuration: res.configuration,
-          fileType: res.fileType,
+          file_type: res.fileType,
 
         };
         this.configService.addConfiguration(newConfiguration)

@@ -56,8 +56,9 @@ export class DashboardComponent implements OnInit {
           port: container.port,
           status: container.status,
           description: container.description,
-          configurationId: container.configurationId,
-          idsToolId: container.idsToolId 
+          configuration_id: container.configuration_id,
+          ids_tool_id: container.ids_tool_id ,
+          ruleset_id: container.ruleset_id
         }));
       });
   }
@@ -68,7 +69,7 @@ export class DashboardComponent implements OnInit {
         this.ensembleList = data.map(ensemble => ({
           id: ensemble.id,
           name: ensemble.name,
-          techniqueId: ensemble.techniqueId,
+          technique_id: ensemble.technique_id,
           status: ensemble.status,
           description: ensemble.description
         }));

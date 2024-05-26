@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS ids_tool(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     ids_type VARCHAR(64) NOT NULL,
-    analysis_method VARCHAR(64) NOT NULL 
+    analysis_method VARCHAR(64) NOT NULL,
+    requires_ruleset BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS configuration(
@@ -32,10 +33,12 @@ CREATE TABLE IF NOT EXISTS ids_container (
     description VARCHAR(2048),
     configuration_id INT NOT NULL,
     ids_tool_id INT NOT NULL,
+    ruleset_id INT,
 
 
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),
-    FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id)
+    FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id),
+    FOREIGN KEY (ruleset_id) REFERENCES configuration(id)
 
 );
 
@@ -60,7 +63,7 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 );
 
 
-INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('Suricata', 'NIDS', 'Signature-based');
-INSERT INTO ids_tool (name, ids_type, analysis_method) VALUES ('Slips', 'NIDS', 'Anomaly-based');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Suricata', 'NIDS', 'Signature-based', true);
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Slips', 'NIDS', 'Anomaly-based', false);
 
 INSERT INTO ensemble_technique (name, description) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight');

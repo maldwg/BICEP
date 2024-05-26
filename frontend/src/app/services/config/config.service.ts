@@ -42,7 +42,7 @@ export class ConfigService {
     formData.append("name", configuration.name);
     formData.append("description", configuration.description);
     formData.append("configuration", configuration.configuration);
-    formData.append("file_type", configuration.fileType);
+    formData.append("file_type", configuration.file_type);
     return this.http.post<ConfigurationSetupData>(environment.backendUrl+path, formData);
   }
 

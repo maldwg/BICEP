@@ -31,7 +31,7 @@ export class IdsEditComponent implements OnInit{
   ngOnInit(): void {
     console.log(this.data)
     this.getAllConfigs();
-    this.currentConfig = this.configurations.filter(c => c.id === this.data.configurationId)[0];
+    this.currentConfig = this.configurations.filter(c => c.id === this.data.configuration_id)[0];
   }
 
   idsEdit = new FormGroup({

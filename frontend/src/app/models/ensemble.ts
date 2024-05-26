@@ -2,7 +2,7 @@ export interface Ensemble {
 
     id: number,
     name: string,
-    techniqueId: number,
+    technique_id: number,
     description: string,
     status: string
 

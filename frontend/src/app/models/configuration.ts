@@ -11,7 +11,7 @@ export interface ConfigurationSetupData{
     name: string,
     configuration: any,
     description: string,
-    fileType: string
+    file_type: string
 }
 
 

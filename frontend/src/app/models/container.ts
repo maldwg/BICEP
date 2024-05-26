@@ -5,13 +5,16 @@ export interface Container{
     port: number,
     status: string,
     description: string,
-    configurationId: number,
-    idsToolId: number
+    configuration_id: number,
+    ids_tool_id: number,
+    ruleset_id?: number
+
 }
 
 export interface ContainerSetupData{
     host: string,
-    idsToolId: number,
-    configurationId: number,
+    ids_tool_id: number,
+    configuration_id: number,
     description: string,
+    ruleset_id?: number
 }
