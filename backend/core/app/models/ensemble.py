@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
 from ..database import Base
+from ..validation.models import EnsembleUpdate
 
 class Ensemble(Base):
     __tablename__ = "ensemble"
@@ -29,6 +30,9 @@ class Ensemble(Base):
         db.delete(ensemble_ids)
         db.commit()
 
+    def get_containers(self, db: Session):
+        return db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == self.id).all()
+
 
 
 def get_all_ids_ensembles(db: Session):
@@ -47,3 +51,25 @@ def remove_ensemble(ensemble: Ensemble, db: Session):
 async def add_ensemble(ensemble: Ensemble, db):
     db.add(ensemble)
     db.commit()
+
+
+def update_ensemble(ensemble: EnsembleUpdate, db: Session):
+    ensemble_db = db.query(Ensemble).filter(Ensemble.id == ensemble.id).first()
+    former_containers = [ensemble_container.ids_container_id for ensemble_container in ensemble_db.get_containers(db) ]
+    for key, value in ensemble.dict().items():
+        setattr(ensemble_db, key, value)
+    db.commit()
+    db.refresh(ensemble_db)
+    new_containers = ensemble.container_ids
+
+    added_containers = list(filter(lambda x: x not in former_containers, new_containers))
+    removed_containers = list(filter(lambda x: x not in new_containers, former_containers))
+
+    for container_id in removed_containers:
+        ensemble_db.remove_container(container_id, db)
+    for container_id in added_containers:
+        ensemble_db.add_container(container_id, db)
+
+
+
+

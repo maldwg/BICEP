@@ -1,0 +1,22 @@
+.grid-container{
+    display: grid;
+    row-gap: 0%;
+    column-gap: 5%;
+    grid-template-columns: auto;
+    justify-content: center;
+    margin: auto
+}
+
+.grid-item {
+    justify-content: center;
+    margin: auto;
+  }
+
+.action-button-div{
+
+}
+
+.mat-success {
+    background-color: green;
+    color: #fff;
+  }

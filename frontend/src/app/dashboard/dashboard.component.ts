@@ -1,12 +1,12 @@
 import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
-import { Container } from '../models/container';
+import { Container, ContainerUpdateData } from '../models/container';
 import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
-import { Ensemble, EnsembleTechnqiue } from '../models/ensemble';
+import { Ensemble, EnsembleContainer, EnsembleTechnqiue, EnsembleUpdateData } from '../models/ensemble';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {
   MatDialog,
@@ -37,6 +37,7 @@ export class DashboardComponent implements OnInit {
   idsToolList: IdsTool[] = [];
   configList: Configuration[] = [];
   ensembleTechnqiueList: EnsembleTechnqiue[] = [];
+  ensembleContainerList: EnsembleContainer[] = [];
 
   constructor (
     private idsService: IdsService,
@@ -53,6 +54,7 @@ export class DashboardComponent implements OnInit {
     this.getAllConfigs();
     this.getAllIdsTools();
     this.getAllTechnqiues();
+    this.getAllEnsembleContainer();
   }
 
   getAllContainer(): void{
@@ -122,14 +124,43 @@ export class DashboardComponent implements OnInit {
       });
   }
 
+  getAllEnsembleContainer(){
+    this.ensembleService.getEnsembleContainers()  
+      .subscribe(data => {
+        this.ensembleContainerList = data.map( ensembleContainer => ({
+          id: ensembleContainer.id,
+          ensemble_id: ensembleContainer.ensemble_id,
+          ids_container_id: ensembleContainer.ids_container_id
+        }));
+      });
+  }
+
   editEnsemble(ensemble: Ensemble){
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
       height: "50%",
       width: "50%",
-      data: ensemble
+      data: {
+        ensemble: ensemble,
+        containerList: this.containerList,
+        ensembleTechniqueList: this.ensembleTechnqiueList,
+        ensembleContainerList: this.ensembleContainerList
+      }
     });
     dialogRef.afterClosed().subscribe(res => {
-      console.log(res)
+      console.log(res);
+      let ensembleUpdate: EnsembleUpdateData = {
+        id: ensemble.id,
+        name: res.name,
+        description: res.description,
+        technique_id: res.ensembleTechnique,
+        container_ids: res.idsContainer
+      }
+      this.ensembleService.updateEnsemble(ensembleUpdate)
+        .subscribe(() => console.log("send update data for ensemble"));
+      
+      ensemble.name = ensembleUpdate.name;
+      ensemble.description = ensembleUpdate.description;
+      ensemble.technique_id = ensembleUpdate.technique_id;
     })
   }
 
@@ -137,11 +168,36 @@ export class DashboardComponent implements OnInit {
     const dialogRef = this.idsDialog.open(IdsEditComponent, {
       height: "50%",
       width: "50%",
-      data: container
+      data: {
+        container: container,
+        configList: this.configList,
+        idsToolList: this.idsToolList
+      }
     });
 
     dialogRef.afterClosed().subscribe(res => {
-      console.log(res)
+      let configId = parseInt(res.config);
+      let rulesetId = parseInt(res.ruleset);
+      if(
+        res.description !== container.description ||
+        configId !== container.configuration_id ||
+        rulesetId !== container.ruleset_id
+      ){
+        let data: ContainerUpdateData = {
+          id: container.id,
+          description: res.description,
+          configuration_id: configId,
+          ruleset_id: rulesetId.toString() !== '' ? rulesetId : container.ruleset_id
+        }
+        this.idsService.updateContainer(data)
+          .subscribe(() => console.log("Successfully send update"))
+
+        container.description = res.description;
+        container.configuration_id = configId;
+        container.ruleset_id = rulesetId;
+
+        // TODO: update or refetch the ensembleContainers as well
+      }
     })
 
   }

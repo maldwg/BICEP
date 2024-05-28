@@ -99,6 +99,7 @@ export class SetupComponent implements OnInit {
         technique: parseInt(this.ensembleForm.value.technique!),
         container_ids: this.ensembleForm.value.containers!
       }
+      console.log(this.ensembleForm)
       console.log(this.ensembleForm.value.containers);
       this.ensembleService.sendEnsembleData(ensembleData)
         .subscribe(() => console.log("successfully send data"))

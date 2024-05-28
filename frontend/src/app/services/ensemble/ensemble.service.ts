@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { Ensemble, EnsembleSetupData, EnsembleTechnqiue } from '../../models/ensemble';
+import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnqiue, EnsembleUpdateData } from '../../models/ensemble';
 
 @Injectable({
   providedIn: 'root'
@@ -31,9 +31,19 @@ export class EnsembleService {
     return this.http.post<EnsembleSetupData>(environment.backendUrl+path, ensembleData)
   }
 
+  updateEnsemble(ensemble: EnsembleUpdateData): Observable<EnsembleUpdateData>{
+    let path = "/crud/ensemble"
+    return this.http.patch<EnsembleUpdateData>(environment.backendUrl+path, ensemble);
+  }
+
   removeEnsemble(ensembleToRemove: Ensemble) : Observable<Ensemble>{
     let path="/ensemble/remove/"
     return this.http.delete<Ensemble>(environment.backendUrl+path+ensembleToRemove.id);
+  }
+
+  getEnsembleContainers(): Observable<EnsembleContainer[]>{
+    let path = "/crud/ensemble/container/all";
+    return this.http.get<EnsembleContainer[]>(environment.backendUrl+path);
   }
 
 }

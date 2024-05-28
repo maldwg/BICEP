@@ -15,4 +15,7 @@ class EnsembleIds(Base):
 
 
 def get_ensemble_ids_by_ids(ensemble_id: int, container_id: int, db: Session):
-    return db.query(EnsembleIds).filter(EnsembleIds.ensemble == ensemble_id, EnsembleIds.ids_container_id==container_id).first()
+    return db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == ensemble_id, EnsembleIds.ids_container_id == container_id).first()
+
+def get_all_ensemble_container(db: Session):
+    return db.query(EnsembleIds).all()

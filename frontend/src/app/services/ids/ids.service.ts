@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { IdsTool } from '../../models/ids';
-import { Container, ContainerSetupData } from '../../models/container';
+import { Container, ContainerSetupData, ContainerUpdateData } from '../../models/container';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -23,6 +23,11 @@ export class IdsService {
     let path = "/ids/setup";
     console.log("send data")
     return this.http.post<ContainerSetupData>(environment.backendUrl+path, containerData);
+  }
+
+  updateContainer(container: ContainerUpdateData): Observable<ContainerUpdateData>{
+    let path = "/crud/container"
+    return this.http.patch<ContainerUpdateData>(environment.backendUrl+path, container);
   }
 
   getAllIdsTools(): Observable<IdsTool[]> {

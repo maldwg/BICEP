@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, UploadFile, Form
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
 from ..models.ids_tool import get_all_tools
-from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id
+from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id, update_container
 from ..docker import remove_docker_container
-from ..models.ensemble import get_all_ids_ensembles
+from ..models.ensemble import get_all_ids_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
+from ..models.ensemble_ids import get_all_ensemble_container
 from ..utils import FILE_TYPES
+from ..validation.models import EnsembleUpdate, IdsContainerUpdate
 
 router = APIRouter(
     prefix="/crud"
@@ -57,6 +59,10 @@ async def get_all_ids_tools(db=Depends(get_db)):
 async def get_all_ids_container(db=Depends(get_db)):
     return get_all_container(db)
 
+@router.patch("/container")
+async def patch_container(container: IdsContainerUpdate,db=Depends(get_db)):
+    return update_container(container, db)
+
 
 @router.get("/ensemble/technique/all")
 async def get_ensemble_techniques(db=Depends(get_db)):
@@ -65,3 +71,11 @@ async def get_ensemble_techniques(db=Depends(get_db)):
 @router.get("/ensemble/all")
 async def get_ensembles(db=Depends(get_db)):
     return get_all_ids_ensembles(db)
+
+@router.get("/ensemble/container/all")
+async def get_ensembles(db=Depends(get_db)):
+    return get_all_ensemble_container(db)
+
+@router.patch("/ensemble")
+async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
+    return update_ensemble(ensmeble, db)

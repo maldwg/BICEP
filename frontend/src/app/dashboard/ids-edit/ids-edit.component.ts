@@ -1,42 +1,61 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { ControlContainer, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Container } from '../../models/container';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { ConfigService } from '../../services/config/config.service';
-import { Configuration } from '../../models/configuration';
+import { Configuration, fileTpyes } from '../../models/configuration';
 import { MatButtonModule } from '@angular/material/button';
+import { IdsTool } from '../../models/ids';
 
 @Component({
   selector: 'app-ids-edit',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
   templateUrl: './ids-edit.component.html',
   styleUrl: './ids-edit.component.css'
 })
 export class IdsEditComponent implements OnInit{
 
-  configurations: Configuration[] = [];
-  currentConfig: Configuration = {
+  selectedIdsTool: IdsTool = {
+    id: 0,
+    name: "",
+    analysis_method: "",
+    idsType: "",
+    requires_ruleset: false
+  }
+
+  
+  selectedRuleset: Configuration = {
     id: 0,
     configuration: "",
     description: "",
-    name: "",
-    file_type: ""
-  };
+    file_type: "",
+    name: ""
+  }
+
+  configurationList: Configuration[] = [];
+  rulesetList: Configuration[] = [];
 
   ngOnInit(): void {
-    console.log(this.data)
-    this.getAllConfigs();
-    this.currentConfig = this.configurations.filter(c => c.id === this.data.configuration_id)[0];
+    this.selectedIdsTool = this.data.idsToolList.filter(t => t.id == this.data.container.ids_tool_id)[0];
+    let selectedConfiguration = this.data.configList.filter(c => c.id == this.data.container.configuration_id)[0];
+    this.selectedRuleset = this.data.configList.filter(c => c.id == this.data.container.ruleset_id)[0];
+
+    this.configurationList = this.data.configList.filter(c => c.file_type == fileTpyes.configuration);
+    this.rulesetList = this.data.configList.filter(r => r.file_type == fileTpyes.ruleSet);
+
+    this.idsEdit.controls.config.setValue(selectedConfiguration.id.toString());
+    this.idsEdit.controls.ruleset.setValue(this.selectedRuleset.id.toString())
   }
 
   idsEdit = new FormGroup({
-    description: new FormControl(this.data.description),
-    config: new FormControl(this.currentConfig.id)
+    description: new FormControl(this.data.container.description),
+    config: new FormControl(""),
+    ruleset: new FormControl(""),
   })
 
 
@@ -45,8 +64,7 @@ export class IdsEditComponent implements OnInit{
 
   constructor(
     public dialogRef: MatDialogRef<IdsEditComponent>,
-    @Inject (MAT_DIALOG_DATA) public data: Container,
-    private configService: ConfigService
+    @Inject (MAT_DIALOG_DATA) public data: {container: Container, configList: Configuration[], idsToolList: IdsTool[]},
   ) {}
 
 
@@ -55,15 +73,9 @@ export class IdsEditComponent implements OnInit{
   }
 
   saveChanges(): void{
-    
+    if(this.idsEdit.valid){
+      this.dialogRef.close(this.idsEdit.value);
+    }
   }
 
-  getAllConfigs() {
-    this.configService.getAllConfigurations()
-      .subscribe(data => {
-        this.configurations = data.map(config => ({
-          id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
-        })); 
-      });
-  }
 }

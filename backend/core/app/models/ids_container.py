@@ -7,6 +7,7 @@ from .ids_tool import get_ids_by_id
 from .ensemble_ids import *
 from ..docker import *
 from ..utils import STATUS
+from ..validation.models import IdsContainerUpdate
 
 from ..database import Base
 
@@ -59,3 +60,11 @@ def remove_container_by_id(db: Session, id):
     container = get_container_by_id(db, id)
     db.delete(container)
     db.commit()
+
+
+def update_container(container: IdsContainerUpdate, db: Session):
+    container_db = db.query(IdsContainer).filter(IdsContainer.id == container.id).first()
+    for key, value in container.dict().items():
+        setattr(container_db, key, value)
+    db.commit()
+    db.refresh(container_db)

@@ -18,3 +18,11 @@ export interface ContainerSetupData{
     description: string,
     ruleset_id?: number
 }
+
+
+export interface ContainerUpdateData{
+    id: number,
+    configuration_id: number,
+    description: string,
+    ruleset_id?: number
+}
