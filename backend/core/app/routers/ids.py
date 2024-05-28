@@ -9,6 +9,7 @@ router = APIRouter(
     prefix="/ids"
 )
 
+# TODO: docker needs longer or cant take it at all when image needs to be pulled. solution ?
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):

@@ -6,7 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
-import { Ensemble } from '../models/ensemble';
+import { Ensemble, EnsembleTechnqiue } from '../models/ensemble';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {
   MatDialog,
@@ -19,6 +19,9 @@ import {
 } from '@angular/material/dialog';
 import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
+import { ConfigService } from '../services/config/config.service';
+import { IdsTool } from '../models/ids';
+import { Configuration } from '../models/configuration';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,21 +34,27 @@ export class DashboardComponent implements OnInit {
 
   containerList: Container[] = [];
   ensembleList: Ensemble[] = [];
+  idsToolList: IdsTool[] = [];
+  configList: Configuration[] = [];
+  ensembleTechnqiueList: EnsembleTechnqiue[] = [];
 
   constructor (
     private idsService: IdsService,
     public idsDialog: MatDialog,
     public EnsembleDialog: MatDialog,
-    private ensembleService: EnsembleService
+    private ensembleService: EnsembleService,
+    private configService: ConfigService,
     
   ) {}
 
   ngOnInit(): void {
     this.getAllContainer();
     this.getAllEnsembles();
+    this.getAllConfigs();
+    this.getAllIdsTools();
+    this.getAllTechnqiues();
   }
 
-  //  IDS TOOL ID an dconfig id are not displayed properly
   getAllContainer(): void{
     this.idsService.getAllIdsContainer()
       .subscribe(data =>  {
@@ -59,6 +68,43 @@ export class DashboardComponent implements OnInit {
           configuration_id: container.configuration_id,
           ids_tool_id: container.ids_tool_id ,
           ruleset_id: container.ruleset_id
+        }));
+      });
+  }
+
+  getAllConfigs(){
+    this.configService.getAllConfigurations()
+      .subscribe(data => {
+        this.configList = data.map(config => ({
+          id: config.id,
+          name: config.name,
+          configuration: config.configuration,
+          description: config.description,
+          file_type: config.file_type
+        }));
+      });
+  }
+
+  getAllTechnqiues(){
+    this.ensembleService.getAllTechnqiues()
+      .subscribe(data => {
+        this.ensembleTechnqiueList = data.map(technqiue => ({
+          id: technqiue.id,
+          description: technqiue.description,
+          name: technqiue.name
+        }));
+      });   
+  }
+
+  getAllIdsTools(){
+    this.idsService.getAllIdsTools()
+      .subscribe(data => {
+        this.idsToolList = data.map(tool => ({
+          id: tool.id,
+          name: tool.name,
+          analysis_method: tool.analysis_method,
+          idsType: tool.idsType,
+          requires_ruleset: tool.requires_ruleset
         }));
       });
   }
@@ -113,4 +159,16 @@ export class DashboardComponent implements OnInit {
 
   }
 
+
+  getConfigName(configId: number) {
+    return this.configList.find(c => c.id == configId)?.name;
+  }
+
+  getIdsToolName(toolId: number) {
+    return this.idsToolList.find(t => t.id == toolId)?.name;
+  }
+
+  getEnsembleTechniqueName(techniqueId: number){
+    return this.ensembleTechnqiueList.find(t => t.id == techniqueId)?.name;
+  }
 }
