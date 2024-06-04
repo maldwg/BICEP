@@ -39,3 +39,43 @@ class EnsembleUpdate(BaseModel):
     description: str
     technique_id: int
     container_ids: list[int]
+
+
+class StaticAnalysisData(BaseModel):
+    """
+
+    """
+    container_id: int
+    dataset_id: int
+
+class StaticAnalysisEnsembleData(BaseModel):
+    """
+
+    """
+    ensemble_id: int
+    dataset_id: int
+
+class NetworkAnalysisData(BaseModel):
+    """
+
+    """
+    container_id: int
+
+class NetworkAnalysisEnsembleData(BaseModel):
+    """
+
+    """
+    ensemble_id: int
+    dataset_id: int
+
+class StopAnalysisData(BaseModel):
+    """
+    
+    """
+    container_id: int
+
+class StopAnalysisEnsembleData(BaseModel):
+    """
+    
+    """
+    ensemble_id: int

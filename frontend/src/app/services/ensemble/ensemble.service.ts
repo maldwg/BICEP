@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnqiue, EnsembleUpdateData } from '../../models/ensemble';
+import { NetworkAnalysisEnsembleData, StaticAnalysisEnsembleData, StopAnalysisEnsembleData } from '../../models/analysis';
 
 @Injectable({
   providedIn: 'root'
@@ -44,6 +45,21 @@ export class EnsembleService {
   getEnsembleContainers(): Observable<EnsembleContainer[]>{
     let path = "/crud/ensemble/container/all";
     return this.http.get<EnsembleContainer[]>(environment.backendUrl+path);
+  }
+
+  startStaticAnalysis(staticAnalysisData: StaticAnalysisEnsembleData) : Observable<StaticAnalysisEnsembleData>{
+    let path = "/ensemble/analysis/static";
+    return this.http.post<StaticAnalysisEnsembleData>(environment.backendUrl+path, staticAnalysisData);
+  }
+
+  startNetworkAnalysis(networkAnalysisData: NetworkAnalysisEnsembleData){
+    let path = "/ensemble/analysis/network";
+    return this.http.post<NetworkAnalysisEnsembleData>(environment.backendUrl+path, networkAnalysisData);
+  }
+
+  stopAnalysis(stopData: StopAnalysisEnsembleData){
+    let path = "/ensemble/analysis/stop";
+    return this.http.post(environment.backendUrl+path, stopData);
   }
 
 }

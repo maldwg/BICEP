@@ -5,3 +5,4 @@ export interface IdsTool{
     analysis_method: string,
     requires_ruleset: boolean
 } 
+

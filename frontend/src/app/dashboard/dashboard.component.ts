@@ -21,7 +21,10 @@ import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 import { ConfigService } from '../services/config/config.service';
 import { IdsTool } from '../models/ids';
-import { Configuration } from '../models/configuration';
+import { Configuration, fileTpyes } from '../models/configuration';
+import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
+import { NetworkAnalysisData, NetworkAnalysisEnsembleData, StaticAnalysisData, StaticAnalysisEnsembleData, StopAnalysisData, StopAnalysisEnsembleData, analysisTypes } from '../models/analysis';
+import { statusTypes } from '../models/status';
 
 @Component({
   selector: 'app-dashboard',
@@ -39,10 +42,13 @@ export class DashboardComponent implements OnInit {
   ensembleTechnqiueList: EnsembleTechnqiue[] = [];
   ensembleContainerList: EnsembleContainer[] = [];
 
+  activeStatus = statusTypes.active;
+
   constructor (
     private idsService: IdsService,
     public idsDialog: MatDialog,
     public EnsembleDialog: MatDialog,
+    public AnalysisDialog: MatDialog,
     private ensembleService: EnsembleService,
     private configService: ConfigService,
     
@@ -134,6 +140,80 @@ export class DashboardComponent implements OnInit {
         }));
       });
   }
+
+  startAnalysis(container: Container){
+    const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
+      height: "50%",
+      width: "50%",
+      data: {
+        datasets: this.configList.filter(c => c.file_type == fileTpyes.testData)
+      }
+    })
+    dialogRef.afterClosed().subscribe(res => {
+      if(res.type === analysisTypes.static){
+        let staticAnalysisData: StaticAnalysisData = {
+          container_id: container.id,
+          dataset_id: res.dataset
+        }
+        this.idsService.startStaticAnalysis(staticAnalysisData)
+          .subscribe(backend_res => console.log(backend_res))
+      }
+      else if(res.type === analysisTypes.network){
+        let networkAnalysisData: NetworkAnalysisData = {
+          container_id: container.id
+        }
+
+        // TODO: Refactor all endpoints like this to propagate backend errors/m,essages
+        this.idsService.startNetworkAnalysis(networkAnalysisData)
+          .subscribe(backend_res => console.log(backend_res))
+      }  
+    })
+  }
+
+  stopAnalysis(container: Container){
+    let stopData: StopAnalysisData = {
+      container_id: container.id
+    }
+    this.idsService.stopAnalysis(stopData)
+      .subscribe(res => console.log(res))
+  }
+
+
+  startEnsembleAnalysis(ensemble: Ensemble){
+    const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
+      height: "50%",
+      width: "50%",
+      data: {
+        datasets: this.configList.filter(c => c.file_type == fileTpyes.testData)
+      }
+    })
+    dialogRef.afterClosed().subscribe(res => {
+      if(res.type === analysisTypes.static){
+        let staticAnalysisData: StaticAnalysisEnsembleData = {
+          ensemble_id: ensemble.id,
+          dataset_id: res.dataset
+        }
+        this.ensembleService.startStaticAnalysis(staticAnalysisData)
+          .subscribe(backend_res => console.log(backend_res))
+      }
+      else if(res.type === analysisTypes.network){
+        let networkAnalysisData: NetworkAnalysisEnsembleData = {
+          ensemble_id: ensemble.id
+        }
+        this.ensembleService.startNetworkAnalysis(networkAnalysisData)
+          .subscribe(backend_res => console.log(backend_res))
+      }
+    })
+  }
+
+  stopEnsembleAnalysis(ensemble: Ensemble){
+    let stopData: StopAnalysisEnsembleData = {
+      ensemble_id: ensemble.id
+    }
+    this.ensembleService.stopAnalysis(stopData)
+      .subscribe(res => console.log(res))
+  }
+
 
   editEnsemble(ensemble: Ensemble){
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
