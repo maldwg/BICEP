@@ -1,7 +1,7 @@
 import socket
 from contextlib import closing
 from enum import Enum
-
+import os 
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
@@ -68,5 +68,15 @@ def find_free_port():
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+    
+
+def get_core_host():
+    return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
+
+def get_container_host(ids_container):
+    if ids_container.host != "localhost":
+        return ids_container.host
+    else:
+        return get_core_host()
     
 

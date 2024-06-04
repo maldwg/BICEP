@@ -49,6 +49,16 @@ class IdsContainer(Base):
         db.delete(self)
         db.commit()
 
+    async def update_config(self, config_id, db):
+        from .configuration import Configuration
+        config_file: Configuration = db.query(Configuration).filter(Configuration.id == config_id).first()
+        await inject_config(self, config_file)
+
+    async def update_ruleset(self, ruleset_id, db):
+        from  .configuration import Configuration
+        ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
+        await inject_ruleset(self, ruleset_file)
+
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()
     
@@ -62,8 +72,20 @@ def remove_container_by_id(db: Session, id):
     db.commit()
 
 
-def update_container(container: IdsContainerUpdate, db: Session):
-    container_db = db.query(IdsContainer).filter(IdsContainer.id == container.id).first()
+async def update_container(container: IdsContainerUpdate, db: Session):
+    container_db: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container.id).first()
+    old_config_id = container_db.configuration_id
+    new_config_id = container.configuration_id
+    
+    if old_config_id != new_config_id:
+        await container_db.update_config(new_config_id, db)
+    
+    old_ruleset_id = container_db.ruleset_id
+    new_ruleset_id = container.ruleset_id
+
+    if old_ruleset_id != new_config_id:
+        await container_db.update_ruleset(new_ruleset_id, db)    
+
     for key, value in container.dict().items():
         setattr(container_db, key, value)
     db.commit()

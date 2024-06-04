@@ -61,7 +61,8 @@ async def get_all_ids_container(db=Depends(get_db)):
 
 @router.patch("/container")
 async def patch_container(container: IdsContainerUpdate,db=Depends(get_db)):
-    return update_container(container, db)
+    await update_container(container, db)
+    return {"message": "updated container successfully"}
 
 
 @router.get("/ensemble/technique/all")

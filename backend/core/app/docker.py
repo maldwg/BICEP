@@ -1,18 +1,8 @@
 import docker
-import os 
-from .utils import Suricata, Slips
+from .utils import Suricata, Slips, get_container_host, get_core_host
 import time
 import httpx
 from requests.models import Response
-
-def get_core_host():
-    return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
-
-def get_container_host(ids_container):
-    if ids_container.host != "localhost":
-        return ids_container.host
-    else:
-        return get_core_host()
 
 def get_docker_client(host: str, port: int = 2375):
     if host == "localhost":
@@ -41,13 +31,12 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
         detach=True
     )
     await check_container_health(ids_container)
-    await inject_config(ids_container, config, ids_properties)
+    await inject_config(ids_container, config)
     if ruleset != None:
-        await inject_ruleset(ids_container, ruleset, ids_properties)
+        await inject_ruleset(ids_container, ruleset)
     client.close()
 
-# TODO: ids_tool needs path for config and optional for ruleset
-async def inject_config(ids_container, config, properties):
+async def inject_config(ids_container, config):
     host = get_container_host(ids_container)
     container_url = f"http://{host}:{ids_container.port}"
     endpoint = "/configuration"
@@ -57,20 +46,16 @@ async def inject_config(ids_container, config, properties):
         response = await client.post(container_url+endpoint,files=file)
         print(response)
         
-
-
-async def inject_ruleset(ids_container, config, properties):
-    pass
-
-
-def write_file(content, path):
-    with open(path, "wb") as output_file:
-        output_file.write(content)
-
-async def send_file_to_container(src_path, container_name, dest_path):
-    # TODO: docker command wont work, use fatapi endpoint to send file
-    pass
-
+async def inject_ruleset(ids_container, config):
+    host = get_container_host(ids_container)
+    container_url = f"http://{host}:{ids_container.port}"
+    endpoint = "/ruleset"
+    print(f"debug: {container_url}{endpoint}")
+    async with httpx.AsyncClient() as client:
+        file={"file": (config.name, config.configuration)}
+        response = await client.post(container_url+endpoint,files=file)
+        print(response)
+    
 async def remove_docker_container(ids_container):
     client = get_docker_client(ids_container.host)
     container = client.containers.get(container_id=ids_container.name)

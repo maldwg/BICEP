@@ -33,6 +33,6 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db)):
-    container = get_container_by_id(db, container_id)
+    container: IdsContainer = get_container_by_id(db, container_id)
     await container.teardown(db)
     return {"message": "teardown done"}
