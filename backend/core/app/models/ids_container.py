@@ -83,7 +83,7 @@ async def update_container(container: IdsContainerUpdate, db: Session):
     old_ruleset_id = container_db.ruleset_id
     new_ruleset_id = container.ruleset_id
 
-    if old_ruleset_id != new_config_id:
+    if old_ruleset_id != new_config_id and new_ruleset_id != None:
         await container_db.update_ruleset(new_ruleset_id, db)    
 
     for key, value in container.dict().items():
