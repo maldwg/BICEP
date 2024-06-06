@@ -4,6 +4,9 @@ import time
 import httpx
 from requests.models import Response
 
+
+# TODO: make docker async
+
 def get_docker_client(host: str, port: int = 2375):
     if host == "localhost":
         host_ip = get_core_host()
@@ -15,7 +18,8 @@ def get_docker_client(host: str, port: int = 2375):
     return client
 
 async def start_docker_container(ids_container, ids_tool, config, ruleset):
-    
+    core_ip = get_core_host()
+    core_url = f"http://{core_ip}:8000" 
     client = get_docker_client(ids_container.host)
     if ids_tool.name == Slips.name:
         ids_properties = Slips()
@@ -26,7 +30,8 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
         name=ids_container.name,
         network_mode="host",
         environment={
-            "PORT": ids_container.port
+            "PORT": ids_container.port,
+            "CORE_URL": core_url
         },
         detach=True
     )

@@ -150,23 +150,28 @@ export class DashboardComponent implements OnInit {
       }
     })
     dialogRef.afterClosed().subscribe(res => {
-      if(res.type === analysisTypes.static){
-        let staticAnalysisData: StaticAnalysisData = {
-          container_id: container.id,
-          dataset_id: res.dataset
+      if(res != null){
+        if(res.type === analysisTypes.static){
+          let staticAnalysisData: StaticAnalysisData = {
+            container_id: container.id,
+            dataset_id: res.dataset
+          }
+          this.idsService.startStaticAnalysis(staticAnalysisData)
+            .subscribe(backend_res => console.log(backend_res))
         }
-        this.idsService.startStaticAnalysis(staticAnalysisData)
-          .subscribe(backend_res => console.log(backend_res))
+        else if(res.type === analysisTypes.network){
+          let networkAnalysisData: NetworkAnalysisData = {
+            container_id: container.id
+          }
+  
+          // TODO: Refactor all endpoints like this to propagate backend errors/m,essages
+          this.idsService.startNetworkAnalysis(networkAnalysisData)
+            .subscribe(backend_res => console.log(backend_res))
+        }  
       }
-      else if(res.type === analysisTypes.network){
-        let networkAnalysisData: NetworkAnalysisData = {
-          container_id: container.id
-        }
-
-        // TODO: Refactor all endpoints like this to propagate backend errors/m,essages
-        this.idsService.startNetworkAnalysis(networkAnalysisData)
-          .subscribe(backend_res => console.log(backend_res))
-      }  
+      else {
+        console.log("Canceled analysis start");
+      }
     })
   }
 
@@ -188,20 +193,25 @@ export class DashboardComponent implements OnInit {
       }
     })
     dialogRef.afterClosed().subscribe(res => {
-      if(res.type === analysisTypes.static){
-        let staticAnalysisData: StaticAnalysisEnsembleData = {
-          ensemble_id: ensemble.id,
-          dataset_id: res.dataset
+      if(res != null){
+        if(res.type === analysisTypes.static){
+          let staticAnalysisData: StaticAnalysisEnsembleData = {
+            ensemble_id: ensemble.id,
+            dataset_id: res.dataset
+          }
+          this.ensembleService.startStaticAnalysis(staticAnalysisData)
+            .subscribe(backend_res => console.log(backend_res))
         }
-        this.ensembleService.startStaticAnalysis(staticAnalysisData)
-          .subscribe(backend_res => console.log(backend_res))
+        else if(res.type === analysisTypes.network){
+          let networkAnalysisData: NetworkAnalysisEnsembleData = {
+            ensemble_id: ensemble.id
+          }
+          this.ensembleService.startNetworkAnalysis(networkAnalysisData)
+            .subscribe(backend_res => console.log(backend_res))
+        }
       }
-      else if(res.type === analysisTypes.network){
-        let networkAnalysisData: NetworkAnalysisEnsembleData = {
-          ensemble_id: ensemble.id
-        }
-        this.ensembleService.startNetworkAnalysis(networkAnalysisData)
-          .subscribe(backend_res => console.log(backend_res))
+      else {
+        console.log("Canceled analysis start");
       }
     })
   }
