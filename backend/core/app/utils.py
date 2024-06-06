@@ -1,7 +1,9 @@
+import base64
 import socket
 from contextlib import closing
 from enum import Enum
-import os 
+import os
+
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
@@ -80,3 +82,15 @@ def get_container_host(ids_container):
         return get_core_host()
     
 
+def get_serialized_confgigurations(configurations):
+    serialized_configs = []
+    for config in configurations:
+        serialized_config = {
+            "id": config.id,
+            "name": config.name,
+            "configuration": base64.b64encode(config.configuration).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
+            "file_type": config.file_type,
+            "description": config.description
+        }
+        serialized_configs.append(serialized_config)
+    return serialized_configs

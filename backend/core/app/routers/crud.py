@@ -1,3 +1,4 @@
+import base64
 from fastapi import APIRouter, Depends, UploadFile, Form
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
@@ -7,7 +8,7 @@ from ..docker import remove_docker_container
 from ..models.ensemble import get_all_ids_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import FILE_TYPES
+from ..utils import FILE_TYPES, get_serialized_confgigurations
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate
 
 router = APIRouter(
@@ -18,8 +19,9 @@ router = APIRouter(
 
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):
-    return get_all_configurations(db)
-
+    configurations = get_all_configurations(db)
+    serialized_configurations = get_serialized_confgigurations(configurations)
+    return serialized_configurations
 @router.get("/configuration/file-types")
 async def get_all_configs(db=Depends(get_db)):
     types = [t.value for t in FILE_TYPES]
@@ -30,7 +32,9 @@ async def get_all_configs(db=Depends(get_db)):
 async def get_all_configs(file_type: str, db=Depends(get_db)):
     valid_file_types = [t.value for t in FILE_TYPES]
     if file_type in valid_file_types:
-        return get_all_configurations_by_type(db, file_type)
+        configurations = get_all_configurations_by_type(db, file_type)
+        serialized_configurations = get_serialized_confgigurations(configurations)
+        return serialized_configurations
     else:
         return {"message": "wrong file type"}
 

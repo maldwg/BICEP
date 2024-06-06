@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Configuration, ConfigurationSetupData } from '../../models/configuration';
+import { Configuration, ConfigurationSetupData, SerializedConfiguration } from '../../models/configuration';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ContainerSetupData } from '../../models/container';
 
 @Injectable({
@@ -16,14 +16,19 @@ export class ConfigService {
 
   
 
-  getAllConfigurations(): Observable<Configuration[]>{
+
+  getAllConfigurations(): Observable<Configuration[]> {
     let path = "/crud/configuration/all";
-    return this.http.get<Configuration[]>(environment.backendUrl+path);
+    return this.http.get<SerializedConfiguration[]>(environment.backendUrl + path).pipe(
+      map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
+    );
   }
 
-  getAllConfigurationsByType(fileType: string): Observable<Configuration[]>{
-    let path = "/crud/configuration/all/"+fileType;
-    return this.http.get<Configuration[]>(environment.backendUrl+path);
+  getAllConfigurationsByType(fileType: string): Observable<Configuration[]> {
+    let path = "/crud/configuration/all/" + fileType;
+    return this.http.get<SerializedConfiguration[]>(environment.backendUrl + path).pipe(
+      map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
+    );
   }
 
   getAllFileTypes(): Observable<string[]>{
@@ -44,6 +49,18 @@ export class ConfigService {
     formData.append("configuration", configuration.configuration);
     formData.append("file_type", configuration.file_type);
     return this.http.post<ConfigurationSetupData>(environment.backendUrl+path, formData);
+  }
+
+
+
+  deserializeConfiguration(serializedConfig: SerializedConfiguration): Configuration {
+    return {
+      id: serializedConfig.id,
+      name: serializedConfig.name,
+      configuration: atob(serializedConfig.configuration), // Decode Base64 to binary
+      file_type: serializedConfig.file_type,
+      description: serializedConfig.description
+    };
   }
 
 }

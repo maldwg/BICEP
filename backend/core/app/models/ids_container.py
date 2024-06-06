@@ -90,3 +90,9 @@ async def update_container(container: IdsContainerUpdate, db: Session):
         setattr(container_db, key, value)
     db.commit()
     db.refresh(container_db)
+
+async def update_container_status(status: STATUS, container: IdsContainer, db: Session):
+    container.status = status
+    db.commit()
+    db.refresh(container)
+

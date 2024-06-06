@@ -20,3 +20,12 @@ export const fileTpyes = {
     ruleSet: "rule-set",
     testData: "test-data"
 }
+
+
+export interface SerializedConfiguration {
+    id: number;
+    name: string;
+    configuration: string; // Base64 encoded string
+    file_type: string;
+    description: string;
+  }
