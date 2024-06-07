@@ -50,14 +50,12 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     container_url = f"http://{host}:{container.port}"
     endpoint = "/analysis/static"
     await update_container_status(STATUS.ACTIVE.value, container, db)
-    # TODO: either increase timeoput for httpx or refactor the shit because does not work otherwise connection aborted and frontend + backend error
     async with httpx.AsyncClient() as client:
         form_data= {
             "container_id": (None, str(container.id), "application/json"),
             "file": (dataset.name, dataset.configuration, "application/octet-stream"),
         }    
         response: HTTPResponse = await client.post(container_url+endpoint,files=form_data)
-    await update_container_status(STATUS.IDLE.value, container, db)
     if response.status_code == 200: 
         return {"message": f"static analysis for ids triggered {static_analysis_data},  response = {response}"}
     else:
