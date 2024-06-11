@@ -1,3 +1,4 @@
+from ..utils import STATUS
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
@@ -7,7 +8,7 @@ from ..validation.models import EnsembleUpdate
 class Ensemble(Base):
     __tablename__ = "ensemble"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
     technique_id = Column(Integer, ForeignKey("ensemble_technique.id"))
     status = Column(String(32), nullable=False)
@@ -71,5 +72,9 @@ def update_ensemble(ensemble: EnsembleUpdate, db: Session):
         ensemble_db.add_container(container_id, db)
 
 
+async def update_ensemble_status(status: STATUS, ensemble: Ensemble, db: Session):
+    ensemble.status = status
+    db.commit()
+    db.refresh(ensemble)
 
 

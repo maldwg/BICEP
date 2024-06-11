@@ -7,7 +7,7 @@ from ..database import Base
 class IdsTool(Base):
     __tablename__ = "ids_tool"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
     ids_type = Column(String(64), nullable=False)
     analysis_method = Column(String(64), nullable=False)

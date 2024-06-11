@@ -6,7 +6,7 @@ from ..database import Base
 class EnsembleIds(Base):
     __tablename__ = "ensemble_ids"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     ensemble_id = Column(Integer, ForeignKey("ensemble.id"))
     ids_container_id = Column(Integer, ForeignKey("ids_container.id"))
 

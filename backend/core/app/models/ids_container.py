@@ -15,7 +15,7 @@ from ..database import Base
 class IdsContainer(Base):
     __tablename__ = "ids_container"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False) 
     host = Column(String(255), nullable=False)
     port = Column(Integer, nullable=False)
@@ -38,9 +38,21 @@ class IdsContainer(Base):
         rulseset = None
         if ids_tool.requires_ruleset:
             rulseset = get_config_by_id(db, self.ruleset_id)
-        await start_docker_container(self, ids_tool, config, rulseset)
-        self.status = STATUS.IDLE.value
+
         db.add(self)
+        db.commit()
+        db.refresh(self)
+        try:
+            await start_docker_container(self, ids_tool, config, rulseset)
+            
+        except Exception as e:
+            print(e)
+            db.delete(self)
+            db.commit()
+            db.refresh(self)
+
+        # set statu to idle again after finish setup
+        self.status = STATUS.IDLE.value
         db.commit()
         db.refresh(self)
 

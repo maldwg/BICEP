@@ -45,37 +45,20 @@ class StaticAnalysisData(BaseModel):
     """
 
     """
-    container_id: int
-    dataset_id: int
-
-class StaticAnalysisEnsembleData(BaseModel):
-    """
-
-    """
-    ensemble_id: int
+    container_id: Optional[int] = None
+    ensemble_id: Optional[int] = None
     dataset_id: int
 
 class NetworkAnalysisData(BaseModel):
     """
 
     """
-    container_id: int
-
-class NetworkAnalysisEnsembleData(BaseModel):
-    """
-
-    """
-    ensemble_id: int
-    dataset_id: int
+    container_id: Optional[int] = None
+    ensemble_id: Optional[int] = None
 
 class StopAnalysisData(BaseModel):
     """
     
     """
-    container_id: int
-
-class StopAnalysisEnsembleData(BaseModel):
-    """
-    
-    """
-    ensemble_id: int
+    container_id: Optional[int] = None
+    ensemble_id: Optional[int] = None

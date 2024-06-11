@@ -7,7 +7,7 @@ from ..database import Base
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
     description = Column(String(2048))
 

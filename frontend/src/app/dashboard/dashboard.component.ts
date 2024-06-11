@@ -23,7 +23,7 @@ import { ConfigService } from '../services/config/config.service';
 import { IdsTool } from '../models/ids';
 import { Configuration, fileTpyes } from '../models/configuration';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
-import { NetworkAnalysisData, NetworkAnalysisEnsembleData, StaticAnalysisData, StaticAnalysisEnsembleData, StopAnalysisData, StopAnalysisEnsembleData, analysisTypes } from '../models/analysis';
+import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
 
 @Component({
@@ -53,6 +53,8 @@ export class DashboardComponent implements OnInit {
     private configService: ConfigService,
     
   ) {}
+
+  // TODO: do not allow analyssis if other is running!
 
   ngOnInit(): void {
     this.getAllContainer();
@@ -195,7 +197,7 @@ export class DashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe(res => {
       if(res != null){
         if(res.type === analysisTypes.static){
-          let staticAnalysisData: StaticAnalysisEnsembleData = {
+          let staticAnalysisData: StaticAnalysisData = {
             ensemble_id: ensemble.id,
             dataset_id: res.dataset
           }
@@ -203,7 +205,7 @@ export class DashboardComponent implements OnInit {
             .subscribe(backend_res => console.log(backend_res))
         }
         else if(res.type === analysisTypes.network){
-          let networkAnalysisData: NetworkAnalysisEnsembleData = {
+          let networkAnalysisData: NetworkAnalysisData = {
             ensemble_id: ensemble.id
           }
           this.ensembleService.startNetworkAnalysis(networkAnalysisData)
@@ -217,7 +219,7 @@ export class DashboardComponent implements OnInit {
   }
 
   stopEnsembleAnalysis(ensemble: Ensemble){
-    let stopData: StopAnalysisEnsembleData = {
+    let stopData: StopAnalysisData = {
       ensemble_id: ensemble.id
     }
     this.ensembleService.stopAnalysis(stopData)

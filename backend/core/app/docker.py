@@ -33,6 +33,7 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
             "PORT": ids_container.port,
             "CORE_URL": core_url
         },
+        cap_add=["NET_ADMIN", "NET_RAW"],
         detach=True
     )
     await check_container_health(ids_container)
@@ -47,8 +48,12 @@ async def inject_config(ids_container, config):
     endpoint = "/configuration"
     print(f"debug: {container_url}{endpoint}")
     async with httpx.AsyncClient() as client:
-        file={"file": (config.name, config.configuration)}
-        response = await client.post(container_url+endpoint,files=file)
+        form_data={
+            "file": (config.name, config.configuration, "application/octet-stream"),
+            "container_id": (None, str(ids_container.id), "application/json"),
+            }
+        
+        response = await client.post(container_url+endpoint,files=form_data)
         print(response)
         
 async def inject_ruleset(ids_container, config):

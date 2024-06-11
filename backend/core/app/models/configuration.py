@@ -8,7 +8,7 @@ from ..database import Base
 class Configuration(Base):
     __tablename__ = "configuration"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
     configuration = Column(BLOB, nullable=False)
     file_type = Column(String(32), nullable=False)
