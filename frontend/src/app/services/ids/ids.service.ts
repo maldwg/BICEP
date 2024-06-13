@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { IdsTool } from '../../models/ids';
 import { Container, ContainerSetupData, ContainerUpdateData } from '../../models/container';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { __param } from 'tslib';
@@ -52,18 +52,18 @@ export class IdsService {
     return this.http.delete(environment.backendUrl+path+id);
   }
 
-  startStaticAnalysis(staticAnalysisData: StaticAnalysisData) : Observable<StaticAnalysisData>{
+  startStaticAnalysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
     let path = "/ids/analysis/static";
-    return this.http.post<StaticAnalysisData>(environment.backendUrl+path, staticAnalysisData);
+    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, staticAnalysisData, { observe: 'response' });
   }
 
-  startNetworkAnalysis(networkAnalysisData: NetworkAnalysisData){
+  startNetworkAnalysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
     let path = "/ids/analysis/network";
-    return this.http.post<StaticAnalysisData>(environment.backendUrl+path, networkAnalysisData);
+    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, networkAnalysisData, { observe: 'response' });
   }
 
-  stopAnalysis(stopData: StopAnalysisData){
+  stopAnalysis(stopData: StopAnalysisData): Observable<HttpResponse<any>>{
     let path = "/ids/analysis/stop";
-    return this.http.post(environment.backendUrl+path, stopData);
+    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, stopData, { observe: 'response' });
   }
 }

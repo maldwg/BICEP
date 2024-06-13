@@ -45,6 +45,10 @@ async def remove_container(container_id: int, db=Depends(get_db)):
 @router.post("/analysis/static")
 async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, static_analysis_data.container_id)
+
+    if container.status != STATUS.IDLE.value:
+        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+
     dataset: Configuration = get_config_by_id(db, static_analysis_data.dataset_id)
     host = get_container_host(container)
     container_url = f"http://{host}:{container.port}"
@@ -64,6 +68,10 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
 @router.post("/analysis/network")
 async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
+
+    if container.status != STATUS.IDLE.value:
+        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+
     host = get_container_host(container)
     container_url = f"http://{host}:{container.port}"
     endpoint = "/analysis/network"

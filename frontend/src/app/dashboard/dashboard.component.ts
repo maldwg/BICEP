@@ -1,4 +1,5 @@
 import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
 import { Container, ContainerUpdateData } from '../models/container';
@@ -25,6 +26,7 @@ import { Configuration, fileTpyes } from '../models/configuration';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
 import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
+import { STATUS_CODES } from 'node:http';
 
 @Component({
   selector: 'app-dashboard',
@@ -41,8 +43,6 @@ export class DashboardComponent implements OnInit {
   configList: Configuration[] = [];
   ensembleTechnqiueList: EnsembleTechnqiue[] = [];
   ensembleContainerList: EnsembleContainer[] = [];
-
-  activeStatus = statusTypes.active;
 
   constructor (
     private idsService: IdsService,
@@ -143,6 +143,7 @@ export class DashboardComponent implements OnInit {
       });
   }
 
+  // TODO: if not status code 200 then popup with error code 
   startAnalysis(container: Container){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "50%",
@@ -159,7 +160,16 @@ export class DashboardComponent implements OnInit {
             dataset_id: res.dataset
           }
           this.idsService.startStaticAnalysis(staticAnalysisData)
-            .subscribe(backend_res => console.log(backend_res))
+            .subscribe((backendRes: HttpResponse<any>) => {
+              console.log(backendRes)
+              if(backendRes.status === 200){
+                console.log("success")
+                container.status = statusTypes.active
+              }
+              else{
+                console.log("not")
+              }
+            })
         }
         else if(res.type === analysisTypes.network){
           let networkAnalysisData: NetworkAnalysisData = {
@@ -168,7 +178,12 @@ export class DashboardComponent implements OnInit {
   
           // TODO: Refactor all endpoints like this to propagate backend errors/m,essages
           this.idsService.startNetworkAnalysis(networkAnalysisData)
-            .subscribe(backend_res => console.log(backend_res))
+            .subscribe((backendRes: HttpResponse<any>) => {
+              console.log(backendRes)
+              if(backendRes.status === 200){
+                container.status = statusTypes.active
+              }
+            })
         }  
       }
       else {
@@ -182,7 +197,12 @@ export class DashboardComponent implements OnInit {
       container_id: container.id
     }
     this.idsService.stopAnalysis(stopData)
-      .subscribe(res => console.log(res))
+      .subscribe((res: HttpResponse<any>) => {
+        console.log(res)
+        if(res.status == 200){
+          container.status = statusTypes.idle
+        }
+      })
   }
 
 
@@ -202,14 +222,24 @@ export class DashboardComponent implements OnInit {
             dataset_id: res.dataset
           }
           this.ensembleService.startStaticAnalysis(staticAnalysisData)
-            .subscribe(backend_res => console.log(backend_res))
+            .subscribe((backendRes: HttpResponse<any>) => {
+              console.log(backendRes)
+              if(backendRes.status === 200){
+                ensemble.status = statusTypes.active
+              }
+            })
         }
         else if(res.type === analysisTypes.network){
           let networkAnalysisData: NetworkAnalysisData = {
             ensemble_id: ensemble.id
           }
           this.ensembleService.startNetworkAnalysis(networkAnalysisData)
-            .subscribe(backend_res => console.log(backend_res))
+            .subscribe((backendRes: HttpResponse<any>) => {
+              console.log(backendRes)
+              if(backendRes.status === 200){
+                ensemble.status = statusTypes.active
+              }
+            })
         }
       }
       else {
@@ -223,7 +253,12 @@ export class DashboardComponent implements OnInit {
       ensemble_id: ensemble.id
     }
     this.ensembleService.stopAnalysis(stopData)
-      .subscribe(res => console.log(res))
+      .subscribe((res: HttpResponse<any>) => {
+        console.log(res)
+        if(res.status === 200){
+          ensemble.status = statusTypes.idle
+        }
+      })
   }
 
 
@@ -253,6 +288,9 @@ export class DashboardComponent implements OnInit {
       ensemble.name = ensembleUpdate.name;
       ensemble.description = ensembleUpdate.description;
       ensemble.technique_id = ensembleUpdate.technique_id;
+      
+      // TODO: complex updating the coreespinding fields to on new edit display the newely added/removed containers properly. Better to reload the window here i guess?
+      
     })
   }
 
@@ -318,5 +356,23 @@ export class DashboardComponent implements OnInit {
 
   getEnsembleTechniqueName(techniqueId: number){
     return this.ensembleTechnqiueList.find(t => t.id == techniqueId)?.name;
+  }
+
+  containerIsIdle(container: Container){
+    if(container.status !== statusTypes.idle){
+      return false;
+    }
+    else{
+      return true;
+    }
+  }
+
+  ensembleIsIdle(ensemble: Ensemble){
+    if(ensemble.status !== statusTypes.idle){
+      return false;
+    }
+    else{
+      return true;
+    }
   }
 }

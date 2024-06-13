@@ -26,8 +26,8 @@
                     <mat-card-actions>
                         <button (click)="editEnsemble(ensemble)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
                         <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
-                        <button (click)="startEnsembleAnalysis(ensemble)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
-                        <button *ngIf="ensemble.status == activeStatus" (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
+                        <button *ngIf="ensembleIsIdle(ensemble)" (click)="startEnsembleAnalysis(ensemble)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
+                        <button *ngIf="!ensembleIsIdle(ensemble)" (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
                     </mat-card-actions>
                 </mat-card>
             </div>
@@ -64,8 +64,8 @@
                 <mat-card-actions>
                     <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
                     <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
-                    <button (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
-                    <button *ngIf="container.status == activeStatus" (click)="stopAnalysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
+                    <button *ngIf="containerIsIdle(container)" (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
+                    <button *ngIf="!containerIsIdle(container)" (click)="stopAnalysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
                 </mat-card-actions>
             </mat-card>
         </div>

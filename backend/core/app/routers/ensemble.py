@@ -12,13 +12,11 @@ from ..utils import find_free_port, STATUS, get_container_host
 router = APIRouter(
     prefix="/ensemble"
 )
+# TODO: frontend allow ensemble analysis only when all container are idle
 
-# TODO: frontend and backend allow ensemble analysis only when all container are idle
-# TODO: disallow analysis starts andd addition to ensmeble if already in ensemble
-# TODO: when esemble is edited, then also /setup call
-# TODO: ensemble edit needs to also call an update int he ids fastapi
-# TODO: check for an update if container is in ensemble already
-#  TODO: for analysis start if not idle do not start
+# one of these:
+# TODO: disallow analysis starts andd addition to ensmeble if already in ensemble --> realy? later one interesting!
+# TODO: backend if container started an anylsis and container in an ensemble, then ensemble status to active or dont allow independent analysis either way?
 
 @router.post("/setup")
 async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
@@ -46,6 +44,10 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     ensemble: Ensemble = get_ensemble_by_id(static_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
 
+    for container in containers:
+        if container.status != STATUS.IDLE.value:
+            return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+
     responses = {}
 
     endpoint = "/analysis/static"
@@ -66,14 +68,19 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             responses.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} triggered,  response = {response}"})
         else:
              responses.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} could not be triggered,  response = {response}"})    
-    return responses
+    return Response(conent=responses,status_code=200)
 
 # TODO: status ausbauen (bspw. ensemble active hinzufügen damit man sieht dass ei ids von einem ensemble gestartet wurde. Ansonsten keine ,öglichkeit das per GUI heruszufinden)
+# TODO: improve differentiation between ids anylssis so that in the frontend ewe can see which ids did not start and rollback?
 
 @router.post("/analysis/network")
 async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db = Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(network_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
+
+    for container in containers:
+        if container.status != STATUS.IDLE.value:
+            return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
 
     responses = {}
 
@@ -90,13 +97,17 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
             responses.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} triggered,  response = {response}"})
         else:
             responses.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} could not be triggered,  response = {response}"})    
-    return responses
+    return Response(conent=responses,status_code=200)
 
 
 
+# TODO implement stop analysis
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: StopAnalysisData):
-    return {"message": f"successfully stopped analysis for ensemble {stop_data}"}
+    if True:
+        return Response(content=f"successfully stopped analysis for ensemble {stop_data}", status_code=200) 
+    else:
+        return Response(content=f"not successfully stopped analysis for ensemble {stop_data}", status_code=500)
 
 
 
