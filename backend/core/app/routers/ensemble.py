@@ -14,6 +14,8 @@ router = APIRouter(
 )
 
 #TODO: REMOVE db from setup methods for ids and ensemble
+# TODO: disallow analysis starts andd addition to ensmeble if already in ensemble
+# TODO: when esemble is edited, then also /setup call
 
 @router.post("/setup")
 async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
@@ -41,7 +43,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     ensemble: Ensemble = get_ensemble_by_id(static_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
 
-    response = {}
+    responses = {}
 
     endpoint = "/analysis/static"
     for container in containers:
@@ -58,10 +60,10 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             # set container status to active/idle afterwards before
         if response.status_code == 200:
             await update_container_status(STATUS.ACTIVE.value, container, db)
-            response.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} triggered,  response = {response}"})
+            responses.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} triggered,  response = {response}"})
         else:
-             response.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} could not be triggered,  response = {response}"})    
-    return response
+             responses.update({f"container {static_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {static_analysis_data.container_id} could not be triggered,  response = {response}"})    
+    return responses
 
 # TODO: status ausbauen (bspw. ensemble active hinzufügen damit man sieht dass ei ids von einem ensemble gestartet wurde. Ansonsten keine ,öglichkeit das per GUI heruszufinden)
 
@@ -70,7 +72,7 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     ensemble: Ensemble = get_ensemble_by_id(network_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
 
-    response = {}
+    responses = {}
 
     endpoint = "/analysis/network"
     for container in containers:
@@ -82,10 +84,10 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
         # set container status to active/idle afterwards before
         if response.status_code == 200:
             await update_container_status(STATUS.ACTIVE.value, container, db)
-            response.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} triggered,  response = {response}"})
+            responses.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} triggered,  response = {response}"})
         else:
-            response.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} could not be triggered,  response = {response}"})    
-    return response
+            responses.update({f"container {network_analysis_data.container_id}": f"static analysis for ensemble {ensemble.id} and ids {network_analysis_data.container_id} could not be triggered,  response = {response}"})    
+    return responses
 
 
 
@@ -118,10 +120,10 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     return responses
 
 
-@router.post("{ensemble_id}/analysis/finished/{container_id}")
+@router.post("/{ensemble_id}/analysis/finished/{container_id}")
 async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
-    ensemble = get_ensemble_by_id(db, ensemble_id)
+    ensemble = get_ensemble_by_id(ensemble_id, db)
     await update_container_status(STATUS.IDLE.value, container, db)
     await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
     return Response(content=f"Successfully stopped analysis for esemble {ensemble_id} and container {container_id}", status_code=200)

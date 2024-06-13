@@ -31,10 +31,15 @@ class Ensemble(Base):
         db.delete(ensemble_ids)
         db.commit()
 
-    def get_containers(self, db: Session):
+    def get_enssemble_ids(self, db: Session):
         return db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == self.id).all()
 
-
+    def get_containers(self, db: Session):
+        from .ids_container import IdsContainer
+        ensemble_ids = db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == self.id).all()
+        id_list = [e_ids.ids_container_id for e_ids in ensemble_ids]
+        containers: list[IdsContainer] = db.query(IdsContainer).filter(IdsContainer.id.in_(id_list)).all()
+        return containers
 
 def get_all_ids_ensembles(db: Session):
     return db.query(Ensemble).all()
@@ -56,7 +61,7 @@ async def add_ensemble(ensemble: Ensemble, db):
 
 def update_ensemble(ensemble: EnsembleUpdate, db: Session):
     ensemble_db = db.query(Ensemble).filter(Ensemble.id == ensemble.id).first()
-    former_containers = [ensemble_container.ids_container_id for ensemble_container in ensemble_db.get_containers(db) ]
+    former_containers = [ensemble_container.ids_container_id for ensemble_container in ensemble_db.get_enssemble_ids(db) ]
     for key, value in ensemble.dict().items():
         setattr(ensemble_db, key, value)
     db.commit()
