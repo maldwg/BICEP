@@ -17,14 +17,16 @@ import { Container } from '../../models/container';
 })
 export class EnsembleEditComponent {
 
-
+  
 
   ngOnInit(): void {
     let selectedTechnique = this.getTechnique(this.data.ensemble.technique_id);
     let ensembleContainers: EnsembleContainer[] = [];
-    ensembleContainers = this.data.ensembleContainerList.filter(ensembleContainer => ensembleContainer.ensemble_id == this.data.ensemble.id);
 
-    let selectedContainers = this.getContainerIds(ensembleContainers).map(String);
+    let availableContainers = this.getAvailableContainers();
+    ensembleContainers = this.data.ensembleContainerList.filter(ensembleContainer => ensembleContainer.ensemble_id == this.data.ensemble.id);
+    let selectedContainers = this.getSelectedContainers(ensembleContainers).map(String);
+    this.data.containerList = this.addCurrentEnsembleContainers(availableContainers, ensembleContainers);
     
     this.ensembleEdit.controls.ensembleTechnique.setValue(selectedTechnique.id.toString());
     this.ensembleEdit.controls.idsContainer.setValue(selectedContainers);
@@ -66,12 +68,24 @@ export class EnsembleEditComponent {
     return this.data.ensembleTechniqueList.filter(t => t.id == techniqueId)[0];
   }
 
-  getContainerIds(ensembleContainerList: EnsembleContainer[]){
-    let containerNames: number[] = [];
+  getSelectedContainers(ensembleContainerList: EnsembleContainer[]){
+    let containerId: number[] = [];
     for(var idx in ensembleContainerList){
-      containerNames.push(this.data.containerList.filter(container => container.id == ensembleContainerList[idx].ids_container_id)[0].id)
+       containerId.push(this.data.containerList.filter(container => container.id == ensembleContainerList[idx].ids_container_id)[0].id)
     }
-    return containerNames;
+    return containerId;
+  }
+
+  getAvailableContainers(){
+    let ensembleContainerIdList = this.data.ensembleContainerList.map(container => container.ids_container_id);
+    return this.data.containerList.filter(container => !ensembleContainerIdList.includes(container.id));
+  }
+
+  addCurrentEnsembleContainers(availableContainers: Container[], ensembleContainers: EnsembleContainer[]){
+    let idList = ensembleContainers.map(container => container.ids_container_id);
+    let currentContainers: Container[] = this.data.containerList.filter(container => idList.includes(container.id));
+
+    return currentContainers.concat(availableContainers);
   }
 
 }

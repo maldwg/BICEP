@@ -42,6 +42,11 @@ export class IdsService {
     return this.http.get<Container[]>(environment.backendUrl+path);
   }
 
+  getAllNonEnsembledIdsContainer(): Observable<Container[]>{
+    let path = "/crud/container/without/ensemble"
+    return this.http.get<Container[]>(environment.backendUrl+path);
+  }
+
   removeContainerById(id: number) {
     let path = "/ids/remove/";
     return this.http.delete(environment.backendUrl+path+id);

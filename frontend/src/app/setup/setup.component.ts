@@ -16,11 +16,12 @@ import { Ensemble, EnsembleSetupData, EnsembleTechnqiue } from '../models/ensemb
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { describe } from 'node:test';
 import { runInThisContext } from 'node:vm';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-setup',
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule ],
+  imports: [MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule ],
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.css'
 })
@@ -137,7 +138,7 @@ export class SetupComponent implements OnInit {
   }
 
   getAllContainer(){
-    this.idsService.getAllIdsContainer()
+    this.idsService.getAllNonEnsembledIdsContainer()
       .subscribe(data => {
         this.containers = data.map(container => ({
           id: container.id,

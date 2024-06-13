@@ -63,6 +63,17 @@ async def get_all_ids_tools(db=Depends(get_db)):
 async def get_all_ids_container(db=Depends(get_db)):
     return get_all_container(db)
 
+
+@router.get("/container/without/ensemble")
+async def get_all_available_ids_container(db=Depends(get_db)):
+    container = get_all_container(db)
+    ensemble_ids = get_all_ensemble_container(db)
+    id_list = [e.ids_container_id for e in ensemble_ids]
+    available_container = [ c for c in container if c.id not in id_list ]
+    print(available_container)
+    return available_container
+
+
 @router.patch("/container")
 async def patch_container(container: IdsContainerUpdate,db=Depends(get_db)):
     await update_container(container, db)
