@@ -94,4 +94,4 @@ async def get_ensembles(db=Depends(get_db)):
 
 @router.patch("/ensemble")
 async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
-    return update_ensemble(ensmeble, db)
+    return await update_ensemble(ensmeble, db)

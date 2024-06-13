@@ -13,13 +13,12 @@ router = APIRouter(
     prefix="/ensemble"
 )
 
+# TODO: frontend and backend allow ensemble analysis only when all container are idle
 # TODO: disallow analysis starts andd addition to ensmeble if already in ensemble
 # TODO: when esemble is edited, then also /setup call
 # TODO: ensemble edit needs to also call an update int he ids fastapi
 # TODO: check for an update if container is in ensemble already
 #  TODO: for analysis start if not idle do not start
-# TODO in ids fastapi if naylsis should begin check if ongoing one via pid
-# TODO ensemble endpoints for add/remove ensembel in ids fastapi for id
 
 @router.post("/setup")
 async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
