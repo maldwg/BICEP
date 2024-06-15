@@ -1,8 +1,11 @@
 import base64
+from http.client import HTTPResponse
 import socket
 from contextlib import closing
 from enum import Enum
 import os
+import httpx
+from fastapi import Response
 
 class STATUS(Enum):
     ACTIVE = "active"
@@ -94,3 +97,57 @@ def get_serialized_confgigurations(configurations):
         }
         serialized_configs.append(serialized_config)
     return serialized_configs
+
+async def deregister_container_from_ensemble(container):
+    host = get_container_host(container)
+    container_url = f"http://{host}:{container.port}"
+    endpoint = f"/configure/ensemble/remove"
+    async with httpx.AsyncClient() as client:
+            response: HTTPResponse = await client.post(container_url+endpoint)
+
+    return response
+
+def create_response_message(message: str, status_code: int):
+    return Response(content=f"{{ message: {message} }}", status_code=status_code)
+
+def create_response_error(message: str, status_code: int):
+    return Response(content=f"{{ error: {message} }}", status_code=status_code)
+
+
+async def start_static_analysis(container, form_data):
+    endpoint = "/analysis/static"
+    host = get_container_host(container)
+    container_url = f"http://{host}:{container.port}"
+    async with httpx.AsyncClient() as client:  
+        response: HTTPResponse = await client.post(container_url+endpoint,files=form_data)    
+    return response
+
+async def start_network_analysis(container, data):
+    endpoint = "/analysis/network"
+    host = get_container_host(container)
+    container_url = f"http://{host}:{container.port}"
+    async with httpx.AsyncClient() as client:
+        response = await client.post(container_url+endpoint, data=data)
+    return response
+
+async def stop_analysis(container):
+    host = get_container_host(container)
+    container_url = f"http://{host}:{container.port}"
+    endpoint = "/analysis/stop"
+    async with httpx.AsyncClient() as client:
+        response: HTTPResponse = await client.post(container_url+endpoint)
+    return response
+
+async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
+    if response.status_code == 200:
+        # await update_container_status(STATUS.ACTIVE.value, container, db)
+        message = f"container {container.id}: {analysis_type} analysis triggered"
+        if ensemble_id != None:
+            message = f"container {container.id}: {analysis_type} analysis for ensemble {ensemble_id} triggered"
+        parsed_response = create_response_message(message, 200)
+    else:
+        message = f"container {container.id}: {analysis_type} analysis could not be triggered"
+        if ensemble_id != None:
+            message = f"container {container.id}: {analysis_type} analysis for ensemble {ensemble_id} could not be triggered"
+        parsed_response = create_response_error(message, 500)
+    return parsed_response

@@ -5,7 +5,7 @@ from ..models.configuration import get_all_configurations, remove_configuration_
 from ..models.ids_tool import get_all_tools
 from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id, update_container
 from ..docker import remove_docker_container
-from ..models.ensemble import get_all_ids_ensembles, update_ensemble
+from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
 from ..utils import FILE_TYPES, get_serialized_confgigurations
@@ -86,7 +86,7 @@ async def get_ensemble_techniques(db=Depends(get_db)):
 
 @router.get("/ensemble/all")
 async def get_ensembles(db=Depends(get_db)):
-    return get_all_ids_ensembles(db)
+    return get_all_ensembles(db)
 
 @router.get("/ensemble/container/all")
 async def get_ensembles(db=Depends(get_db)):

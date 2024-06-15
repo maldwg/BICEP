@@ -1,3 +1,5 @@
+from http.client import HTTPResponse
+import json
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, func, distinct
 from sqlalchemy.orm import relationship, Session
 
@@ -6,8 +8,8 @@ from .ids_tool import get_ids_by_id
 # important, otherwise error when getting all ensemble
 from .ensemble_ids import *
 from ..docker import *
-from ..utils import STATUS
-from ..validation.models import IdsContainerUpdate
+from ..utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis
+from ..validation.models import IdsContainerUpdate, NetworkAnalysisData
 
 from ..database import Base
 
@@ -70,6 +72,17 @@ class IdsContainer(Base):
         from  .configuration import Configuration
         ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
         await inject_ruleset(self, ruleset_file)
+
+    async def start_static_analysis(self, form_data):
+        response: HTTPResponse = await start_static_analysis(self, form_data)
+        return response
+    
+    async def start_network_analysis(self, data):
+        response = await start_network_analysis(self, data)
+        return response
+    
+    async def stop_analysis(self):
+        return await stop_analysis(self)
 
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()

@@ -27,9 +27,9 @@ export class EnsembleService {
     return this.http.get<Ensemble[]>(environment.backendUrl+path);
   }
 
-  sendEnsembleData(ensembleData: EnsembleSetupData) : Observable<EnsembleSetupData>{
+  sendEnsembleData(ensembleData: EnsembleSetupData) : Observable<HttpResponse<any>>{
     let path="/ensemble/setup"
-    return this.http.post<EnsembleSetupData>(environment.backendUrl+path, ensembleData)
+    return this.http.post<any>(environment.backendUrl+path, ensembleData)
   }
 
   updateEnsemble(ensemble: EnsembleUpdateData): Observable<EnsembleUpdateData>{

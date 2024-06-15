@@ -17,6 +17,7 @@ import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { describe } from 'node:test';
 import { runInThisContext } from 'node:vm';
 import {MatTooltipModule} from '@angular/material/tooltip';
+import { HttpResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-setup',
@@ -87,7 +88,7 @@ export class SetupComponent implements OnInit {
         ruleset_id: this.idsForm.value.ruleset ? parseInt( this.idsForm.value.ruleset ) : undefined 
       };    
       this.idsService.sendContainerSetupData(containerData)
-        .subscribe();
+        .subscribe(res => console.log(res));
       this.router.navigate(["/"]);
     }
   }
@@ -103,9 +104,17 @@ export class SetupComponent implements OnInit {
       console.log(this.ensembleForm)
       console.log(this.ensembleForm.value.containers);
       this.ensembleService.sendEnsembleData(ensembleData)
-        .subscribe(() => console.log("successfully send data"))
+        .subscribe((res: HttpResponse<any>) => {
+          console.log(res)
+          if(res.status == 200){
+            this.router.navigate(["/"])
+          }
+          else{
+            // TODO: popup error
+          }
+        })
     }
-      this.router.navigate(["/"])
+      
   }
 
   getConfigurations() {

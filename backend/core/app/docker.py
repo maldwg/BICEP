@@ -54,8 +54,8 @@ async def inject_config(ids_container, config):
             }
         
         response = await client.post(container_url+endpoint,files=form_data)
-        print(response)
         
+    return response
 async def inject_ruleset(ids_container, config):
     host = get_container_host(ids_container)
     container_url = f"http://{host}:{ids_container.port}"
@@ -64,8 +64,8 @@ async def inject_ruleset(ids_container, config):
     async with httpx.AsyncClient() as client:
         file={"file": (config.name, config.configuration)}
         response = await client.post(container_url+endpoint,files=file)
-        print(response)
-    
+    return response
+
 async def remove_docker_container(ids_container):
     client = get_docker_client(ids_container.host)
     container = client.containers.get(container_id=ids_container.name)

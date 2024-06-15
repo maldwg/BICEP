@@ -4,7 +4,7 @@ from ..dependencies import get_db
 from ..validation.models import IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
-from ..utils import find_free_port, STATUS, get_container_host
+from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -50,52 +50,46 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
 
     dataset: Configuration = get_config_by_id(db, static_analysis_data.dataset_id)
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
-    endpoint = "/analysis/static"
-    await update_container_status(STATUS.ACTIVE.value, container, db)
-    async with httpx.AsyncClient() as client:
-        form_data= {
+    form_data= {
             "container_id": (None, str(container.id), "application/json"),
             "file": (dataset.name, dataset.configuration, "application/octet-stream"),
         }    
-        response: HTTPResponse = await client.post(container_url+endpoint,files=form_data)
+    response: HTTPResponse = await container.start_static_analysis(form_data)
+    response = await parse_response_for_triggered_analysis(response, container, db, "static")
+
     if response.status_code == 200: 
-        return {"message": f"static analysis for ids triggered {static_analysis_data},  response = {response}"}
-    else:
-        return {"message": f"static analysis for ids could not be triggered {static_analysis_data},  response = {response}"}
+        await update_container_status(STATUS.ACTIVE.value, container, db)
+
+    return response
 
 @router.post("/analysis/network")
 async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
-
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
-    endpoint = "/analysis/network"
-    async with httpx.AsyncClient() as client:
-        response = await client.post(container_url+endpoint, data=json.dumps(network_analysis_data.__dict__))
+        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500) 
+    
+    data = json.dumps(network_analysis_data.__dict__)
+    response: HTTPResponse = await container.start_network_analysis(data)
+    response = await parse_response_for_triggered_analysis(response, container, db, "network")
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.ACTIVE.value, container, db)
-        return {"message": f"static analysis for ids triggered {network_analysis_data},  response = {response}"}
-    else:
-        return {"message": f"network analysis for ids could not be triggered {network_analysis_data},  response = {response}"}
+    
+    return response
 
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
-    endpoint = "/analysis/stop"
-    async with httpx.AsyncClient() as client:
-        response = await client.post(container_url+endpoint)
+    response: HTTPResponse = await container.stop_analysis()
     # set container status to active/idle afterwards before
-    await update_container_status(STATUS.IDLE.value, container, db)
-    return {"message": f"successfully stopped analysis for container {stop_data}, response = {response}"}
-
+    if response.status_code == 200:
+        await update_container_status(STATUS.IDLE.value, container, db)
+        message = f"Analysis for container {container.id} stopped successfully"
+        return create_response_message(message, 200)
+    else:
+        message = f"Analysis for container {container.id} did not stop successfully"
+        return create_response_error(message, 500)
 
 @router.post("/analysis/finished/{container_id}")
 async def finished_analysis(container_id: int, db=Depends(get_db)):

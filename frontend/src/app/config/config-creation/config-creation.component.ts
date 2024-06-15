@@ -59,6 +59,9 @@ export class ConfigCreationComponent implements OnInit{
 
   }
 
+// TODO: Polish: add a configrm dialog fro all delete actions to confirm if it should be delted
+// Todo: polish: Add error cards to display errors as popup
+
   save(): void{
     if (this.configForm.valid){
       let newConfiguration: ConfigurationSetupData = {
