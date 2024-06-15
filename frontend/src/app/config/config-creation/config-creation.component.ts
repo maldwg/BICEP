@@ -11,11 +11,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-config-creation',
   standalone: true,
   imports: [
+    MatProgressBarModule,
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
@@ -44,6 +47,7 @@ export class ConfigCreationComponent implements OnInit{
   });
 
   fileName="";
+  uploadProgress = 0;
 
   constructor(
     public dialogRef: MatDialogRef<ConfigCreationComponent>, 
@@ -57,7 +61,28 @@ export class ConfigCreationComponent implements OnInit{
 
   save(): void{
     if (this.configForm.valid){
-      this.dialogRef.close(this.configForm.value)
+      let newConfiguration: ConfigurationSetupData = {
+        name: this.configForm.value.name!,
+        description: this.configForm.value.description!,
+        configuration: this.configForm.value.configuration!,
+        file_type: this.configForm.value.fileType!,
+      };
+      this.configService.addConfiguration(newConfiguration)
+        .subscribe((event: HttpEvent<any>) => {
+          console.log(event)
+          switch (event.type) {
+            case HttpEventType.UploadProgress:
+              if (event.total) {
+                this.uploadProgress = Math.round((100 * event.loaded) / event.total);
+              }
+              break;
+            case HttpEventType.Response:
+              this.dialogRef.close(this.configForm.value);
+              break;
+          }
+        }, error => {
+          console.error(error);
+        });
     }
   }
 
@@ -66,17 +91,16 @@ export class ConfigCreationComponent implements OnInit{
   }
 
   onFileSelected(event: any) {
-    console.log(event)
     const file:File = event.target.files[0];
     if (file) {
         this.fileName = file.name;
         this.configForm.patchValue({configuration: file});
-    }
+      }
+
 }
 
 getAllFileTypes(){
   this.configService.getAllFileTypes()
     .subscribe(data => this.fileTypeList = data)
 }
-
 }

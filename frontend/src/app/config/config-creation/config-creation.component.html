@@ -31,12 +31,15 @@
                 <mat-icon>attach_file</mat-icon>
             </button>
           </div>
+          <div class="grid-item progress-div" *ngIf="uploadProgress">
+            <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+          </div>
         </div>
       </form>
   </mat-dialog-content>
   <mat-dialog-actions class="grid-item">
       <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
-      <button class="action-button" mat-flat-button (click)="save()" color="success" cdkFocusInitial>Save</button>
-  </mat-dialog-actions>
+      <button class="action-button" mat-flat-button (click)="save()" color="success" cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
+    </mat-dialog-actions>
 </div>
 

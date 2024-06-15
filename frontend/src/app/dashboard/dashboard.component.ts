@@ -260,7 +260,9 @@ export class DashboardComponent implements OnInit {
         }
       })
   }
-
+// TODO: Polish better display for status 
+// TODO: Polish the cards 
+// TODO polish the summaries?
 
   editEnsemble(ensemble: Ensemble){
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
@@ -274,23 +276,25 @@ export class DashboardComponent implements OnInit {
       }
     });
     dialogRef.afterClosed().subscribe(res => {
-      console.log(res);
-      let ensembleUpdate: EnsembleUpdateData = {
-        id: ensemble.id,
-        name: res.name,
-        description: res.description,
-        technique_id: res.ensembleTechnique,
-        container_ids: res.idsContainer
-      }
-      this.ensembleService.updateEnsemble(ensembleUpdate)
-        .subscribe(() => console.log("send update data for ensemble"));
-      
-      ensemble.name = ensembleUpdate.name;
-      ensemble.description = ensembleUpdate.description;
-      ensemble.technique_id = ensembleUpdate.technique_id;
-      
-      // TODO: complex updating the coreespinding fields to on new edit display the newely added/removed containers properly. Better to reload the window here i guess?
-      
+      // Ensure there is a reason to update
+      if(res !== null){
+        console.log(res);
+        let ensembleUpdate: EnsembleUpdateData = {
+          id: ensemble.id,
+          name: res.name,
+          description: res.description,
+          technique_id: res.ensembleTechnique,
+          container_ids: res.idsContainer
+        }
+        this.ensembleService.updateEnsemble(ensembleUpdate)
+          .subscribe(() => console.log("send update data for ensemble"));
+        
+        ensemble.name = ensembleUpdate.name;
+        ensemble.description = ensembleUpdate.description;
+        ensemble.technique_id = ensembleUpdate.technique_id;
+        
+        // location.reload();
+      } 
     })
   }
 
@@ -308,6 +312,7 @@ export class DashboardComponent implements OnInit {
     dialogRef.afterClosed().subscribe(res => {
       let configId = parseInt(res.config);
       let rulesetId = parseInt(res.ruleset);
+      // Ensure there is at least one field that needs an update
       if(
         res.description !== container.description ||
         configId !== container.configuration_id ||
@@ -375,4 +380,27 @@ export class DashboardComponent implements OnInit {
       return true;
     }
   }
+
+  getEnsembleContainerFromEnsembleId(id: number){
+    return this.ensembleContainerList.filter(e => e.ensemble_id == id);
+  }
+
+  getEnsembleContainerNamesFromEnsembleId(id: number){
+    let ensembleContainer: EnsembleContainer[] = this.getEnsembleContainerFromEnsembleId(id);
+    let containerIds = ensembleContainer.map(e => e.ids_container_id);
+    return this.containerList.filter(c => containerIds.includes(c.id)).map(c => c.name);
+  }
+
+  checkEnsembleContainersAreIdleByEnsembleId(ensembleid: number){
+    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensembleid).map(c => c.ids_container_id);
+    let containers: Container[] = this.containerList.filter(c => ensembleContainerIds.includes(c.id));
+    let flag: boolean = true
+    containers.forEach(container => {
+      if(container.status !== statusTypes.idle){
+        flag = false;
+      }
+    });
+    return flag;
+  }
+
 }

@@ -68,19 +68,9 @@ export class ConfigComponent implements OnInit{
       height: '50%',
       width: '40%',
     });
-
+ 
     dialogRef.afterClosed().subscribe(res => {
       if (res != null) {
-        let newConfiguration: ConfigurationSetupData = {
-          name: res.name,
-          description: res.description,
-          configuration: res.configuration,
-          file_type: res.fileType,
-
-        };
-        this.configService.addConfiguration(newConfiguration)
-          .subscribe(() => console.log("Added configuration"));
-
           window.location.reload();
       }      
     });
