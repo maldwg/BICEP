@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS ids_container (
     configuration_id INT NOT NULL,
     ids_tool_id INT NOT NULL,
     ruleset_id INT,
+    stream_metric_task_id VARCHAR(64),
 
 
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),

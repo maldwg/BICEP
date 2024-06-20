@@ -7,6 +7,11 @@ import os
 import httpx
 from fastapi import Response
 
+# global tasks dict that store info 
+stream_metric_tasks = {
+
+}
+
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
@@ -154,3 +159,13 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
             message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} could not be triggered"
         parsed_response = create_response_error(message, 500)
     return parsed_response
+
+
+def calculate_cpu_percent(previous_cpu, previous_system, current_cpu, current_system, online_cpus):
+    print("calc")
+    cpu_delta = current_cpu - previous_cpu
+    system_delta = current_system - previous_system
+    
+    if system_delta > 0 and cpu_delta > 0:
+        return (cpu_delta / system_delta) * online_cpus * 100.0
+    return 0.0

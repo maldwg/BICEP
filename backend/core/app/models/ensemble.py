@@ -1,6 +1,8 @@
+import asyncio
 from http.client import HTTPResponse
 import json
-from ..utils import STATUS, create_response_error, create_response_message, deregister_container_from_ensemble, get_container_host, parse_response_for_triggered_analysis
+import uuid
+from ..utils import STATUS, create_response_error, stream_metric_tasks ,create_response_message, deregister_container_from_ensemble, get_container_host, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
@@ -8,6 +10,7 @@ from ..database import Base
 from .ids_container import IdsContainer, update_container_status
 from ..validation.models import EnsembleUpdate
 import httpx 
+from ..docker import start_metric_stream, stop_metric_stream
 
 class Ensemble(Base):
     __tablename__ = "ensemble"
@@ -99,7 +102,7 @@ class Ensemble(Base):
             responses.append(response)  
         return responses
 
-    async def stop_analysis(self):
+    async def stop_analysis(self, db):
         containers: list[IdsContainer] = self.get_containers(db)
 
         responses = []
@@ -114,6 +117,27 @@ class Ensemble(Base):
                 responses.append(create_response_error(message, 500)) 
         return responses
     
+
+    async def start_metric_collection(self,db):
+        containers: list[IdsContainer] = self.get_containers(db)
+        for container in containers:
+            task_id = str(uuid.uuid4())
+            task = asyncio.create_task(start_metric_stream(container, self.name))
+            stream_metric_tasks[task_id] = task
+            container.stream_metric_task_id = task_id           
+            db.commit()
+            db.refresh(container)
+        return f"successfully started metric collection for ensemble {self.id}"
+    
+    async def stop_metric_collection(self, db):
+        containers: list[IdsContainer] = self.get_containers(db)
+        for container in containers:
+            await stop_metric_stream(container.stream_metric_task_id)
+            del stream_metric_tasks[container.stream_metric_task_id]
+            container.stream_metric_task_id = None
+            db.commit()
+            db.refresh(container)
+        return f"successfully stopped metric collection for ensemble {self.id}"
 def get_all_ensembles(db: Session):
     return db.query(Ensemble).all()
 

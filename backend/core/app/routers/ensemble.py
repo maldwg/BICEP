@@ -1,3 +1,4 @@
+import asyncio
 from http.client import HTTPResponse
 import json
 
@@ -9,6 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from ..dependencies import get_db
 from ..validation.models import EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
 from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ensemble_by_id, remove_ensemble, update_ensemble_status
+from ..models.ids_container import IdsContainer
 import httpx 
 from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
@@ -38,14 +40,15 @@ async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.delete("/remove/{ensemble_id}")
-async def setup_ensembles(ensemble_id: int,db=Depends(get_db)):
-    ensemble = get_ensemble_by_id(ensemble_id, db)
+async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
+    ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     ids_ensembles: list[EnsembleIds] = get_all_ensemble_container(db)
     container_id_list = [ids_ensemble.ids_container_id  for ids_ensemble in ids_ensembles if ids_ensemble.ensemble_id == ensemble_id]
-    container_list = [ get_container_by_id(db=db, id=id) for id in container_id_list]
-     
+    container_list: list[IdsContainer] = [ get_container_by_id(db=db, id=id) for id in container_id_list]
     responses = []
+    await ensemble.stop_metric_collection(db)
     for container in container_list:
+        # deregister from ensemble and stop running analysis if one is running
         response: HTTPResponse = await deregister_container_from_ensemble(container)
         if response.status_code != 400 and response.status_code != 500:
             message=f"message successfully removed container {id} from ensemble {ensemble.id}"
@@ -71,6 +74,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             return create_response_error(message, 500)
 
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(dataset, static_analysis_data, db)
+    await ensemble.start_metric_collection(db)
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
@@ -90,6 +94,8 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
 
 
     responses: list[HTTPResponse] = await ensemble.start_network_analysis(db=db, network_analysis_data=network_analysis_data)
+    await ensemble.start_metric_collection(db)
+
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     await update_ensemble_status(db=db, ensemble=ensemble, status=STATUS.ACTIVE.value)
@@ -104,7 +110,7 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     responses = []
 
     for container in containers:
-        response: HTTPResponse = await container.stop_analysis()
+        response: HTTPResponse = await container.stop_analysis(db)
         
         if response.status_code == 200:
             await update_container_status(STATUS.IDLE.value, container, db)
@@ -114,12 +120,15 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
             message = f"Could not stop analysis for container {container.id} and ensemble {ensemble.id}"
             responses.append(create_generic_response_message_for_ensemble(message, 500))
     await update_ensemble_status(db=db, ensemble=ensemble, status=STATUS.IDLE.value)
+    await ensemble.stop_metric_collection(db)
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.post("/{ensemble_id}/analysis/finished/{container_id}")
 async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
-    ensemble = get_ensemble_by_id(ensemble_id, db)
+    ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     await update_container_status(STATUS.IDLE.value, container, db)
+    # TODO: check if this was the last container that ran, if yes update ensemble status and stop ensemble metric collection
     await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
+    await ensemble.stop_metric_collection(db)
     return Response(content=f"Successfully finished analysis for esemble {ensemble_id} and container {container_id}", status_code=200)

@@ -22,6 +22,12 @@ services:
       - 9090:9090
     networks:
       - bicep
+  prometheus-push-gateway:
+    image: prom/pushgateway
+    ports: 
+      - 9091:9091
+    networks:
+        - bicep
   core:
     build:
       context: ./backend/core
@@ -37,7 +43,7 @@ services:
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
-      - PROMETHEUS_URL=prometheus:9090
+      - PROMETHEUS_URL=prometheus-push-gateway:9091
   database:
     build:
       context: ./database

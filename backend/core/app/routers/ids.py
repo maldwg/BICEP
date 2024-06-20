@@ -1,10 +1,11 @@
+import asyncio
 from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response
 from ..dependencies import get_db
 from ..validation.models import IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
-from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis
+from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -18,6 +19,7 @@ router = APIRouter(
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
+    
     free_port=find_free_port()
     if data.ruleset_id:
         ruleset_id = data.ruleset_id
@@ -39,6 +41,7 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, container_id)
+    await container.stop_metric_collection(db)
     await container.teardown(db)
     return {"message": "teardown done"}
 
@@ -55,6 +58,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             "file": (dataset.name, dataset.configuration, "application/octet-stream"),
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data)
+    await container.start_metric_collection(db)
     response = await parse_response_for_triggered_analysis(response, container, db, "static")
 
     if response.status_code == 200: 
@@ -71,6 +75,7 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     
     data = json.dumps(network_analysis_data.__dict__)
     response: HTTPResponse = await container.start_network_analysis(data)
+    await container.start_metric_collection(db)
     response = await parse_response_for_triggered_analysis(response, container, db, "network")
     # set container status to active/idle afterwards before
     if response.status_code == 200:
@@ -82,6 +87,7 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
 async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
     response: HTTPResponse = await container.stop_analysis()
+    await container.stop_metric_collection(db)
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)

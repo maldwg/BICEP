@@ -1,3 +1,4 @@
+import asyncio
 from http.client import HTTPResponse
 import json
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, func, distinct
@@ -23,14 +24,18 @@ class IdsContainer(Base):
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
+    stream_metric_task_id = Column(String(64))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))
-
     configuration = relationship('Configuration', back_populates='container', foreign_keys=[configuration_id])
     ids_tool = relationship('IdsTool', back_populates='container')
     ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
     ruleset = relationship('Configuration', back_populates='containerRuleset', foreign_keys=[ruleset_id])
+
+    # properties not in the DB
+    # TODO: move this into the DB and use it there rather then trying this as this will get lost
+    
 
     async def setup(self, db):
         from .configuration import get_config_by_id
@@ -84,6 +89,23 @@ class IdsContainer(Base):
     async def stop_analysis(self):
         return await stop_analysis(self)
 
+    async def start_metric_collection(self, db):
+        task_id = str(uuid.uuid4())
+        self.stream_metric_task_id = task_id
+        task = asyncio.create_task(start_metric_stream(self))
+        stream_metric_tasks[task_id] = task
+        db.commit()
+        db.refresh(self)
+        return f"started metric collection for container {self.id}"
+    
+    async def stop_metric_collection(self, db):
+        await stop_metric_stream(self.stream_metric_task_id)
+        del stream_metric_tasks[self.stream_metric_task_id]
+        self.stream_metric_task_id = None
+        db.commit()
+        db.refresh(self)
+        return f"stopped metric collection for container {self.id}"
+    
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()
     

@@ -1,9 +1,13 @@
+import asyncio
+import json
 import docker
-from .utils import Suricata, Slips, get_container_host, get_core_host
+from .utils import Suricata, Slips, get_container_host, get_core_host, stream_metric_tasks, calculate_cpu_percent
 import time
 import httpx
-from requests.models import Response
+import uuid
 
+from requests.models import Response
+from .prometheus import push_metrics_to_prometheus
 
 # TODO: make docker async
 
@@ -93,3 +97,38 @@ async def check_container_health(ids_container, timeout=60):
             print("Container did not become healthy in time.")
             return False
         time.sleep(1)
+
+async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
+    client = get_docker_client(container.host)
+    container = client.containers.get(container_id=container.name)
+    try:
+        for stats_bytes in container.stats(stream=True):
+            stats_decoded = stats_bytes.decode("utf-8")
+            stats = json.loads(stats_decoded)
+            # CPU usage calculation
+            # CPU usage calculation
+            cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
+            system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
+            online_cpus = stats['cpu_stats'].get('online_cpus', 1)
+
+            cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
+
+            # Memory usage calculation
+            memory_usage_bytes = stats['memory_stats']['usage']
+            memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
+
+            stat = {
+                "cpu_usage": cpu_percentage,
+                "memory_usage": memory_usage_mb,
+            }
+            await push_metrics_to_prometheus(stat, container.name, ensemble_name)
+            await asyncio.sleep(interval)
+    except asyncio.CancelledError as e:
+        print("The task was canceled")
+    except Exception as e:
+        print(e)
+        raise e
+async def stop_metric_stream(task_id):
+    task = stream_metric_tasks[task_id]
+    task.cancel()
+

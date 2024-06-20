@@ -1,13 +1,17 @@
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 import os
 
-prometheusUrl = os.environ.get('PROMETHEUS_URL')
 
 
-registry = CollectorRegistry()
 
-g = Gauge('job_last_success_unixtime', 'Last time a batch job successfully finished', registry=registry)
+async def push_metrics_to_prometheus(data, container_name: str, ensemble_name: str=None):
+    prometheusUrl = os.environ.get('PROMETHEUS_URL')
+    registry = CollectorRegistry()
+    cpu_gauge = Gauge('container_cpu_usage', 'CPU usage of the container', ['container', 'ensemble'], registry=registry)
+    memory_gauge = Gauge('container_memory_usage', 'Memory usage of the container', ['container', 'ensemble'], registry=registry)
 
-g.set_to_current_time()
+    cpu_gauge.labels(container=container_name, ensemble=ensemble_name).set(data["cpu_usage"])
+    memory_gauge.labels(container=container_name, ensemble=ensemble_name).set(data["memory_usage"])
+            
+    push_to_gateway(prometheusUrl, job='container_metrics', registry=registry)
 
-push_to_gateway(prometheusUrl, job='batchA', registry=registry)
