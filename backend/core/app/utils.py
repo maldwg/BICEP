@@ -108,10 +108,13 @@ async def deregister_container_from_ensemble(container):
     return response
 
 def create_response_message(message: str, status_code: int):
-    return Response(content=f"{{ message: {message} }}", status_code=status_code)
+    return Response(content=f"{{ \"message\": \"{message}\" }}", status_code=status_code)
 
 def create_response_error(message: str, status_code: int):
-    return Response(content=f"{{ error: {message} }}", status_code=status_code)
+    return Response(content=f"{{ \"error\": \"{message}\" }}", status_code=status_code)
+
+def create_generic_response_message_for_ensemble(message: str, status_code: int):
+    return {"content": message, "status_code": status_code}
 
 
 async def start_static_analysis(container, form_data):
@@ -141,13 +144,13 @@ async def stop_analysis(container):
 async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
     if response.status_code == 200:
         # await update_container_status(STATUS.ACTIVE.value, container, db)
-        message = f"container {container.id}: {analysis_type} analysis triggered"
+        message = f"container {container.id} - {analysis_type} analysis triggered"
         if ensemble_id != None:
-            message = f"container {container.id}: {analysis_type} analysis for ensemble {ensemble_id} triggered"
+            message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} triggered"
         parsed_response = create_response_message(message, 200)
     else:
-        message = f"container {container.id}: {analysis_type} analysis could not be triggered"
+        message = f"container {container.id} - {analysis_type} analysis could not be triggered"
         if ensemble_id != None:
-            message = f"container {container.id}: {analysis_type} analysis for ensemble {ensemble_id} could not be triggered"
+            message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} could not be triggered"
         parsed_response = create_response_error(message, 500)
     return parsed_response

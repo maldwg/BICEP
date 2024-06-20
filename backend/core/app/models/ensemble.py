@@ -78,6 +78,7 @@ class Ensemble(Base):
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
             
             if response.status_code == 200:
+                # TODO: did not work set container status to active/idle afterwards before
                 await update_container_status(STATUS.ACTIVE.value, container, db)
             
             responses.append(response)
@@ -92,7 +93,6 @@ class Ensemble(Base):
             data = json.dumps(network_analysis_data.__dict__)
             response: HTTPResponse = await container.start_network_analysis(data)
             response = await parse_response_for_triggered_analysis(response, container, db, "network", self.id)
-            # set container status to active/idle afterwards before
             if response.status_code == 200:
                 await update_container_status(STATUS.ACTIVE.value, container, db)
                 

@@ -106,6 +106,7 @@ export class SetupComponent implements OnInit {
       this.ensembleService.sendEnsembleData(ensembleData)
         .subscribe((res: HttpResponse<any>) => {
           console.log(res)
+          // TODO: go thorugh each response object here and see if it was succesful??
           if(res.status == 200){
             this.router.navigate(["/"])
           }

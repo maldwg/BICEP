@@ -153,6 +153,7 @@ export class DashboardComponent implements OnInit {
       }
     })
     dialogRef.afterClosed().subscribe(res => {
+      console.log(res)
       if(res != null){
         if(res.type === analysisTypes.static){
           let staticAnalysisData: StaticAnalysisData = {
@@ -238,6 +239,7 @@ export class DashboardComponent implements OnInit {
               console.log(backendRes)
               if(backendRes.status === 200){
                 ensemble.status = statusTypes.active
+                // TODO: reload location as updating each container not so easy 
               }
             })
         }
@@ -257,6 +259,7 @@ export class DashboardComponent implements OnInit {
         console.log(res)
         if(res.status === 200){
           ensemble.status = statusTypes.idle
+          // TODO: Reload window to update dile again otherwise too complex presumably --> not impossible but complex
         }
       })
   }

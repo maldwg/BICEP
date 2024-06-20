@@ -29,7 +29,7 @@ export class EnsembleService {
 
   sendEnsembleData(ensembleData: EnsembleSetupData) : Observable<HttpResponse<any>>{
     let path="/ensemble/setup"
-    return this.http.post<any>(environment.backendUrl+path, ensembleData)
+    return this.http.post<any>(environment.backendUrl+path, ensembleData, { observe: 'response' })
   }
 
   updateEnsemble(ensemble: EnsembleUpdateData): Observable<EnsembleUpdateData>{
