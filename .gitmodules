@@ -1,0 +1,3 @@
+[submodule "backend/core/app/utils"]
+	path = backend/core/app/utils
+	url = git@github.com:maldwg/BICEP-utils.git
