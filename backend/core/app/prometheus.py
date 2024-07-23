@@ -27,3 +27,8 @@ async def push_alerts_to_prometheus(alerts: list[Alert], analysis_type: str , co
     # memory_gauge.labels(container=container_name, ensemble=ensemble_name).set(data["memory_usage"])
             
     # push_to_gateway(prometheusUrl, job='container_metrics', registry=registry)
+
+
+# TODO 10: implement function to send metrics
+async def push_evaluation_metrics_to_prometheus():
+    pass

@@ -9,8 +9,8 @@ from ..utils import create_response_error, create_response_message, find_free_po
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
-from ..prometheus import push_alerts_to_prometheus
-
+from ..prometheus import push_alerts_to_prometheus, push_evaluation_metrics_to_prometheus
+from ..models.metrics import calculate_evaluation_metrics
 router = APIRouter(
     prefix="/ids"
 )
@@ -111,4 +111,9 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
     print(container_id)
     print(alert_data)
 
+    # TODO 10: implement correctly
+    if alert_data.analysis_type == "static":
+        # cannot be calculated for network analysis
+        metrics = calculate_evaluation_metrics()
+        await push_evaluation_metrics_to_prometheus()
     await push_alerts_to_prometheus()

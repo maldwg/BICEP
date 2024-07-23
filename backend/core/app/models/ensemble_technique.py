@@ -16,3 +16,7 @@ class EnsembleTechnique(Base):
 
 def get_all_ensemble_techniques(db: Session):
     return db.query(EnsembleTechnique).all()
+
+# TODO 10: implement majority vote
+def majority_vote():
+    pass

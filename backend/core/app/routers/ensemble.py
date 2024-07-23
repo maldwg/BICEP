@@ -14,7 +14,7 @@ from ..models.ids_container import IdsContainer
 import httpx 
 from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
-from ..prometheus import push_alerts_to_prometheus
+from ..prometheus import push_alerts_to_prometheus, push_evaluation_metrics_to_prometheus
 
 router = APIRouter(
     prefix="/ensemble"
@@ -137,7 +137,9 @@ async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_
 
 @router.post("/{ensemble_id}/alerts/{container_id}")
 async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_data: AlertData):
-    print(ensemble_id)
-    print(container_id)
-    print(alert_data)
-    await push_alerts_to_prometheus()
+    if alert_data.analysis_type == "static":
+        # save intermediate results until all container are stopped and have send data
+        # get the majority vote method to know how to rank the systems
+        # calculate metrics
+        await push_evaluation_metrics_to_prometheus()
+    await push_alerts_to_prometheus
