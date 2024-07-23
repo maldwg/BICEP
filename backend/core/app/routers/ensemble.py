@@ -1,7 +1,7 @@
 import asyncio
 from http.client import HTTPResponse
 import json
-
+from app.utils.models.ids_base import Alert
 from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
@@ -135,5 +135,7 @@ async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_
 
 
 @router.post("/{ensemble_id}/alerts/{container_id}")
-async def receive_alerts_from_ids(ensemble_id: int, container_id: int, ):
-    pass
+async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alerts: list[Alert]):
+    print(ensemble_id)
+    print(container_id)
+    print(alerts)
