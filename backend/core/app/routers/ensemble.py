@@ -1,7 +1,7 @@
 import asyncio
 from http.client import HTTPResponse
 import json
-from app.utils.models.ids_base import Alert
+from app.bicep-utils.models.ids_base import Alert
 from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
