@@ -9,8 +9,6 @@ import uuid
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
 
-# TODO: make docker async
-
 def get_docker_client(host: str, port: int = 2375):
     if host == "localhost":
         host_ip = get_core_host()
@@ -29,22 +27,33 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
         ids_properties = Slips()
     elif ids_tool.name == Suricata.name:
         ids_properties = Suricata()
-    client.containers.run(
-        image=ids_properties.image,
-        name=ids_container.name,
-        network_mode="host",
-        environment={
-            "PORT": ids_container.port,
-            "CORE_URL": core_url
-        },
-        cap_add=["NET_ADMIN", "NET_RAW"],
-        detach=True
-    )
+
+    # ensure image is present 
+    # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
+    # await pull_image_async(client, ids_properties.image)
+    await run_container_async(client=client, container=ids_container, properties=ids_properties, url=core_url)
     await check_container_health(ids_container)
     await inject_config(ids_container, config)
     if ruleset != None:
         await inject_ruleset(ids_container, ruleset)
     client.close()
+
+async def pull_image_async(client, image):
+    await asyncio.to_thread(client.images.pull, image)
+
+async def run_container_async(client, properties, container, url):
+    await asyncio.to_thread(
+        client.containers.run, 
+        image=properties.image,
+        name=container.name,
+        network_mode="host",
+        environment={
+            "PORT": container.port,
+            "CORE_URL": url
+        },
+        cap_add=["NET_ADMIN", "NET_RAW"],
+        detach=True  
+        )
 
 async def inject_config(ids_container, config):
     host = get_container_host(ids_container)
@@ -101,34 +110,34 @@ async def check_container_health(ids_container, timeout=60):
 async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
     client = get_docker_client(container.host)
     container = client.containers.get(container_id=container.name)
-    try:
-        for stats_bytes in container.stats(stream=True):
-            stats_decoded = stats_bytes.decode("utf-8")
-            stats = json.loads(stats_decoded)
-            # CPU usage calculation
-            # CPU usage calculation
-            cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
-            system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
-            online_cpus = stats['cpu_stats'].get('online_cpus', 1)
+    for stats_bytes in container.stats(stream=True):
+        stats_decoded = stats_bytes.decode("utf-8")
+        stats = json.loads(stats_decoded)
+        # CPU usage calculation
+        # CPU usage calculation
+        # TODO 9: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
+        cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
+        system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
+        online_cpus = stats['cpu_stats'].get('online_cpus', 1)
 
-            cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
+        cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
 
-            # Memory usage calculation
-            memory_usage_bytes = stats['memory_stats']['usage']
-            memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
+        # Memory usage calculation
+        memory_usage_bytes = stats['memory_stats']['usage']
+        memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
 
-            stat = {
-                "cpu_usage": cpu_percentage,
-                "memory_usage": memory_usage_mb,
-            }
-            await push_metrics_to_prometheus(stat, container.name, ensemble_name)
-            await asyncio.sleep(interval)
-    except asyncio.CancelledError as e:
-        print("The task was canceled")
-    except Exception as e:
-        print(e)
-        raise e
+        stat = {
+            "cpu_usage": cpu_percentage,
+            "memory_usage": memory_usage_mb,
+        }
+        await push_metrics_to_prometheus(stat, container.name, ensemble_name)
+        await asyncio.sleep(interval)
+
 async def stop_metric_stream(task_id):
-    task = stream_metric_tasks[task_id]
-    task.cancel()
-
+    try:
+        # TODO 5: Cancellation does nothing --> task goes on anyways
+        task = stream_metric_tasks[task_id]
+        res = task.cancel()
+        print(f"Task was canceld? {res}")
+    except KeyError as e:
+        print(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")

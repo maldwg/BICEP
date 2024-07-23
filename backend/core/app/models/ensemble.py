@@ -87,6 +87,8 @@ class Ensemble(Base):
             responses.append(response)
         return responses
     
+# TODO 10: what about ensembling method implementations ?
+
     async def start_network_analysis(self, network_analysis_data, db):
         from .ids_container import IdsContainer
         containers: list[IdsContainer] = self.get_containers(db)
@@ -132,6 +134,9 @@ class Ensemble(Base):
     async def stop_metric_collection(self, db):
         containers: list[IdsContainer] = self.get_containers(db)
         for container in containers:
+            if not container.stream_metric_task_id:
+                # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been started
+                continue
             await stop_metric_stream(container.stream_metric_task_id)
             del stream_metric_tasks[container.stream_metric_task_id]
             container.stream_metric_task_id = None

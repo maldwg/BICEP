@@ -13,6 +13,3 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 export class AppComponent {
   title = 'frontend';
 }
-
-
-// TODO: animation and wait for upload becuase otherwise not uploaded nmaybe because of file size

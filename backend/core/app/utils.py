@@ -7,7 +7,7 @@ import os
 import httpx
 from fastapi import Response
 
-# global tasks dict that store info 
+# global tasks dict that stores ids for stream tasks in containers 
 stream_metric_tasks = {
 
 }

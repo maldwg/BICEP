@@ -37,9 +37,7 @@ export class ConfigComponent implements OnInit{
     this.getAllConfigs();
   }
 
-  // TODO: POLISH: split into different types
-  // TODO: setup: onlfy configuration and if NIDS or so also ruleset
-// TODO: Polish: add progressbar or so by upload
+  // TODO: POLISH: split into different types (on display with view cards)
 
   getAllConfigs(){
     this.configService.getAllConfigurations()

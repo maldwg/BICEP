@@ -33,9 +33,6 @@ class IdsContainer(Base):
     ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
     ruleset = relationship('Configuration', back_populates='containerRuleset', foreign_keys=[ruleset_id])
 
-    # properties not in the DB
-    # TODO: move this into the DB and use it there rather then trying this as this will get lost
-    
 
     async def setup(self, db):
         from .configuration import get_config_by_id
@@ -87,7 +84,8 @@ class IdsContainer(Base):
         return response
     
     async def stop_analysis(self):
-        return await stop_analysis(self)
+        result = await stop_analysis(self)
+        return result
 
     async def start_metric_collection(self, db):
         task_id = str(uuid.uuid4())
@@ -99,8 +97,14 @@ class IdsContainer(Base):
         return f"started metric collection for container {self.id}"
     
     async def stop_metric_collection(self, db):
-        await stop_metric_stream(self.stream_metric_task_id)
-        del stream_metric_tasks[self.stream_metric_task_id]
+        if not self.stream_metric_task_id:
+            # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been startedd
+            return f"Could not stop metric collection for container {self.id}; No stream started"
+        try:
+            await stop_metric_stream(self.stream_metric_task_id)
+            del stream_metric_tasks[self.stream_metric_task_id]
+        except KeyError as e:
+            print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
         self.stream_metric_task_id = None
         db.commit()
         db.refresh(self)

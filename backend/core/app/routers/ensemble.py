@@ -73,7 +73,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
 
-    responses: list[HTTPResponse] = await ensemble.start_static_analysis(dataset, static_analysis_data, db)
+    responses: list[HTTPResponse] = await ensemble.start_static_analysis(static_analysis_data=static_analysis_data, dataset=dataset, db=db)
     await ensemble.start_metric_collection(db)
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
@@ -127,8 +127,13 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
 async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
     ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
+    await ensemble.stop_metric_collection(db)
     await update_container_status(STATUS.IDLE.value, container, db)
     # TODO: check if this was the last container that ran, if yes update ensemble status and stop ensemble metric collection
     await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
-    await ensemble.stop_metric_collection(db)
     return Response(content=f"Successfully finished analysis for esemble {ensemble_id} and container {container_id}", status_code=200)
+
+
+@router.post("/{ensemble_id}/alerts/{container_id}")
+async def receive_alerts_from_ids(ensemble_id: int, container_id: int, ):
+    pass

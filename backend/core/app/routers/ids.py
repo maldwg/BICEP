@@ -97,8 +97,10 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
         message = f"Analysis for container {container.id} did not stop successfully"
         return create_response_error(message, 500)
 
+# Endpoint to receive notice when triggered analysis (static) has finished
 @router.post("/analysis/finished/{container_id}")
 async def finished_analysis(container_id: int, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
+    await container.stop_metric_collection(db)
     await update_container_status(STATUS.IDLE.value, container, db)
     return Response(content=f"Successfully stopped analysis for fontainer {container_id}", status_code=200)
