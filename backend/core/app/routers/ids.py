@@ -2,14 +2,14 @@ import asyncio
 from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response
 from ..dependencies import get_db
-from ..validation.models import IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
+from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
-
+from ..prometheus import push_alerts_to_prometheus
 
 router = APIRouter(
     prefix="/ids"
@@ -104,3 +104,11 @@ async def finished_analysis(container_id: int, db=Depends(get_db)):
     await container.stop_metric_collection(db)
     await update_container_status(STATUS.IDLE.value, container, db)
     return Response(content=f"Successfully stopped analysis for fontainer {container_id}", status_code=200)
+
+
+@router.post("/alerts/{container_id}")
+async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
+    print(container_id)
+    print(alert_data)
+
+    await push_alerts_to_prometheus()

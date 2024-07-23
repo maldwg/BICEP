@@ -1,19 +1,20 @@
 import asyncio
 from http.client import HTTPResponse
 import json
-from app.bicep-utils.models.ids_base import Alert
+from ..bicep_utils.models.ids_base import Alert
 from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from fastapi import APIRouter, Depends, Response
 from fastapi.encoders import jsonable_encoder
 from ..dependencies import get_db
-from ..validation.models import EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
+from ..validation.models import AlertData, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
 from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ensemble_by_id, remove_ensemble, update_ensemble_status
 from ..models.ids_container import IdsContainer
 import httpx 
 from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
+from ..prometheus import push_alerts_to_prometheus
 
 router = APIRouter(
     prefix="/ensemble"
@@ -135,7 +136,8 @@ async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_
 
 
 @router.post("/{ensemble_id}/alerts/{container_id}")
-async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alerts: list[Alert]):
+async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_data: AlertData):
     print(ensemble_id)
     print(container_id)
-    print(alerts)
+    print(alert_data)
+    await push_alerts_to_prometheus()

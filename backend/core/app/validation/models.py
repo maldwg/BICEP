@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from ..bicep_utils.models.ids_base import Alert
 
 class IdsContainerCreate(BaseModel):
     """
@@ -62,3 +63,11 @@ class StopAnalysisData(BaseModel):
     """
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
+
+class AlertData(BaseModel):
+    """
+    
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    alerts: list[Alert]
+    analysis_type: str
