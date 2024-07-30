@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from ..bicep_utils.models.ids_base import Alert
@@ -64,10 +65,14 @@ class StopAnalysisData(BaseModel):
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
 
+class AlertModel(BaseModel):
+    time: str
+    source: str
+    destination: str
+    severity: Optional[float]
+    type: str
+    message: str    
+
 class AlertData(BaseModel):
-    """
-    
-    """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    alerts: list[Alert]
+    alerts: list[AlertModel]
     analysis_type: str

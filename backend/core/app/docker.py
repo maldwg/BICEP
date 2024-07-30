@@ -108,34 +108,37 @@ async def check_container_health(ids_container, timeout=60):
         time.sleep(1)
 
 async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
-    client = get_docker_client(container.host)
-    container = client.containers.get(container_id=container.name)
-    for stats_bytes in container.stats(stream=True):
-        stats_decoded = stats_bytes.decode("utf-8")
-        stats = json.loads(stats_decoded)
-        # CPU usage calculation
-        # CPU usage calculation
-        # TODO 9: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
-        cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
-        system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
-        online_cpus = stats['cpu_stats'].get('online_cpus', 1)
+    try:
+        client = get_docker_client(container.host)
+        container = client.containers.get(container_id=container.name)
+        for stats_bytes in container.stats(stream=True):
+            stats_decoded = stats_bytes.decode("utf-8")
+            stats = json.loads(stats_decoded)
+            # CPU usage calculation
+            # CPU usage calculation
+            # TODO 9: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
+            cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
+            system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
+            online_cpus = stats['cpu_stats'].get('online_cpus', 1)
 
-        cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
+            cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
 
-        # Memory usage calculation
-        memory_usage_bytes = stats['memory_stats']['usage']
-        memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
+            # Memory usage calculation
+            memory_usage_bytes = stats['memory_stats']['usage']
+            memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
 
-        stat = {
-            "cpu_usage": cpu_percentage,
-            "memory_usage": memory_usage_mb,
-        }
-        await push_metrics_to_prometheus(stat, container.name, ensemble_name)
-        await asyncio.sleep(interval)
+            stat = {
+                "cpu_usage": cpu_percentage,
+                "memory_usage": memory_usage_mb,
+            }
+            await push_metrics_to_prometheus(stat, container.name, ensemble_name)
+            await asyncio.sleep(interval)
+    except asyncio.CancelledError as e:
+        print("Task was cancelled successfully")
 
 async def stop_metric_stream(task_id):
     try:
-        # TODO 5: Cancellation does nothing --> task goes on anyways
+        # TODO 8: Cancellation does nothing --> task goes on anyways
         task = stream_metric_tasks[task_id]
         res = task.cancel()
         print(f"Task was canceld? {res}")

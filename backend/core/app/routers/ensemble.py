@@ -138,6 +138,8 @@ async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_
 @router.post("/{ensemble_id}/alerts/{container_id}")
 async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_data: AlertData):
     if alert_data.analysis_type == "static":
+        # TODO 8: implement logic for receiving alerts
+        
         # save intermediate results until all container are stopped and have send data
         # get the majority vote method to know how to rank the systems
         # calculate metrics

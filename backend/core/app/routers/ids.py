@@ -111,9 +111,9 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
     print(container_id)
     print(alert_data)
 
-    # TODO 10: implement correctly
+    # TODO 8: implement correctly
     if alert_data.analysis_type == "static":
         # cannot be calculated for network analysis
         metrics = calculate_evaluation_metrics()
-        await push_evaluation_metrics_to_prometheus()
-    await push_alerts_to_prometheus()
+        # await push_evaluation_metrics_to_prometheus()
+    # await push_alerts_to_prometheus()
