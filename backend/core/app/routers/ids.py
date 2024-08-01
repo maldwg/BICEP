@@ -9,7 +9,7 @@ from ..utils import create_response_error, create_response_message, find_free_po
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
-from ..prometheus import push_alerts_to_prometheus, push_evaluation_metrics_to_prometheus
+from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..models.metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert

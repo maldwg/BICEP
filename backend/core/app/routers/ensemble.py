@@ -14,7 +14,7 @@ from ..models.ids_container import IdsContainer
 import httpx 
 from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
-from ..prometheus import push_alerts_to_prometheus, push_evaluation_metrics_to_prometheus
+from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..loki import push_alerts_to_loki
 router = APIRouter(
     prefix="/ensemble"
@@ -144,7 +144,11 @@ async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_dat
     }
     if alert_data.analysis_type == "static":
         # TODO 8: implement logic for receiving alerts
-        
+
+        # check if other containers are still running --> if no and this is last, then send the logs -> DOWNSIDE: if relatively same tempo --> doubly calculating
+        # otherwise: check if in timeframe there was already a push for this ensemble from all the other container ids? ?
+        # otherwise label/counter for the ensemble to knwo which label to assign / coordinate
+   
         # save intermediate results until all container are stopped and have send data
         # get the majority vote method to know how to rank the systems
         # calculate metrics

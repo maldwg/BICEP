@@ -8,7 +8,6 @@ from .bicep_utils.models.ids_base import Alert
 LOKI_URL = os.environ.get('LOKI_URL')
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
-    # TODO 9: Works propably fine bnut since suricata timesampt is 2018 lok rejects --> hwo to configure loki correctly or use which timestamp ???
     values = [ [await timestamp_in_nano_seconds(), str(a.to_dict())] for a in alerts]
     print(values)
     log_entry = {
