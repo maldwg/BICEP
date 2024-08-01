@@ -109,11 +109,13 @@ async def finished_analysis(container_id: int, db=Depends(get_db)):
 
 
 @router.post("/alerts/{container_id}")
-async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
+async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=Depends(get_db)):
+    container = get_container_by_id(db, container_id)
     labels = {
-        "container_id": str(container_id),
+        "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
-        "ensemble": "None"
+        "ensemble": "None",
+        "logging": "alerts"
     }
     alerts = [
         Alert(
@@ -127,10 +129,7 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
         for alert in alert_data.alerts
     ]
     if alert_data.analysis_type == "static":
-        # cannot be calculated for network analysis
-        # metrics = calculate_evaluation_metrics()
-        # await push_evaluation_metrics_to_prometheus()
-        pass
+        metrics = await calculate_evaluation_metrics()
+        await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name)
 
-    response = await push_alerts_to_loki(alerts=alerts, labels=labels)
-    print(response)
+    await push_alerts_to_loki(alerts=alerts, labels=labels)

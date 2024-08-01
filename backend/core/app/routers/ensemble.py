@@ -140,10 +140,13 @@ async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_dat
     labels = {
         "container_id": str(container_id),
         "analysis_type": alert_data.analysis_type,
-        "ensemble": str(ensemble_id)
+        "ensemble": str(ensemble_id),
+        "logging": "alerts"
+
     }
     if alert_data.analysis_type == "static":
         # TODO 8: implement logic for receiving alerts
+        # TODO 10: metrics start/stop might be buggy
 
         # check if other containers are still running --> if no and this is last, then send the logs -> DOWNSIDE: if relatively same tempo --> doubly calculating
         # otherwise: check if in timeframe there was already a push for this ensemble from all the other container ids? ?
