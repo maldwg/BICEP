@@ -44,6 +44,7 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
       - PROMETHEUS_URL=prometheus-push-gateway:9091
+      - LOKI_URL=http://loki:3100
   database:
     build:
       context: ./database
@@ -53,6 +54,16 @@ services:
       - 3306:3306
     networks:
       - bicep
+  loki:
+    build:
+      context: ./loki 
+    ports:
+      - 3100:3100
+    networks:
+      - bicep  
+    command: -config.file=/mnt/config/loki-config.yaml
+    volumes:
+      - ./loki/loki:/mnt/config
 networks:
   bicep:
     driver: bridge

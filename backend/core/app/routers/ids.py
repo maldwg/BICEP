@@ -11,6 +11,8 @@ import json
 from fastapi.encoders import jsonable_encoder
 from ..prometheus import push_alerts_to_prometheus, push_evaluation_metrics_to_prometheus
 from ..models.metrics import calculate_evaluation_metrics
+from ..loki import push_alerts_to_loki
+from ..bicep_utils.models.ids_base import Alert
 router = APIRouter(
     prefix="/ids"
 )
@@ -108,12 +110,27 @@ async def finished_analysis(container_id: int, db=Depends(get_db)):
 
 @router.post("/alerts/{container_id}")
 async def receive_alerts_from_ids(container_id: int, alert_data: AlertData):
-    print(container_id)
-    print(alert_data)
-
-    # TODO 8: implement correctly
+    labels = {
+        "container_id": str(container_id),
+        "analysis_type": alert_data.analysis_type,
+        "ensemble": "None"
+    }
+    alerts = [
+        Alert(
+            time=alert.time, 
+            destination=alert.destination, 
+            source=alert.source, 
+            severity=alert.severity, 
+            type=alert.type, 
+            message=alert.message
+            ) 
+        for alert in alert_data.alerts
+    ]
     if alert_data.analysis_type == "static":
         # cannot be calculated for network analysis
-        metrics = calculate_evaluation_metrics()
+        # metrics = calculate_evaluation_metrics()
         # await push_evaluation_metrics_to_prometheus()
-    # await push_alerts_to_prometheus()
+        pass
+
+    response = await push_alerts_to_loki(alerts=alerts, labels=labels)
+    print(response)
