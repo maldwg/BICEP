@@ -35,3 +35,5 @@ async def calculate_evaluation_metrics():
     }
     return metrics
 
+async def calculate_evaluation_metrics_for_ensemble():
+    pass

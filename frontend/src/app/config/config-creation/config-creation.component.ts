@@ -46,7 +46,7 @@ export class ConfigCreationComponent implements OnInit{
     fileType: new FormControl(""),
   });
 
-  fileName="";
+  fileNames: string[] = [];
   uploadProgress = 0;
 
   constructor(
@@ -63,6 +63,7 @@ export class ConfigCreationComponent implements OnInit{
 // Todo: polish: Add error cards to display errors as popup
 
   save(): void{
+    // TODO 8: allow for multiple files to be sended
     if (this.configForm.valid){
       let newConfiguration: ConfigurationSetupData = {
         name: this.configForm.value.name!,
@@ -94,10 +95,11 @@ export class ConfigCreationComponent implements OnInit{
   }
 
   onFileSelected(event: any) {
-    const file:File = event.target.files[0];
-    if (file) {
-        this.fileName = file.name;
-        this.configForm.patchValue({configuration: file});
+    const files:File[] = event.target.files;
+    console.log(files)
+    if (files && files.length > 0) {
+        this.fileNames = Array.from(files).map(file => file.name);
+        this.configForm.patchValue({configuration: files});
       }
 
 }
@@ -106,4 +108,19 @@ getAllFileTypes(){
   this.configService.getAllFileTypes()
     .subscribe(data => this.fileTypeList = data)
 }
+
+
+getAcceptType(): string {
+  switch (this.configForm.controls.fileType.value) {
+    case 'test-data':
+      return '.pcap,.csv,.pcap_ISX';
+    case 'configuration':
+      return '.yaml,.conf,.json';
+    case 'ruleset':
+      return '.rules';
+    default:
+      return '*/*';
+  }
+}
+
 }

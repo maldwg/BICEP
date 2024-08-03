@@ -23,9 +23,17 @@
           </mat-form-field>
         </div>
         <div class="grid-item">
-          <input type="file" class="file-input" required (change)="onFileSelected($event)" #fileUpload>
+          <input type="file" class="file-input" required (change)="onFileSelected($event)" #fileUpload [accept]="getAcceptType()" [multiple]="configForm.controls.fileType.value === 'test-data'">
+          <p *ngIf="configForm.controls.fileType.value == 'test-data'">Upload pcap file and csv/pcap_ISX file</p>
           <div class="file-upload">
-            {{fileName || "No file uploaded yet."}}
+            <ng-container *ngIf="fileNames.length; else noFileText">
+              <div *ngFor="let fileName of fileNames">
+                {{ fileName }}
+              </div>
+            </ng-container>
+            <ng-template #noFileText>
+              No file uploaded yet.
+            </ng-template>
             <button mat-mini-fab color="primary" class="upload-btn"
               (click)="fileUpload.click()">
                 <mat-icon>attach_file</mat-icon>

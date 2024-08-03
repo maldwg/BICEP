@@ -1,6 +1,8 @@
 import asyncio
 from http.client import HTTPResponse
 import json
+
+from ..models.metrics import calculate_evaluation_metrics_for_ensemble
 from ..bicep_utils.models.ids_base import Alert
 from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
 from ..models.configuration import Configuration, get_config_by_id
@@ -136,16 +138,29 @@ async def finished_analysis(ensemble_id: int, container_id: int, db=Depends(get_
 
 
 @router.post("/{ensemble_id}/alerts/{container_id}")
-async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_data: AlertData):
+async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_data: AlertData, db=Depends(get_db)):
+    container = get_container_by_id(db, container_id)
+    ensemble = get_ensemble_by_id(db, ensemble_id)    
     labels = {
-        "container_id": str(container_id),
+        "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
-        "ensemble": str(ensemble_id),
+        "ensemble_name": ensemble.name,
         "logging": "alerts"
 
     }
+    alerts = [
+        Alert(
+            time=alert.time, 
+            destination=alert.destination, 
+            source=alert.source, 
+            severity=alert.severity, 
+            type=alert.type, 
+            message=alert.message
+            ) 
+        for alert in alert_data.alerts
+    ]        
     if alert_data.analysis_type == "static":
-        # TODO 8: implement logic for receiving alerts
+        # TODO 8: implement logic for receiving alerts 
         # TODO 10: metrics start/stop might be buggy
 
         # check if other containers are still running --> if no and this is last, then send the logs -> DOWNSIDE: if relatively same tempo --> doubly calculating
@@ -157,4 +172,9 @@ async def receive_alerts_from_ids(ensemble_id: int, container_id: int, alert_dat
         # calculate metrics
         pass
         # await push_evaluation_metrics_to_prometheus()
-    await push_alerts_to_loki(alerts=alert_data.alerts, labels=labels)
+    await push_alerts_to_loki(alerts=alerts, labels=labels)
+
+
+    if alert_data.analysis_type == "static":
+        metrics = await calculate_evaluation_metrics_for_ensemble()
+        await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name)
