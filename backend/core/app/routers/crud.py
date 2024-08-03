@@ -1,5 +1,6 @@
 import base64
 from fastapi import APIRouter, Depends, UploadFile, Form
+from fastapi.responses import JSONResponse
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
 from ..models.ids_tool import get_all_tools
@@ -43,17 +44,23 @@ async def remove_config( id: int, db=Depends(get_db)):
     remove_configuration_by_id(db, id)
 
 @router.post("/configuration/add")
-async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db)):
-    content = await configuration.read()
-    configuration = Configuration(
-        name=name,
-        description=description,
-        configuration=content,
-        file_type=file_type,
-    )
-    add_config(db, configuration)
-    return {"message": "configuration added successfully"}
-
+async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db)):
+    configuration_files = [await c.read() for c in configuration]
+    if len(configuration_files) == 1:
+        content = configuration_files[0]
+        configuration = Configuration(
+            name=name,
+            description=description,
+            configuration=content,
+            file_type=file_type,
+        )
+        add_config(db, configuration)
+    else:
+        # TODO 8: handle 2 files 
+        # TODO 8: adjut database schema for additional optional file
+        # # TODO 8: calculate from labels file Nr. of benign, not benign --> maybe save in other database ==> much refacoring / additional stuff to do --> suboptimal
+        print("2")
+    return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 @router.get("/ids-tool/all")
 async def get_all_ids_tools(db=Depends(get_db)):
