@@ -1,15 +1,17 @@
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, UploadFile, Form
 from fastapi.responses import JSONResponse
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
+from ..models.dataset import Dataset, get_all_datasets, get_dataset_by_id, add_dataset
 from ..models.ids_tool import get_all_tools
 from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id, update_container
 from ..docker import remove_docker_container
 from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import FILE_TYPES, get_serialized_confgigurations
+from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_benign_and_malicious_ammount
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate
 
 router = APIRouter(
@@ -45,9 +47,9 @@ async def remove_config( id: int, db=Depends(get_db)):
 
 @router.post("/configuration/add")
 async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db)):
-    configuration_files = [await c.read() for c in configuration]
-    if len(configuration_files) == 1:
-        content = configuration_files[0]
+    # For rulesets and general configurations
+    if len(configuration) == 1:
+        content = await configuration[0].read()  
         configuration = Configuration(
             name=name,
             description=description,
@@ -56,10 +58,18 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
         )
         add_config(db, configuration)
     else:
-        # TODO 8: handle 2 files 
-        # TODO 8: adjut database schema for additional optional file
-        # # TODO 8: calculate from labels file Nr. of benign, not benign --> maybe save in other database ==> much refacoring / additional stuff to do --> suboptimal
-        print("2")
+        pcap_file = await list(filter(lambda c: c.filename.split(".")[-1] == "pcap" , configuration ))[0].read()
+        labels_file = await list(filter(lambda c: c.filename.split(".")[-1] != "pcap" , configuration ))[0].read()
+        benign, malicious = await calculate_benign_and_malicious_ammount(labels_file)
+        dataset = Dataset(
+            name=name,
+            description=description,
+            pcap_file=pcap_file,
+            label_file=labels_file,
+            ammount_benign=benign,
+            ammount_malicious=malicious,
+        )
+        add_dataset(db, dataset)
     return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 @router.get("/ids-tool/all")

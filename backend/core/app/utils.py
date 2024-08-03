@@ -1,17 +1,24 @@
+import asyncio
 import base64
 from http.client import HTTPResponse
+import io
 import socket
 from contextlib import closing
 from enum import Enum
 import os
 import httpx
 from fastapi import Response
+import pandas as pd
+import multiprocessing
 
 # global tasks dict that stores ids for stream tasks in containers 
 stream_metric_tasks = {
 
 }
 
+# TODO 5: find a way to make it asynch --> maybe backroung task with asynchio in the endpoint ?
+
+# asnycion craete task
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
@@ -169,3 +176,33 @@ def calculate_cpu_percent(previous_cpu, previous_system, current_cpu, current_sy
     if system_delta > 0 and cpu_delta > 0:
         return (cpu_delta / system_delta) * online_cpus * 100.0
     return 0.0
+
+# TODO 8: add calculation
+async def calculate_benign_and_malicious_ammount(labels_file):
+    # convert bytes to bytestream to be able to read it into pandas
+    byte_stream = io.BytesIO(labels_file)
+    df = pd.read_csv(byte_stream)
+
+    benign_count = 0
+    malicious_count = 0
+
+    # Todo 5: this is not asnych whatsoever, need to be though!
+
+    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
+
+    pool = multiprocessing.Pool()
+    result = pool.map(process_row, df.itertuples(index=False))
+    result_df = pd.DataFrame(result, columns=df.columns)
+
+    # Convert the DataFrame to a NumPy array for vectorized operations
+    array = df.to_numpy()
+    
+    # Create a boolean mask for 'benign' and 'malicious'
+    benign_mask = np.char.find(array.astype(str), 'benign') != -1
+    malicious_mask = np.char.find(array.astype(str), 'malicious') != -1
+    
+    # Sum the boolean masks to count occurrences
+    benign_count = np.any(benign_mask, axis=1).sum()
+    malicious_count = np.any(malicious_mask, axis=1).sum()
+    print(benign_count, malicious_count)
+    return benign_count, malicious_count
