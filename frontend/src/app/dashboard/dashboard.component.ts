@@ -22,11 +22,13 @@ import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 import { ConfigService } from '../services/config/config.service';
 import { IdsTool } from '../models/ids';
-import { Configuration, fileTpyes } from '../models/configuration';
+import { Configuration, fileTypes } from '../models/configuration';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
 import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
 import { STATUS_CODES } from 'node:http';
+import { DatasetService } from '../services/dataset/dataset.service';
+import { Dataset } from '../models/dataset';
 
 @Component({
   selector: 'app-dashboard',
@@ -41,6 +43,7 @@ export class DashboardComponent implements OnInit {
   ensembleList: Ensemble[] = [];
   idsToolList: IdsTool[] = [];
   configList: Configuration[] = [];
+  datasetList: Dataset[] = [];
   ensembleTechnqiueList: EnsembleTechnqiue[] = [];
   ensembleContainerList: EnsembleContainer[] = [];
 
@@ -51,6 +54,7 @@ export class DashboardComponent implements OnInit {
     public AnalysisDialog: MatDialog,
     private ensembleService: EnsembleService,
     private configService: ConfigService,
+    private datasetService: DatasetService,
     
   ) {}
 
@@ -60,6 +64,7 @@ export class DashboardComponent implements OnInit {
     this.getAllContainer();
     this.getAllEnsembles();
     this.getAllConfigs();
+    this.getAllDatasets();
     this.getAllIdsTools();
     this.getAllTechnqiues();
     this.getAllEnsembleContainer();
@@ -91,6 +96,21 @@ export class DashboardComponent implements OnInit {
           configuration: config.configuration,
           description: config.description,
           file_type: config.file_type
+        }));
+      });
+  }
+
+  getAllDatasets(){
+    this.datasetService.getAllDatasets()
+      .subscribe(data => {
+        this.datasetList = data.map(config => ({
+          id: config.id,
+          name: config.name,
+          pcap_file: config.pcap_file,
+          description: config.description,
+          labels_file: config.labels_file,
+          ammount_benign: config.ammount_benign,
+          ammount_malicious: config.ammount_malicious,
         }));
       });
   }
@@ -149,11 +169,12 @@ export class DashboardComponent implements OnInit {
       height: "50%",
       width: "50%",
       data: {
-        datasets: this.configList.filter(c => c.file_type == fileTpyes.testData)
+        datasets: this.datasetList
       }
     })
     dialogRef.afterClosed().subscribe(res => {
       console.log(res)
+      // TODO 10: clicking cancel also executes the analysis if all fields are filled !
       if(res != null){
         if(res.type === analysisTypes.static){
           let staticAnalysisData: StaticAnalysisData = {
@@ -212,7 +233,7 @@ export class DashboardComponent implements OnInit {
       height: "50%",
       width: "50%",
       data: {
-        datasets: this.configList.filter(c => c.file_type == fileTpyes.testData)
+        datasets: this.datasetList
       }
     })
     dialogRef.afterClosed().subscribe(res => {
@@ -356,6 +377,10 @@ export class DashboardComponent implements OnInit {
 
   getConfigName(configId: number) {
     return this.configList.find(c => c.id == configId)?.name;
+  }
+
+  getDatasetName(datasetId: number) {
+    return this.datasetList.find(d => d.id == datasetId)?.name;
   }
 
   getIdsToolName(toolId: number) {

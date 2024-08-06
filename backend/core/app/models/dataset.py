@@ -10,7 +10,7 @@ class Dataset(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
     pcap_file = Column(BLOB, nullable=False)
-    label_file = Column(BLOB, nullable=False)
+    labels_file = Column(BLOB, nullable=False)
     description = Column(String(2048), nullable=False)
     ammount_benign = Column(Integer, nullable=False)
     ammount_malicious = Column(Integer, nullable=False)

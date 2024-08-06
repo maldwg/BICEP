@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS dataset(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     pcap_file LONGBLOB NOT NULL,
-    label_file LONGBLOB NOT NULL,
+    labels_file LONGBLOB NOT NULL,
     description VARCHAR(2048) NOT NULL,
     ammount_benign INT NOT NULL,
     ammount_malicious INT NOT NULL

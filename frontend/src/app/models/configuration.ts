@@ -15,7 +15,7 @@ export interface ConfigurationSetupData{
 }
 
 
-export const fileTpyes = {
+export const fileTypes = {
     configuration: "configuration",
     ruleSet: "rule-set",
     testData: "test-data"

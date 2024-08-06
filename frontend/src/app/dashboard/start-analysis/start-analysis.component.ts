@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { Configuration, fileTpyes } from '../../models/configuration';
+import { Configuration, fileTypes } from '../../models/configuration';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { analysisTypes } from '../../models/analysis';
+import { Dataset } from '../../models/dataset';
 
 @Component({
   selector: 'app-start-analysis',
@@ -28,7 +29,7 @@ export class StartAnalysisComponent implements OnInit{
 
   constructor(
     public dialogRef: MatDialogRef<StartAnalysisComponent>,
-    @Inject (MAT_DIALOG_DATA) public data: {datasets: Configuration[]},
+    @Inject (MAT_DIALOG_DATA) public data: {datasets: Dataset[]},
   ) {}
 
 

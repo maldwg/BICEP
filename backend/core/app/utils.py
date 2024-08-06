@@ -16,6 +16,8 @@ stream_metric_tasks = {
 
 }
 
+dataset_addition_tasks = set()
+
 # TODO 5: find a way to make it asynch --> maybe backroung task with asynchio in the endpoint ?
 
 # asnycion craete task
@@ -183,26 +185,75 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     byte_stream = io.BytesIO(labels_file)
     df = pd.read_csv(byte_stream)
 
-    benign_count = 0
-    malicious_count = 0
+    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
+    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
+    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
+    
+    print(benign_count)
+    print(malicious_count)
+    return benign_count, malicious_count
 
-    # Todo 5: this is not asnych whatsoever, need to be though!
+
+def dataset_callback(pcap_file, labels_file, name, description, db, future):
+    from .models.dataset import Dataset, add_dataset
+    try:
+        benign, malicious = future.result()
+        print(benign)
+        print(malicious)
+    except Exception as e:
+        print("Task raised an exception:")
+
+    dataset = Dataset(
+        name=name,
+        description=description,
+        pcap_file=pcap_file,
+        labels_file=labels_file,
+        ammount_benign=benign,
+        ammount_malicious=malicious,
+    )
+    add_dataset(db, dataset)
+        
+    dataset_addition_tasks.discard(future)
+
+
+async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
+    from .models.dataset import Dataset, add_dataset
+    # TODO 10: check if files are matching in length --> otherwise error ?
+    print("test me 2")
+ 
+    # convert bytes to bytestream to be able to read it into pandas
+    byte_stream = io.BytesIO(labels_file)
+    df = pd.read_csv(byte_stream)
 
     df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
-
-    pool = multiprocessing.Pool()
-    result = pool.map(process_row, df.itertuples(index=False))
-    result_df = pd.DataFrame(result, columns=df.columns)
-
-    # Convert the DataFrame to a NumPy array for vectorized operations
-    array = df.to_numpy()
+    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
+    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
     
-    # Create a boolean mask for 'benign' and 'malicious'
-    benign_mask = np.char.find(array.astype(str), 'benign') != -1
-    malicious_mask = np.char.find(array.astype(str), 'malicious') != -1
-    
-    # Sum the boolean masks to count occurrences
-    benign_count = np.any(benign_mask, axis=1).sum()
-    malicious_count = np.any(malicious_mask, axis=1).sum()
-    print(benign_count, malicious_count)
-    return benign_count, malicious_count
+
+    dataset = Dataset(
+        name=name,
+        description=description,
+        pcap_file=pcap_file,
+        labels_file=labels_file,
+        ammount_benign=benign_count,
+        ammount_malicious=malicious_count,
+    )
+    add_dataset(db, dataset)
+        
+    # dataset_addition_tasks.discard(future)
+
+def get_serialized_datasets(datasets):
+    serialized_configs = []
+    for dataset in datasets:
+        serialized_config = {
+            "id": dataset.id,
+            "name": dataset.name,
+            "pcap_file": base64.b64encode(dataset.pcap_file).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
+            "labels_file": base64.b64encode(dataset.labels_file).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
+            "description": dataset.description,
+            "ammount_benign": dataset.ammount_benign,
+            "ammount_malicious": dataset.ammount_malicious
+
+        }
+        serialized_configs.append(serialized_config)
+    return serialized_configs

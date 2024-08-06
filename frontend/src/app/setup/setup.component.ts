@@ -9,7 +9,7 @@ import { IdsService } from '../services/ids/ids.service';
 import { ConfigService } from '../services/config/config.service';
 import { Router } from '@angular/router';
 import { Container, ContainerSetupData } from '../models/container';
-import { Configuration, fileTpyes } from '../models/configuration';
+import { Configuration, fileTypes } from '../models/configuration';
 import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
 import { Ensemble, EnsembleSetupData, EnsembleTechnqiue } from '../models/ensemble';
@@ -119,7 +119,7 @@ export class SetupComponent implements OnInit {
   }
 
   getConfigurations() {
-    let type: string = fileTpyes.configuration;
+    let type: string = fileTypes.configuration;
     this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
         this.idsConfigs = data.map(config => ({
@@ -129,7 +129,7 @@ export class SetupComponent implements OnInit {
   }
 
   getRuleSets() {
-    let type: string = fileTpyes.ruleSet;
+    let type: string = fileTypes.ruleSet;
     this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
         this.ruleSets = data.map(config => ({

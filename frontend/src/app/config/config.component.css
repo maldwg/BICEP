@@ -34,3 +34,19 @@
   margin: auto;
   padding-bottom: 5%;
 }
+
+.panel-grid-div{
+  display: grid;
+  grid-template-columns: auto;
+  row-gap: 5%;
+  justify-content: center;
+  margin: auto;
+  width: 80%;
+}
+
+.panel-grid-item{
+  margin: 10%;
+  padding: 2%;
+  width: 100%;
+}
+

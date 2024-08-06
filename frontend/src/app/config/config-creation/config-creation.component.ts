@@ -6,13 +6,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ConfigComponent } from '../config.component';
 import { Dialog } from '@angular/cdk/dialog';
-import { ConfigurationSetupData } from '../../models/configuration';
+import { ConfigurationSetupData, fileTypes } from '../../models/configuration';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import { DatasetSetupData } from '../../models/dataset';
+import { DatasetService } from '../../services/dataset/dataset.service';
 
 @Component({
   selector: 'app-config-creation',
@@ -52,6 +54,7 @@ export class ConfigCreationComponent implements OnInit{
   constructor(
     public dialogRef: MatDialogRef<ConfigCreationComponent>, 
     private configService: ConfigService,
+    private datasetService: DatasetService,
   ){}
 
   ngOnInit(): void {
@@ -62,31 +65,54 @@ export class ConfigCreationComponent implements OnInit{
 // TODO: Polish: add a configrm dialog fro all delete actions to confirm if it should be delted
 // Todo: polish: Add error cards to display errors as popup
 
+// TODO 5: return is there from the backend however, it is not processed correctly for the reload in the FE
   save(): void{
-    // TODO 8: allow for multiple files to be sended
     if (this.configForm.valid){
-      let newConfiguration: ConfigurationSetupData = {
-        name: this.configForm.value.name!,
-        description: this.configForm.value.description!,
-        configuration: this.configForm.value.configuration!,
-        file_type: this.configForm.value.fileType!,
-      };
-      this.configService.addConfiguration(newConfiguration)
-        .subscribe((event: HttpEvent<any>) => {
-          console.log(event)
-          switch (event.type) {
-            case HttpEventType.UploadProgress:
-              if (event.total) {
-                this.uploadProgress = Math.round((100 * event.loaded) / event.total);
-              }
-              break;
-            case HttpEventType.Response:
-              this.dialogRef.close(this.configForm.value);
-              break;
-          }
-        }, error => {
-          console.error(error);
-        });
+      if(this.configForm.value.fileType === fileTypes.testData){
+        let newDataset: DatasetSetupData = {
+          name: this.configForm.value.name!,
+          description: this.configForm.value.description!,
+          configuration: this.configForm.value.configuration!,
+        };
+        this.datasetService.addDataset(newDataset)
+          .subscribe((event: HttpEvent<any>) => {
+            switch (event.type) {
+              case HttpEventType.UploadProgress:
+                if (event.total) {
+                  this.uploadProgress = Math.round((100 * event.loaded) / event.total);
+                }
+                break;
+              case HttpEventType.Response:
+                this.dialogRef.close(this.configForm.value);
+                break;
+            }
+          }, error => {
+            console.error(error);
+          });
+      }
+      else{
+        let newConfiguration: ConfigurationSetupData = {
+          name: this.configForm.value.name!,
+          description: this.configForm.value.description!,
+          configuration: this.configForm.value.configuration!,
+          file_type: this.configForm.value.fileType!,
+        };
+        this.configService.addConfiguration(newConfiguration)
+          .subscribe((event: HttpEvent<any>) => {
+            switch (event.type) {
+              case HttpEventType.UploadProgress:
+                if (event.total) {
+                  this.uploadProgress = Math.round((100 * event.loaded) / event.total);
+                }
+                break;
+              case HttpEventType.Response:
+                this.dialogRef.close(this.configForm.value);
+                break;
+            }
+          }, error => {
+            console.error(error);
+          });
+      }
     }
   }
 
@@ -112,11 +138,11 @@ getAllFileTypes(){
 
 getAcceptType(): string {
   switch (this.configForm.controls.fileType.value) {
-    case 'test-data':
+    case fileTypes.testData:
       return '.pcap,.csv,.pcap_ISX';
-    case 'configuration':
+    case fileTypes.configuration:
       return '.yaml,.conf,.json';
-    case 'ruleset':
+    case fileTypes.ruleSet:
       return '.rules';
     default:
       return '*/*';

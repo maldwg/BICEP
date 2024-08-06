@@ -6,8 +6,7 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
-import { ConfigService } from '../../services/config/config.service';
-import { Configuration, fileTpyes } from '../../models/configuration';
+import { Configuration, fileTypes } from '../../models/configuration';
 import { MatButtonModule } from '@angular/material/button';
 import { IdsTool } from '../../models/ids';
 
@@ -45,8 +44,8 @@ export class IdsEditComponent implements OnInit{
     let selectedConfiguration = this.data.configList.filter(c => c.id == this.data.container.configuration_id)[0];
     this.selectedRuleset = this.data.configList.filter(c => c.id == this.data.container.ruleset_id)[0];
 
-    this.configurationList = this.data.configList.filter(c => c.file_type == fileTpyes.configuration);
-    this.rulesetList = this.data.configList.filter(r => r.file_type == fileTpyes.ruleSet);
+    this.configurationList = this.data.configList.filter(c => c.file_type == fileTypes.configuration);
+    this.rulesetList = this.data.configList.filter(r => r.file_type == fileTypes.ruleSet);
 
     this.idsEdit.controls.config.setValue(selectedConfiguration.id.toString());
     this.idsEdit.controls.ruleset.setValue(this.selectedRuleset.id.toString())

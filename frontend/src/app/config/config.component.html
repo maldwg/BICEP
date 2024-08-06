@@ -4,23 +4,99 @@
 <div class="config-button-div">
     <button class="mat-elevation-z8 grid-item-first-row" color="primary" mat-flat-button (click)="newConfig()">New configuration</button>
 </div>
-<div class="grid-container" >
-    <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
-        <mat-card>
-            <mat-card-header>
-                <mat-card-title>
-                    {{configuration.name}}
-                </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-                <div>ID: {{configuration.id}} </div>
-                <div>Description: {{configuration.description}} </div>
-                <div>File type: {{configuration.file_type}} </div>
-            </mat-card-content>
-            <mat-card-actions>
-                <button class="action-button" color="accent"  mat-flat-button>Details</button>
-                <button class="action-button" color="warn" (click)="remove(configuration)"  mat-flat-button>Remove</button>
-            </mat-card-actions>
-        </mat-card>
-    </div>
+<div class="panel-grid-div">
+
+    <mat-expansion-panel class="panel-grid-item">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Configurations
+            </mat-panel-title>
+            <mat-panel-description>
+                Configurations for the IDS
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="grid-container" >
+            <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
+                <mat-card *ngIf="configuration.file_type === fileTypeDict.configuration">
+                    <mat-card-header>
+                        <mat-card-title>
+                            {{configuration.name}}
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div>ID: {{configuration.id}} </div>
+                        <div>Description: {{configuration.description}} </div>
+                        <div>File type: {{configuration.file_type}} </div>
+                    </mat-card-content>
+                    <mat-card-actions>
+                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
+                        <button class="action-button" color="warn" (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="panel-grid-item">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Rulesets
+            </mat-panel-title>
+            <mat-panel-description>
+                Rulesets for signature based IDS
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="grid-container" >
+            <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
+                <mat-card *ngIf="configuration.file_type === fileTypeDict.ruleSet">
+                    <mat-card-header>
+                        <mat-card-title>
+                            {{configuration.name}}
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div>ID: {{configuration.id}} </div>
+                        <div>Description: {{configuration.description}} </div>
+                        <div>File type: {{configuration.file_type}} </div>
+                    </mat-card-content>
+                    <mat-card-actions>
+                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
+                        <button class="action-button" color="warn" (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="panel-grid-item">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Datasets
+            </mat-panel-title>
+            <mat-panel-description>
+                Datasets for static analysis
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="grid-container" >
+            <div class="grid-item" *ngFor="let dataset of datasetList" class="mat-elevation-z8"> 
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>
+                            {{dataset.name}}
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div>ID: {{dataset.id}} </div>
+                        <div>Description: {{dataset.description}} </div>
+                        <div>Bening Requests: {{dataset.ammount_benign}} </div>
+                        <div>Malicious Requests: {{dataset.ammount_malicious}} </div>
+                    </mat-card-content>
+                    <mat-card-actions>
+                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
+                        <button class="action-button" color="warn" (click)="removeDataset(dataset)"  mat-flat-button>Remove</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+    </mat-expansion-panel>
 </div>

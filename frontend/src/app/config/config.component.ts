@@ -1,6 +1,6 @@
 import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { ConfigService } from '../services/config/config.service';
-import { Configuration, ConfigurationSetupData } from '../models/configuration';
+import { Configuration, ConfigurationSetupData, fileTypes } from '../models/configuration';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
@@ -16,28 +16,32 @@ import {
 } from '@angular/material/dialog';
 import { ReadVResult } from 'fs';
 import { Router } from '@angular/router';
+import { DatasetService } from '../services/dataset/dataset.service';
+import { Dataset } from '../models/dataset';
+import { MatExpansionModule } from '@angular/material/expansion';
 @Component({
   selector: 'app-config',
   standalone: true,
-  imports: [ MatCardModule, MatButtonModule, CommonModule, ],
+  imports: [ MatCardModule, MatButtonModule, CommonModule, MatExpansionModule],
   templateUrl: './config.component.html',
   styleUrl: './config.component.css'
 })
 export class ConfigComponent implements OnInit{
 
   configurationList: Configuration[] = [];
-  fileTypeList: string[] = [];
+  datasetList: Dataset[] = [];
+  fileTypeDict = fileTypes;
 
   constructor(
     private configService: ConfigService,
+    private datasetService: DatasetService,
     public dialog: MatDialog,
   ) {  }
 
   ngOnInit(): void {
     this.getAllConfigs();
+    this.getAllDatasets();
   }
-
-  // TODO: POLISH: split into different types (on display with view cards)
 
   getAllConfigs(){
     this.configService.getAllConfigurations()
@@ -53,13 +57,32 @@ export class ConfigComponent implements OnInit{
     }
 
 
+    getAllDatasets(){
+      this.datasetService.getAllDatasets()
+        .subscribe(data => {
+          this.datasetList = data.map(config => ({
+            id: config.id,
+            name: config.name,
+            pcap_file: config.pcap_file,
+            description: config.description,
+            labels_file: config.labels_file,
+            ammount_benign: config.ammount_benign,
+            ammount_malicious: config.ammount_malicious,
+          }));
+        });
+    }
 
-  remove(configuration: Configuration){
+
+  removeConfiguration(configuration: Configuration){
     this.configService.removeConfiguration(configuration.id)
       .subscribe(() => console.log("Removed configuration"));
     this.configurationList = this.configurationList.filter(config => config !== configuration);
   }
-
+  removeDataset(dataset: Dataset){
+    this.datasetService.removeDataset(dataset.id)
+      .subscribe(() => console.log("Removed dataset"));
+    this.datasetList = this.datasetList.filter(d => d !== dataset);
+  }
 
   newConfig(): void {
     const dialogRef = this.dialog.open(ConfigCreationComponent, {
