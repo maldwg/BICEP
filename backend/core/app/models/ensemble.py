@@ -75,7 +75,8 @@ class Ensemble(Base):
             form_data= {
                 "container_id": (None, str(container.id), "application/json"),
                 "ensemble_id": (None, str(self.id), "application/json"),
-                "file": (dataset.name, dataset.configuration, "application/octet-stream"),
+                "dataset": (dataset.name, dataset.pcap_file, "application/octet-stream"),
+                "dataset_id": (None, str(dataset.id), "application/json")
             }    
             response: HTTPResponse = await container.start_static_analysis(form_data)
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)

@@ -2,9 +2,10 @@ import asyncio
 from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response
 from ..dependencies import get_db
-from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData
+from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
+from ..models.dataset import Dataset, get_dataset_by_id
 from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks
 import httpx 
 import json 
@@ -54,10 +55,11 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     if container.status != STATUS.IDLE.value:
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
 
-    dataset: Configuration = get_config_by_id(db, static_analysis_data.dataset_id)
+    dataset: Dataset = get_config_by_id(db, static_analysis_data.dataset_id)
     form_data= {
             "container_id": (None, str(container.id), "application/json"),
-            "file": (dataset.name, dataset.configuration, "application/octet-stream"),
+            "dataset": (dataset.name, dataset.pcap_file, "application/octet-stream"),
+            "dataset_id": (None, str(dataset.id), "application/json")
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data)
     await container.start_metric_collection(db)
@@ -100,14 +102,15 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
         return create_response_error(message, 500)
 
 # Endpoint to receive notice when triggered analysis (static) has finished
-@router.post("/analysis/finished/{container_id}")
-async def finished_analysis(container_id: int, db=Depends(get_db)):
-    container = get_container_by_id(db, container_id)
+@router.post("/analysis/finished")
+async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
+    container = get_container_by_id(db, analysisFinishedData.container_id)
     await container.stop_metric_collection(db)
     await update_container_status(STATUS.IDLE.value, container, db)
-    return Response(content=f"Successfully stopped analysis for fontainer {container_id}", status_code=200)
+    return Response(content=f"Successfully stopped analysis for fontainer {analysisFinishedData.container_id}", status_code=200)
 
 
+# TODO 5: calculate metrics according to the dataset provided 
 @router.post("/alerts/{container_id}")
 async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=Depends(get_db)):
     container = get_container_by_id(db, container_id)
@@ -115,8 +118,12 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=D
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
         "ensemble": "None",
-        "logging": "alerts"
+        "logging": "alerts",
     }
+    if alert_data.dataset_id != None:
+        dataset = get_dataset_by_id(alert_data.dataset_id)
+        labels["dataset"] = dataset.name
+
     alerts = [
         Alert(
             time=alert.time, 

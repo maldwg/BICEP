@@ -76,3 +76,9 @@ class AlertModel(BaseModel):
 class AlertData(BaseModel):
     alerts: list[AlertModel]
     analysis_type: str
+    dataset_id: int
+
+
+class AnalysisFinishedData(BaseModel):
+    container_id: int
+    ensemble_id: Optional[int] = None
