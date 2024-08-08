@@ -174,7 +174,6 @@ export class DashboardComponent implements OnInit {
     })
     dialogRef.afterClosed().subscribe(res => {
       console.log(res)
-      // TODO 10: clicking cancel also executes the analysis if all fields are filled !
       if(res != null){
         if(res.type === analysisTypes.static){
           let staticAnalysisData: StaticAnalysisData = {
