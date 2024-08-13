@@ -3,3 +3,4 @@ sqlalchemy
 prometheus_client
 docker
 pandas
+pyshark

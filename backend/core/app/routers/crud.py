@@ -67,10 +67,8 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
 async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     # For rulesets and general configurations
     if len(configuration) == 2:
-        print("test me!")
         pcap_file = await list(filter(lambda c: c.filename.split(".")[-1] == "pcap" , configuration ))[0].read()
         labels_file = await list(filter(lambda c: c.filename.split(".")[-1] != "pcap" , configuration ))[0].read()
-        print("second test")
         background_tasks.add_task(calculate_and_add_dataset, pcap_file=pcap_file, labels_file=labels_file, name=name, description=description, db=db)
         return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
     else:

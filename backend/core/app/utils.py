@@ -10,6 +10,8 @@ import httpx
 from fastapi import Response
 import pandas as pd
 import multiprocessing
+import csv 
+import time 
 
 # global tasks dict that stores ids for stream tasks in containers 
 stream_metric_tasks = {
@@ -219,28 +221,37 @@ def dataset_callback(pcap_file, labels_file, name, description, db, future):
 async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
     from .models.dataset import Dataset, add_dataset
     # TODO 10: check if files are matching in length --> otherwise error ?
-    print("test me 2")
- 
-    # convert bytes to bytestream to be able to read it into pandas
-    byte_stream = io.BytesIO(labels_file)
-    df = pd.read_csv(byte_stream)
 
-    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
-    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
-    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
+    byte_stream = io.BytesIO(labels_file)
+    text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
+    malicious, benign = await calculate_malicious_benign_counts(text_stream)
 
     dataset = Dataset(
         name=name,
         description=description,
         pcap_file=pcap_file,
         labels_file=labels_file,
-        ammount_benign=benign_count,
-        ammount_malicious=malicious_count,
+        ammount_benign=benign,
+        ammount_malicious=malicious,
     )
     add_dataset(db, dataset)
-        
-    # dataset_addition_tasks.discard(future)
+
+# Efficient CSV processing using a genrator
+async def calculate_malicious_benign_counts(input_file):
+    benign_count = 0
+    malicious_count = 0
+
+    with input_file as input_csv:
+        reader = csv.reader(input_csv)
+        for row in reader:
+            # Convert each cell in the row to lowercase and check for "benign"
+            if any("benign" in cell.lower() for cell in row):
+                benign_count += 1
+            else:
+                malicious_count += 1
+
+    return benign_count, malicious_count
 
 def get_serialized_datasets(datasets):
     serialized_configs = []

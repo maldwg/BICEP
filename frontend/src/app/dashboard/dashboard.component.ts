@@ -29,11 +29,12 @@ import { statusTypes } from '../models/status';
 import { STATUS_CODES } from 'node:http';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule],
+  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS ensemble_technique(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     description VARCHAR(2048) NOT NULL
+    -- TODO 0: function_name varchar(128) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ids_container (
