@@ -55,7 +55,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     if container.status != STATUS.IDLE.value:
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
 
-    dataset: Dataset = get_config_by_id(db, static_analysis_data.dataset_id)
+    dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
     form_data= {
             "container_id": (None, str(container.id), "application/json"),
             "dataset": (dataset.name, dataset.pcap_file, "application/octet-stream"),
@@ -111,9 +111,9 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
 
 
 # TODO 5: calculate metrics according to the dataset provided 
-@router.post("/alerts/{container_id}")
-async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=Depends(get_db)):
-    container = get_container_by_id(db, container_id)
+@router.post("/publish/alerts")
+async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
+    container = get_container_by_id(db, alert_data.container_id)
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -121,7 +121,7 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=D
         "logging": "alerts",
     }
     if alert_data.dataset_id != None:
-        dataset = get_dataset_by_id(alert_data.dataset_id)
+        dataset = get_dataset_by_id(dataset_id=alert_data.dataset_id, db=db)
         labels["dataset"] = dataset.name
 
     alerts = [
@@ -137,6 +137,9 @@ async def receive_alerts_from_ids(container_id: int, alert_data: AlertData, db=D
     ]
     if alert_data.analysis_type == "static":
         metrics = await calculate_evaluation_metrics()
-        await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name)
+        if alert_data.dataset_id != None:
+            await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=dataset.name)
+        else:
+            await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=None)
 
     await push_alerts_to_loki(alerts=alerts, labels=labels)

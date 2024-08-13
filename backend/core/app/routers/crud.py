@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse
 from ..dependencies import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
-from ..models.dataset import Dataset, get_all_datasets, get_dataset_by_id, add_dataset, remove_dataset_by_id
+from ..models.dataset import Dataset, get_all_datasets, get_dataset_by_id, add_dataset, remove_dataset_by_id, get_all_datasets_with_dummy_data
 from ..models.ids_tool import get_all_tools
 from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id, update_container
 from ..docker import remove_docker_container
@@ -74,11 +74,20 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
     else:
         return JSONResponse(content={"message": "Too many files attached"}, status_code=500)
 
+
+# TODO 9: make it fastere by not sending the files but dummy files
 @router.get("/dataset/all")
 async def get_all_configs(db=Depends(get_db)):
     datasets = get_all_datasets(db)
     serialized_datasets = get_serialized_datasets(datasets)
     return JSONResponse(content=serialized_datasets, status_code=200)
+
+@router.get("/dataset/all/without/files")
+async def get_all_configs(db=Depends(get_db)):
+    datasets = get_all_datasets_with_dummy_data(db)
+    serialized_datasets = get_serialized_datasets(datasets)
+    return JSONResponse(content=serialized_datasets, status_code=200)
+
 
 @router.delete("/dataset/{id}")
 async def remove_config( id: int, db=Depends(get_db)):

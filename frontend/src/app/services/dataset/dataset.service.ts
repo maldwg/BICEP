@@ -23,6 +23,14 @@ export class DatasetService {
     );
   }
 
+
+  getAllDatasetsWithoutFiles(): Observable<Dataset[]> {
+    let path = "/crud/dataset/all/without/files";
+    return this.http.get<SerializedDataset[]>(environment.backendUrl + path).pipe(
+      map((serializedDatasets) => serializedDatasets.map(serializedDataset => this.deserializeConfiguration(serializedDataset)))
+    );
+  }
+
   removeDataset(id: number) {
     let path = "/crud/dataset/";
     return this.http.delete(environment.backendUrl+path+id);

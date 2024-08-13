@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.types import BLOB
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from ..database import Base
 
@@ -21,6 +21,13 @@ def get_dataset_by_id(db: Session, dataset_id: int):
 
 def get_all_datasets(db: Session):
     return db.query(Dataset).all()
+
+def get_all_datasets_with_dummy_data(db: Session):
+    datasets = db.query(Dataset).options(defer(Dataset.pcap_file), defer(Dataset.labels_file)).all()
+    for dataset in datasets:
+        dataset.pcap_file = b""  # Set to empty byte string as dummy value
+        dataset.labels_file = b""  # Set to empty byte string as dummy value
+    return datasets
 
 def remove_dataset_by_id(db: Session, id: int):
     dataset = get_dataset_by_id(db, id)

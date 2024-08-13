@@ -58,7 +58,7 @@ export class ConfigComponent implements OnInit{
 
 
     getAllDatasets(){
-      this.datasetService.getAllDatasets()
+      this.datasetService.getAllDatasetsWithoutFiles()
         .subscribe(data => {
           this.datasetList = data.map(config => ({
             id: config.id,

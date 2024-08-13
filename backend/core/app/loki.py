@@ -9,7 +9,6 @@ LOKI_URL = os.environ.get('LOKI_URL')
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
     values = [ [await timestamp_in_nano_seconds(), str(a.to_dict())] for a in alerts]
-    print(values)
     log_entry = {
         "streams": [
             {

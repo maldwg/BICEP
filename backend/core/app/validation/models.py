@@ -69,7 +69,7 @@ class AlertModel(BaseModel):
     time: str
     source: str
     destination: str
-    severity: Optional[float]
+    severity: Optional[float] = None
     type: str
     message: str    
 
@@ -77,6 +77,8 @@ class AlertData(BaseModel):
     alerts: list[AlertModel]
     analysis_type: str
     dataset_id: int
+    container_id: int
+    ensemble_id: Optional[int] = None
 
 
 class AnalysisFinishedData(BaseModel):
