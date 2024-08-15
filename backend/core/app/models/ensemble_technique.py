@@ -9,7 +9,8 @@ class EnsembleTechnique(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
-    description = Column(String(2048))
+    description = Column(String(2048), nullable=False)
+    function_name = Column(String(128), nullable=False)
 
     ensemble = relationship('Ensemble', back_populates='ensemble_technique')
 

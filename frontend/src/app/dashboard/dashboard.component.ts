@@ -7,7 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
-import { Ensemble, EnsembleContainer, EnsembleTechnqiue, EnsembleUpdateData } from '../models/ensemble';
+import { Ensemble, EnsembleContainer, EnsembleTechnique, EnsembleUpdateData } from '../models/ensemble';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {
   MatDialog,
@@ -45,7 +45,7 @@ export class DashboardComponent implements OnInit {
   idsToolList: IdsTool[] = [];
   configList: Configuration[] = [];
   datasetList: Dataset[] = [];
-  ensembleTechnqiueList: EnsembleTechnqiue[] = [];
+  ensembleTechniqueList: EnsembleTechnique[] = [];
   ensembleContainerList: EnsembleContainer[] = [];
 
   constructor (
@@ -119,10 +119,11 @@ export class DashboardComponent implements OnInit {
   getAllTechnqiues(){
     this.ensembleService.getAllTechnqiues()
       .subscribe(data => {
-        this.ensembleTechnqiueList = data.map(technqiue => ({
-          id: technqiue.id,
-          description: technqiue.description,
-          name: technqiue.name
+        this.ensembleTechniqueList = data.map(technique => ({
+          id: technique.id,
+          description: technique.description,
+          name: technique.name,
+          function_name: technique.function_name
         }));
       });   
   }
@@ -295,7 +296,7 @@ export class DashboardComponent implements OnInit {
       data: {
         ensemble: ensemble,
         containerList: this.containerList,
-        ensembleTechniqueList: this.ensembleTechnqiueList,
+        ensembleTechniqueList: this.ensembleTechniqueList,
         ensembleContainerList: this.ensembleContainerList
       }
     });
@@ -388,7 +389,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getEnsembleTechniqueName(techniqueId: number){
-    return this.ensembleTechnqiueList.find(t => t.id == techniqueId)?.name;
+    return this.ensembleTechniqueList.find(t => t.id == techniqueId)?.name;
   }
 
   containerIsIdle(container: Container){

@@ -137,11 +137,11 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
     return Response(content=f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}", status_code=200)
 
-
+# TODO 9: ensemble ends only one container data not all as metrics (cpou, memory) ,  
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
-    container = get_container_by_id(db, alert_data.container_id)
-    ensemble = get_ensemble_by_id(db, alert_data.ensemble_id)    
+    container = get_container_by_id(db=db, id=alert_data.container_id)
+    ensemble = get_ensemble_by_id(db=db, id=alert_data.ensemble_id)    
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -149,7 +149,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         "logging": "alerts",
     }
     if alert_data.dataset_id != None:
-        dataset = get_dataset_by_id(alert_data.dataset_id)
+        dataset = get_dataset_by_id(dataset_id=alert_data.dataset_id, db=db)
         labels["dataset"] = dataset.name
     alerts = [
         Alert(
@@ -181,6 +181,8 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     if alert_data.analysis_type == "static":
         metrics = await calculate_evaluation_metrics_for_ensemble()
         if alert_data.dataset_id != None:
+            pass
             await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, ensemble_name=ensemble.name, dataset_name=dataset.name)
         else:
+            pass
             await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, ensemble_name=ensemble.name, dataset_name=None)

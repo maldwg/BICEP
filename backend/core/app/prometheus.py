@@ -15,7 +15,6 @@ async def push_metrics_to_prometheus(data, container_name: str, ensemble_name: s
             
     push_to_gateway(prometheusUrl, job='container_metrics', registry=registry)
 
-# TODO add dataset name
 async def push_evaluation_metrics_to_prometheus(metrics: dict, container_name: str, ensemble_name: str=None, dataset_name: str = None):
     prometheusUrl = os.environ.get('PROMETHEUS_URL')
     registry = CollectorRegistry()

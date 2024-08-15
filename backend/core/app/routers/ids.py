@@ -136,7 +136,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         for alert in alert_data.alerts
     ]
     if alert_data.analysis_type == "static":
-        metrics = await calculate_evaluation_metrics()
+        metrics = await calculate_evaluation_metrics(dataset, alerts)
         if alert_data.dataset_id != None:
             await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=dataset.name)
         else:

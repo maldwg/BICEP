@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { Ensemble, EnsembleContainer, EnsembleTechnqiue } from '../../models/ensemble';
+import { Ensemble, EnsembleContainer, EnsembleTechnique } from '../../models/ensemble';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -48,7 +48,7 @@ export class EnsembleEditComponent {
     @Inject (MAT_DIALOG_DATA) public data: {
       ensemble: Ensemble,
       containerList: Container[],
-      ensembleTechniqueList: EnsembleTechnqiue[],
+      ensembleTechniqueList: EnsembleTechnique[],
       ensembleContainerList: EnsembleContainer[],
     }
   ) {}

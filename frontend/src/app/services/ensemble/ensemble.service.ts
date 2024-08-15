@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnqiue, EnsembleUpdateData } from '../../models/ensemble';
+import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnique, EnsembleUpdateData } from '../../models/ensemble';
 import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData } from '../../models/analysis';
 
 @Injectable({
@@ -16,9 +16,9 @@ export class EnsembleService {
 
  // TODO: update all endpoints to use httpResponse objects instead of the other bullshit
 
-  getAllTechnqiues(): Observable<EnsembleTechnqiue[]>{
+  getAllTechnqiues(): Observable<EnsembleTechnique[]>{
     let path = "/crud/ensemble/technique/all"
-    return this.http.get<EnsembleTechnqiue[]>(environment.backendUrl+path);
+    return this.http.get<EnsembleTechnique[]>(environment.backendUrl+path);
 
   }
 

@@ -12,7 +12,7 @@ import { Container, ContainerSetupData } from '../models/container';
 import { Configuration, fileTypes } from '../models/configuration';
 import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
-import { Ensemble, EnsembleSetupData, EnsembleTechnqiue } from '../models/ensemble';
+import { Ensemble, EnsembleSetupData, EnsembleTechnique } from '../models/ensemble';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { describe } from 'node:test';
 import { runInThisContext } from 'node:vm';
@@ -48,7 +48,7 @@ export class SetupComponent implements OnInit {
   idsTools: IdsTool[] = [];
   containers: Container[] = [];
   ensembles: Ensemble[] = [];
-  ensembleTechniques: EnsembleTechnqiue[] = [];
+  ensembleTechniques: EnsembleTechnique[] = [];
   userChoice = "";
   requiresRuleset = false;
 
@@ -171,7 +171,8 @@ export class SetupComponent implements OnInit {
         this.ensembleTechniques = data.map(technique => ({
           id: technique.id,
           name: technique.name,
-          description: technique.description
+          description: technique.description,
+          function_name: technique.function_name
         }));
       });
   }

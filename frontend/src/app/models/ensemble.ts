@@ -9,10 +9,11 @@ export interface Ensemble {
 }
 
 
-export interface EnsembleTechnqiue{
+export interface EnsembleTechnique{
     id: number,
     name: string,
-    description: string
+    description: string,
+    function_name: string
 }
 
 export interface EnsembleSetupData{

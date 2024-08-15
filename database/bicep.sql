@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS dataset(
 CREATE TABLE IF NOT EXISTS ensemble_technique(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
-    description VARCHAR(2048) NOT NULL
-    -- TODO 0: function_name varchar(128) NOT NULL
+    description VARCHAR(2048) NOT NULL,
+    function_name VARCHAR(128) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ids_container (
@@ -79,4 +79,4 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Suricata', 'NIDS', 'Signature-based', true);
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Slips', 'NIDS', 'Anomaly-based', false);
 
-INSERT INTO ensemble_technique (name, description) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight');
+INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
