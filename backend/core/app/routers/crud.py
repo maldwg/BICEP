@@ -1,8 +1,8 @@
 import base64
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
-from fastapi.responses import JSONResponse
-from ..dependencies import get_db
+from fastapi.responses import JSONResponse, Response
+from ..database import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
 from ..models.dataset import Dataset, get_all_datasets, get_dataset_by_id, add_dataset, remove_dataset_by_id, get_all_datasets_with_dummy_data
 from ..models.ids_tool import get_all_tools
@@ -15,7 +15,7 @@ from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_benign
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate
 import asyncio 
 import functools
-
+import time
 
 router = APIRouter(
     prefix="/crud"
@@ -47,6 +47,7 @@ async def get_all_configs(file_type: str, db=Depends(get_db)):
 @router.delete("/configuration/{id}")
 async def remove_config( id: int, db=Depends(get_db)):
     remove_configuration_by_id(db, id)
+    return Response(content=f"Successfully removed config {id}", status_code=204)
 
 # TODO 1: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
 @router.post("/configuration/add")

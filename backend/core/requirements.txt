@@ -5,3 +5,5 @@ docker
 pandas
 pyshark
 scapy==2.6.0rc1
+asyncmy
+aiomysql

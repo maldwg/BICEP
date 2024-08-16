@@ -2,14 +2,14 @@ import asyncio
 from http.client import HTTPResponse
 import json
 
-from ..models.metrics import calculate_evaluation_metrics_for_ensemble
+from ..metrics import calculate_evaluation_metrics_for_ensemble
 from ..bicep_utils.models.ids_base import Alert
 from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from fastapi import APIRouter, Depends, Response
 from fastapi.encoders import jsonable_encoder
-from ..dependencies import get_db
+from ..database import get_db
 from ..validation.models import AlertData, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
 from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ensemble_by_id, remove_ensemble, update_ensemble_status
 from ..models.ids_container import IdsContainer

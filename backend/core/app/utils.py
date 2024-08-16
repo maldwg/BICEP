@@ -138,7 +138,8 @@ async def start_static_analysis(container, form_data):
     host = get_container_host(container)
     container_url = f"http://{host}:{container.port}"
     async with httpx.AsyncClient() as client:  
-        response: HTTPResponse = await client.post(container_url+endpoint,files=form_data)    
+        # set timeout to 90 seconds, as uploads can take a while
+        response: HTTPResponse = await client.post(container_url+endpoint,files=form_data, timeout=90)    
     return response
 
 async def start_network_analysis(container, data):
@@ -173,7 +174,6 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
 
 
 def calculate_cpu_percent(previous_cpu, previous_system, current_cpu, current_system, online_cpus):
-    print("calc")
     cpu_delta = current_cpu - previous_cpu
     system_delta = current_system - previous_system
     
@@ -196,7 +196,7 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     return benign_count, malicious_count
 
 
-def dataset_callback(pcap_file, labels_file, name, description, db, future):
+async def dataset_callback(pcap_file, labels_file, name, description, db, future):
     from .models.dataset import Dataset, add_dataset
     try:
         benign, malicious = future.result()
@@ -213,19 +213,17 @@ def dataset_callback(pcap_file, labels_file, name, description, db, future):
         ammount_benign=benign,
         ammount_malicious=malicious,
     )
-    add_dataset(db, dataset)
+    await add_dataset(db, dataset)
         
     dataset_addition_tasks.discard(future)
 
 
 async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
     from .models.dataset import Dataset, add_dataset
-    # TODO 10: check if files are matching in length --> otherwise error ?
-
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
-    malicious, benign = await calculate_malicious_benign_counts(text_stream)
+    benign, malicious = await calculate_malicious_benign_counts(text_stream)
 
     dataset = Dataset(
         name=name,
@@ -235,16 +233,19 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
         ammount_benign=benign,
         ammount_malicious=malicious,
     )
-    add_dataset(db, dataset)
+    await add_dataset(db, dataset)
 
 # Efficient CSV processing using a genrator
 async def calculate_malicious_benign_counts(input_file):
     benign_count = 0
     malicious_count = 0
-
+    header = True
     with input_file as input_csv:
         reader = csv.reader(input_csv)
         for row in reader:
+            if header:
+                header = False
+                continue
             # Convert each cell in the row to lowercase and check for "benign"
             if any("benign" in cell.lower() for cell in row):
                 benign_count += 1

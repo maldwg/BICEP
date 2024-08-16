@@ -64,7 +64,7 @@ export class ConfigCreationComponent implements OnInit{
 
 // TODO: Polish: add a configrm dialog fro all delete actions to confirm if it should be delted
 // Todo: polish: Add error cards to display errors as popup
-
+// TODO: spinning circle while upload complete but not ready calcuating dataset
 // TODO 5: return is there from the backend however, it is not processed correctly for the reload in the FE
   save(): void{
     if (this.configForm.valid){
@@ -83,7 +83,9 @@ export class ConfigCreationComponent implements OnInit{
                 }
                 break;
               case HttpEventType.Response:
+                console.log("Recorded event");
                 this.dialogRef.close(this.configForm.value);
+                console.log("close");
                 break;
             }
           }, error => {
@@ -106,7 +108,9 @@ export class ConfigCreationComponent implements OnInit{
                 }
                 break;
               case HttpEventType.Response:
+                console.log("Recorded event");
                 this.dialogRef.close(this.configForm.value);
+                console.log("close");
                 break;
             }
           }, error => {

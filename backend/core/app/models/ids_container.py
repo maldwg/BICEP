@@ -105,6 +105,11 @@ class IdsContainer(Base):
             del stream_metric_tasks[self.stream_metric_task_id]
         except KeyError as e:
             print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
+            # set to none, because this indicates that the metric task has either been canceled or the server reloaded, 
+            # #either way the ID is lost in the dict, hence remove it also from the object
+            self.stream_metric_task_id = None
+            db.commit()
+            db.refresh(self)
         self.stream_metric_task_id = None
         db.commit()
         db.refresh(self)
@@ -121,7 +126,6 @@ def remove_container_by_id(db: Session, id):
     container = get_container_by_id(db, id)
     db.delete(container)
     db.commit()
-
 
 async def update_container(container: IdsContainerUpdate, db: Session):
     container_db: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container.id).first()

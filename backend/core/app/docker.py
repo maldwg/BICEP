@@ -49,7 +49,8 @@ async def run_container_async(client, properties, container, url):
         network_mode="host",
         environment={
             "PORT": container.port,
-            "CORE_URL": url
+            "CORE_URL": url,
+            "TZ": "UTC"
         },
         cap_add=["NET_ADMIN", "NET_RAW"],
         detach=True  

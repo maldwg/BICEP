@@ -1,7 +1,7 @@
 import asyncio
 from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response
-from ..dependencies import get_db
+from ..database import get_db
 from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
@@ -11,7 +11,7 @@ import httpx
 import json 
 from fastapi.encoders import jsonable_encoder
 from ..prometheus import push_evaluation_metrics_to_prometheus
-from ..models.metrics import calculate_evaluation_metrics
+from ..metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
 router = APIRouter(
@@ -136,10 +136,12 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         for alert in alert_data.alerts
     ]
     if alert_data.analysis_type == "static":
+        # TODO 2: put in background 
         metrics = await calculate_evaluation_metrics(dataset, alerts)
         if alert_data.dataset_id != None:
+            # TODO 2: put in background
             await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=dataset.name)
         else:
             await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=None)
-
     await push_alerts_to_loki(alerts=alerts, labels=labels)
+    return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)

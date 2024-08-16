@@ -21,7 +21,6 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
         'Content-Type': 'application/json'
     }
     response = requests.post(f'{LOKI_URL}/loki/api/v1/push', headers=headers, data=json.dumps(log_entry))
-    print(log_entry)
     return response
 
 
