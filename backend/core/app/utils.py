@@ -213,7 +213,7 @@ async def dataset_callback(pcap_file, labels_file, name, description, db, future
         ammount_benign=benign,
         ammount_malicious=malicious,
     )
-    await add_dataset(db, dataset)
+    add_dataset(db, dataset)
         
     dataset_addition_tasks.discard(future)
 
@@ -233,7 +233,7 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
         ammount_benign=benign,
         ammount_malicious=malicious,
     )
-    await add_dataset(db, dataset)
+    add_dataset(db, dataset)
 
 # Efficient CSV processing using a genrator
 async def calculate_malicious_benign_counts(input_file):

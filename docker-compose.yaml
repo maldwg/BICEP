@@ -66,6 +66,8 @@ services:
     command: -config.file=/mnt/config/loki-config.yaml
     volumes:
       - ./loki/loki:/mnt/config
+    environment:
+      - LOG_LEVEL=debug
 networks:
   bicep:
     driver: bridge

@@ -3,6 +3,7 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
+  grpc_server_max_recv_msg_size: 8388608
 
 common:
   instance_addr: 127.0.0.1
@@ -48,3 +49,15 @@ ruler:
 # If you would like to disable reporting, uncomment the following lines:
 #analytics:
 #  reporting_enabled: false
+
+# CLI flag: -ingester.per-stream-rate-limit
+limits_config:
+  per_stream_rate_limit: 1000MB 
+
+  # Maximum burst bytes per stream, also expressible in human readable forms (1MB,
+  # 256KB, etc). This is how far above the rate limit a stream can 'burst' before
+  # the stream is limited.
+  # CLI flag: -ingester.per-stream-rate-limit-burst
+  per_stream_rate_limit_burst: 2000MB 
+
+  max_line_size: 5MB

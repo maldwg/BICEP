@@ -103,7 +103,8 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
             destination_port = row[dst_port_col_id].strip()
 
             key = (row_timestamp, source_ip, source_port, destination_ip, destination_port)
-            
+            # TODO 8: save all keys that weere iterated over to another dict and at the end remove all keys in the alert dioct that are the same as in the helper dict
+            # because one request can trigger multiple alerts. Do not directly delete key on match as another request might be in the dataset to check 
             if key in alerts_dict:
                 alert = alerts_dict[key].pop(0)
                 # if the list is emptied, remove the key from the dict
@@ -121,7 +122,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     counter = 0
     for _,v in alerts_dict.items():
         counter += len(v)
-
+    # TODO 8: add counter/original to metrics to calculate 
     print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, not assignable alerts {counter} of {original_alert_size}")
     return TP, FP, TN, FN
 
