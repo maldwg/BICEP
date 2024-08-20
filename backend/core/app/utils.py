@@ -12,7 +12,10 @@ import pandas as pd
 import multiprocessing
 import csv 
 import time 
-
+from .prometheus import push_evaluation_metrics_to_prometheus
+from .metrics import calculate_evaluation_metrics
+from .models.dataset import Dataset
+from .bicep_utils.models.ids_base import Alert
 # global tasks dict that stores ids for stream tasks in containers 
 stream_metric_tasks = {
 
@@ -269,3 +272,7 @@ def get_serialized_datasets(datasets):
         }
         serialized_configs.append(serialized_config)
     return serialized_configs
+
+async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str):
+    metrics = await calculate_evaluation_metrics(dataset, alerts)
+    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name)

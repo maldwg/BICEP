@@ -6,7 +6,6 @@ from .bicep_utils.models.ids_base import Alert
 
 LOKI_URL = os.environ.get('LOKI_URL')
 
-# TODO 1: alerts might be too long, how to handle that ??
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
     values = [ [str(time.time_ns()), str(a.to_dict())] for a in alerts]

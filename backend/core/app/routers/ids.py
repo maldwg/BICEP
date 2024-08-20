@@ -1,12 +1,12 @@
 import asyncio
 from http.client import HTTPResponse
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, BackgroundTasks
 from ..database import get_db
 from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
-from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks
+from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -112,7 +112,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
 
 # TODO 5: calculate metrics according to the dataset provided 
 @router.post("/publish/alerts")
-async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
+async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     container = get_container_by_id(db, alert_data.container_id)
     labels = {
         "container_name": container.name,
@@ -136,12 +136,6 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         for alert in alert_data.alerts
     ]
     if alert_data.analysis_type == "static":
-        # TODO 2: put in background 
-        metrics = await calculate_evaluation_metrics(dataset, alerts)
-        if alert_data.dataset_id != None:
-            # TODO 2: put in background
-            await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=dataset.name)
-        else:
-            await push_evaluation_metrics_to_prometheus(metrics, container_name=container.name, dataset_name=None)
-    await push_alerts_to_loki(alerts=alerts, labels=labels)
+        background_tasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=alerts, container_name=container.name)
+    background_tasks.add_task(push_alerts_to_loki, alerts=alerts, labels=labels)
     return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)
