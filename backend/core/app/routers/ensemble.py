@@ -137,7 +137,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
     return Response(content=f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}", status_code=200)
 
-# TODO 9: ensemble ends only one container data not all as metrics (cpou, memory) ,  
+# TODO 0: ensemble ends only one container data not all as metrics (cpou, memory) ,  
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     container = get_container_by_id(db=db, id=alert_data.container_id)
@@ -163,8 +163,8 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         for alert in alert_data.alerts
     ]        
     if alert_data.analysis_type == "static":
-        # TODO 8: implement logic for receiving alerts 
-        # TODO 10: metrics start/stop might be buggy
+        # TODO 0: implement logic for receiving alerts 
+        # TODO 0: metrics start/stop might be buggy
 
         # check if other containers are still running --> if no and this is last, then send the logs -> DOWNSIDE: if relatively same tempo --> doubly calculating
         # otherwise: check if in timeframe there was already a push for this ensemble from all the other container ids? ?

@@ -105,7 +105,6 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
 @router.post("/analysis/finished")
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container = get_container_by_id(db, analysisFinishedData.container_id)
-    await container.stop_metric_collection(db)
     await update_container_status(STATUS.IDLE.value, container, db)
     return Response(content=f"Successfully stopped analysis for fontainer {analysisFinishedData.container_id}", status_code=200)
 

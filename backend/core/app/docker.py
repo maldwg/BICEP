@@ -30,6 +30,7 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
 
     # ensure image is present 
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
+    # TODO 5: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed
     # await pull_image_async(client, ids_properties.image)
     await run_container_async(client=client, container=ids_container, properties=ids_properties, url=core_url)
     await check_container_health(ids_container)
@@ -117,7 +118,7 @@ async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
             stats = json.loads(stats_decoded)
             # CPU usage calculation
             # CPU usage calculation
-            # TODO 9: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
+            # TODO 0: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
             cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
             system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
             online_cpus = stats['cpu_stats'].get('online_cpus', 1)
@@ -135,13 +136,12 @@ async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
             await push_metrics_to_prometheus(stat, container.name, ensemble_name)
             await asyncio.sleep(interval)
     except asyncio.CancelledError as e:
-        print("Task was cancelled successfully")
+        print(f"Task for sending metrics for container {container.name} was cancelled successfully")
 
 async def stop_metric_stream(task_id):
     try:
-        # TODO 10: Cancellation does nothing --> task goes on anyways
         task = stream_metric_tasks[task_id]
-        res = task.cancel()
-        print(f"Task was canceld? {res}")
-    except KeyError as e:
+        task.cancel()
+    except Exception as e:
         print(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
+        print(e)
