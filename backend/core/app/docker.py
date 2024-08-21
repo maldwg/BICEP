@@ -1,10 +1,9 @@
 import asyncio
 import json
 import docker
-from .utils import Suricata, Slips, get_container_host, get_core_host, stream_metric_tasks, calculate_cpu_percent
+from .utils import Suricata, Slips, get_container_host, get_core_host, stream_metric_tasks
 import time
 import httpx
-import uuid
 
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
@@ -109,32 +108,27 @@ async def check_container_health(ids_container, timeout=60):
             return False
         time.sleep(1)
 
-async def start_metric_stream(container, ensemble_name: str="NaN", interval=10):
+async def start_metric_stream(container, ensemble_name: str="NaN", interval=1.0):
     try:
         client = get_docker_client(container.host)
         container = client.containers.get(container_id=container.name)
         for stats_bytes in container.stats(stream=True):
             stats_decoded = stats_bytes.decode("utf-8")
             stats = json.loads(stats_decoded)
-            # CPU usage calculation
-            # CPU usage calculation
-            # TODO 0: CPU uage is not 100% true.... wrong calculation ? which values to trust ? Should i even trust docker stats ? what do i acutally want to dispaly?
-            cpu_total_usage = stats['cpu_stats']['cpu_usage']['total_usage']
-            system_cpu_usage = stats['cpu_stats']['system_cpu_usage']
-            online_cpus = stats['cpu_stats'].get('online_cpus', 1)
-
-            cpu_percentage = (cpu_total_usage / system_cpu_usage) * online_cpus * 100.0
-
-            # Memory usage calculation
-            memory_usage_bytes = stats['memory_stats']['usage']
-            memory_usage_mb = memory_usage_bytes / (1024 * 1024)  # Convert to MB
-
+            try:
+                cpu_usage = await calculate_cpu_usage(stats) 
+                cpu_usage = 99.99 if cpu_usage >= 100.00 else cpu_usage
+                memory_usage = await calculate_memory_usage(stats)
+            except KeyError as e:
+                # Keyerrors occur on every 1st iteration as tehre is not pre_cpu statistic yet
+                continue            
             stat = {
-                "cpu_usage": cpu_percentage,
-                "memory_usage": memory_usage_mb,
+                "cpu_usage": cpu_usage,
+                "memory_usage": memory_usage,
             }
             await push_metrics_to_prometheus(stat, container.name, ensemble_name)
             await asyncio.sleep(interval)
+
     except asyncio.CancelledError as e:
         print(f"Task for sending metrics for container {container.name} was cancelled successfully")
 
@@ -145,3 +139,16 @@ async def stop_metric_stream(task_id):
     except Exception as e:
         print(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
         print(e)
+
+
+async def calculate_memory_usage(stats) -> float:
+    memory_usage_bytes = stats['memory_stats']['usage']
+    memory_usage_mb = memory_usage_bytes / (1024 * 1024)
+    return round(memory_usage_mb, 2)
+
+async def calculate_cpu_usage(stats) -> float:
+    UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+    SystemDelta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+    len_cpu = len(stats['cpu_stats']['cpu_usage']['percpu_usage'])
+    percentage = (UsageDelta / SystemDelta) * len_cpu * 100
+    return round(percentage, 2)

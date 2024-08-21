@@ -126,6 +126,7 @@
         "y": 0
       },
       "id": 1,
+      "interval": "1s",
       "options": {
         "legend": {
           "calcs": [],
@@ -150,7 +151,7 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{container}}",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -172,7 +173,7 @@
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": false,
-            "axisColorMode": "text",
+            "axisColorMode": "series",
             "axisLabel": "",
             "axisPlacement": "auto",
             "fillOpacity": 80,
@@ -192,15 +193,19 @@
           },
           "mappings": [],
           "thresholds": {
-            "mode": "absolute",
+            "mode": "percentage",
             "steps": [
               {
                 "color": "green",
                 "value": null
               },
               {
+                "color": "orange",
+                "value": 70
+              },
+              {
                 "color": "red",
-                "value": 80
+                "value": 85
               }
             ]
           }
@@ -216,16 +221,16 @@
       "id": 3,
       "options": {
         "barRadius": 0,
-        "barWidth": 0.97,
+        "barWidth": 0.86,
         "fullHighlight": false,
-        "groupWidth": 0.7,
+        "groupWidth": 0.62,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "auto",
+        "orientation": "vertical",
         "showValue": "auto",
         "stacking": "none",
         "tooltip": {
@@ -233,8 +238,9 @@
           "sort": "none"
         },
         "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        "xTickLabelSpacing": 100
       },
+      "pluginVersion": "11.1.4",
       "targets": [
         {
           "datasource": {
@@ -242,14 +248,87 @@
             "uid": "cduw0oiwj7vuof"
           },
           "editorMode": "code",
-          "expr": "{metric=\"alert-metrics\"}",
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
+          "exemplar": false,
+          "expr": "last_over_time(PRECISION{metric=\"alert-metrics\"}[5h])",
+          "format": "time_series",
+          "instant": true,
+          "interval": "1",
+          "legendFormat": "PREC: {{container}}",
+          "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(FNR{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "interval": "1",
+          "legendFormat": "FNR: {{container}}",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(FPR{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(ACCURACY{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(F_SCORE{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "E"
         }
       ],
       "title": "Evaluation metrics",
+      "transformations": [
+        {
+          "id": "joinByLabels",
+          "options": {
+            "join": [
+              "container",
+              "ensemble",
+              "dataset"
+            ],
+            "value": "__name__"
+          }
+        }
+      ],
       "type": "barchart"
     },
     {
@@ -318,6 +397,7 @@
         "y": 8
       },
       "id": 2,
+      "interval": "1",
       "options": {
         "legend": {
           "calcs": [],
@@ -342,7 +422,7 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{{container}}",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -358,13 +438,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "BICEP",
   "uid": "edv2tl6dk6gaod",
-  "version": 9,
+  "version": 14,
   "weekStart": ""
 }

@@ -22,6 +22,5 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
     }
     # set timeout to 90 seconds to be able to send all logs
     response = requests.post(f'{LOKI_URL}/loki/api/v1/push', headers=headers, data=json.dumps(log_entry), timeout=90)
-    print(response)
     return response
 

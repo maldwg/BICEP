@@ -176,14 +176,6 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-def calculate_cpu_percent(previous_cpu, previous_system, current_cpu, current_system, online_cpus):
-    cpu_delta = current_cpu - previous_cpu
-    system_delta = current_system - previous_system
-    
-    if system_delta > 0 and cpu_delta > 0:
-        return (cpu_delta / system_delta) * online_cpus * 100.0
-    return 0.0
-
 # TODO 8: add calculation
 async def calculate_benign_and_malicious_ammount(labels_file):
     # convert bytes to bytestream to be able to read it into pandas

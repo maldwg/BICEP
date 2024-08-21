@@ -3,7 +3,7 @@ import os
 from .bicep_utils.models.ids_base import Alert
 
 
-
+# TODO add display_name as id for ensembles and container
 async def push_metrics_to_prometheus(data, container_name: str, ensemble_name: str=None):
     prometheusUrl = os.environ.get('PROMETHEUS_URL')
     registry = CollectorRegistry()
