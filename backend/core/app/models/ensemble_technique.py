@@ -1,5 +1,6 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.types import BLOB
+from ..bicep_utils.models.ids_base import Alert
 from sqlalchemy.orm import relationship, Session
 
 from ..database import Base
@@ -14,10 +15,18 @@ class EnsembleTechnique(Base):
 
     ensemble = relationship('Ensemble', back_populates='ensemble_technique')
 
+    async def execute_technique_by_name_on_alerts(self, alerts: list[Alert]):
+        func = getattr(__name__, self.function_name)
+        return func(alerts)
 
 def get_all_ensemble_techniques(db: Session):
     return db.query(EnsembleTechnique).all()
 
+async def get_ensemble_technique_by_id(db: Session, id: int):
+    return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
+
 # TODO 10: implement majority vote
-def majority_vote():
-    pass
+async def majority_vote(alerts: list[Alert]):
+    return alerts
+
+

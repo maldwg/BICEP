@@ -29,7 +29,7 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
 
     # ensure image is present 
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
-    # TODO 5: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed
+    # TODO 5: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
     # await pull_image_async(client, ids_properties.image)
     await run_container_async(client=client, container=ids_container, properties=ids_properties, url=core_url)
     await check_container_health(ids_container)

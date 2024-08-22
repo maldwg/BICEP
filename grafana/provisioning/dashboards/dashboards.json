@@ -151,7 +151,8 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "{{container}}",
+          "interval": "1",
+          "legendFormat": "{{display_name}}",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -321,6 +322,7 @@
           "id": "joinByLabels",
           "options": {
             "join": [
+              "display_name",
               "container",
               "ensemble",
               "dataset"
@@ -422,7 +424,7 @@
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{display_name}}",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -432,19 +434,20 @@
       "type": "timeseries"
     }
   ],
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "BICEP",
   "uid": "edv2tl6dk6gaod",
-  "version": 14,
+  "version": 17,
   "weekStart": ""
 }

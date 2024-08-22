@@ -267,4 +267,4 @@ def get_serialized_datasets(datasets):
 
 async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str):
     metrics = await calculate_evaluation_metrics(dataset, alerts)
-    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name)
+    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name)   

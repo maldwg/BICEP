@@ -24,6 +24,7 @@ class Ensemble(Base):
     ensemble_ids = relationship('EnsembleIds', back_populates='ensemble', cascade="all, delete")
     ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble')
 
+    current_analysis_id = None
 
     async def add_container(self,container_id: int, db: Session):
         from .ids_container import IdsContainer
@@ -88,6 +89,16 @@ class Ensemble(Base):
             responses.append(response)
         return responses
     
+    async def container_is_last_one_running(self, container, db):
+        all_containers = self.get_containers(db)
+        other_containers_in_ensemble = list(filter(lambda c: c.id != container.id, all_containers))
+        other_containers_running = [ c.is_container_running() for c in other_containers_in_ensemble]    
+        if True not in other_containers_running:
+            return True
+        else:
+            return False
+
+
 # TODO 10: what about ensembling method implementations ?
 
     async def start_network_analysis(self, network_analysis_data, db):
@@ -120,6 +131,11 @@ class Ensemble(Base):
                 responses.append(create_response_error(message, 500)) 
         return responses
     
+    async def is_container_running(self):
+        if self.status == STATUS.ACTIVE:
+            return True
+        else:
+            return False
 
     async def start_metric_collection(self,db):
         containers: list[IdsContainer] = self.get_containers(db)
@@ -189,5 +205,4 @@ async def update_ensemble_status(status: STATUS, ensemble: Ensemble, db: Session
     ensemble.status = status
     db.commit()
     db.refresh(ensemble)
-
 

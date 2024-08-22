@@ -1,0 +1,342 @@
+---
+annotations:
+  list:
+  - builtIn: 1
+    datasource:
+      type: grafana
+      uid: "-- Grafana --"
+    enable: true
+    hide: true
+    iconColor: rgba(0, 211, 255, 1)
+    name: Annotations & Alerts
+    type: dashboard
+description: All metrics regarding the BICEP application
+editable: true
+fiscalYearStartMonth: 0
+graphTooltip: 0
+id: 1
+links: []
+panels:
+- datasource:
+    type: loki
+    uid: cduw0pfoxqi9sa
+  gridPos:
+    h: 8
+    w: 12
+    x: 0
+    "y": 0
+  id: 4
+  options:
+    dedupStrategy: none
+    enableLogDetails: true
+    prettifyLogMessage: false
+    showCommonLabels: false
+    showLabels: false
+    showTime: false
+    sortOrder: Descending
+    wrapLogMessage: false
+  pluginVersion: 11.1.4
+  targets:
+  - datasource:
+      type: loki
+      uid: cduw0pfoxqi9sa
+    editorMode: builder
+    expr: '{logging="alerts"} |~ `.*`'
+    queryType: range
+    refId: A
+  title: Alerts
+  type: logs
+- datasource:
+    type: prometheus
+    uid: cduw0oiwj7vuof
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        drawStyle: line
+        fillOpacity: 0
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: auto
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: 
+        - color: red
+          value: 80
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 12
+    "y": 0
+  id: 1
+  interval: 1s
+  options:
+    legend:
+      calcs: []
+      displayMode: list
+      placement: bottom
+      showLegend: true
+    tooltip:
+      mode: single
+      sort: none
+  targets:
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    disableTextWrap: false
+    editorMode: builder
+    expr: container_cpu_usage
+    fullMetaSearch: false
+    includeNullMetadata: true
+    instant: false
+    interval: '1'
+    legendFormat: "{{display_name}}"
+    range: true
+    refId: A
+    useBackend: false
+  title: CPU usage
+  type: timeseries
+- datasource:
+    type: prometheus
+    uid: cduw0oiwj7vuof
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: series
+        axisLabel: ''
+        axisPlacement: auto
+        fillOpacity: 80
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        lineWidth: 1
+        scaleDistribution:
+          type: linear
+        thresholdsStyle:
+          mode: 'off'
+      mappings: []
+      thresholds:
+        mode: percentage
+        steps:
+        - color: green
+          value: 
+        - color: orange
+          value: 70
+        - color: red
+          value: 85
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 0
+    "y": 8
+  id: 3
+  options:
+    barRadius: 0
+    barWidth: 0.86
+    fullHighlight: false
+    groupWidth: 0.62
+    legend:
+      calcs: []
+      displayMode: list
+      placement: bottom
+      showLegend: true
+    orientation: vertical
+    showValue: auto
+    stacking: none
+    tooltip:
+      mode: single
+      sort: none
+    xTickLabelRotation: 0
+    xTickLabelSpacing: 100
+  pluginVersion: 11.1.4
+  targets:
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(PRECISION{metric="alert-metrics"}[5h])
+    format: time_series
+    instant: true
+    interval: '1'
+    legendFormat: 'PREC: {{container}}'
+    range: false
+    refId: A
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(FNR{metric="alert-metrics"}[5h])
+    hide: false
+    instant: true
+    interval: '1'
+    legendFormat: 'FNR: {{container}}'
+    range: false
+    refId: B
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(FPR{metric="alert-metrics"}[5h])
+    hide: false
+    instant: true
+    legendFormat: __auto
+    range: false
+    refId: C
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(ACCURACY{metric="alert-metrics"}[5h])
+    hide: false
+    instant: true
+    legendFormat: __auto
+    range: false
+    refId: D
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(F_SCORE{metric="alert-metrics"}[5h])
+    hide: false
+    instant: true
+    legendFormat: __auto
+    range: false
+    refId: E
+  title: Evaluation metrics
+  transformations:
+  - id: joinByLabels
+    options:
+      join:
+      - display_name
+      - container
+      - ensemble
+      - dataset
+      value: __name__
+  type: barchart
+- datasource:
+    type: prometheus
+    uid: cduw0oiwj7vuof
+  fieldConfig:
+    defaults:
+      color:
+        mode: palette-classic
+      custom:
+        axisBorderShow: false
+        axisCenteredZero: false
+        axisColorMode: text
+        axisLabel: ''
+        axisPlacement: auto
+        barAlignment: 0
+        drawStyle: line
+        fillOpacity: 0
+        gradientMode: none
+        hideFrom:
+          legend: false
+          tooltip: false
+          viz: false
+        insertNulls: false
+        lineInterpolation: linear
+        lineWidth: 1
+        pointSize: 5
+        scaleDistribution:
+          type: linear
+        showPoints: auto
+        spanNulls: false
+        stacking:
+          group: A
+          mode: none
+        thresholdsStyle:
+          mode: 'off'
+      mappings: []
+      thresholds:
+        mode: absolute
+        steps:
+        - color: green
+          value: 
+        - color: red
+          value: 80
+    overrides: []
+  gridPos:
+    h: 8
+    w: 12
+    x: 12
+    "y": 8
+  id: 2
+  interval: '1'
+  options:
+    legend:
+      calcs: []
+      displayMode: list
+      placement: bottom
+      showLegend: true
+    tooltip:
+      mode: single
+      sort: none
+  targets:
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    disableTextWrap: false
+    editorMode: builder
+    expr: container_memory_usage
+    fullMetaSearch: false
+    includeNullMetadata: true
+    instant: false
+    legendFormat: "{{display_name}}"
+    range: true
+    refId: A
+    useBackend: false
+  title: Memory usage
+  type: timeseries
+refresh: 5s
+schemaVersion: 39
+tags: []
+templating:
+  list: []
+time:
+  from: now-5m
+  to: now
+timepicker: {}
+timezone: browser
+title: BICEP
+uid: edv2tl6dk6gaod
+version: 17
+weekStart: ''
