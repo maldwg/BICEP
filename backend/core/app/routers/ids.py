@@ -117,6 +117,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
         "ensemble": "None",
+        "ensemble_analysis_id": "None",
         "logging": "alerts",
     }
     if alert_data.dataset_id != None:

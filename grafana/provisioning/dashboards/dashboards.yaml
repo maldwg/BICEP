@@ -240,6 +240,17 @@ panels:
     legendFormat: __auto
     range: false
     refId: E
+  - datasource:
+      type: prometheus
+      uid: cduw0oiwj7vuof
+    editorMode: code
+    exemplar: false
+    expr: last_over_time(UNASSIGNED_REQUEST_RATIO{metric="alert-metrics"}[5h])
+    hide: false
+    instant: true
+    legendFormat: __auto
+    range: false
+    refId: F
   title: Evaluation metrics
   transformations:
   - id: joinByLabels
@@ -326,17 +337,16 @@ panels:
     useBackend: false
   title: Memory usage
   type: timeseries
-refresh: 5s
 schemaVersion: 39
 tags: []
 templating:
   list: []
 time:
-  from: now-5m
+  from: now-6h
   to: now
 timepicker: {}
 timezone: browser
 title: BICEP
 uid: edv2tl6dk6gaod
-version: 17
+version: 18
 weekStart: ''

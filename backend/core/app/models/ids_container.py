@@ -115,6 +115,12 @@ class IdsContainer(Base):
         db.refresh(self)
         return f"stopped metric collection for container {self.id}"
     
+    async def is_busy(self):
+        if self.status == STATUS.ACTIVE.value:
+            return True
+        else:
+            return False
+    
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()
     

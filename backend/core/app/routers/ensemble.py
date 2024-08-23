@@ -122,7 +122,7 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     responses = []
 
     for container in containers:
-        response: HTTPResponse = await container.stop_analysis(db)
+        response: HTTPResponse = await container.stop_analysis()
         
         if response.status_code == 200:
             await update_container_status(STATUS.IDLE.value, container, db)
@@ -171,14 +171,21 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             ) 
         for alert in alert_data.alerts
     ]        
-
+    print(ensemble.current_analysis_id)
     if alert_data.analysis_type == "static":
+        print(f"name: {container.name}, status: {container.status}")
         if not await ensemble.container_is_last_one_running(container=container, db=db):
-            await push_alerts_to_loki(alerts=alerts, labels=labels)
+        # alternatively also check if already logs are pushed?
+            print("I am not the last one")
+            response = await push_alerts_to_loki(alerts=alerts, labels=labels)
+            print(response)
+            print(response.content)
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200) 
         else:
+            print("I am the last")
             previous_alerts: list[list[Alert]] = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
-            all_alerts = previous_alerts.append(alerts)
+            current_alerts = {container.name: alerts}
+            all_alerts = previous_alerts | current_alerts
             ensemble_technique: EnsembleTechnique = get_ensemble_technique_by_id(db=db,id=ensemble.ensemble_technique)
             ensembled_alerts = ensemble_technique.execute_technique_by_name_on_alerts(all_alerts)
             # label change signals that the logs are not from a container but the ensemble
@@ -191,7 +198,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
     else:
         other_containers_in_ensemble = list(filter(lambda c: c.id != container.id ,ensemble.get_containers(db)))
-        if await containers_already_pushed_to_loki(other_containers_in_ensemble):
+        if await containers_already_pushed_to_loki(containers=other_containers_in_ensemble, analysis_id=ensemble.current_analysis_id):
             previous_alerts: list[list[Alert]] = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
             all_alerts = previous_alerts.append(alerts)
             ensemble_technique: EnsembleTechnique = get_ensemble_technique_by_id(db=db,id=ensemble.ensemble_technique)
@@ -201,6 +208,8 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
             await clean_up_alerts_in_loki(ensemble.current_analysis_id)
             await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)
+            # assign new uuid to distinguish the next alert round from the current one
+            ensemble.current_analysis_id = str(uuid.uuid4())
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
         else:
             await push_alerts_to_loki(alerts=alerts, labels=labels)

@@ -24,6 +24,7 @@ class Ensemble(Base):
     ensemble_ids = relationship('EnsembleIds', back_populates='ensemble', cascade="all, delete")
     ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble')
 
+    # TODO 0: make this a database attribute, otherwsie ode wont work! --> afterwards everytime it is changed, commit the db!
     current_analysis_id = None
 
     async def add_container(self,container_id: int, db: Session):
@@ -92,7 +93,7 @@ class Ensemble(Base):
     async def container_is_last_one_running(self, container, db):
         all_containers = self.get_containers(db)
         other_containers_in_ensemble = list(filter(lambda c: c.id != container.id, all_containers))
-        other_containers_running = [ c.is_container_running() for c in other_containers_in_ensemble]    
+        other_containers_running = [ await c.is_busy() for c in other_containers_in_ensemble]    
         if True not in other_containers_running:
             return True
         else:

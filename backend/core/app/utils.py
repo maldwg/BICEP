@@ -13,9 +13,10 @@ import multiprocessing
 import csv 
 import time 
 from .prometheus import push_evaluation_metrics_to_prometheus
-from .metrics import calculate_evaluation_metrics
 from .models.dataset import Dataset
 from .bicep_utils.models.ids_base import Alert
+from dateutil import parser
+
 # global tasks dict that stores ids for stream tasks in containers 
 stream_metric_tasks = {
 
@@ -266,5 +267,37 @@ def get_serialized_datasets(datasets):
     return serialized_configs
 
 async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str):
+    from .metrics import calculate_evaluation_metrics
     metrics = await calculate_evaluation_metrics(dataset, alerts)
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name)   
+
+
+async def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
+    source_ip = alert.source.rsplit(":", maxsplit=1)[0].strip()
+    source_port = alert.source.rsplit(":", maxsplit=1)[-1].strip()
+    destination_ip = alert.destination.rsplit(":", maxsplit=1)[0].strip()
+    destination_port = alert.destination.rsplit(":", maxsplit=1)[-1].strip()
+    timestamp = await normalize_and_parse_alert_timestamp(alert.time)
+    return timestamp, source_ip, source_port, destination_ip, destination_port
+
+
+async def normalize_and_parse_alert_timestamp(timestamp_str):
+    """
+    Method to normalize timestamp formats, as these can differ from dataset to dataset
+    Returns a normalized timestamp in minutes format
+    """
+    timestamp_format = "%d/%m/%Y %H:%M"
+    parsed_timestamp = parser.parse(timestamp_str).strftime(timestamp_format)
+    return parsed_timestamp
+
+
+
+async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
+    common_alerts = {}
+    for container_name, alerts in alerts_dict.items():
+        for alert in alerts:
+            timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+            key = (timestamp, source_ip, source_port, destination_ip, destination_port)
+            # check if alert is already in dict, and increment counter for container detecting it
+            common_alerts[key] = common_alerts.get(key, {}).get(container_name, []) + [alert]
+    return common_alerts

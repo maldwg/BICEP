@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.types import BLOB
 from ..bicep_utils.models.ids_base import Alert
 from sqlalchemy.orm import relationship, Session
-
+from ..utils import combine_alerts_for_ids_in_alert_dict
 from ..database import Base
 
 class EnsembleTechnique(Base):
@@ -25,8 +25,26 @@ def get_all_ensemble_techniques(db: Session):
 async def get_ensemble_technique_by_id(db: Session, id: int):
     return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
 
-# TODO 10: implement majority vote
-async def majority_vote(alerts: list[Alert]):
-    return alerts
-
-
+async def majority_vote(alerts_dict: dict) -> list[Alert]:
+    ids_container_count = len(alerts_dict)
+    majority_threshold = ids_container_count / 2
+    common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
+    majority_voted_alerts = []
+    for alert_key, container_dict in common_alerts.items():
+        container_voting_for_alert = len(container_dict)
+        while container_voting_for_alert > majority_threshold:
+            commulative_severity = 0
+            # there are potentially multiple alerts for each alert key recognized by the IDS
+            # Iterate over each container alerting and combine alerts and avg severity until no majority is voting for the alert
+            for container_name, alerts in container_dict.items():
+                # remove one entry for every container and keep only one for reference
+                alert: Alert = alerts.pop()
+                # remove containers with empty lists, so they are not voting anymore
+                if len(alerts) == 0:
+                    container_dict.pop(container_name)
+                commulative_severity += alert.severity
+            avg_severity = commulative_severity / container_voting_for_alert
+            alert.severity = avg_severity
+            majority_voted_alerts.append([alert])
+            container_voting_for_alert = len(container_dict)
+    return majority_voted_alerts

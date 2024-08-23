@@ -3,13 +3,12 @@ import csv
 import io
 from .bicep_utils.models.ids_base import Alert
 from datetime import datetime, timezone
-from dateutil import parser
-
+from .utils import extract_ts_srcip_srcport_dstip_dstport_from_alert, normalize_and_parse_alert_timestamp
 async def calculate_evaluation_metrics(dataset, alerts):
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious
-    TP, FP, TN, FN = await get_positves_and_negatives_from_dataset(dataset, alerts)
+    TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
     # FPR: False Positive Rate
     def calculate_fpr():
         return FP / (FP + TN) if (FP + TN) > 0 else 0
@@ -36,6 +35,8 @@ async def calculate_evaluation_metrics(dataset, alerts):
         recall = calculate_dr()
         return 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
+    def calculate_unassigned_requests_ration():
+        return UNASSIGNED_REQUESTS / TOTAL_REQUESTS
 
     metrics = {
         "FPR": calculate_fpr(),
@@ -43,7 +44,8 @@ async def calculate_evaluation_metrics(dataset, alerts):
         "DR": calculate_dr(),
         "ACCURACY": calculate_accuracy(),
         "PRECISION": calculate_precision(),
-        "F_SCORE": calculate_f_score()
+        "F_SCORE": calculate_f_score(),
+        "UNASSIGNED_REQUEST_RATIO": calculate_unassigned_requests_ration()
     }
     print(metrics)
 
@@ -71,11 +73,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     # save in a dict for performance reasons 
     alerts_dict = {}
     for alert in alerts:
-        source_ip = alert.source.rsplit(":", maxsplit=1)[0].strip()
-        source_port = alert.source.rsplit(":", maxsplit=1)[-1].strip()
-        destination_ip = alert.destination.rsplit(":", maxsplit=1)[0].strip()
-        destination_port = alert.destination.rsplit(":", maxsplit=1)[-1].strip()
-        timestamp = await normalize_and_parse_timestamp(alert.time)
+        timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
 
         key = (timestamp, source_ip, source_port, destination_ip, destination_port)
         alerts_dict[key] = alerts_dict.get(key, []) + [alert]
@@ -96,7 +94,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
         dst_port_col_id = await get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port"])
 
         for row in reader:
-            row_timestamp = await normalize_and_parse_timestamp(row[timestamp_col_id])
+            row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
             source_ip = row[src_ip_col_id].strip()
             source_port = row[src_port_col_id].strip()
             destination_ip = row[dst_ip_col_id].strip()
@@ -123,8 +121,11 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     for _,v in alerts_dict.items():
         counter += len(v)
     # TODO 8: add counter/original to metrics to calculate 
-    print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, not assignable alerts {counter} of {original_alert_size}")
-    return TP, FP, TN, FN
+    print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {counter} of {original_alert_size}")
+    UNASSIGNED_REQUESTS = counter
+    TOTAL_REQUESTS = original_alert_size
+
+    return TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS
 
 async def is_request_benign(cell):
     if "benign" == str(cell).lower():
@@ -132,11 +133,3 @@ async def is_request_benign(cell):
     return False
 
 
-async def normalize_and_parse_timestamp(timestamp_str):
-    """
-    Method to normalize timestamp formats, as these can differ from dataset to dataset
-    Returns a normalized timestamp in minutes format
-    """
-    timestamp_format = "%d/%m/%Y %H:%M"
-    parsed_timestamp = parser.parse(timestamp_str).strftime(timestamp_format)
-    return parsed_timestamp

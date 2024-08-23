@@ -17,6 +17,12 @@ common:
     kvstore:
       store: inmemory
 
+compactor:
+  retention_enabled: true
+  retention_delete_delay: 1m
+  # make this smaller --> are logs then still present !?
+  compaction_interval: 1m
+
 query_range:
   results_cache:
     cache:
@@ -61,3 +67,5 @@ limits_config:
   per_stream_rate_limit_burst: 2000MB 
 
   max_line_size: 5MB
+  deletion_mode: filter-and-delete
+  retention_period: 1m
