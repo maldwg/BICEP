@@ -69,3 +69,4 @@ limits_config:
   max_line_size: 5MB
   deletion_mode: filter-and-delete
   retention_period: 1m
+  max_entries_limit_per_query: 100000

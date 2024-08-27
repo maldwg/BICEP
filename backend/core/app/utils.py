@@ -7,7 +7,7 @@ from contextlib import closing
 from enum import Enum
 import os
 import httpx
-from fastapi import Response
+from fastapi import Response, Request, Depends
 import pandas as pd
 import multiprocessing
 import csv 
@@ -18,9 +18,12 @@ from .bicep_utils.models.ids_base import Alert
 from dateutil import parser
 
 # global tasks dict that stores ids for stream tasks in containers 
-stream_metric_tasks = {
+# stream_metric_tasks = {
 
-}
+# }
+
+def get_stream_metric_tasks(request: Request):
+    return request.app.state.stream_metric_tasks
 
 dataset_addition_tasks = set()
 
@@ -31,6 +34,11 @@ class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
 
+
+class ANALYSIS_STATUS(Enum):
+    LOGS_SENT = "LOGS_SENT"
+    PROCESSING = "PROCESSING"
+    IDLE = "IDLE"
 
 class FILE_TYPES(Enum):
     CONFIG = "configuration"
@@ -290,14 +298,22 @@ async def normalize_and_parse_alert_timestamp(timestamp_str):
     parsed_timestamp = parser.parse(timestamp_str).strftime(timestamp_format)
     return parsed_timestamp
 
-
-
 async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
+    """
+        Gets a dict of this shape: {"ids": list[Alert], "ids2": list[Alert], ...}
+        returns a dict like : {ts-src_ip-src_port-dst_ip-dst_port: {"ids1": list[Alert], "ids2": list[Alert]}}
+    """
     common_alerts = {}
     for container_name, alerts in alerts_dict.items():
         for alert in alerts:
             timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
             key = (timestamp, source_ip, source_port, destination_ip, destination_port)
+            common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
             # check if alert is already in dict, and increment counter for container detecting it
-            common_alerts[key] = common_alerts.get(key, {}).get(container_name, []) + [alert]
+            # common_alerts_for_key = common_alerts.get(key, {})
+            # if common_alerts_for_key == {}:
+            #     initial_container_alert_dict = {container_name: [alert]}
+            #     common_alerts[key] = initial_container_alert_dict
+            # else:
+            #     common_alerts[key][container_name] = common_alerts.get(key, {}).get(container_name, []) + [alert]
     return common_alerts

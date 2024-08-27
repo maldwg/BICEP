@@ -6,7 +6,7 @@ from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, N
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
-from ..utils import create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, stream_metric_tasks, calculate_evaluation_metrics_and_push
+from ..utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -21,7 +21,7 @@ router = APIRouter(
 # TODO: docker needs longer or cant take it at all when image needs to be pulled. solution ?
 
 @router.post("/setup")
-async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
+async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     
     free_port=find_free_port()
     if data.ruleset_id:
@@ -38,13 +38,14 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
         ruleset_id=ruleset_id
         )
     await ids_container.setup(db)
+    await ids_container.start_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
     return {"message": "setup done"}
 
 
 @router.delete("/remove/{container_id}")
-async def remove_container(container_id: int, db=Depends(get_db)):
+async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     container: IdsContainer = get_container_by_id(db, container_id)
-    await container.stop_metric_collection(db)
+    await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
     await container.teardown(db)
     return {"message": "teardown done"}
 
@@ -62,7 +63,6 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data)
-    await container.start_metric_collection(db)
     response = await parse_response_for_triggered_analysis(response, container, db, "static")
 
     if response.status_code == 200: 
@@ -79,7 +79,6 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     
     data = json.dumps(network_analysis_data.__dict__)
     response: HTTPResponse = await container.start_network_analysis(data)
-    await container.start_metric_collection(db)
     response = await parse_response_for_triggered_analysis(response, container, db, "network")
     # set container status to active/idle afterwards before
     if response.status_code == 200:
@@ -91,7 +90,6 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
 async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
     response: HTTPResponse = await container.stop_analysis()
-    await container.stop_metric_collection(db)
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)
@@ -109,7 +107,6 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     return Response(content=f"Successfully stopped analysis for fontainer {analysisFinishedData.container_id}", status_code=200)
 
 
-# TODO 5: calculate metrics according to the dataset provided 
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     container = get_container_by_id(db, alert_data.container_id)

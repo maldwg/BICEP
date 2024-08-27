@@ -2,7 +2,7 @@ import asyncio
 from http.client import HTTPResponse
 import json
 import uuid
-from ..utils import STATUS, create_response_error, stream_metric_tasks ,create_response_message, deregister_container_from_ensemble, get_container_host, parse_response_for_triggered_analysis
+from ..utils import ANALYSIS_STATUS,STATUS, create_response_error ,create_response_message, deregister_container_from_ensemble, get_container_host, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
@@ -20,18 +20,17 @@ class Ensemble(Base):
     technique_id = Column(Integer, ForeignKey("ensemble_technique.id"))
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
+    current_analysis_id = Column(String(64))
 
     ensemble_ids = relationship('EnsembleIds', back_populates='ensemble', cascade="all, delete")
     ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble')
-
-    # TODO 0: make this a database attribute, otherwsie ode wont work! --> afterwards everytime it is changed, commit the db!
-    current_analysis_id = None
 
     async def add_container(self,container_id: int, db: Session):
         from .ids_container import IdsContainer
         ensemble_ids = EnsembleIds(
             ensemble_id=self.id,
-            ids_container_id=container_id
+            ids_container_id=container_id,
+            status=ANALYSIS_STATUS.IDLE.value
         )
         container: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container_id).first() 
         host = get_container_host(container)
@@ -50,7 +49,7 @@ class Ensemble(Base):
         ensemble_ids = get_ensemble_ids_by_ids(self.id, container_id, db)
 
         container: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container_id).first() 
-        response = deregister_container_from_ensemble(container)
+        response = await deregister_container_from_ensemble(container)
 
         if response.status_code == 200:
             db.delete(ensemble_ids)
@@ -137,30 +136,7 @@ class Ensemble(Base):
             return True
         else:
             return False
-
-    async def start_metric_collection(self,db):
-        containers: list[IdsContainer] = self.get_containers(db)
-        for container in containers:
-            task_id = str(uuid.uuid4())
-            task = asyncio.create_task(start_metric_stream(container, self.name))
-            stream_metric_tasks[task_id] = task
-            container.stream_metric_task_id = task_id           
-            db.commit()
-            db.refresh(container)
-        return f"successfully started metric collection for ensemble {self.id}"
-    
-    async def stop_metric_collection(self, db):
-        containers: list[IdsContainer] = self.get_containers(db)
-        for container in containers:
-            if not container.stream_metric_task_id:
-                # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been started
-                continue
-            await stop_metric_stream(container.stream_metric_task_id)
-            del stream_metric_tasks[container.stream_metric_task_id]
-            container.stream_metric_task_id = None
-            db.commit()
-            db.refresh(container)
-        return f"successfully stopped metric collection for ensemble {self.id}"
+        
 def get_all_ensembles(db: Session):
     return db.query(Ensemble).all()
 

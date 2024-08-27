@@ -87,21 +87,21 @@ class IdsContainer(Base):
         result = await stop_analysis(self)
         return result
 
-    async def start_metric_collection(self, db):
+    async def start_metric_collection(self, db, stream_metric_tasks):
         task_id = str(uuid.uuid4())
         self.stream_metric_task_id = task_id
-        task = asyncio.create_task(start_metric_stream(self))
+        task = asyncio.create_task(start_metric_stream(container=self))
         stream_metric_tasks[task_id] = task
         db.commit()
         db.refresh(self)
         return f"started metric collection for container {self.id}"
     
-    async def stop_metric_collection(self, db):
+    async def stop_metric_collection(self, db, stream_metric_tasks):
         if not self.stream_metric_task_id:
             # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been startedd
             return f"Could not stop metric collection for container {self.id}; No stream started"
         try:
-            await stop_metric_stream(self.stream_metric_task_id)
+            await stop_metric_stream(stream_metric_tasks=stream_metric_tasks, task_id=self.stream_metric_task_id, container=self)
             del stream_metric_tasks[self.stream_metric_task_id]
         except KeyError as e:
             print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")

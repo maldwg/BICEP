@@ -11,11 +11,12 @@ from ..docker import remove_docker_container
 from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_benign_and_malicious_ammount, dataset_callback, dataset_addition_tasks, calculate_and_add_dataset, get_serialized_datasets
+from ..utils import get_stream_metric_tasks,FILE_TYPES, get_serialized_confgigurations, calculate_benign_and_malicious_ammount, dataset_callback, dataset_addition_tasks, calculate_and_add_dataset, get_serialized_datasets
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate
 import asyncio 
 import functools
 import time
+import json
 
 router = APIRouter(
     prefix="/crud"
@@ -133,4 +134,9 @@ async def get_ensembles(db=Depends(get_db)):
 
 @router.patch("/ensemble")
 async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
-    return await update_ensemble(ensmeble, db)
+    result = await update_ensemble(ensmeble, db)
+    for r in result:
+        if r.status_code != 200:
+            return JSONResponse(content={"messages": "Failed to change ensemble attributes"}, status_code=500)
+        else:
+            return JSONResponse(content={"messages": "successfully changed ensemble attributes"}, status_code=200)

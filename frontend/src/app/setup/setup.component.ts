@@ -185,7 +185,8 @@ export class SetupComponent implements OnInit {
           name: ensemble.name,
           description: ensemble.description,
           technique_id: ensemble.technique_id,
-          status: ensemble.status
+          status: ensemble.status,
+          current_analysis_id: ensemble.current_analysis_id
         }));
       });
   }

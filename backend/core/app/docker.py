@@ -1,7 +1,7 @@
 import asyncio
 import json
 import docker
-from .utils import Suricata, Slips, get_container_host, get_core_host, stream_metric_tasks
+from .utils import Suricata, Slips, get_container_host, get_core_host
 import time
 import httpx
 
@@ -55,6 +55,7 @@ async def run_container_async(client, properties, container, url):
         cap_add=["NET_ADMIN", "NET_RAW"],
         detach=True  
         )
+    
 
 async def inject_config(ids_container, config):
     host = get_container_host(ids_container)
@@ -108,7 +109,7 @@ async def check_container_health(ids_container, timeout=60):
             return False
         time.sleep(1)
 
-async def start_metric_stream(container, ensemble_name: str="NaN", interval=1.0):
+async def start_metric_stream(container, interval=1.0):
     try:
         client = get_docker_client(container.host)
         container = client.containers.get(container_id=container.name)
@@ -126,16 +127,22 @@ async def start_metric_stream(container, ensemble_name: str="NaN", interval=1.0)
                 "cpu_usage": cpu_usage,
                 "memory_usage": memory_usage,
             }
-            await push_metrics_to_prometheus(stat, container.name, ensemble_name)
+            await push_metrics_to_prometheus(stat, container.name)
             await asyncio.sleep(interval)
 
     except asyncio.CancelledError as e:
         print(f"Task for sending metrics for container {container.name} was cancelled successfully")
 
-async def stop_metric_stream(task_id):
+async def stop_metric_stream(task_id, stream_metric_tasks, container):
     try:
         task = stream_metric_tasks[task_id]
         task.cancel()
+        # push a last time to pomtheus the values None, so that there is no continuous timeline for the metrics
+        stats = {
+            "cpu_usage": -1,
+            "memory_usage": -1
+        }
+        await push_metrics_to_prometheus(stats, container.name)
     except Exception as e:
         print(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
         print(e)

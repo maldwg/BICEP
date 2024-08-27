@@ -47,6 +47,7 @@ services:
       - DATABASE_NAME=bicep
       - PROMETHEUS_URL=prometheus-push-gateway:9091
       - LOKI_URL=http://loki:3100
+      - TZ=UTC
   database:
     build:
       context: ./database
@@ -68,6 +69,7 @@ services:
       - ./loki/loki:/mnt/config
     environment:
       - LOG_LEVEL=debug
+      - TZ=UTC
 networks:
   bicep:
     driver: bridge

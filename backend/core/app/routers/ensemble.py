@@ -2,9 +2,9 @@ import asyncio
 from http.client import HTTPResponse
 import json
 
-from ..metrics import calculate_evaluation_metrics_for_ensemble
+from ..metrics import calculate_evaluation_metrics
 from ..bicep_utils.models.ids_base import Alert
-from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds
+from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds, update_sendig_logs_status, last_container_sending_logs
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.ensemble_technique import EnsembleTechnique, get_ensemble_technique_by_id
@@ -17,7 +17,7 @@ from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ens
 from ..models.ids_container import IdsContainer
 from ..models.dataset import Dataset, get_dataset_by_id
 import httpx 
-from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
+from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, ANALYSIS_STATUS ,get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
 from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..loki import push_alerts_to_loki, get_alerts_from_analysis_id, clean_up_alerts_in_loki, containers_already_pushed_to_loki
@@ -46,13 +46,13 @@ async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.delete("/remove/{ensemble_id}")
+# TODO is status reset when deleting this ?
 async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     ids_ensembles: list[EnsembleIds] = get_all_ensemble_container(db)
     container_id_list = [ids_ensemble.ids_container_id  for ids_ensemble in ids_ensembles if ids_ensemble.ensemble_id == ensemble_id]
     container_list: list[IdsContainer] = [ get_container_by_id(db=db, id=id) for id in container_id_list]
     responses = []
-    await ensemble.stop_metric_collection(db)
     for container in container_list:
         # deregister from ensemble and stop running analysis if one is running
         response: HTTPResponse = await deregister_container_from_ensemble(container)
@@ -78,13 +78,14 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
         if container.status != STATUS.IDLE.value:
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
+        await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value )
 
-    if ensemble.current_analysis_id == None:
-        ensemble.current_analysis_id = str(uuid.uuid4())
+    # set new uuid to identify the new run
+    ensemble.current_analysis_id = str(uuid.uuid4())
+    
 
 
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(static_analysis_data=static_analysis_data, dataset=dataset, db=db)
-    await ensemble.start_metric_collection(db)
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
@@ -101,12 +102,11 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     for container in containers:
         if container.status != STATUS.IDLE.value:
             return create_response_error(f"container with id {container.id} is not Idle!, aborting", status_code=500)
+        await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value)
 
-    if ensemble.current_analysis_id == None:
-        ensemble.current_analysis_id = str(uuid.uuid4())
+    ensemble.current_analysis_id = str(uuid.uuid4())
 
     responses: list[HTTPResponse] = await ensemble.start_network_analysis(db=db, network_analysis_data=network_analysis_data)
-    await ensemble.start_metric_collection(db)
 
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
@@ -131,15 +131,17 @@ async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
         else:
             message = f"Could not stop analysis for container {container.id} and ensemble {ensemble.id}"
             responses.append(create_generic_response_message_for_ensemble(message, 500))
+
+        await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
+
     await update_ensemble_status(db=db, ensemble=ensemble, status=STATUS.IDLE.value)
-    await ensemble.stop_metric_collection(db)
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.post("/analysis/finished")
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, analysisFinishedData.container_id)
     ensemble: Ensemble = get_ensemble_by_id(analysisFinishedData.ensemble_id, db)
-    await ensemble.stop_metric_collection(db)
+    await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
     await update_container_status(STATUS.IDLE.value, container, db)
     if await ensemble.container_is_last_one_running(container=container, db=db):
         await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
@@ -171,48 +173,45 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             ) 
         for alert in alert_data.alerts
     ]        
-    print(ensemble.current_analysis_id)
+    # push alerts first, to ensure that enough tie has been passed for other containers to upload their logs
+    response = await push_alerts_to_loki(alerts=alerts, labels=labels)
+    if response.status_code != 204:
+        return Response(content="Could not push logs to loki for container",status_code=500)
+
     if alert_data.analysis_type == "static":
-        print(f"name: {container.name}, status: {container.status}")
-        if not await ensemble.container_is_last_one_running(container=container, db=db):
-        # alternatively also check if already logs are pushed?
-            print("I am not the last one")
-            response = await push_alerts_to_loki(alerts=alerts, labels=labels)
-            print(response)
-            print(response.content)
+        await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
+        if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200) 
         else:
-            print("I am the last")
-            previous_alerts: list[list[Alert]] = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
-            current_alerts = {container.name: alerts}
-            all_alerts = previous_alerts | current_alerts
-            ensemble_technique: EnsembleTechnique = get_ensemble_technique_by_id(db=db,id=ensemble.ensemble_technique)
-            ensembled_alerts = ensemble_technique.execute_technique_by_name_on_alerts(all_alerts)
+            all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
+            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
-            labels["container_name"] = None
+            labels["container_name"] = "None"
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
             await clean_up_alerts_in_loki(ensemble.current_analysis_id)
             await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)
-            metrics = await calculate_evaluation_metrics_for_ensemble(ensembled_alerts)
+            metrics = await calculate_evaluation_metrics(dataset=dataset, alerts=ensembled_alerts)
             await push_evaluation_metrics_to_prometheus(metrics, ensemble_name=ensemble.name, dataset_name=dataset.name)
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
     else:
-        other_containers_in_ensemble = list(filter(lambda c: c.id != container.id ,ensemble.get_containers(db)))
-        if await containers_already_pushed_to_loki(containers=other_containers_in_ensemble, analysis_id=ensemble.current_analysis_id):
-            previous_alerts: list[list[Alert]] = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
-            all_alerts = previous_alerts.append(alerts)
-            ensemble_technique: EnsembleTechnique = get_ensemble_technique_by_id(db=db,id=ensemble.ensemble_technique)
-            ensembled_alerts = ensemble_technique.execute_technique_by_name_on_alerts(all_alerts)
+        await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.LOGS_SENT.value)
+        if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
+            return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200)       
+        else:
+            # TODO 1: only 1 container in promisc mode is getting the requests logged... why ?
+            all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
+            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
-            labels["container_name"] = None
+            labels["container_name"] = "None"
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
-            await clean_up_alerts_in_loki(ensemble.current_analysis_id)
+            # await clean_up_alerts_in_loki(ensemble.current_analysis_id)
             await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)
             # assign new uuid to distinguish the next alert round from the current one
             ensemble.current_analysis_id = str(uuid.uuid4())
+            # update al satus to be processing again
+            all_containers_in_ensemble = ensemble.get_containers(db)
+            for c in all_containers_in_ensemble:
+                await update_sendig_logs_status(container=c, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value)
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
-        else:
-            await push_alerts_to_loki(alerts=alerts, labels=labels)
-            return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200)    
         
 # TODO 5: do not allow in frontend/backend to stop the analysis of a container that is running for an ensemble

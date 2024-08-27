@@ -2,15 +2,15 @@ import os
 import requests
 import json
 import time
+from datetime import datetime, timedelta,timezone
 import httpx
-from datetime import datetime, timedelta
 from .bicep_utils.models.ids_base import Alert
 
 LOKI_URL = os.environ.get('LOKI_URL')
 
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
-    values = [ [str(time.time_ns()), str(a.to_dict())] for a in alerts]
+    values = [ [str(await get_timestamp_in_nanoseconds()), str(a.to_dict())] for a in alerts]
     log_entry = {
         'streams': [
             {
@@ -28,42 +28,43 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
 
     async with httpx.AsyncClient() as client:
         data= json.dumps(log_entry)
-        print(data)
-        print(50*"----")
         response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=90)
-        print(response)
-        print(response.content)
     return response
 
 
+async def get_timestamp_in_nanoseconds():
+    now = datetime.now(timezone.utc)
+    seconds_since_epoch = now.timestamp()
+    nanoseconds_since_epoch = int(seconds_since_epoch * 1_000_000_000)
+    nanoseconds_since_epoch += now.microsecond * 1000  
+    return nanoseconds_since_epoch
+
 async def get_alerts_from_analysis_id(analysis_id: str):
-    from datetime import datetime, time, timedelta
+    from datetime import time
 
     path = "/loki/api/v1/query_range"
 
-    query = f"{{ensemble_analysis_id={analysis_id}}}"
-    now = time.time_ns()
-    t_minus_12_hours = now - (12 * 60 * 60 * int(1e9))
+    query = f'{{ensemble_analysis_id="{analysis_id}"}}'
+    today = datetime.today().date()
+    beginngin_of_day = datetime.combine(today, time(0, 0)).isoformat()+ 'Z'
+    end_of_day = datetime.combine(today, time(23, 59)).isoformat()+ 'Z'
     params = {
         'query': query,
-        'start': t_minus_12_hours,  
+        'start': beginngin_of_day,  
         # reasonable ammount of time delta to have all ids been executed
-        'end': now,
-        'limit': 1000000
+        'end': end_of_day,
+        'limit': 100000
     }
-
     async with httpx.AsyncClient() as client:
         response = await client.get(LOKI_URL+path,params=params, timeout=90)
 
-    print(response)
-    print(response.content)
     if response.status_code == 200:
         try:
             logs = response.json()
             # Do something with the logs
             alerts = {}
             for stream in logs["data"]["result"]:
-                alerts_of_container=([log for _, log in stream["values"]])
+                alerts_of_container=([Alert.from_json(log) for _, log in stream["values"]])
                 label = stream["stream"]["container_name"]
                 alerts[label] = alerts_of_container
             return alerts
@@ -94,31 +95,44 @@ async def clean_up_alerts_in_loki(analysis_id: str):
 
 async def containers_already_pushed_to_loki(containers: list, analysis_id: str) -> bool:
     container_names = [c.name for c in containers]
+    containers_with_logs = []
     path = "/loki/api/v1/query_range"
 
-    query = f"{{ensemble_analysis_id={analysis_id}}}"
+    query = f'{{ensemble_analysis_id="{analysis_id}"}}'
     now = datetime.now()
+    t_minus_30_minutes = now - timedelta(minutes=30)
+    timestamp_now = now.isoformat().rsplit(".")[0]+ 'Z'
+    timestamp_t_minus_30_minutes = t_minus_30_minutes.isoformat().rsplit(".")[0]+ 'Z'
 
     params = {
         'query': query,
-        'start': now,  
+        'start': timestamp_t_minus_30_minutes,  
         # 30 minutes should be enough since old logs are delted 
-        'end': now - timedelta(minutes=30),
-        'limit': 1000000
+        'end': timestamp_now,
+        'limit': 100000
     }
-
+    print(params)
     async with httpx.AsyncClient() as client:
         response = await client.get(LOKI_URL+path,params=params, timeout=90)
-    
+    print(response)
+    print(response.content)
     if response.status_code == 200:
         try:
             logs = response.json()
-            # Do something with the logs
-            containers_with_logs = [ labels["container_name"] for labels in logs["data"]["result"]["stream"]]
+            for stream in logs["data"]["result"]:
+                labels = stream["stream"]
+                print(labels)
+                container_name = labels["container_name"]
+                containers_with_logs.append(container_name) 
             containers_without_logs = list(set(container_names) - set(containers_with_logs))
-            if containers_with_logs == []:
+            print(container_names)
+            print(containers_with_logs)
+            print(containers_without_logs)
+            if containers_without_logs == []:
+                # all containers have pushed logs
                 return True
             else:
+                # some container logs are missing
                 return False
         except Exception as e:
             raise(e)

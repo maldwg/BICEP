@@ -53,7 +53,7 @@ export class EnsembleEditComponent {
     }
   ) {}
 
-
+// TODO 5: When exiting, but earlier modifying something, than the function is called anyway... change that 
   exit(): void{
     this.dialogRef.close();
   }

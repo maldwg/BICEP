@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS ensemble(
     status VARCHAR(32) NOT NULL,
     description VARCHAR(2048),
     technique_id INT NOT NULL,
+    current_analysis_id VARCHAR(64),
+
 
     FOREIGN KEY (technique_id) REFERENCES ensemble_technique(id)
 );
@@ -70,6 +72,7 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
     id INT AUTO_INCREMENT PRIMARY KEY,
     ensemble_id  INT NOT NULL,
     ids_container_id INT NOT NULL,
+    status VARCHAR(32),
 
     FOREIGN KEY (ensemble_id) REFERENCES ensemble(id),
     FOREIGN KEY (ids_container_id) REFERENCES ids_container(id)

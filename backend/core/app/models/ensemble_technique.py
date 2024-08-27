@@ -4,6 +4,7 @@ from ..bicep_utils.models.ids_base import Alert
 from sqlalchemy.orm import relationship, Session
 from ..utils import combine_alerts_for_ids_in_alert_dict
 from ..database import Base
+import sys
 
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
@@ -15,36 +16,37 @@ class EnsembleTechnique(Base):
 
     ensemble = relationship('Ensemble', back_populates='ensemble_technique')
 
-    async def execute_technique_by_name_on_alerts(self, alerts: list[Alert]):
-        func = getattr(__name__, self.function_name)
-        return func(alerts)
+    async def execute_technique_by_name_on_alerts(self, alerts: list[Alert], ensemble):
+        module = sys.modules[__name__]
+        func = getattr(module, self.function_name)
+        return await func(alerts_dict=alerts, ensemble=ensemble)
 
 def get_all_ensemble_techniques(db: Session):
     return db.query(EnsembleTechnique).all()
 
-async def get_ensemble_technique_by_id(db: Session, id: int):
+def get_ensemble_technique_by_id(db: Session, id: int):
     return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
 
-async def majority_vote(alerts_dict: dict) -> list[Alert]:
-    ids_container_count = len(alerts_dict)
+async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
+    # TODO 1: even though only 1 alert is there --> seems like it is getting in the ensemble... why ?
+    ids_container_count = len(ensemble.ensemble_ids)
     majority_threshold = ids_container_count / 2
     common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
     majority_voted_alerts = []
     for alert_key, container_dict in common_alerts.items():
-        container_voting_for_alert = len(container_dict)
+        # get ammount of container that have at least 1 alert for the alert key left
+        container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
         while container_voting_for_alert > majority_threshold:
             commulative_severity = 0
             # there are potentially multiple alerts for each alert key recognized by the IDS
             # Iterate over each container alerting and combine alerts and avg severity until no majority is voting for the alert
-            for container_name, alerts in container_dict.items():
-                # remove one entry for every container and keep only one for reference
+            for _, alerts in container_dict.items():
+
                 alert: Alert = alerts.pop()
-                # remove containers with empty lists, so they are not voting anymore
-                if len(alerts) == 0:
-                    container_dict.pop(container_name)
-                commulative_severity += alert.severity
+                # add alert severity if not none, if none add 0 
+                commulative_severity += alert.severity if alert.severity is not None else 0    
             avg_severity = commulative_severity / container_voting_for_alert
             alert.severity = avg_severity
-            majority_voted_alerts.append([alert])
-            container_voting_for_alert = len(container_dict)
+            majority_voted_alerts.append(alert)
+            container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
     return majority_voted_alerts

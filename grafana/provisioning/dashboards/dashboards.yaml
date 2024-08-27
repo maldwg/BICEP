@@ -110,8 +110,8 @@ panels:
       type: prometheus
       uid: cduw0oiwj7vuof
     disableTextWrap: false
-    editorMode: builder
-    expr: container_cpu_usage
+    editorMode: code
+    expr: container_cpu_usage != -1
     fullMetaSearch: false
     includeNullMetadata: true
     instant: false
@@ -326,8 +326,8 @@ panels:
       type: prometheus
       uid: cduw0oiwj7vuof
     disableTextWrap: false
-    editorMode: builder
-    expr: container_memory_usage
+    editorMode: code
+    expr: container_memory_usage != -1
     fullMetaSearch: false
     includeNullMetadata: true
     instant: false
@@ -348,5 +348,5 @@ timepicker: {}
 timezone: browser
 title: BICEP
 uid: edv2tl6dk6gaod
-version: 18
+version: 20
 weekStart: ''

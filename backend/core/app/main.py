@@ -16,6 +16,12 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    
+    app.state.stream_metric_tasks = {}
+
+
 app.include_router(ids.router)
 app.include_router(crud.router)
 app.include_router(ensemble.router)

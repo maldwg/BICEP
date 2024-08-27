@@ -149,7 +149,8 @@ export class DashboardComponent implements OnInit {
           name: ensemble.name,
           technique_id: ensemble.technique_id,
           status: ensemble.status,
-          description: ensemble.description
+          description: ensemble.description,
+          current_analysis_id: ensemble.current_analysis_id,
         }));
       });
   }

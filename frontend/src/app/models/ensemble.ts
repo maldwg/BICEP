@@ -4,7 +4,8 @@ export interface Ensemble {
     name: string,
     technique_id: number,
     description: string,
-    status: string
+    status: string,
+    current_analysis_id: string
 
 }
 
