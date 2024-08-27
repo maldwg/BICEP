@@ -1,0 +1,16 @@
+.dashboard-div{
+    display: flex;
+    margin: auto;
+    justify-content: center;
+    align-items: center;
+    height: 90%;
+    width: 90%
+
+}
+
+.grafana-dashboard{
+    justify-content: center;
+    align-items: center;
+    height: 98%;
+    width: 100%
+}
