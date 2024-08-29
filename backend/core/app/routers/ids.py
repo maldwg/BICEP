@@ -46,6 +46,8 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     container: IdsContainer = get_container_by_id(db, container_id)
     await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
+    # stop analysis to also remove interfaces created if run in networking mode
+    await container.stop_analysis()
     await container.teardown(db)
     return {"message": "teardown done"}
 
