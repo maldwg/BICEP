@@ -27,8 +27,6 @@ def get_stream_metric_tasks(request: Request):
 
 dataset_addition_tasks = set()
 
-# TODO 5: find a way to make it asynch --> maybe backroung task with asynchio in the endpoint ?
-
 # asnycion craete task
 class STATUS(Enum):
     ACTIVE = "active"
@@ -49,8 +47,8 @@ class Ids(object):
     image = ""
     config_path=""
 
-# TODO: refactor so that image is in the table not here
-# TODO: config path is in ids logic not here
+# TODO 0: refactor so that image is in the table not here
+# TODO 0: config path is in ids logic not here
 class Suricata(Ids):
     name = "Suricata"
     image = "maxldwg/bicep-suricata"
@@ -185,7 +183,6 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-# TODO 8: add calculation
 async def calculate_benign_and_malicious_ammount(labels_file):
     # convert bytes to bytestream to be able to read it into pandas
     byte_stream = io.BytesIO(labels_file)
@@ -281,10 +278,10 @@ async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[A
 
 
 async def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
-    source_ip = alert.source.rsplit(":", maxsplit=1)[0].strip()
-    source_port = alert.source.rsplit(":", maxsplit=1)[-1].strip()
-    destination_ip = alert.destination.rsplit(":", maxsplit=1)[0].strip()
-    destination_port = alert.destination.rsplit(":", maxsplit=1)[-1].strip()
+    source_ip = alert.source_ip.strip()
+    source_port = alert.source_port.strip()
+    destination_ip = alert.destination_ip.strip()
+    destination_port = alert.destination_port.strip()
     timestamp = await normalize_and_parse_alert_timestamp(alert.time)
     return timestamp, source_ip, source_port, destination_ip, destination_port
 

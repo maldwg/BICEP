@@ -28,7 +28,7 @@ def get_ensemble_technique_by_id(db: Session, id: int):
     return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
 
 async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
-    # TODO 1: even though only 1 alert is there --> seems like it is getting in the ensemble... why ?
+    # TODO 0: even though only 1 alert is there --> seems like it is getting in the ensemble... why ?
     ids_container_count = len(ensemble.ensemble_ids)
     majority_threshold = ids_container_count / 2
     common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)

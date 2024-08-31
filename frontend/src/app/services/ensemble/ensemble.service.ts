@@ -14,7 +14,7 @@ export class EnsembleService {
     private http: HttpClient
   ) { }
 
- // TODO: update all endpoints to use httpResponse objects instead of the other bullshit
+ // TODO 10: update all endpoints to use httpResponse objects instead of the other bullshit
 
   getAllTechnqiues(): Observable<EnsembleTechnique[]>{
     let path = "/crud/ensemble/technique/all"

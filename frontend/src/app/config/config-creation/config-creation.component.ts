@@ -62,10 +62,10 @@ export class ConfigCreationComponent implements OnInit{
 
   }
 
-// TODO: Polish: add a configrm dialog fro all delete actions to confirm if it should be delted
-// Todo: polish: Add error cards to display errors as popup
-// TODO: spinning circle while upload complete but not ready calcuating dataset
-// TODO 5: return is there from the backend however, it is not processed correctly for the reload in the FE
+ // 10: Polish: add a configrm dialog fro all delete actions to confirm if it should be delted
+// Todo 10: polish: Add error cards to display errors as popup
+// TODO 10: spinning circle while upload complete but not ready calcuating dataset
+// TODO 10: return is there from the backend however, it is not processed correctly for the reload in the FE
   save(): void{
     if (this.configForm.valid){
       if(this.configForm.value.fileType === fileTypes.testData){

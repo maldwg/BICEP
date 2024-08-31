@@ -25,6 +25,3 @@ async def startup_event():
 app.include_router(ids.router)
 app.include_router(crud.router)
 app.include_router(ensemble.router)
-
-
-# TODO: refactor relative imports to use absolute imports instead

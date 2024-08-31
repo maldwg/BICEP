@@ -27,7 +27,7 @@ import { HttpResponse } from '@angular/common/http';
   styleUrl: './setup.component.css'
 })
 export class SetupComponent implements OnInit {
-  //  TODO: add name to IDS creation
+  //  TODO 5: add name to IDS creation
   idsForm = new FormGroup({
     host: new FormControl("localhost"),
     description: new FormControl(""),
@@ -106,12 +106,12 @@ export class SetupComponent implements OnInit {
       this.ensembleService.sendEnsembleData(ensembleData)
         .subscribe((res: HttpResponse<any>) => {
           console.log(res)
-          // TODO: go thorugh each response object here and see if it was succesful??
+          // TODO 5: go thorugh each response object here and see if it was succesful??
           if(res.status == 200){
             this.router.navigate(["/"])
           }
           else{
-            // TODO: popup error
+            // TODO 10: popup error
           }
         })
     }

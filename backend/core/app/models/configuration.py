@@ -20,7 +20,6 @@ class Configuration(Base):
 def get_config_by_id(db: Session, config_id: int):
     return db.query(Configuration).filter(Configuration.id == config_id).first()
     
- # TODO 10: all db actions need to be executed in the background
 def get_all_configurations(db: Session):
     return db.query(Configuration).all()
 

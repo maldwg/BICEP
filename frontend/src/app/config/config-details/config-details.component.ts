@@ -10,5 +10,5 @@ import { Component } from '@angular/core';
 export class ConfigDetailsComponent {
 
 
-  // TODO: Display details
+  // TODO10: Display details
 }

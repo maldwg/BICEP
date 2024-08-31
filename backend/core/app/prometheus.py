@@ -2,6 +2,8 @@ from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 import os
 from .bicep_utils.models.ids_base import Alert
 
+
+# TODO 10 : refactor metrics to be not started or stopped by container setup/removal but have a permanent endpoint or background task ha ndle the job
 async def push_metrics_to_prometheus(data, container_name: str):
     prometheusUrl = os.environ.get('PROMETHEUS_URL')
     registry = CollectorRegistry()

@@ -59,7 +59,7 @@ export class DashboardComponent implements OnInit {
     
   ) {}
 
-  // TODO: do not allow analyssis if other is running!
+  // TODO 0: do not allow analyssis if other is running!
 
   ngOnInit(): void {
     this.getAllContainer();
@@ -166,7 +166,7 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  // TODO: if not status code 200 then popup with error code 
+  // TODO 10: if not status code 200 then popup with error code 
   startAnalysis(container: Container){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "50%",
@@ -200,7 +200,7 @@ export class DashboardComponent implements OnInit {
             container_id: container.id
           }
   
-          // TODO: Refactor all endpoints like this to propagate backend errors/m,essages
+          // TODO 10: Refactor all endpoints like this to propagate backend errors/m,essages
           this.idsService.startNetworkAnalysis(networkAnalysisData)
             .subscribe((backendRes: HttpResponse<any>) => {
               console.log(backendRes)
@@ -262,7 +262,7 @@ export class DashboardComponent implements OnInit {
               console.log(backendRes)
               if(backendRes.status === 200){
                 ensemble.status = statusTypes.active
-                // TODO: reload location as updating each container not so easy 
+                // TODO 0: reload location as updating each container not so easy 
               }
             })
         }
@@ -282,13 +282,12 @@ export class DashboardComponent implements OnInit {
         console.log(res)
         if(res.status === 200){
           ensemble.status = statusTypes.idle
-          // TODO: Reload window to update dile again otherwise too complex presumably --> not impossible but complex
+          // TODO 0: Reload window to update dile again otherwise too complex presumably --> not impossible but complex
         }
       })
   }
-// TODO: Polish better display for status 
-// TODO: Polish the cards 
-// TODO polish the summaries?
+// TODO 0: Polish the cards 
+// TODO 0: polish the summaries?
 
   editEnsemble(ensemble: Ensemble){
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
@@ -357,7 +356,7 @@ export class DashboardComponent implements OnInit {
         container.configuration_id = configId;
         container.ruleset_id = rulesetId;
 
-        // TODO: update or refetch the ensembleContainers as well
+        // TODO 0: update or refetch the ensembleContainers as well
       }
     })
 

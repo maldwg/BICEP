@@ -83,7 +83,6 @@ class Ensemble(Base):
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
             
             if response.status_code == 200:
-                # TODO: did not work set container status to active/idle afterwards before
                 await update_container_status(STATUS.ACTIVE.value, container, db)
             
             responses.append(response)
@@ -98,8 +97,6 @@ class Ensemble(Base):
         else:
             return False
 
-
-# TODO 10: what about ensembling method implementations ?
 
     async def start_network_analysis(self, network_analysis_data, db):
         from .ids_container import IdsContainer
@@ -139,9 +136,6 @@ class Ensemble(Base):
         
 def get_all_ensembles(db: Session):
     return db.query(Ensemble).all()
-
-# TODO: make all db actions asynchronous
-
 
 def get_ensemble_by_id(id: int, db: Session):
     return db.query(Ensemble).filter(Ensemble.id == id).first()

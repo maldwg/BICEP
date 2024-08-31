@@ -8,7 +8,6 @@ export interface Container{
     configuration_id: number,
     ids_tool_id: number,
     ruleset_id?: number,
-    // TODO: adjust frontend to also display if currently metrics are sended
     stream_metric_task_id?: string
 
 }

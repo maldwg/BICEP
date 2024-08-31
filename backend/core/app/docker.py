@@ -5,6 +5,9 @@ from .utils import Suricata, Slips, get_container_host, get_core_host
 import time
 import httpx
 
+
+# TODO 5: container that are down cannot be removed right now
+
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
 
@@ -28,8 +31,9 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
         ids_properties = Suricata()
 
     # ensure image is present 
+    # TODO 0: docker needs longer or cant take it at all when image needs to be pulled. solution ?
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
-    # TODO 5: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
+    # TODO 0: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
     # await pull_image_async(client, ids_properties.image)
     await run_container_async(client=client, container=ids_container, properties=ids_properties, url=core_url)
     await check_container_health(ids_container)
@@ -106,6 +110,7 @@ async def check_container_health(ids_container, timeout=60):
             return True
         if time.time() - start_time > timeout:
             print("Container did not become healthy in time.")
+            await remove_docker_container(ids_container)
             return False
         time.sleep(1)
 
@@ -154,6 +159,7 @@ async def calculate_memory_usage(stats) -> float:
     return round(memory_usage_mb, 2)
 
 async def calculate_cpu_usage(stats) -> float:
+    # TODO 0: needs to be divided by the online cpus I guess, to get the total amchine ausalstung
     UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
     SystemDelta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
     len_cpu = len(stats['cpu_stats']['cpu_usage']['percpu_usage'])
