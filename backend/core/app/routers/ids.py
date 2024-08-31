@@ -18,7 +18,6 @@ router = APIRouter(
     prefix="/ids"
 )
 
-# TODO: docker needs longer or cant take it at all when image needs to be pulled. solution ?
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
@@ -126,8 +125,10 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
     alerts = [
         Alert(
             time=alert.time, 
-            destination=alert.destination, 
-            source=alert.source, 
+            destination_ip=alert.destination_ip, 
+            destination_port=alert.destination_port, 
+            source_ip=alert.source_ip, 
+            source_port=alert.source_port, 
             severity=alert.severity, 
             type=alert.type, 
             message=alert.message

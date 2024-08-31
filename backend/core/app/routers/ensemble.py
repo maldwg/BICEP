@@ -46,7 +46,6 @@ async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.delete("/remove/{ensemble_id}")
-# TODO is status reset when deleting this ?
 async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     ids_ensembles: list[EnsembleIds] = get_all_ensemble_container(db)
@@ -65,7 +64,7 @@ async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
     remove_ensemble(ensemble, db)
     return JSONResponse(content={"content": responses}, status_code=200)
 
-# TODO: update all returns to use new helper methdos (create_response_message/error)
+# TODO 5: update all returns to use new helper methdos (create_response_message/error) or delte helper methods
 
 @router.post("/analysis/static")
 async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
@@ -91,8 +90,6 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     # set container status to active/idle afterwards before
     await update_ensemble_status(db=db, ensemble=ensemble, status=STATUS.ACTIVE.value)
     return JSONResponse(content={"content": content}, status_code=200)
-
-# TODO maybe: improve differentiation between ids anylssis so that in the frontend ewe can see which ids did not start and rollback?
 
 @router.post("/analysis/network")
 async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db = Depends(get_db)):
@@ -165,8 +162,10 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     alerts = [
         Alert(
             time=alert.time, 
-            destination=alert.destination, 
-            source=alert.source, 
+            destination_ip=alert.destination_ip, 
+            destination_port=alert.destination_port, 
+            source_ip=alert.source_ip, 
+            source_port=alert.source_port, 
             severity=alert.severity, 
             type=alert.type, 
             message=alert.message
@@ -196,13 +195,21 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     else:
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.LOGS_SENT.value)
         if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
+            print(f"I am not the last one {container.name}")
+            print(alerts)
+            print(20*"##")
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200)       
         else:
-            # TODO 1: only 1 container in promisc mode is getting the requests logged... why ?
+            print(f"I am the last running container: {container.name}")
+            print(alerts)
+            print(20*"##")
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
+            print(50* "---")
+            print(ensembled_alerts)
+            print(50* "---")
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
             # await clean_up_alerts_in_loki(ensemble.current_analysis_id)
             await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)

@@ -50,7 +50,7 @@ async def remove_config( id: int, db=Depends(get_db)):
     remove_configuration_by_id(db, id)
     return Response(content=f"Successfully removed config {id}", status_code=204)
 
-# TODO 1: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
+# TODO 10: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
 @router.post("/configuration/add")
 async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     # For rulesets and general configurations
@@ -77,7 +77,6 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
         return JSONResponse(content={"message": "Too many files attached"}, status_code=500)
 
 
-# TODO 9: make it fastere by not sending the files but dummy files
 @router.get("/dataset/all")
 async def get_all_configs(db=Depends(get_db)):
     datasets = get_all_datasets(db)

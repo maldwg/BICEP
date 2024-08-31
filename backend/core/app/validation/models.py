@@ -67,8 +67,10 @@ class StopAnalysisData(BaseModel):
 
 class AlertModel(BaseModel):
     time: str
-    source: str
-    destination: str
+    source_ip: str
+    source_port: str
+    destination_ip: str
+    destination_port: str
     severity: Optional[float] = None
     type: str
     message: str    
