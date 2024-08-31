@@ -1,89 +1,90 @@
 <div class="panel-grid-div">
-
-    <mat-expansion-panel class="panel-grid-item">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Ensembles
-            </mat-panel-title>
-            <mat-panel-description>
-                Overview on current Ensembles
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <div class="grid-container">
-            <div class="grid-item" *ngFor="let ensemble of ensembleList" class="mat-elevation-z8">
-                <mat-card >
-                    <mat-card-header>
-                        <mat-card-title >
-                            {{ensemble.name}}
-                            <mat-icon *ngIf="ensemble.status === 'active'" class='spinning' color="accent">settings</mat-icon>
-                            <mat-icon *ngIf="ensemble.status === 'idle'" color="primary">pause_circle</mat-icon>
-                        </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content >
-                            <div>Id: {{ensemble.id}} </div>
-                            <div>Ensemble technique: {{getEnsembleTechniqueName(ensemble.technique_id)}}</div>
-                            <div>Description: {{ensemble.description}}</div>
-                            <div>Status: {{ensemble.status}} </div>
-                            <div>
-                                Containers: 
-                                {{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }} 
+    <div class="panel-grid-item">
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Ensembles
+                </mat-panel-title>
+                <mat-panel-description>
+                    Overview on current Ensembles
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+            <div class="grid-container">
+                <div class="grid-item" *ngFor="let ensemble of ensembleList" class="mat-elevation-z8">
+                    <mat-card >
+                        <mat-card-header>
+                            <mat-card-title >
+                                {{ensemble.name}}
+                                <mat-icon *ngIf="ensemble.status === 'active'" class='spinning' color="accent">settings</mat-icon>
+                                <mat-icon *ngIf="ensemble.status === 'idle'" color="primary">pause_circle</mat-icon>
+                            </mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content >
+                                <div>Id: {{ensemble.id}} </div>
+                                <div>Ensemble technique: {{getEnsembleTechniqueName(ensemble.technique_id)}}</div>
+                                <div>Description: {{ensemble.description}}</div>
+                                <div>Status: {{ensemble.status}} </div>
+                                <div>
+                                    Containers: 
+                                    {{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }} 
+                                </div>
+                                
+                                <div class="not-dile-warning-div" *ngIf="!checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)">
+                                    Warning: At least one container from this ensemble is not idle. Stop it before trying to analyze the ensemble
                             </div>
-                            
-                            <div class="not-dile-warning-div" *ngIf="!checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)">
-                                Warning: At least one container from this ensemble is not idle. Stop it before trying to analyze the ensemble
-                           </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                        <button (click)="editEnsemble(ensemble)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
-                        <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
-                        <button *ngIf="ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)" (click)="startEnsembleAnalysis(ensemble)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
-                        <button *ngIf="!ensembleIsIdle(ensemble)" (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
-                    </mat-card-actions>
-                </mat-card>
+                        </mat-card-content>
+                        <mat-card-actions>
+                            <button (click)="editEnsemble(ensemble)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                            <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
+                            <button *ngIf="ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)" (click)="startEnsembleAnalysis(ensemble)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
+                            <button *ngIf="!ensembleIsIdle(ensemble)" (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
+                        </mat-card-actions>
+                    </mat-card>
+                </div>
             </div>
-        </div>
-        
-    </mat-expansion-panel>
-
-<mat-expansion-panel class="panel-grid-item">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Containers
-            </mat-panel-title>
-            <mat-panel-description>
-                Overview on current Containers
-            </mat-panel-description>
-    </mat-expansion-panel-header>
-    <div class="grid-container">
-        <div class="grid-item" *ngFor="let container of containerList" class="mat-elevation-z8">
-            <mat-card >
-                <mat-card-header>
-                    <mat-card-title>
-                        {{container.name}}
-                            <mat-icon *ngIf="container.status === 'active'" class='spinning mat-icon-class' color="accent">settings</mat-icon>
-                            <mat-icon *ngIf="container.status === 'idle'" class="mat-icon-class" color="primary">pause_circle</mat-icon>
-                    </mat-card-title>
-                </mat-card-header>
-                <mat-card-content >
-                        <div>ID: {{container.id}}</div>
-                        <div>Host: {{container.host}}</div>
-                        <div>Port: {{container.port}}</div>
-                        <div>IDS Tool: {{getIdsToolName(container.ids_tool_id)}}</div>
-                        <div>Configuration: {{getConfigName(container.configuration_id)}}</div>
-                        <div *ngIf="container.ruleset_id">Ruleset: {{getConfigName(container.ruleset_id)}}</div>
-                        <div>Description: {{container.description}}</div>
-                        <div>Status: {{container.status}}</div>
-                </mat-card-content>
-                <mat-card-actions>
-                    <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
-                    <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
-                    <button *ngIf="containerIsIdle(container)" (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
-                    <button *ngIf="!containerIsIdle(container)" (click)="stopAnalysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
-                </mat-card-actions>
-            </mat-card>
-        </div>
+            
+        </mat-expansion-panel>
     </div>
-</mat-expansion-panel>
-
-
+    <div class="panel-grid-item">
+        <mat-expansion-panel class="panel-grid-item">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Containers
+                </mat-panel-title>
+                <mat-panel-description>
+                    Overview on current Containers
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+            <div class="grid-container">
+                <div class="grid-item" *ngFor="let container of containerList" class="mat-elevation-z8">
+                    <mat-card >
+                            <mat-card-header>
+                                <mat-card-title>
+                                    {{container.name}}
+                                        <mat-icon *ngIf="container.status === 'active'" class='spinning mat-icon-class' color="accent">settings</mat-icon>
+                                        <mat-icon *ngIf="container.status === 'idle'" class="mat-icon-class" color="primary">pause_circle</mat-icon>
+                                </mat-card-title>
+                            </mat-card-header>
+                            <mat-card-content >
+                                    <div>ID: {{container.id}}</div>
+                                    <div>Host: {{container.host}}</div>
+                                    <div>Port: {{container.port}}</div>
+                                    <div>IDS Tool: {{getIdsToolName(container.ids_tool_id)}}</div>
+                                    <div>Configuration: {{getConfigName(container.configuration_id)}}</div>
+                                    <div *ngIf="container.ruleset_id">Ruleset: {{getConfigName(container.ruleset_id)}}</div>
+                                    <div>Description: {{container.description}}</div>
+                                    <div>Status: {{container.status}}</div>
+                                    <div *ngIf="!container.ruleset_id"><br></div>
+                            </mat-card-content>
+                            <mat-card-actions>
+                                <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
+                                <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
+                                <button *ngIf="containerIsIdle(container)" (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
+                                <button *ngIf="!containerIsIdle(container)" (click)="stopAnalysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
+                            </mat-card-actions>
+                    </mat-card>
+                </div>      
+            </div>
+        </mat-expansion-panel>
+    </div>
 </div>

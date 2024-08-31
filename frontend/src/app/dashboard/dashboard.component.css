@@ -1,18 +1,20 @@
 .grid-container{
-    display: grid;
-    row-gap: 7%;
-    column-gap: 5%;
-    grid-template-columns: auto auto auto;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    row-gap: 25px;
+    column-gap: 25px;
     justify-content: center;
-    margin: auto
+    margin: auto;
+    padding: 5%;
 }
 
 .grid-item {
-    justify-content: center;
-    padding: 5%;
-    margin: 5%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    margin-left: auto;
+    margin-right: auto;
   }
-
 
 .action-button{
   margin: 1%;
@@ -26,18 +28,20 @@
   }
 
 .panel-grid-div{
-  display: grid;
-  grid-template-columns: auto;
+  display: flex;
+  flex-direction: column;
   row-gap: 5%;
+  column-gap: 5%;
   justify-content: center;
   margin: auto;
   width: 80%;
 }
 
 .panel-grid-item{
-  margin: 10%;
-  padding: 2%;
-  width: 100%;
+  margin-top: 2%;
+  margin-bottom: 2%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 
