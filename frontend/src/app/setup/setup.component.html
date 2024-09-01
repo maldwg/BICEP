@@ -1,38 +1,34 @@
 <div class="component-header-div">
     <h1>Configure new IDS or Ensemble</h1>
 </div>
-<div *ngIf="userChoice !== ''" class="grid-container-setup-choice">
+<div *ngIf="userChoice !== ''" class="flexbox-container-setup-choice">
     <button color="accent" mat-flat-button (click)="setUserChoice('')">back</button>
 </div>
-<div class="grid-container-setup-choice" *ngIf="userChoice === ''">
-    <div class="grid-item">
-        <mat-card (click)="setUserChoice('ensemble')">
-            <mat-card-content class="mat-elevation-z8">
-                Ensemble
-            </mat-card-content>
-        </mat-card>
+<div class="flexbox-container-setup-choice" *ngIf="userChoice === ''">
+    <div class="flexbox-setup-choice-div">
+        <button class="mat-elevation-z8 flexbox-setup-choice-button" (click)="setUserChoice('ensemble')" mat-button>
+               Ensemble
+        </button>
     </div>
-    <div class="grid-item">
-        <mat-card (click)="setUserChoice('ids')">
-            <mat-card-content class="mat-elevation-z8">
+    <div class="flexbox-setup-choice-div">
+        <button class="mat-elevation-z8 flexbox-setup-choice-button" (click)="setUserChoice('ids')" mat-button>
                 IDS
-            </mat-card-content>
-        </mat-card>
+        </button>
     </div>
 </div>
 
 
-<div class="grid-container" *ngIf="userChoice === 'ensemble'">
+<div class="flexbox-container" *ngIf="userChoice === 'ensemble'">
     <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()">
         <mat-card>
             <mat-card-content class="mat-elevation-z8">
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Name</mat-label>
                             <input matInput required [formControl]="ensembleForm.controls.name">
                         </mat-form-field>
                     </div>
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Technique</mat-label>
                             <mat-select [formControl]="ensembleForm.controls.technique" matTooltip="Select the method to weight the different IDS" required>
@@ -40,7 +36,7 @@
                             </mat-select>
                         </mat-form-field>
                     </div>
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Available IDS Container</mat-label>
                             <mat-select  [formControl]="ensembleForm.controls.containers" matTooltip="Only Containers not in an ensemble are displayed" required multiple>
@@ -48,7 +44,7 @@
                             </mat-select>
                         </mat-form-field>
                     </div>
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Description</mat-label>
                             <textarea matInput [formControl]="ensembleForm.controls.description" required></textarea>
@@ -65,26 +61,18 @@
 
 </div>
 
-<div class="grid-container" *ngIf="userChoice === 'ids'">
+<div class="flexbox-container" *ngIf="userChoice === 'ids'">
     <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
         <mat-card>
             <mat-card-content class="mat-elevation-z8">
 
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label >Target host</mat-label>
                             <input matTooltip="The IP adress where the container should run on" matInput value="localhost" readonly="" required [formControl]="idsForm.controls.host">
                         </mat-form-field>
                     </div>
-                    <div class="grid-item">
-                        <mat-form-field>
-                            <mat-label>Configuration</mat-label>
-                            <mat-select [formControl]="idsForm.controls.config" matTooltip="The main configuration fie for the IDS" required>
-                                <mat-option *ngFor="let c of idsConfigs" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>IDS Tool</mat-label>
                             <mat-select [formControl]="idsForm.controls.idsTool" required>
@@ -92,7 +80,15 @@
                             </mat-select>
                         </mat-form-field>
                     </div>
-                    <div class="grid-item" *ngIf="requiresRuleset">
+                    <div class="flexbox-item">
+                        <mat-form-field>
+                            <mat-label>Configuration</mat-label>
+                            <mat-select [formControl]="idsForm.controls.config" matTooltip="The main configuration fie for the IDS" required>
+                                <mat-option *ngFor="let c of idsConfigs" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="flexbox-item" *ngIf="requiresRuleset">
                         <mat-form-field>
                             <mat-label>Ruleset</mat-label>
                             <mat-select [formControl]="idsForm.controls.ruleset" matTooltip="The ruleset for subsequent analysis" required>
@@ -100,7 +96,7 @@
                             </mat-select>
                         </mat-form-field>
                     </div>
-                    <div class="grid-item">
+                    <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Description</mat-label>
                             <textarea matInput [formControl]="idsForm.controls.description" required></textarea>

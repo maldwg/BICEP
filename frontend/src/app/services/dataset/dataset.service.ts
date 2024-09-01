@@ -23,14 +23,6 @@ export class DatasetService {
     );
   }
 
-
-  getAllDatasetsWithoutFiles(): Observable<Dataset[]> {
-    let path = "/crud/dataset/all/without/files";
-    return this.http.get<SerializedDataset[]>(environment.backendUrl + path).pipe(
-      map((serializedDatasets) => serializedDatasets.map(serializedDataset => this.deserializeConfiguration(serializedDataset)))
-    );
-  }
-
   removeDataset(id: number) {
     let path = "/crud/dataset/";
     return this.http.delete(environment.backendUrl+path+id);
@@ -56,8 +48,8 @@ export class DatasetService {
     return {
       id: serializedDataset.id,
       name: serializedDataset.name,
-      pcap_file: atob(serializedDataset.pcap_file),
-      labels_file: atob(serializedDataset.labels_file), 
+      pcap_file_path: serializedDataset.pcap_file_path,
+      labels_file_path: serializedDataset.labels_file_path, 
       description: serializedDataset.description,
       ammount_benign: serializedDataset.ammount_benign,
       ammount_malicious: serializedDataset.ammount_malicious

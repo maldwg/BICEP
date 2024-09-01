@@ -1,4 +1,4 @@
-.grid-container{
+.flexbox-container{
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
@@ -9,7 +9,7 @@
     padding: 2%;
 }
 
-.grid-item {
+.flexbox-item {
     margin-top: 5%;
     margin-bottom: 5%;
     margin-left: auto;
@@ -27,7 +27,7 @@
     align-items: center;
   }
 
-.panel-grid-div{
+.panel-flexbox-div{
   display: flex;
   flex-direction: column;
   row-gap: 5%;
@@ -37,7 +37,7 @@
   width: 80%;
 }
 
-.panel-grid-item{
+.panel-flexbox-item{
   margin-top: 2%;
   margin-bottom: 2%;
   margin-left: auto;

@@ -102,14 +102,14 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllDatasets(){
-    this.datasetService.getAllDatasetsWithoutFiles()
+    this.datasetService.getAllDatasets()
       .subscribe(data => {
         this.datasetList = data.map(config => ({
           id: config.id,
           name: config.name,
-          pcap_file: config.pcap_file,
+          pcap_file_path: config.pcap_file_path,
           description: config.description,
-          labels_file: config.labels_file,
+          labels_file_path: config.labels_file_path,
           ammount_benign: config.ammount_benign,
           ammount_malicious: config.ammount_malicious,
         }));

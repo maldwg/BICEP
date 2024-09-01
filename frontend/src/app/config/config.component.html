@@ -2,11 +2,11 @@
     <h1> Overview on existing configurations </h1>
 </div>
 <div class="config-button-div">
-    <button class="mat-elevation-z8 grid-item-first-row" color="primary" mat-flat-button (click)="newConfig()">Upload new file</button>
+    <button class="mat-elevation-z8 flexbox-item-first-row" color="primary" mat-flat-button (click)="newConfig()">Upload new file</button>
 </div>
-<div class="panel-grid-div">
+<div class="panel-flexbox-div">
 
-    <mat-expansion-panel class="panel-grid-item">
+    <mat-expansion-panel class="panel-flexbox-item">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Configurations
@@ -15,9 +15,9 @@
                 Configurations for the IDS
             </mat-panel-description>
         </mat-expansion-panel-header>
-        <div class="grid-container" >
-            <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
-                <mat-card *ngIf="configuration.file_type === fileTypeDict.configuration">
+        <div class="flexbox-container" >
+            <div class="flexbox-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
+                <mat-card class="mat-card" *ngIf="configuration.file_type === fileTypeDict.configuration">
                     <mat-card-header>
                         <mat-card-title>
                             {{configuration.name}}
@@ -37,7 +37,7 @@
         </div>
     </mat-expansion-panel>
 
-    <mat-expansion-panel class="panel-grid-item">
+    <mat-expansion-panel class="panel-flexbox-item">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Rulesets
@@ -46,9 +46,9 @@
                 Rulesets for signature based IDS
             </mat-panel-description>
         </mat-expansion-panel-header>
-        <div class="grid-container" >
-            <div class="grid-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
-                <mat-card *ngIf="configuration.file_type === fileTypeDict.ruleSet">
+        <div class="flexbox-container" >
+            <div class="flexbox-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
+                <mat-card class="mat-card" *ngIf="configuration.file_type === fileTypeDict.ruleSet">
                     <mat-card-header>
                         <mat-card-title>
                             {{configuration.name}}
@@ -68,7 +68,7 @@
         </div>
     </mat-expansion-panel>
 
-    <mat-expansion-panel class="panel-grid-item">
+    <mat-expansion-panel class="panel-flexbox-item">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Datasets
@@ -77,9 +77,9 @@
                 Datasets for static analysis
             </mat-panel-description>
         </mat-expansion-panel-header>
-        <div class="grid-container" >
-            <div class="grid-item" *ngFor="let dataset of datasetList" class="mat-elevation-z8"> 
-                <mat-card>
+        <div class="flexbox-container" >
+            <div class="flexbox-item" *ngFor="let dataset of datasetList" class="mat-elevation-z8"> 
+                <mat-card class="mat-card">
                     <mat-card-header>
                         <mat-card-title>
                             {{dataset.name}}

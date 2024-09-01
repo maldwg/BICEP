@@ -1,20 +1,20 @@
-<div class="grid-container">
+<div class="flexbox-container">
   <h2 mat-dialog-title>Create new Configuration</h2>
   <mat-dialog-content>
       <form [formGroup]="configForm">
-        <div class="grid-item">
+        <div class="flexbox-item">
           <mat-form-field>
             <mat-label>Name</mat-label>
             <input matInput required [formControl]="configForm.controls.name">
           </mat-form-field>
         </div>
-        <div class="grid-item">
+        <div class="flexbox-item">
           <mat-form-field>
             <mat-label>Description</mat-label>
             <input matInput required [formControl]="configForm.controls.description">
           </mat-form-field>
         </div>
-        <div class="grid-item">
+        <div class="flexbox-item">
           <mat-form-field>
             <mat-label>File type</mat-label>
             <mat-select [formControl]="configForm.controls.fileType" required>
@@ -22,7 +22,7 @@
           </mat-select>
           </mat-form-field>
         </div>
-        <div class="grid-item">
+        <div class="flexbox-item">
           <input type="file" class="file-input" required (change)="onFileSelected($event)" #fileUpload [accept]="getAcceptType()" [multiple]="configForm.controls.fileType.value === 'test-data'">
           <p *ngIf="configForm.controls.fileType.value == 'test-data'">Upload pcap file and csv/pcap_ISX file</p>
           <div class="file-upload">
@@ -39,13 +39,13 @@
                 <mat-icon>attach_file</mat-icon>
             </button>
           </div>
-          <div class="grid-item progress-div" *ngIf="uploadProgress">
+          <div class="flexbox-item progress-div" *ngIf="uploadProgress">
             <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
           </div>
         </div>
       </form>
   </mat-dialog-content>
-  <mat-dialog-actions class="grid-item">
+  <mat-dialog-actions class="flexbox-item">
       <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
       <button class="action-button" mat-flat-button (click)="save()" color="success" cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
     </mat-dialog-actions>

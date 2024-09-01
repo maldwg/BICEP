@@ -1,12 +1,12 @@
-.grid-container{
-    display: grid;
+.flexbox-container{
+    display: flexbox;
     row-gap: 0%;
-    grid-template-columns: auto;
+    flexbox-template-columns: auto;
     justify-content: center;
     margin: auto
 }
 
-.grid-item {
+.flexbox-item {
     justify-content: center;
     padding: 1%;
   }
@@ -17,8 +17,8 @@
   border-radius: 20px;
 }
 
-.grid-item-first-row{
-  grid-column: 1/-1;
+.flexbox-item-first-row{
+  flexbox-column: 1/-1;
   padding-bottom: 5%;
 }
 

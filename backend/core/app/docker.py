@@ -123,7 +123,6 @@ async def start_metric_stream(container, interval=1.0):
             stats = json.loads(stats_decoded)
             try:
                 cpu_usage = await calculate_cpu_usage(stats) 
-                cpu_usage = 99.99 if cpu_usage >= 100.00 else cpu_usage
                 memory_usage = await calculate_memory_usage(stats)
             except KeyError as e:
                 # Keyerrors occur on every 1st iteration as tehre is not pre_cpu statistic yet
@@ -159,9 +158,10 @@ async def calculate_memory_usage(stats) -> float:
     return round(memory_usage_mb, 2)
 
 async def calculate_cpu_usage(stats) -> float:
-    # TODO 0: needs to be divided by the online cpus I guess, to get the total amchine ausalstung
     UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
     SystemDelta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
     len_cpu = len(stats['cpu_stats']['cpu_usage']['percpu_usage'])
-    percentage = (UsageDelta / SystemDelta) * len_cpu * 100
+    percentage_total = (UsageDelta / SystemDelta) * len_cpu * 100
+    available_cpus = stats['precpu_stats']['online_cpus']
+    percentage = percentage_total / available_cpus
     return round(percentage, 2)

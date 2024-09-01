@@ -1,8 +1,8 @@
 export interface Dataset{
     id: number,
     name: string,
-    pcap_file: string,
-    labels_file: string,
+    pcap_file_path: string,
+    labels_file_path: string,
     description: string,
     ammount_benign: number,
     ammount_malicious: number
@@ -17,8 +17,8 @@ export interface DatasetSetupData{
 export interface SerializedDataset {
     id: number,
     name: string,
-    pcap_file: string, // Base64 encoded string
-    labels_file: string, // Base64 encoded string
+    pcap_file_path: string,
+    labels_file_path: string, 
     description: string,
     ammount_benign: number,
     ammount_malicious: number

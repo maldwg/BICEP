@@ -4,18 +4,19 @@
     align-items: flex-start;
   }
 
-.grid-container {
-  display: grid;
-  row-gap: 0px;
-  grid-template-columns: auto;
+.flexbox-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   justify-content: center;
   margin: auto;
   padding: 2%;
 }
 
-.grid-item {
+.flexbox-item {
   justify-content: center;
   padding: 1%;
+  flex: 1 1 0px;
 }
 
 .submit-button-div {
@@ -30,10 +31,20 @@
   border-radius: 20px;
 }
 
-.grid-container-setup-choice{
-  display: grid;
-  column-gap: 5%;
-  grid-template-columns: auto auto;
+.flexbox-container-setup-choice{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  column-gap: 30%;
   justify-content: center;
-  margin: auto
+  margin: auto;
+
+}
+
+.flexbox-setup-choice-div{
+  justify-content: center;
+  text-align: center;
+  padding: 1%;
+  flex: 1 1 0px;
+  margin: auto;
 }

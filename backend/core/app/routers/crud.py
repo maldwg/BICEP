@@ -81,14 +81,7 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
 async def get_all_configs(db=Depends(get_db)):
     datasets = get_all_datasets(db)
     serialized_datasets = get_serialized_datasets(datasets)
-    return JSONResponse(content=serialized_datasets, status_code=200)
-
-@router.get("/dataset/all/without/files")
-async def get_all_configs(db=Depends(get_db)):
-    datasets = get_all_datasets_with_dummy_data(db)
-    serialized_datasets = get_serialized_datasets(datasets)
-    return JSONResponse(content=serialized_datasets, status_code=200)
-
+    return serialized_datasets
 
 @router.delete("/dataset/{id}")
 async def remove_config( id: int, db=Depends(get_db)):

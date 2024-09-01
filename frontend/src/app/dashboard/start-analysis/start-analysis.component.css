@@ -1,13 +1,13 @@
-.grid-container{
-    display: grid;
+.flexbox-container{
+    display: flexbox;
     row-gap: 0%;
     column-gap: 5%;
-    grid-template-columns: auto;
+    flexbox-template-columns: auto;
     justify-content: center;
     margin: auto
 }
 
-.grid-item {
+.flexbox-item {
     justify-content: center;
     margin: auto;
   }

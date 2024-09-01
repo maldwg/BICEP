@@ -16,7 +16,7 @@ from .prometheus import push_evaluation_metrics_to_prometheus
 from .models.dataset import Dataset
 from .bicep_utils.models.ids_base import Alert
 from dateutil import parser
-
+import uuid
 # global tasks dict that stores ids for stream tasks in containers 
 # stream_metric_tasks = {
 
@@ -226,15 +226,34 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
     
     benign, malicious = await calculate_malicious_benign_counts(text_stream)
 
+    uid = str(uuid.uuid4())
+    base_path = "/opt"
+    dataset_storage_location = f"{base_path}/{name}/{uid}"
+    
+    pcap_file_path = f"{dataset_storage_location}/dataset.pcap"
+    labels_file_path = f"{dataset_storage_location}/dataset.csv"
+
+    await create_directory(dataset_storage_location)
+    await save_file_to_disk(pcap_file, pcap_file_path)
+    await save_file_to_disk(labels_file, labels_file_path)
+
     dataset = Dataset(
         name=name,
         description=description,
-        pcap_file=pcap_file,
-        labels_file=labels_file,
+        pcap_file_path=pcap_file_path,
+        labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
     )
     add_dataset(db, dataset)
+
+async def save_file_to_disk(file, path):
+    with open(path, "wb") as f:
+        f.write(file)
+
+async def create_directory(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 # Efficient CSV processing using a genrator
 async def calculate_malicious_benign_counts(input_file):
@@ -256,20 +275,20 @@ async def calculate_malicious_benign_counts(input_file):
     return benign_count, malicious_count
 
 def get_serialized_datasets(datasets):
-    serialized_configs = []
+    serialized_datasets = []
     for dataset in datasets:
         serialized_config = {
             "id": dataset.id,
             "name": dataset.name,
-            "pcap_file": base64.b64encode(dataset.pcap_file).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
-            "labels_file": base64.b64encode(dataset.labels_file).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
+            "pcap_file_path": dataset.pcap_file_path, 
+            "labels_file_path": dataset.labels_file_path,  
             "description": dataset.description,
             "ammount_benign": dataset.ammount_benign,
             "ammount_malicious": dataset.ammount_malicious
 
         }
-        serialized_configs.append(serialized_config)
-    return serialized_configs
+        serialized_datasets.append(serialized_config)
+    return serialized_datasets
 
 async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str):
     from .metrics import calculate_evaluation_metrics
@@ -283,10 +302,11 @@ async def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
     destination_ip = alert.destination_ip.strip()
     destination_port = alert.destination_port.strip()
     timestamp = await normalize_and_parse_alert_timestamp(alert.time)
+    timestamp = timestamp.strip()
     return timestamp, source_ip, source_port, destination_ip, destination_port
 
 
-async def normalize_and_parse_alert_timestamp(timestamp_str):
+async def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     """
     Method to normalize timestamp formats, as these can differ from dataset to dataset
     Returns a normalized timestamp in minutes format

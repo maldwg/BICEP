@@ -72,11 +72,13 @@ class Ensemble(Base):
         containers: list[IdsContainer] = self.get_containers(db)
         responses = []
 
+        pcap_file = await dataset.read_pcap_file()
+
         for container in containers:
             form_data= {
                 "container_id": (None, str(container.id), "application/json"),
                 "ensemble_id": (None, str(self.id), "application/json"),
-                "dataset": (dataset.name, dataset.pcap_file, "application/octet-stream"),
+                "dataset": (dataset.name, pcap_file, "application/octet-stream"),
                 "dataset_id": (None, str(dataset.id), "application/json")
             }    
             response: HTTPResponse = await container.start_static_analysis(form_data)

@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS configuration(
 CREATE TABLE IF NOT EXISTS dataset(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
-    pcap_file LONGBLOB NOT NULL,
-    labels_file LONGBLOB NOT NULL,
+    pcap_file_path VARCHAR(1024) NOT NULL,
+    labels_file_path VARCHAR(1024) NOT NULL,
     description VARCHAR(2048) NOT NULL,
     ammount_benign INT NOT NULL,
     ammount_malicious INT NOT NULL

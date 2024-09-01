@@ -28,10 +28,16 @@ def get_ensemble_technique_by_id(db: Session, id: int):
     return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
 
 async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
+    import json
     # TODO 0: even though only 1 alert is there --> seems like it is getting in the ensemble... why ?
     ids_container_count = len(ensemble.ensemble_ids)
     majority_threshold = ids_container_count / 2
     common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
+    try:
+        print(common_alerts)
+    except Exception as e:
+        print("could not write common alerts to file")
+        print(e)
     majority_voted_alerts = []
     for alert_key, container_dict in common_alerts.items():
         # get ammount of container that have at least 1 alert for the alert key left
@@ -49,4 +55,9 @@ async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
             alert.severity = avg_severity
             majority_voted_alerts.append(alert)
             container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
+    try:
+        print(majority_voted_alerts)
+    except Exception as e:
+        print("could not write majority votes to file")
+        print(e)
     return majority_voted_alerts
