@@ -18,8 +18,8 @@ import { describe } from 'node:test';
 import { runInThisContext } from 'node:vm';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import { HttpResponse } from '@angular/common/http';
-import { HostService } from '../services/host/host.service';
-import { HostSystem } from '../models/host';
+import { DockerHostService } from '../services/host/host.service';
+import { DockerHostSystem } from '../models/host';
 
 @Component({
   selector: 'app-setup',
@@ -48,7 +48,7 @@ export class SetupComponent implements OnInit {
   idsConfigs: Configuration[] = [];
   ruleSets: Configuration[] = [];
   idsTools: IdsTool[] = [];
-  hostSystems: HostSystem[] = [];
+  hostSystems: DockerHostSystem[] = [];
   containers: Container[] = [];
   ensembles: Ensemble[] = [];
   ensembleTechniques: EnsembleTechnique[] = [];
@@ -61,7 +61,7 @@ export class SetupComponent implements OnInit {
     private configService: ConfigService,
     private ensembleService: EnsembleService,
     private router: Router,
-    private hostService: HostService,
+    private hostService: DockerHostService,
   ) {}
 
 

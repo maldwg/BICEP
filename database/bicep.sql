@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS ids_tool(
 );
 
 
-CREATE TABLE IF NOT EXISTS host_system(
+CREATE TABLE IF NOT EXISTS docker_host_system(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name  VARCHAR(128) NOT NULL,
     -- can be dns name or plain IP
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS ids_container (
     stream_metric_task_id VARCHAR(64),
 
 
-    FOREIGN KEY (host_system_id) REFERENCES host_system(id),
+    FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id),
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),
     FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id),
     FOREIGN KEY (ruleset_id) REFERENCES configuration(id)
@@ -98,4 +98,4 @@ INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 
 
-INSERT INTO host_system (name, host, docker_port) VALUES ("Core-server", "localhost", 2375)
+INSERT INTO docker_host_system (name, host, docker_port) VALUES ("Core-server", "localhost", 2375)

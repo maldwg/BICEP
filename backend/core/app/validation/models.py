@@ -88,7 +88,7 @@ class AnalysisFinishedData(BaseModel):
     ensemble_id: Optional[int] = None
 
 
-class HostCreationData(BaseModel):
+class DockerHostCreationData(BaseModel):
     name: str
     host: str
     # Default Port instead of None

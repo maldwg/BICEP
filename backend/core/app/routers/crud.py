@@ -11,8 +11,8 @@ from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
 from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, get_serialized_datasets
-from ..validation.models import EnsembleUpdate, IdsContainerUpdate, HostCreationData
-from ..models.host_system import get_all_hosts, remove_host, add_host_system, HostSystem
+from ..validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
+from ..models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 router = APIRouter(
     prefix="/crud"
 )
@@ -135,8 +135,8 @@ async def return_all_hosts(db=Depends(get_db)):
     return hosts
 
 @router.post("/host/add")
-async def create_host(host_data: HostCreationData,db=Depends(get_db)):
-    host = HostSystem(
+async def create_host(host_data: DockerHostCreationData,db=Depends(get_db)):
+    host = DockerHostSystem(
         name = host_data.name,
         host = host_data.host,
         docker_port = host_data.docker_port

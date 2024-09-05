@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
-import { HostsComponent } from '../hosts.component';
+import { DockerHostsComponent } from '../docker-hosts.component';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {HostSystemCreationData} from "../../models/host"
+import {DockerHostSystemCreationData} from "../../models/host"
 import { MatFormField, MatFormFieldModule, MatLabel } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -42,7 +42,7 @@ export class HostCreationComponent {
 
   save() {
     if(this.hostForm.valid){
-      let hostCreationData: HostSystemCreationData = {
+      let hostCreationData: DockerHostSystemCreationData = {
         name: this.hostForm.value.name!,
         host: this.hostForm.value.host!,
         docker_port: parseInt(this.hostForm.value.dockerPort!)

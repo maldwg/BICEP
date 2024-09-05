@@ -14,7 +14,7 @@ from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
-from ..models.host_system import get_host_by_id
+from ..models.docker_host_system import get_host_by_id
 router = APIRouter(
     prefix="/ids"
 )

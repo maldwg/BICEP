@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { HostsComponent } from './hosts.component';
+import { HostsComponent } from './docker-hosts.component';
 
 describe('HostsComponent', () => {
   let component: HostsComponent;

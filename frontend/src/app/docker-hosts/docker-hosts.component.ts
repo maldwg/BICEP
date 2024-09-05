@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HostService } from '../services/host/host.service';
-import { HostSystem } from '../models/host';
+import { DockerHostService } from '../services/host/host.service';
+import { DockerHostSystem } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
 import { HostCreationComponent } from './host-creation/host-creation.component';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardModule, MatCardTitle } from '@angular/material/card';
@@ -16,18 +16,18 @@ import { HttpResponse } from '@angular/common/http';
     MatButtonModule,
     CommonModule
   ],
-  templateUrl: './hosts.component.html',
-  styleUrl: './hosts.component.css'
+  templateUrl: './docker-hosts.component.html',
+  styleUrl: './docker-hosts.component.css'
 })
-export class HostsComponent implements OnInit{
+export class DockerHostsComponent implements OnInit{
 
   constructor (
-    private hostService: HostService,
+    private hostService: DockerHostService,
     public dialog: MatDialog
   ) {}
 
 
-  hostSystemList: HostSystem[] = []
+  hostSystemList: DockerHostSystem[] = []
 
   ngOnInit(): void {
     this.getAllHostSystems()
@@ -49,7 +49,7 @@ export class HostsComponent implements OnInit{
   }
 
 
-  removeHost(host: HostSystem){
+  removeHost(host: DockerHostSystem){
     this.hostService.removeHost(host.id).subscribe((response: HttpResponse<any>) => {
       if(response.status == 204){
         this.hostSystemList = this.hostSystemList.filter(h => h.id != host.id)

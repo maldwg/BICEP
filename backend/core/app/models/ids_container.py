@@ -27,9 +27,9 @@ class IdsContainer(Base):
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))
-    host_system_id = Column(Integer, ForeignKey("host_system.id"))
+    host_system_id = Column(Integer, ForeignKey("docker_host_system.id"))
 
-    host_system = relationship("HostSystem", back_populates="container")
+    host_system = relationship('DockerHostSystem', back_populates='container')
     configuration = relationship('Configuration', back_populates='container', foreign_keys=[configuration_id])
     ids_tool = relationship('IdsTool', back_populates='container')
     ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
