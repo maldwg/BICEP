@@ -1,0 +1,27 @@
+<div class="component-header-div">
+    <h1> Overview on configured hosts </h1>
+</div>
+<div class="config-button-div">
+    <button class="mat-elevation-z8 flexbox-item-first-row" color="primary" mat-flat-button (click)="newHost()">Add new host</button>
+</div>
+        <div class="flexbox-container" >
+            <div class="flexbox-item" *ngFor="let hostSystem of hostSystemList" class="mat-elevation-z8"> 
+                <mat-card class="mat-card">
+                    <mat-card-header>
+                        <mat-card-title>
+                            {{hostSystem.name}}
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div>ID: {{hostSystem.id}} </div>
+                        <div>Host: {{hostSystem.host}} </div>
+                        <div>Docker Port: {{hostSystem.docker_port}} </div>
+                    </mat-card-content>
+                    <mat-card-actions>
+                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
+                        <button class="action-button" color="warn" (click)="removeHost(hostSystem)"  mat-flat-button>Remove</button>
+                    </mat-card-actions>
+                </mat-card>
+            </div>
+        </div>
+

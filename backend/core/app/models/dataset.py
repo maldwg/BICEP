@@ -28,15 +28,11 @@ def get_dataset_by_id(db: Session, dataset_id: int):
 def get_all_datasets(db: Session):
     return db.query(Dataset).all()
 
-def get_all_datasets_with_dummy_data(db: Session):
-    datasets = db.query(Dataset).options(defer(Dataset.pcap_file_path), defer(Dataset.labels_file_path)).all()
-    for dataset in datasets:
-        dataset.pcap_file_path = ""  # Set to empty byte string as dummy value
-        dataset.labels_file_path = ""  # Set to empty byte string as dummy value
-    return datasets
-
 def remove_dataset_by_id(db: Session, id: int):
-    dataset = get_dataset_by_id(db, id)
+    from ..utils import remove_directory
+    dataset: Dataset = get_dataset_by_id(db, id)
+    directory = "/".join(dataset.labels_file_path.split("/")[:-2])
+    remove_directory(directory)
     db.delete(dataset)
     db.commit()
 

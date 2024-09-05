@@ -48,6 +48,9 @@ services:
       - PROMETHEUS_URL=prometheus-push-gateway:9091
       - LOKI_URL=http://loki:3100
       - TZ=UTC
+      - UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN=600
+      - UVICORN_TIMEOUT_KEEP_ALIVE=600
+
   database:
     build:
       context: ./database

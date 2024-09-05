@@ -4,20 +4,15 @@ from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
 from ..database import get_db
 from ..models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
-from ..models.dataset import Dataset, get_all_datasets, get_dataset_by_id, add_dataset, remove_dataset_by_id, get_all_datasets_with_dummy_data
+from ..models.dataset import Dataset, get_all_datasets, remove_dataset_by_id
 from ..models.ids_tool import get_all_tools
-from ..models.ids_container import get_all_container, remove_container_by_id, get_container_by_id, update_container
-from ..docker import remove_docker_container
+from ..models.ids_container import get_all_container, update_container
 from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import get_stream_metric_tasks,FILE_TYPES, get_serialized_confgigurations, calculate_benign_and_malicious_ammount, dataset_callback, dataset_addition_tasks, calculate_and_add_dataset, get_serialized_datasets
-from ..validation.models import EnsembleUpdate, IdsContainerUpdate
-import asyncio 
-import functools
-import time
-import json
-
+from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, get_serialized_datasets
+from ..validation.models import EnsembleUpdate, IdsContainerUpdate, HostCreationData
+from ..models.host_system import get_all_hosts, remove_host, add_host_system, HostSystem
 router = APIRouter(
     prefix="/crud"
 )
@@ -132,3 +127,24 @@ async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
             return JSONResponse(content={"messages": "Failed to change ensemble attributes"}, status_code=500)
         else:
             return JSONResponse(content={"messages": "successfully changed ensemble attributes"}, status_code=200)
+        
+
+@router.get("/host/all")
+async def return_all_hosts(db=Depends(get_db)):
+    hosts = get_all_hosts(db)
+    return hosts
+
+@router.post("/host/add")
+async def create_host(host_data: HostCreationData,db=Depends(get_db)):
+    host = HostSystem(
+        name = host_data.name,
+        host = host_data.host,
+        docker_port = host_data.docker_port
+    )
+    add_host_system(host, db)
+    return JSONResponse(content={"message": "Successfully created host"}, status_code=200)
+
+@router.delete("/host/delete/{id}")
+async def delete_host(id: int,db=Depends(get_db)):
+    remove_host(id, db)
+    return Response(status_code=204)

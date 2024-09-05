@@ -20,7 +20,6 @@ class IdsContainer(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False) 
-    host = Column(String(255), nullable=False)
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
@@ -28,6 +27,9 @@ class IdsContainer(Base):
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))
+    host_system_id = Column(Integer, ForeignKey("host_system.id"))
+
+    host_system = relationship("HostSystem", back_populates="container")
     configuration = relationship('Configuration', back_populates='container', foreign_keys=[configuration_id])
     ids_tool = relationship('IdsTool', back_populates='container')
     ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete")
@@ -61,7 +63,10 @@ class IdsContainer(Base):
         db.refresh(self)
 
     async def teardown(self, db):
-        await remove_docker_container(self)
+        try:
+            await remove_docker_container(self)
+        except Exception as e:
+            print(e)
         db.delete(self)
         db.commit()
 
@@ -75,8 +80,8 @@ class IdsContainer(Base):
         ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
         await inject_ruleset(self, ruleset_file)
 
-    async def start_static_analysis(self, form_data):
-        response: HTTPResponse = await start_static_analysis(self, form_data)
+    async def start_static_analysis(self, form_data, dataset):
+        response: HTTPResponse = await start_static_analysis(self, form_data, dataset)
         return response
     
     async def start_network_analysis(self, data):
@@ -120,6 +125,14 @@ class IdsContainer(Base):
             return True
         else:
             return False
+        
+    def get_container_http_url(self):
+        if "Core" in self.host_system.name or self.host_system.host == "localhost":
+            core_host = get_core_host()
+            container_host_url = f"http://{core_host}:{self.port}"
+        else:
+            container_host_url = f"http://{self.host_system.host}:{self.port}"
+        return container_host_url
     
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()

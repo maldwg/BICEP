@@ -1,0 +1,31 @@
+<div class="flexbox-container">
+    <h2 mat-dialog-title>Add new Host</h2>
+    <mat-dialog-content>
+        <form [formGroup]="hostForm">
+          <div class="flexbox-item">
+            <mat-form-field>
+              <mat-label>Name</mat-label>
+              <input matInput required [formControl]="hostForm.controls.name">
+            </mat-form-field>
+          </div>
+          <div class="flexbox-item">
+            <mat-form-field>
+              <mat-label>Host</mat-label>
+              <input matInput required [formControl]="hostForm.controls.host">
+            </mat-form-field>
+          </div>
+          <div class="flexbox-item">
+            <mat-form-field>
+              <mat-label>Docker Port</mat-label>
+              <input matInput required [formControl]="hostForm.controls.dockerPort">
+            </mat-form-field>
+          </div>
+        </form>
+    </mat-dialog-content>
+    <mat-dialog-actions class="flexbox-item">
+        <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
+        <button class="action-button" mat-flat-button (click)="save()" color="success">Save</button>
+      </mat-dialog-actions>
+  </div>
+  
+  

@@ -6,7 +6,7 @@ from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, N
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
-from ..utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, get_container_host, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from ..utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -14,6 +14,7 @@ from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
+from ..models.host_system import get_host_by_id
 router = APIRouter(
     prefix="/ids"
 )
@@ -21,14 +22,14 @@ router = APIRouter(
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
-    
+    host = get_host_by_id(data.host_system_id, db=db)
     free_port=find_free_port()
     if data.ruleset_id:
         ruleset_id = data.ruleset_id
     else:
         ruleset_id = None
     ids_container = IdsContainer(
-        host=data.host,
+        host_system_id=host.id,
         port=free_port,
         description=data.description,
         configuration_id=data.configuration_id,
@@ -43,10 +44,13 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
-    container: IdsContainer = get_container_by_id(db, container_id)
-    await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
-    # stop analysis to also remove interfaces created if run in networking mode
-    await container.stop_analysis()
+    try:
+        container: IdsContainer = get_container_by_id(db, container_id)
+        await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
+        # stop analysis to also remove interfaces created if run in networking mode
+        await container.stop_analysis()
+    except Exception as e:
+        print(e)
     await container.teardown(db)
     return {"message": "teardown done"}
 
@@ -58,17 +62,21 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
-    pcap_file = await dataset.read_pcap_file()
+    print("is this the bottleneck")
+    await update_container_status(STATUS.ACTIVE.value, container, db)
+    # pcap_file = await dataset.read_pcap_file()
     form_data= {
             "container_id": (None, str(container.id), "application/json"),
-            "dataset": (dataset.name, pcap_file, "application/octet-stream"),
+            # "dataset": (dataset.name, pcap_file, "application/octet-stream"),
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
-    response: HTTPResponse = await container.start_static_analysis(form_data)
+    print("is this the bottleneck 2")
+    # TODO 0: try with asyncio in background 
+    response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
     response = await parse_response_for_triggered_analysis(response, container, db, "static")
-
-    if response.status_code == 200: 
-        await update_container_status(STATUS.ACTIVE.value, container, db)
+    # set container status to IDLE if request failed
+    if response.status_code != 200: 
+        await update_container_status(STATUS.IDLE.value, container, db)
 
     return response
 
@@ -80,11 +88,12 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500) 
     
     data = json.dumps(network_analysis_data.__dict__)
+    await update_container_status(STATUS.ACTIVE.value, container, db)
     response: HTTPResponse = await container.start_network_analysis(data)
     response = await parse_response_for_triggered_analysis(response, container, db, "network")
-    # set container status to active/idle afterwards before
-    if response.status_code == 200:
-        await update_container_status(STATUS.ACTIVE.value, container, db)
+    # set container status to IDLE if request failed
+    if response.status_code != 200:
+        await update_container_status(STATUS.IDLE.value, container, db)
     
     return response
 
@@ -136,6 +145,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
             ) 
         for alert in alert_data.alerts
     ]
+    print(f"recievd {len(alerts)} alerts")
     if alert_data.analysis_type == "static":
         background_tasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=alerts, container_name=container.name)
     background_tasks.add_task(push_alerts_to_loki, alerts=alerts, labels=labels)

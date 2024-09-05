@@ -1,34 +1,38 @@
 import asyncio
 import json
 import docker
-from .utils import Suricata, Slips, get_container_host, get_core_host
+from .utils import Suricata, Slips, get_core_host
 import time
 import httpx
-
-
-# TODO 5: container that are down cannot be removed right now
 
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
 
-def get_docker_client(host: str, port: int = 2375):
-    if host == "localhost":
-        host_ip = get_core_host()
-        host_url = f"tcp://{host_ip}:2375"
+def get_docker_client(host_system):
+    if "Core" in host_system.name or host_system.host == "localhost":
+         core_host = get_core_host()
+         host_url = f"tcp://{core_host}:{host_system.docker_port}"
+    else: 
+        host_url = f"tcp://{host_system.host}:{host_system.docker_port}"
+    try:
         client = docker.DockerClient(base_url=host_url)
-    else:
-        host_url = f"tcp://{host}:{str(port)}"
-        client = docker.DockerClient(base_url=host_url)
+    except Exception as e:
+        print(e)
+        raise(Exception(f"Could not create a docker client for url {host_url} \n Try to use an IP instead of hostname"))
     return client
 
 async def start_docker_container(ids_container, ids_tool, config, ruleset):
     core_ip = get_core_host()
     core_url = f"http://{core_ip}:8000" 
-    client = get_docker_client(ids_container.host)
+    client = get_docker_client(ids_container.host_system)
+
     if ids_tool.name == Slips.name:
         ids_properties = Slips()
     elif ids_tool.name == Suricata.name:
         ids_properties = Suricata()
+    else:
+        print("IDS Tool not unknown")
+        return False
 
     # ensure image is present 
     # TODO 0: docker needs longer or cant take it at all when image needs to be pulled. solution ?
@@ -62,8 +66,7 @@ async def run_container_async(client, properties, container, url):
     
 
 async def inject_config(ids_container, config):
-    host = get_container_host(ids_container)
-    container_url = f"http://{host}:{ids_container.port}"
+    container_url = ids_container.get_container_http_url()
     endpoint = "/configuration"
     print(f"debug: {container_url}{endpoint}")
     async with httpx.AsyncClient() as client:
@@ -76,8 +79,7 @@ async def inject_config(ids_container, config):
         
     return response
 async def inject_ruleset(ids_container, config):
-    host = get_container_host(ids_container)
-    container_url = f"http://{host}:{ids_container.port}"
+    container_url = ids_container.get_container_http_url()
     endpoint = "/ruleset"
     print(f"debug: {container_url}{endpoint}")
     async with httpx.AsyncClient() as client:
@@ -86,7 +88,7 @@ async def inject_ruleset(ids_container, config):
     return response
 
 async def remove_docker_container(ids_container):
-    client = get_docker_client(ids_container.host)
+    client = get_docker_client(ids_container.host_system)
     container = client.containers.get(container_id=ids_container.name)
     container.stop()
     container.remove()
@@ -95,8 +97,10 @@ async def remove_docker_container(ids_container):
 
 async def check_container_health(ids_container, timeout=60):
     start_time = time.time()
-    host = get_container_host(ids_container)
-    url = f"http://{host}:{ids_container.port}/healthcheck"
+    container_url = ids_container.get_container_http_url()
+    print(container_url)
+    url = f"{container_url}/healthcheck"
+    print(url)
     response = Response()
     response.status_code = 500
     while True:

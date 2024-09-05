@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS ids_tool(
     requires_ruleset BOOLEAN NOT NULL
 );
 
+
+CREATE TABLE IF NOT EXISTS host_system(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name  VARCHAR(128) NOT NULL,
+    -- can be dns name or plain IP
+    host VARCHAR(1024) NOT NULL,
+    docker_port INT NOT NULL
+);
+
+
 CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
@@ -39,16 +49,17 @@ CREATE TABLE IF NOT EXISTS ensemble_technique(
 CREATE TABLE IF NOT EXISTS ids_container (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name varchar(64) NOT NULL,
-    host VARCHAR(255) NOT NULL,
     port INT NOT NULL,
     status VARCHAR(32) NOT NULL,
     description VARCHAR(2048),
+    host_system_id INT NOT NULL,
     configuration_id INT NOT NULL,
     ids_tool_id INT NOT NULL,
     ruleset_id INT,
     stream_metric_task_id VARCHAR(64),
 
 
+    FOREIGN KEY (host_system_id) REFERENCES host_system(id),
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),
     FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id),
     FOREIGN KEY (ruleset_id) REFERENCES configuration(id)
@@ -79,7 +90,12 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 );
 
 
+
+
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Suricata', 'NIDS', 'Signature-based', true);
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Slips', 'NIDS', 'Anomaly-based', false);
 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
+
+
+INSERT INTO host_system (name, host, docker_port) VALUES ("Core-server", "localhost", 2375)

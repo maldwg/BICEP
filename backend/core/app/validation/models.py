@@ -7,7 +7,7 @@ class IdsContainerCreate(BaseModel):
     """
         Class to validate input from the frontend
     """
-    host: str
+    host_system_id: int
     description: str
     configuration_id: int
     ids_tool_id: int
@@ -86,3 +86,10 @@ class AlertData(BaseModel):
 class AnalysisFinishedData(BaseModel):
     container_id: int
     ensemble_id: Optional[int] = None
+
+
+class HostCreationData(BaseModel):
+    name: str
+    host: str
+    # Default Port instead of None
+    docker_port: Optional[int] = 2375

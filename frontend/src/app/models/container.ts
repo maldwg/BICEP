@@ -13,7 +13,7 @@ export interface Container{
 }
 
 export interface ContainerSetupData{
-    host: string,
+    host_system_id: number,
     ids_tool_id: number,
     configuration_id: number,
     description: string,

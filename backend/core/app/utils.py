@@ -7,16 +7,16 @@ from contextlib import closing
 from enum import Enum
 import os
 import httpx
-from fastapi import Response, Request, Depends
+from fastapi import Response, Request
 import pandas as pd
-import multiprocessing
 import csv 
-import time 
 from .prometheus import push_evaluation_metrics_to_prometheus
 from .models.dataset import Dataset
 from .bicep_utils.models.ids_base import Alert
 from dateutil import parser
 import uuid
+import shutil
+from fastapi.responses import JSONResponse
 # global tasks dict that stores ids for stream tasks in containers 
 # stream_metric_tasks = {
 
@@ -95,6 +95,7 @@ class IdsContainerBase(object):
 
 
 def find_free_port():
+    # TODO 10: Adapt this to also find free ports on other systems
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -103,13 +104,7 @@ def find_free_port():
 
 def get_core_host():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
-
-def get_container_host(ids_container):
-    if ids_container.host != "localhost":
-        return ids_container.host
-    else:
-        return get_core_host()
-    
+   
 
 def get_serialized_confgigurations(configurations):
     serialized_configs = []
@@ -125,8 +120,7 @@ def get_serialized_confgigurations(configurations):
     return serialized_configs
 
 async def deregister_container_from_ensemble(container):
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
+    container_url = container.get_container_http_url()
     endpoint = f"/configure/ensemble/remove"
     async with httpx.AsyncClient() as client:
             response: HTTPResponse = await client.post(container_url+endpoint)
@@ -142,27 +136,32 @@ def create_response_error(message: str, status_code: int):
 def create_generic_response_message_for_ensemble(message: str, status_code: int):
     return {"content": message, "status_code": status_code}
 
-
-async def start_static_analysis(container, form_data):
+async def start_static_analysis(container, form_data, dataset):
     endpoint = "/analysis/static"
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
-    async with httpx.AsyncClient() as client:  
-        # set timeout to 90 seconds, as uploads can take a while
-        response: HTTPResponse = await client.post(container_url+endpoint,files=form_data, timeout=90)    
-    return response
+    container_url = container.get_container_http_url()
+    async def send_request_in_background(): 
+        try:
+            async with httpx.AsyncClient() as client:  
+                with open(dataset.pcap_file_path, "rb") as f:
+                    form_data["dataset"] = (dataset.name, f, "application/octet-stream")
+                    # set timeout to 600 seconds, as uploads can take a while
+                    response = await client.post(container_url+endpoint,files=form_data, timeout=180)    
+                    response.raise_for_status()
+        except Exception as e:
+            print(e)
+    task = asyncio.create_task(send_request_in_background())
+    print(task)
+    return JSONResponse(content={"message": "Successfully sending data in the background"}, status_code=200)
 
 async def start_network_analysis(container, data):
     endpoint = "/analysis/network"
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
+    container_url = container.get_container_http_url()
     async with httpx.AsyncClient() as client:
         response = await client.post(container_url+endpoint, data=data)
     return response
 
 async def stop_analysis(container):
-    host = get_container_host(container)
-    container_url = f"http://{host}:{container.port}"
+    container_url = container.get_container_http_url()
     endpoint = "/analysis/stop"
     async with httpx.AsyncClient() as client:
         response: HTTPResponse = await client.post(container_url+endpoint)
@@ -250,7 +249,14 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
 async def save_file_to_disk(file, path):
     with open(path, "wb") as f:
         f.write(file)
-
+    
+def remove_directory(path):
+    print(path)
+    try:
+        shutil.rmtree(path)
+    except Exception as e:
+        print(e)
+        
 async def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -260,6 +266,7 @@ async def calculate_malicious_benign_counts(input_file):
     benign_count = 0
     malicious_count = 0
     header = True
+    # TODO 0: also possible with async with aiofiles by reading from file directly instead of the stream ?
     with input_file as input_csv:
         reader = csv.reader(input_csv)
         for row in reader:
@@ -312,7 +319,7 @@ async def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     Returns a normalized timestamp in minutes format
     """
     timestamp_format = "%d/%m/%Y %H:%M"
-    parsed_timestamp = parser.parse(timestamp_str).strftime(timestamp_format)
+    parsed_timestamp = parser.parse(timestamp_str, dayfirst=True).strftime(timestamp_format)
     return parsed_timestamp
 
 async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:

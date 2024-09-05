@@ -37,7 +37,10 @@ async def calculate_evaluation_metrics(dataset, alerts):
         return 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     def calculate_unassigned_requests_ration():
-        return UNASSIGNED_REQUESTS / TOTAL_REQUESTS
+        if TOTAL_REQUESTS != 0:
+            return UNASSIGNED_REQUESTS / TOTAL_REQUESTS
+        else:
+            return 0
 
     metrics = {
         "FPR": calculate_fpr(),
@@ -122,6 +125,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                 else:
                     TP += 1
             else:
+
                 if await is_request_benign(row[label_col_id]):
                     TN += 1
                 else:

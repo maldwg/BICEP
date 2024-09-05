@@ -2,7 +2,7 @@ import asyncio
 from http.client import HTTPResponse
 import json
 import uuid
-from ..utils import ANALYSIS_STATUS,STATUS, create_response_error ,create_response_message, deregister_container_from_ensemble, get_container_host, parse_response_for_triggered_analysis
+from ..utils import ANALYSIS_STATUS,STATUS, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
@@ -33,8 +33,7 @@ class Ensemble(Base):
             status=ANALYSIS_STATUS.IDLE.value
         )
         container: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container_id).first() 
-        host = get_container_host(container)
-        container_url = f"http://{host}:{container.port}"
+        container_url = container.get_container_http_url()
         endpoint = f"/configure/ensemble/add/{self.id}"
         async with httpx.AsyncClient() as client:
                 response: HTTPResponse = await client.post(container_url+endpoint)
@@ -71,7 +70,7 @@ class Ensemble(Base):
         from .ids_container import IdsContainer
         containers: list[IdsContainer] = self.get_containers(db)
         responses = []
-
+        await update_container_status(STATUS.ACTIVE.value, container, db)
         pcap_file = await dataset.read_pcap_file()
 
         for container in containers:
@@ -81,11 +80,13 @@ class Ensemble(Base):
                 "dataset": (dataset.name, pcap_file, "application/octet-stream"),
                 "dataset_id": (None, str(dataset.id), "application/json")
             }    
+            
+            # TODO 0: try with asyncio in background 
             response: HTTPResponse = await container.start_static_analysis(form_data)
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
             
-            if response.status_code == 200:
-                await update_container_status(STATUS.ACTIVE.value, container, db)
+            if response.status_code != 200:
+                await update_container_status(STATUS.IDLE.value, container, db)
             
             responses.append(response)
         return responses

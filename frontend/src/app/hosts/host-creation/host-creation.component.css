@@ -1,0 +1,44 @@
+.flexbox-container{
+    display: flexbox;
+    row-gap: 0%;
+    flexbox-template-columns: auto;
+    justify-content: center;
+    margin: auto
+}
+
+.flexbox-item {
+    justify-content: center;
+    padding: 1%;
+  }
+
+
+.action-button{
+  margin: 1%;
+  border-radius: 20px;
+}
+
+.flexbox-item-first-row{
+  flexbox-column: 1/-1;
+  padding-bottom: 5%;
+}
+
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+
+.mat-success {
+  background-color: green;
+  color: #fff;
+}
+
+
+.file-input {
+  display: none;
+}
+
+.progress-div{
+  padding-top: 10%;
+}

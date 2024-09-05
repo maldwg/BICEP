@@ -17,7 +17,7 @@ from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ens
 from ..models.ids_container import IdsContainer
 from ..models.dataset import Dataset, get_dataset_by_id
 import httpx 
-from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, ANALYSIS_STATUS ,get_container_host, create_response_error, create_response_message, create_generic_response_message_for_ensemble
+from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, ANALYSIS_STATUS ,create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
 from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..loki import push_alerts_to_loki, get_alerts_from_analysis_id, clean_up_alerts_in_loki, containers_already_pushed_to_loki
