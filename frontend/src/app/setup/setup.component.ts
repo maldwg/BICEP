@@ -147,7 +147,13 @@ export class SetupComponent implements OnInit {
     this.idsService.getAllIdsTools()
       .subscribe(data => {
         this.idsTools = data.map( tool => ({
-          id: tool.id, name: tool.name, idsType: tool.idsType, analysis_method: tool.analysis_method, requires_ruleset: tool.requires_ruleset
+          id: tool.id,
+          name: tool.name, 
+          idsType: tool.idsType, 
+          analysis_method: tool.analysis_method, 
+          requires_ruleset: tool.requires_ruleset,
+          image_name: tool.image_name,
+          image_tag: tool.image_tag
         }));
       });
   }
@@ -158,7 +164,7 @@ export class SetupComponent implements OnInit {
         this.containers = data.map(container => ({
           id: container.id,
           name: container.name,
-          host: container.host,
+          host_system_id: container.host_system_id,
           port: container.port,
           status: container.status,
           configuration_id: container.configuration_id,

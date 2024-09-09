@@ -1,7 +1,7 @@
 import asyncio
 import json
 import docker
-from .utils import Suricata, Slips, get_core_host
+from .utils import get_core_host
 import time
 import httpx
 
@@ -26,20 +26,12 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
     core_url = f"http://{core_ip}:8000" 
     client = get_docker_client(ids_container.host_system)
 
-    if ids_tool.name == Slips.name:
-        ids_properties = Slips()
-    elif ids_tool.name == Suricata.name:
-        ids_properties = Suricata()
-    else:
-        print("IDS Tool not unknown")
-        return False
-
     # ensure image is present 
     # TODO 0: docker needs longer or cant take it at all when image needs to be pulled. solution ?
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
     # TODO 0: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
     # await pull_image_async(client, ids_properties.image)
-    await run_container_async(client=client, container=ids_container, properties=ids_properties, url=core_url)
+    await run_container_async(client=client, container=ids_container, ids_tool=ids_tool, url=core_url)
     await check_container_health(ids_container)
     await inject_config(ids_container, config)
     if ruleset != None:
@@ -49,10 +41,11 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
 async def pull_image_async(client, image):
     await asyncio.to_thread(client.images.pull, image)
 
-async def run_container_async(client, properties, container, url):
+async def run_container_async(client, ids_tool, container, url):
+    image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
     await asyncio.to_thread(
         client.containers.run, 
-        image=properties.image,
+        image=image_name_and_version,
         name=container.name,
         network_mode="host",
         environment={
@@ -120,7 +113,7 @@ async def check_container_health(ids_container, timeout=60):
 
 async def start_metric_stream(container, interval=1.0):
     try:
-        client = get_docker_client(container.host)
+        client = get_docker_client(container.host_system)
         container = client.containers.get(container_id=container.name)
         for stats_bytes in container.stats(stream=True):
             stats_decoded = stats_bytes.decode("utf-8")

@@ -19,7 +19,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
   "links": [],
   "panels": [
     {
@@ -77,6 +76,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -163,6 +163,7 @@
     },
     {
       "datasource": {
+        "default": true,
         "type": "prometheus",
         "uid": "cduw0oiwj7vuof"
       },
@@ -328,6 +329,20 @@
           "legendFormat": "__auto",
           "range": false,
           "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(DR{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "G"
         }
       ],
       "title": "Evaluation metrics",
@@ -364,6 +379,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -461,6 +477,6 @@
   "timezone": "browser",
   "title": "BICEP",
   "uid": "edv2tl6dk6gaod",
-  "version": 20,
+  "version": 1,
   "weekStart": ""
 }

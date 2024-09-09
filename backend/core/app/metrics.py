@@ -10,35 +10,45 @@ async def calculate_evaluation_metrics(dataset, alerts):
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious
     TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
+
     # FPR: False Positive Rate
     def calculate_fpr():
-        return FP / (FP + TN) if (FP + TN) > 0 else 0
+        fpr = FP / (FP + TN) if (FP + TN) > 0 else 0
+        return round(fpr, 2)
 
     # FNR: False Negative Rate
     def calculate_fnr():
-        return FN / (FN + TP) if (FN + TP) > 0 else 0
-
+        fnr = FN / (FN + TP) if (FN + TP) > 0 else 0
+        return round(fnr, 2)
     # DR: Detection Rate (Sensitivity/Recall)
     def calculate_dr():
-        return TP / (TP + FN) if (TP + FN) > 0 else 0
+        dr = TP / (TP + FN) if (TP + FN) > 0 else 0
+        # if there is no malicious return DR of 100 %
+        if true_malicious == 0 and dr == 0:
+            return 1
+        else:
+            return round(dr,2)
 
     # Accuracy
     def calculate_accuracy():
-        return (TP + TN) / total if total > 0 else 0
+        acc = (TP + TN) / total if total > 0 else 0
+        return round(acc, 2)
 
     # Precision
     def calculate_precision():
-        return TP / (TP + FP) if (TP + FP) > 0 else 0
+        prec = TP / (TP + FP) if (TP + FP) > 0 else 0
+        return round(prec, 2)
 
     # F-Score (F1-Score)
     def calculate_f_score():
         precision = calculate_precision()
         recall = calculate_dr()
-        return 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        return round(score,2)
 
     def calculate_unassigned_requests_ration():
         if TOTAL_REQUESTS != 0:
-            return UNASSIGNED_REQUESTS / TOTAL_REQUESTS
+            return round(UNASSIGNED_REQUESTS / TOTAL_REQUESTS, 2)
         else:
             return 0
 
@@ -49,7 +59,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
         "ACCURACY": calculate_accuracy(),
         "PRECISION": calculate_precision(),
         "F_SCORE": calculate_f_score(),
-        "UNASSIGNED_REQUEST_RATIO": calculate_unassigned_requests_ration()
+        "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ration()
     }
     print(metrics)
 
@@ -83,11 +93,6 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
         # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
         alerts_dict[key] = alerts_dict.get(key, []) + [alert]
 
-    # print(50*"###")
-    # try:
-    #     print(alerts_dict)
-    # except Exception as e:
-    #     print(e)
     original_alert_size = 0
     for _,v in alerts_dict.items():
         original_alert_size += len(v)
@@ -101,7 +106,6 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
         src_port_col_id = await get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port"])
         dst_ip_col_id = await get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP"])
         dst_port_col_id = await get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port"])
-        # print(50*"+++")
 
         for row in reader:
             row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
@@ -125,7 +129,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                 else:
                     TP += 1
             else:
-
+                
                 if await is_request_benign(row[label_col_id]):
                     TN += 1
                 else:
@@ -134,20 +138,19 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     remaining_unassigned_alerts = 0
     for _,v in alerts_dict.items():
         remaining_unassigned_alerts += len(v)
-
-    # try:        
-    #     print(50*"---")
-    #     print(alerts_dict)
-    # except Exception as e:
-    #     print(e)
+    test = []
+    for k,v in alerts_dict.items():
+        test.append(k)
+    # print(test)
     print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {remaining_unassigned_alerts} of {original_alert_size}")
+
     UNASSIGNED_REQUESTS = remaining_unassigned_alerts
     TOTAL_REQUESTS = original_alert_size
 
     return TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS
 
 async def is_request_benign(cell):
-    if "benign" == str(cell).lower():
+    if "benign" == str(cell).lower().strip():
         return True
     return False
 

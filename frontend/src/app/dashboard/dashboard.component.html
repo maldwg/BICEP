@@ -67,7 +67,7 @@
                             </mat-card-header>
                             <mat-card-content >
                                     <div>ID: {{container.id}}</div>
-                                    <div>Host: {{container.host}}</div>
+                                    <div>Host: {{getHostName(container.host_system_id)}}</div>
                                     <div>Port: {{container.port}}</div>
                                     <div>IDS Tool: {{getIdsToolName(container.ids_tool_id)}}</div>
                                     <div>Configuration: {{getConfigName(container.configuration_id)}}</div>

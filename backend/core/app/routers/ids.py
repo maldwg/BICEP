@@ -20,6 +20,8 @@ router = APIRouter(
 )
 
 
+background_tasks = set()
+
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     host = get_host_by_id(data.host_system_id, db=db)
@@ -119,7 +121,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
 
 
 @router.post("/publish/alerts")
-async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     container = get_container_by_id(db, alert_data.container_id)
     labels = {
         "container_name": container.name,
@@ -147,6 +149,10 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
     ]
     print(f"recievd {len(alerts)} alerts")
     if alert_data.analysis_type == "static":
-        background_tasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=alerts, container_name=container.name)
-    background_tasks.add_task(push_alerts_to_loki, alerts=alerts, labels=labels)
+        calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
+        print(task)
+        background_tasks.add(task)
+    send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
+    print(task)
+    background_tasks.add(send_task)
     return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)

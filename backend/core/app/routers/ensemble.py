@@ -187,10 +187,10 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
-            await clean_up_alerts_in_loki(ensemble.current_analysis_id)
-            await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)
+            asyncio.create_task(clean_up_alerts_in_loki(ensemble.current_analysis_id))
+            asyncio.create_task(push_alerts_to_loki(alerts=ensembled_alerts, labels=labels))
             metrics = await calculate_evaluation_metrics(dataset=dataset, alerts=ensembled_alerts)
-            await push_evaluation_metrics_to_prometheus(metrics, ensemble_name=ensemble.name, dataset_name=dataset.name)
+            asyncio.create_task(push_evaluation_metrics_to_prometheus(metrics, ensemble_name=ensemble.name, dataset_name=dataset.name))
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
     else:
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.LOGS_SENT.value)

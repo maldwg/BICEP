@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS ids_tool(
     name VARCHAR(64) NOT NULL,
     ids_type VARCHAR(64) NOT NULL,
     analysis_method VARCHAR(64) NOT NULL,
-    requires_ruleset BOOLEAN NOT NULL
+    requires_ruleset BOOLEAN NOT NULL,
+    image_name VARCHAR(128) NOT NULL,
+    image_tag VARCHAR(64) NOT NULL
 );
 
 
@@ -92,8 +94,8 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 
 
 
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Suricata', 'NIDS', 'Signature-based', true);
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset) VALUES ('Slips', 'NIDS', 'Anomaly-based', false);
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest');
 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 

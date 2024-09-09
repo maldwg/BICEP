@@ -43,7 +43,7 @@ async def get_all_configs(file_type: str, db=Depends(get_db)):
 @router.delete("/configuration/{id}")
 async def remove_config( id: int, db=Depends(get_db)):
     remove_configuration_by_id(db, id)
-    return Response(content=f"Successfully removed config {id}", status_code=204)
+    return Response(status_code=204)
 
 # TODO 10: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
 @router.post("/configuration/add")

@@ -42,23 +42,6 @@ class FILE_TYPES(Enum):
     CONFIG = "configuration"
     TEST_DATA = "test-data"
     RULE_SET = "rule-set"
-class Ids(object):
-    name = ""
-    image = ""
-    config_path=""
-
-# TODO 0: refactor so that image is in the table not here
-# TODO 0: config path is in ids logic not here
-class Suricata(Ids):
-    name = "Suricata"
-    image = "maxldwg/bicep-suricata"
-    config_path = "/opt/suricata.yaml"
-
-class Slips(Ids):
-    name = "Slips"
-    image = "maxldwg/bicep-slips"
-    config_path = "/opt/slips.yaml"
-
 
 
 class IdsContainerBase(object):
@@ -316,10 +299,12 @@ async def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
 async def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     """
     Method to normalize timestamp formats, as these can differ from dataset to dataset
-    Returns a normalized timestamp in minutes format
+    Returns a normalized timestamp in minutes format (isoformat)
+
+    IMPORTANT: The csv file and pcap file/alerts from the IDSs are expected to have timestamp in isoformat format
+                Otherwise the processsing here won't work correctly
     """
-    timestamp_format = "%d/%m/%Y %H:%M"
-    parsed_timestamp = parser.parse(timestamp_str, dayfirst=True).strftime(timestamp_format)
+    parsed_timestamp = parser.parse(timestamp_str).replace(tzinfo=None).isoformat().rsplit(":",maxsplit=1)[0]
     return parsed_timestamp
 
 async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:

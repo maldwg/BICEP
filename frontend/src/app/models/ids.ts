@@ -3,6 +3,8 @@ export interface IdsTool{
     name: string,
     idsType: string,
     analysis_method: string,
-    requires_ruleset: boolean
+    requires_ruleset: boolean,
+    image_name: string,
+    image_tag: string
 } 
 

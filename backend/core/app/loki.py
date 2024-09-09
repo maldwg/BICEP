@@ -28,7 +28,7 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
 
     async with httpx.AsyncClient() as client:
         data= json.dumps(log_entry)
-        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=90)
+        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=180)
     return response
 
 

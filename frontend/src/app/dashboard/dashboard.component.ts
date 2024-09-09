@@ -30,6 +30,8 @@ import { STATUS_CODES } from 'node:http';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
+import { DockerHostService } from '../services/host/host.service';
+import { DockerHostSystem } from '../models/host';
 
 @Component({
   selector: 'app-dashboard',
@@ -47,6 +49,7 @@ export class DashboardComponent implements OnInit {
   datasetList: Dataset[] = [];
   ensembleTechniqueList: EnsembleTechnique[] = [];
   ensembleContainerList: EnsembleContainer[] = [];
+  dockerHostList: DockerHostSystem[] = [];
 
   constructor (
     private idsService: IdsService,
@@ -56,6 +59,7 @@ export class DashboardComponent implements OnInit {
     private ensembleService: EnsembleService,
     private configService: ConfigService,
     private datasetService: DatasetService,
+    private hostService: DockerHostService
     
   ) {}
 
@@ -69,6 +73,7 @@ export class DashboardComponent implements OnInit {
     this.getAllIdsTools();
     this.getAllTechnqiues();
     this.getAllEnsembleContainer();
+    this.getAllHosts();
   }
 
   getAllContainer(): void{
@@ -77,7 +82,7 @@ export class DashboardComponent implements OnInit {
         this.containerList = data.map(container => ({
           id: container.id,
           name: container.name,
-          host: container.host,
+          host_system_id: container.host_system_id,
           port: container.port,
           status: container.status,
           description: container.description,
@@ -136,7 +141,9 @@ export class DashboardComponent implements OnInit {
           name: tool.name,
           analysis_method: tool.analysis_method,
           idsType: tool.idsType,
-          requires_ruleset: tool.requires_ruleset
+          requires_ruleset: tool.requires_ruleset,
+          image_name: tool.image_name,
+          image_tag: tool.image_tag
         }));
       });
   }
@@ -215,6 +222,19 @@ export class DashboardComponent implements OnInit {
       }
     })
   }
+
+  getAllHosts(){
+    this.hostService.getAllHosts()
+      .subscribe(hosts => {
+      this.dockerHostList = hosts.map(host => ({
+        id: host.id,
+        name: host.name,
+        host: host.host,
+        docker_port: host.docker_port
+      }));
+    });
+  }
+  
 
   stopAnalysis(container: Container){
     let stopData: StopAnalysisData = {
@@ -430,6 +450,10 @@ export class DashboardComponent implements OnInit {
       }
     });
     return flag;
+  }
+
+  getHostName(id: number){
+    return this.dockerHostList.find(host => host.id == id)?.name;
   }
 
 }

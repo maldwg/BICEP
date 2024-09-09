@@ -24,7 +24,9 @@ export class IdsEditComponent implements OnInit{
     name: "",
     analysis_method: "",
     idsType: "",
-    requires_ruleset: false
+    requires_ruleset: false,
+    image_name: "",
+    image_tag: ""
   }
 
   
