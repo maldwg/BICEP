@@ -53,12 +53,11 @@ export class EnsembleEditComponent {
     }
   ) {}
 
-// TODO 0: When exiting, but earlier modifying something, than the function is called anyway... change that 
   exit(): void{
-    this.dialogRef.close();
+    this.dialogRef.close(null);
   }
 
-  saveChanges(): void{
+  save(): void{
     if(this.ensembleEdit.valid){
       this.dialogRef.close(this.ensembleEdit.value);
     }

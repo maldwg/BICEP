@@ -1,8 +1,8 @@
 
 <div class="flexbox-container">
     <h2 mat-dialog-title>Update Ensemble</h2>
-        <form [formGroup]="ensembleEdit" (ngSubmit)="saveChanges()">
             <mat-dialog-content>
+                <form [formGroup]="ensembleEdit">
                     <div class="flexbox-item">
                         <mat-form-field>
                             <mat-label>Name</mat-label>
@@ -31,15 +31,15 @@
                             <textarea matInput [formControl]="ensembleEdit.controls.description" required></textarea>
                         </mat-form-field>
                     </div>
+                </form>
             </mat-dialog-content>
             <mat-dialog-actions>
                 <div class="flexbox-item action-button-div">
-                    <button type="submit" class="custom-button mat-elevation-z8" mat-flat-button
+                    <button (click)="save()" class="custom-button mat-elevation-z8" mat-flat-button
                         color="success">Save</button>
                     <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
                         color="warn">Exit</button>
                 </div>
 
             </mat-dialog-actions>
-        </form>
 </div>

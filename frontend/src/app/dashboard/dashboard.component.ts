@@ -63,7 +63,7 @@ export class DashboardComponent implements OnInit {
     
   ) {}
 
-  // TODO 0: do not allow analyssis if other is running!
+  // TODO 5: do not allow analyssis if other container of ensemble is running, so if ensemble is not idle do not allow for executions!
 
   ngOnInit(): void {
     this.getAllContainer();
@@ -282,7 +282,7 @@ export class DashboardComponent implements OnInit {
               console.log(backendRes)
               if(backendRes.status === 200){
                 ensemble.status = statusTypes.active
-                // TODO 0: reload location as updating each container not so easy 
+                // TODO 5: update status of each container
               }
             })
         }
@@ -302,13 +302,10 @@ export class DashboardComponent implements OnInit {
         console.log(res)
         if(res.status === 200){
           ensemble.status = statusTypes.idle
-          // TODO 0: Reload window to update dile again otherwise too complex presumably --> not impossible but complex
+          // TODO 5: update containers to dile again 
         }
       })
   }
-// TODO 0: Polish the cards 
-// TODO 0: polish the summaries?
-
   editEnsemble(ensemble: Ensemble){
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
       height: "50%",
@@ -322,8 +319,8 @@ export class DashboardComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(res => {
       // Ensure there is a reason to update
-      if(res !== null){
-        console.log(res);
+      let previousContainerOfEnsemble = this.ensembleContainerList.filter(e_ids => e_ids.ensemble_id == ensemble.id).map(e_ids => e_ids.ids_container_id.toString())
+      if(res != null){
         let ensembleUpdate: EnsembleUpdateData = {
           id: ensemble.id,
           name: res.name,
@@ -355,14 +352,10 @@ export class DashboardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(res => {
-      let configId = parseInt(res.config);
-      let rulesetId = parseInt(res.ruleset);
       // Ensure there is at least one field that needs an update
-      if(
-        res.description !== container.description ||
-        configId !== container.configuration_id ||
-        rulesetId !== container.ruleset_id
-      ){
+      if(res != null){
+        let configId = parseInt(res.config);
+        let rulesetId = parseInt(res.ruleset);
         let data: ContainerUpdateData = {
           id: container.id,
           description: res.description,
@@ -454,6 +447,13 @@ export class DashboardComponent implements OnInit {
 
   getHostName(id: number){
     return this.dockerHostList.find(host => host.id == id)?.name;
+  }
+
+  arrayEquals(a: Array<any>, b: Array<any>){
+    return Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((val, index) => val === b[index]);
   }
 
 }

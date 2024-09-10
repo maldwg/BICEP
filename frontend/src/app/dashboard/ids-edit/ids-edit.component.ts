@@ -70,12 +70,13 @@ export class IdsEditComponent implements OnInit{
 
 
   exit(): void{
-    this.dialogRef.close();
+    this.dialogRef.close(null);
   }
 
-  saveChanges(): void{
+  save(): void{
     if(this.idsEdit.valid){
       this.dialogRef.close(this.idsEdit.value);
+      
     }
   }
 
