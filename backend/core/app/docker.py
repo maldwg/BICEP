@@ -88,12 +88,10 @@ async def remove_docker_container(ids_container):
     client.close()
     
 
-async def check_container_health(ids_container, timeout=60):
+async def check_container_health(ids_container, timeout=30):
     start_time = time.time()
     container_url = ids_container.get_container_http_url()
-    print(container_url)
     url = f"{container_url}/healthcheck"
-    print(url)
     response = Response()
     response.status_code = 500
     while True:
@@ -101,7 +99,7 @@ async def check_container_health(ids_container, timeout=60):
             async with httpx.AsyncClient() as client:
                 response = await client.get(url)
         except:
-            print("Container not ready")
+            pass
         if response.status_code == 200:
             print(f"Healthcheck for container {url} was sucessful")
             return True
@@ -109,7 +107,7 @@ async def check_container_health(ids_container, timeout=60):
             print("Container did not become healthy in time.")
             await remove_docker_container(ids_container)
             return False
-        time.sleep(1)
+        await asyncio.sleep(2)
 
 async def start_metric_stream(container, interval=1.0):
     try:

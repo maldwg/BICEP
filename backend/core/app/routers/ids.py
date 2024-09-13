@@ -19,7 +19,7 @@ router = APIRouter(
     prefix="/ids"
 )
 
-
+# set to prevent asynch tasks from being garbage collected
 background_tasks = set()
 
 @router.post("/setup")
@@ -62,9 +62,12 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
 
     if container.status != STATUS.IDLE.value:
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+    
+    if not await container.is_available():
+         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
-    print("is this the bottleneck")
     await update_container_status(STATUS.ACTIVE.value, container, db)
     # pcap_file = await dataset.read_pcap_file()
     form_data= {
@@ -72,8 +75,6 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             # "dataset": (dataset.name, pcap_file, "application/octet-stream"),
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
-    print("is this the bottleneck 2")
-    # TODO 0: try with asyncio in background 
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
     response = await parse_response_for_triggered_analysis(response, container, db, "static")
     # set container status to IDLE if request failed
@@ -89,6 +90,11 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     if container.status != STATUS.IDLE.value:
         return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500) 
     
+
+    if not await container.is_available():
+         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+
+
     data = json.dumps(network_analysis_data.__dict__)
     await update_container_status(STATUS.ACTIVE.value, container, db)
     response: HTTPResponse = await container.start_network_analysis(data)
@@ -148,11 +154,9 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         for alert in alert_data.alerts
     ]
     print(f"recievd {len(alerts)} alerts")
+    send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
+    background_tasks.add(send_task)
     if alert_data.analysis_type == "static":
         calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
-        print(task)
-        background_tasks.add(task)
-    send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
-    print(task)
-    background_tasks.add(send_task)
+        background_tasks.add(calc_task)
     return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)

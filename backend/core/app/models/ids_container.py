@@ -134,6 +134,9 @@ class IdsContainer(Base):
             container_host_url = f"http://{self.host_system.host}:{self.port}"
         return container_host_url
     
+    async def is_available(self):
+        return await check_container_health(self)
+    
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()
     

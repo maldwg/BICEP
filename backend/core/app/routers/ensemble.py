@@ -77,6 +77,10 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
         if container.status != STATUS.IDLE.value:
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
+        
+        if not await container.is_available():
+            return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value )
 
     # set new uuid to identify the new run
@@ -99,6 +103,10 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     for container in containers:
         if container.status != STATUS.IDLE.value:
             return create_response_error(f"container with id {container.id} is not Idle!, aborting", status_code=500)
+        
+        if not await container.is_available():
+         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value)
 
     ensemble.current_analysis_id = str(uuid.uuid4())
