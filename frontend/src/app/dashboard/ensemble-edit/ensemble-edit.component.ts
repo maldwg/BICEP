@@ -40,6 +40,8 @@ export class EnsembleEditComponent {
   })
 
 
+  // TODO 0: Add emblem and background picture with logo to alkl sites
+  // TODO 0: Add indication in navbar on which page you are
 
 
 

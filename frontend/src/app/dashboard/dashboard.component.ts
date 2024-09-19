@@ -24,7 +24,7 @@ import { ConfigService } from '../services/config/config.service';
 import { IdsTool } from '../models/ids';
 import { Configuration, fileTypes } from '../models/configuration';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
-import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, analysisTypes } from '../models/analysis';
+import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
 import { STATUS_CODES } from 'node:http';
 import { DatasetService } from '../services/dataset/dataset.service';
@@ -190,7 +190,7 @@ export class DashboardComponent implements OnInit {
             container_id: container.id,
             dataset_id: res.dataset
           }
-          this.idsService.startStaticAnalysis(staticAnalysisData)
+          this.idsService.start_static_analysis(staticAnalysisData)
             .subscribe((backendRes: HttpResponse<any>) => {
               console.log(backendRes)
               if(backendRes.status === 200){
@@ -208,7 +208,7 @@ export class DashboardComponent implements OnInit {
           }
   
           // TODO 10: Refactor all endpoints like this to propagate backend errors/m,essages
-          this.idsService.startNetworkAnalysis(networkAnalysisData)
+          this.idsService.start_network_analysis(networkAnalysisData)
             .subscribe((backendRes: HttpResponse<any>) => {
               console.log(backendRes)
               if(backendRes.status === 200){
@@ -236,11 +236,11 @@ export class DashboardComponent implements OnInit {
   }
   
 
-  stopAnalysis(container: Container){
-    let stopData: StopAnalysisData = {
+  stop_analysis(container: Container){
+    let stopData: stop_analysisData = {
       container_id: container.id
     }
-    this.idsService.stopAnalysis(stopData)
+    this.idsService.stop_analysis(stopData)
       .subscribe((res: HttpResponse<any>) => {
         console.log(res)
         if(res.status == 200){
@@ -265,7 +265,7 @@ export class DashboardComponent implements OnInit {
             ensemble_id: ensemble.id,
             dataset_id: res.dataset
           }
-          this.ensembleService.startStaticAnalysis(staticAnalysisData)
+          this.ensembleService.start_static_analysis(staticAnalysisData)
             .subscribe((backendRes: HttpResponse<any>) => {
               console.log(backendRes)
               if(backendRes.status === 200){
@@ -277,7 +277,7 @@ export class DashboardComponent implements OnInit {
           let networkAnalysisData: NetworkAnalysisData = {
             ensemble_id: ensemble.id
           }
-          this.ensembleService.startNetworkAnalysis(networkAnalysisData)
+          this.ensembleService.start_network_analysis(networkAnalysisData)
             .subscribe((backendRes: HttpResponse<any>) => {
               console.log(backendRes)
               if(backendRes.status === 200){
@@ -294,10 +294,10 @@ export class DashboardComponent implements OnInit {
   }
 
   stopEnsembleAnalysis(ensemble: Ensemble){
-    let stopData: StopAnalysisData = {
+    let stopData: stop_analysisData = {
       ensemble_id: ensemble.id
     }
-    this.ensembleService.stopAnalysis(stopData)
+    this.ensembleService.stop_analysis(stopData)
       .subscribe((res: HttpResponse<any>) => {
         console.log(res)
         if(res.status === 200){

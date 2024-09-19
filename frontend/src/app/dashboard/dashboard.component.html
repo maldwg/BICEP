@@ -80,7 +80,7 @@
                                 <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>	
                                 <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>	
                                 <button *ngIf="containerIsIdle(container)" (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>	
-                                <button *ngIf="!containerIsIdle(container)" (click)="stopAnalysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
+                                <button *ngIf="!containerIsIdle(container)" (click)="stop_analysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>	
                             </mat-card-actions>
                     </mat-card>
                 </div>      

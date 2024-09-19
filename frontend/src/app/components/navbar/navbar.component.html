@@ -1,7 +1,7 @@
 <mat-toolbar color="primary"  class="mat-elevation-z8">
-        <a class="anchor" routerLink="/">Dashboard</a>
-        <a class="anchor" routerLink="/metrics">Metrics</a>
-        <a class="anchor" routerLink="/setup">Setup</a>
-        <a class="anchor" routerLink="/upload">Uploads</a>
-        <a class="anchor" routerLink="/hosts">Docker Hosts</a>
+        <a class="anchor" routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+        <a class="anchor" routerLink="/metrics" routerLinkActive="active-link">Metrics</a>
+        <a class="anchor" routerLink="/setup" routerLinkActive="active-link">Setup</a>
+        <a class="anchor" routerLink="/upload" routerLinkActive="active-link">Uploads</a>
+        <a class="anchor" routerLink="/hosts" routerLinkActive="active-link">Docker Hosts</a>
 </mat-toolbar>

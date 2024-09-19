@@ -14,7 +14,7 @@ export interface NetworkAnalysisData {
     ensemble_id?: number
 
 }
-export interface StopAnalysisData{
+export interface stop_analysisData{
     container_id?: number,
     ensemble_id?: number
 }

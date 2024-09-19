@@ -1,18 +1,20 @@
-.example-icon {
-    padding: 0 14px;
-  }
-  
-  .example-spacer {
-    flex: 1 1 auto;
-  }
-  
 .anchor {
-    text-align: center;
-    text-decoration: none;
-    color: #FFBF00;
-    margin-right: 2%;
-    padding: 0.75%;
+  text-align: center;
+  text-decoration: none;
+  color: #FFBF00;
+  margin-right: 2%;
+  padding: 0.75%;
 }
+
+.anchor:hover {
+  color: #FFC300;
+}
+
+/* Style for the active link */
+.active-link {
+  color: whitesmoke;
+}
+
 .mat-toolbar {
   position: relative;
 }

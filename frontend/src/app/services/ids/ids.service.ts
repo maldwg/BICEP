@@ -5,7 +5,7 @@ import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angula
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { __param } from 'tslib';
-import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData } from '../../models/analysis';
+import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData } from '../../models/analysis';
 
 @Injectable({
   providedIn: 'root'
@@ -52,17 +52,17 @@ export class IdsService {
     return this.http.delete(environment.backendUrl+path+id);
   }
 
-  startStaticAnalysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
+  start_static_analysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
     let path = "/ids/analysis/static";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, staticAnalysisData, { observe: 'response' });
   }
 
-  startNetworkAnalysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
+  start_network_analysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
     let path = "/ids/analysis/network";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, networkAnalysisData, { observe: 'response' });
   }
 
-  stopAnalysis(stopData: StopAnalysisData): Observable<HttpResponse<any>>{
+  stop_analysis(stopData: stop_analysisData): Observable<HttpResponse<any>>{
     let path = "/ids/analysis/stop";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, stopData, { observe: 'response' });
   }

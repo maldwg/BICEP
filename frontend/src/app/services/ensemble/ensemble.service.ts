@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnique, EnsembleUpdateData } from '../../models/ensemble';
-import { NetworkAnalysisData, StaticAnalysisData, StopAnalysisData } from '../../models/analysis';
+import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData } from '../../models/analysis';
 
 @Injectable({
   providedIn: 'root'
@@ -47,17 +47,17 @@ export class EnsembleService {
     return this.http.get<EnsembleContainer[]>(environment.backendUrl+path);
   }
 
-  startStaticAnalysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
+  start_static_analysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
     let path = "/ensemble/analysis/static";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, staticAnalysisData, { observe: 'response' });
   }
 
-  startNetworkAnalysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
+  start_network_analysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
     let path = "/ensemble/analysis/network";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, networkAnalysisData, { observe: 'response' });
   }
 
-  stopAnalysis(stopData: StopAnalysisData): Observable<HttpResponse<any>>{
+  stop_analysis(stopData: stop_analysisData): Observable<HttpResponse<any>>{
     let path = "/ensemble/analysis/stop";
     return this.http.post<any>(environment.backendUrl+path, stopData, { observe: 'response' });
   }
