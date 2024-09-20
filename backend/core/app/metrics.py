@@ -2,6 +2,7 @@
 import csv
 import io
 import aiofiles
+import json
 from .bicep_utils.models.ids_base import Alert
 from datetime import datetime, timezone
 from .utils import extract_ts_srcip_srcport_dstip_dstport_from_alert, normalize_and_parse_alert_timestamp
@@ -9,7 +10,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious
-    TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
+    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
 
     # FPR: False Positive Rate
     def calculate_fpr():
@@ -24,10 +25,8 @@ async def calculate_evaluation_metrics(dataset, alerts):
     def calculate_dr():
         dr = TP / (TP + FN) if (TP + FN) > 0 else 0
         # if there is no malicious return DR of 100 %
-        if true_malicious == 0 and dr == 0:
-            return 1
-        else:
-            return round(dr,2)
+        dr = 1 if true_malicious == 0 and dr == 0 else dr
+        return round(dr,2)
 
     # Accuracy
     def calculate_accuracy():
@@ -47,8 +46,8 @@ async def calculate_evaluation_metrics(dataset, alerts):
         return round(score,2)
 
     def calculate_unassigned_requests_ration():
-        if TOTAL_REQUESTS != 0:
-            return round(UNASSIGNED_REQUESTS / TOTAL_REQUESTS, 2)
+        if TOTAL_ALERTS != 0:
+            return round(UNASSIGNED_ALERTS / TOTAL_ALERTS, 2)
         else:
             return 0
 
@@ -69,43 +68,23 @@ async def calculate_evaluation_metrics_for_ensemble():
     pass
 
 async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
-    TP = 0
-    FP = 0
-    TN = 0
-    FN = 0
-
-    async def get_index(lst: list, search_list: list[str]):
-        for index, element in enumerate(lst):
-                # Compare the lowercase versions of the strings
-                element = str(element).strip().casefold()
-                for search in search_list:
-                    if str(element).casefold() == search.casefold():
-                        return index
-        return None
-
+    TP = TN = FN = FP = 0
 
     # save in a dict for performance reasons 
     alerts_dict = {}
     for alert in alerts:
         timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
-
         key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
         # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
         alerts_dict[key] = alerts_dict.get(key, []) + [alert]
 
-    original_alert_size = 0
-    for _,v in alerts_dict.items():
-        original_alert_size += len(v)
+    TOTAL_ALERTS = await get_item_counts_of_dict(alerts_dict)
+    # iterate over ground truth csv and compare each entry to the alerts
     with open(dataset.labels_file_path, 'r') as csv_file:
         reader = csv.reader(csv_file)
         header = next(reader)
         # Get column dynamically from header
-        label_col_id = await get_index(header, ["Label", "Class"])
-        timestamp_col_id = await get_index(header, ["Time", "Timestamp"])
-        src_ip_col_id = await get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP"])
-        src_port_col_id = await get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port"])
-        dst_ip_col_id = await get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP"])
-        dst_port_col_id = await get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port"])
+        label_col_id, timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id = await get_column_ids(header)
 
         for row in reader:
             row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
@@ -115,10 +94,6 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
             row_destination_port = row[dst_port_col_id].strip()
 
             key = f"{row_timestamp}-{row_source_ip}-{row_source_port}-{row_destination_ip}-{row_destination_port}"
-            # try:
-            #     print(key)
-            # except Exception as e:
-            #     print(e)
             if key in alerts_dict:
                 alert = alerts_dict[key].pop(0)
                 # if the list is emptied, remove the key from the dict
@@ -129,25 +104,15 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                 else:
                     TP += 1
             else:
-                
                 if await is_request_benign(row[label_col_id]):
                     TN += 1
                 else:
                     FN += 1
     # ammount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
-    remaining_unassigned_alerts = 0
-    for _,v in alerts_dict.items():
-        remaining_unassigned_alerts += len(v)
-    test = []
-    for k,v in alerts_dict.items():
-        test.append(k)
-    # print(test)
-    print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {remaining_unassigned_alerts} of {original_alert_size}")
+    UNASSIGNED_ALERTS = await get_item_counts_of_dict(alerts_dict)
+    print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
 
-    UNASSIGNED_REQUESTS = remaining_unassigned_alerts
-    TOTAL_REQUESTS = original_alert_size
-
-    return TP, FP, TN, FN, UNASSIGNED_REQUESTS, TOTAL_REQUESTS
+    return TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS
 
 async def is_request_benign(cell):
     if "benign" == str(cell).lower().strip():
@@ -155,3 +120,26 @@ async def is_request_benign(cell):
     return False
 
 
+async def get_index(lst: list, search_list: list[str]):
+    for index, element in enumerate(lst):
+            # Compare the lowercase versions of the strings
+            element = str(element).strip().casefold()
+            for search in search_list:
+                if str(element).casefold() == search.casefold():
+                    return index
+    return None
+
+async def get_column_ids(header: list):
+    label_col_id = await get_index(header, ["Label", "Class"])
+    timestamp_col_id = await get_index(header, ["Time", "Timestamp"])
+    src_ip_col_id = await get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP"])
+    src_port_col_id = await get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port"])
+    dst_ip_col_id = await get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP"])
+    dst_port_col_id = await get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port"])
+    return label_col_id,timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id
+
+async def get_item_counts_of_dict(d: dict):
+    items = 0
+    for _,v in d.items():
+        items += len(v)
+    return items

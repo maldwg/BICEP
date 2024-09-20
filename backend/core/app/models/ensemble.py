@@ -70,7 +70,6 @@ class Ensemble(Base):
         from .ids_container import IdsContainer
         containers: list[IdsContainer] = self.get_containers(db)
         responses = []
-        await update_container_status(STATUS.ACTIVE.value, container, db)
         pcap_file = await dataset.read_pcap_file()
 
         for container in containers:
@@ -82,12 +81,13 @@ class Ensemble(Base):
             }    
             
             # TODO 0: try with asyncio in background 
-            response: HTTPResponse = await container.start_static_analysis(form_data)
+            response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
             
             if response.status_code != 200:
                 await update_container_status(STATUS.IDLE.value, container, db)
-            
+            else:
+                await update_container_status(STATUS.ACTIVE.value, container, db)
             responses.append(response)
         return responses
     
@@ -110,9 +110,10 @@ class Ensemble(Base):
             data = json.dumps(network_analysis_data.__dict__)
             response: HTTPResponse = await container.start_network_analysis(data)
             response = await parse_response_for_triggered_analysis(response, container, db, "network", self.id)
-            if response.status_code == 200:
-                await update_container_status(STATUS.ACTIVE.value, container, db)
-                
+            if response.status_code != 200:
+                await update_container_status(STATUS.IDLE.value, container, db)
+            else:
+                await update_container_status(STATUS.ACTIVE.value, container, db)                
             responses.append(response)  
         return responses
 

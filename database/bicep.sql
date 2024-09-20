@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS ids_container (
     name varchar(64) NOT NULL,
     port INT NOT NULL,
     status VARCHAR(32) NOT NULL,
-    description VARCHAR(2048),
+    description VARCHAR(2048) NOT NULL,
     host_system_id INT NOT NULL,
     configuration_id INT NOT NULL,
     ids_tool_id INT NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS ensemble(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     status VARCHAR(32) NOT NULL,
-    description VARCHAR(2048),
+    description VARCHAR(2048) NOT NULL,
     technique_id INT NOT NULL,
     current_analysis_id VARCHAR(64),
 

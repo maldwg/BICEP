@@ -17,6 +17,7 @@ from dateutil import parser
 import uuid
 import shutil
 from fastapi.responses import JSONResponse
+
 # global tasks dict that stores ids for stream tasks in containers 
 # stream_metric_tasks = {
 
@@ -249,7 +250,6 @@ async def calculate_malicious_benign_counts(input_file):
     benign_count = 0
     malicious_count = 0
     header = True
-    # TODO 0: also possible with async with aiofiles by reading from file directly instead of the stream ?
     with input_file as input_csv:
         reader = csv.reader(input_csv)
         for row in reader:

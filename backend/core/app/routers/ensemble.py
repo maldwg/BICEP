@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Response
 from fastapi.encoders import jsonable_encoder
 import uuid
 from ..database import get_db
-from ..validation.models import AlertData, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
+from ..validation.models import AlertData, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, stop_analysisData, AnalysisFinishedData
 from ..models.ensemble import get_all_ensembles, Ensemble, add_ensemble, get_ensemble_by_id, remove_ensemble, update_ensemble_status
 from ..models.ids_container import IdsContainer
 from ..models.dataset import Dataset, get_dataset_by_id
@@ -120,7 +120,7 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
 
 
 @router.post("/analysis/stop")
-async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
+async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(stop_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
 
@@ -201,21 +201,19 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             asyncio.create_task(push_evaluation_metrics_to_prometheus(metrics, ensemble_name=ensemble.name, dataset_name=dataset.name))
             return Response(content=f"Successfully pushed alerts for ensemble {ensemble.name}", status_code=200)    
     else:
+        print(f"{container.name} got {len(alerts)}")
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.LOGS_SENT.value)
         if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
             print(f"I am not the last one {container.name}")
-            print(alerts)
-            print(20*"##")
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200)       
         else:
             print(f"I am the last running container: {container.name}")
-            print(alerts)
-            print(20*"##")
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
             print(50* "---")
+            print(f"length: {len(ensembled_alerts)}")
             print(ensembled_alerts)
             print(50* "---")
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble

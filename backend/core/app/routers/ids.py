@@ -2,7 +2,7 @@ import asyncio
 from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
 from ..database import get_db
-from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, StopAnalysisData, AnalysisFinishedData
+from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, stop_analysisData, AnalysisFinishedData
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
@@ -106,7 +106,7 @@ async def start_static_container_analysis(network_analysis_data: NetworkAnalysis
     return response
 
 @router.post("/analysis/stop")
-async def stop_analysis(stop_data: StopAnalysisData, db=Depends(get_db)):
+async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
     response: HTTPResponse = await container.stop_analysis()
     # set container status to active/idle afterwards before

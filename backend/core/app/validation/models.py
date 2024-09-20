@@ -58,7 +58,7 @@ class NetworkAnalysisData(BaseModel):
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
 
-class StopAnalysisData(BaseModel):
+class stop_analysisData(BaseModel):
     """
     
     """
