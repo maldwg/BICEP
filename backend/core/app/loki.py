@@ -64,7 +64,13 @@ async def get_alerts_from_analysis_id(analysis_id: str):
             # Do something with the logs
             alerts = {}
             for stream in logs["data"]["result"]:
-                alerts_of_container=([Alert.from_json(log) for _, log in stream["values"]])
+                alerts_of_container = []
+                for _, log in stream["values"]:
+                    try:
+                        alerts_of_container.append(Alert.from_json(log))
+                    except:
+                        print(f"could not parse alert from json {log}")
+                        print(20*"-----")
                 label = stream["stream"]["container_name"]
                 alerts[label] = alerts_of_container
             return alerts

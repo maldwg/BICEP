@@ -191,7 +191,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200) 
         else:
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
-            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
+            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
@@ -209,13 +209,9 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
         else:
             print(f"I am the last running container: {container.name}")
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
-            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts=all_alerts, ensemble=ensemble)
+            ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
-            print(50* "---")
-            print(f"length: {len(ensembled_alerts)}")
-            print(ensembled_alerts)
-            print(50* "---")
             # cleanup and reupload alerts so that only the weighted and ensembled ones are now available for the ensemble
             # await clean_up_alerts_in_loki(ensemble.current_analysis_id)
             await push_alerts_to_loki(alerts=ensembled_alerts, labels=labels)

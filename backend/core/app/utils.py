@@ -326,3 +326,11 @@ async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
             # else:
             #     common_alerts[key][container_name] = common_alerts.get(key, {}).get(container_name, []) + [alert]
     return common_alerts
+
+
+def get_length_of_nested_dict(d: dict):
+    counter = 0
+    for k,v in d.items():
+        for container, alerts in v.items():
+            counter += len(alerts)
+    return counter
