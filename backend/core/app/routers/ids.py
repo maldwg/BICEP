@@ -129,6 +129,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     container = get_container_by_id(db, alert_data.container_id)
+    print(f"Received Logs for container {container.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
