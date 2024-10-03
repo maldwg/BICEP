@@ -26,6 +26,10 @@ from fastapi.responses import JSONResponse
 def get_stream_metric_tasks(request: Request):
     return request.app.state.stream_metric_tasks
 
+
+def get_background_tasks(request: Request):
+    return request.app.state.background_tasks
+
 dataset_addition_tasks = set()
 
 # asnycion craete task

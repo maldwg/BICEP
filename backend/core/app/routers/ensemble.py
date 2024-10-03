@@ -20,7 +20,7 @@ import httpx
 from ..utils import deregister_container_from_ensemble, find_free_port, STATUS, ANALYSIS_STATUS ,create_response_error, create_response_message, create_generic_response_message_for_ensemble
 from fastapi.responses import JSONResponse
 from ..prometheus import push_evaluation_metrics_to_prometheus
-from ..loki import push_alerts_to_loki, get_alerts_from_analysis_id, clean_up_alerts_in_loki, containers_already_pushed_to_loki
+from ..loki import push_alerts_to_loki, get_alerts_from_analysis_id, clean_up_alerts_in_loki
 router = APIRouter(
     prefix="/ensemble"
 )
@@ -147,9 +147,11 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     container: IdsContainer = get_container_by_id(db, analysisFinishedData.container_id)
     ensemble: Ensemble = get_ensemble_by_id(analysisFinishedData.ensemble_id, db)
     await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
+    print(f"Updated status of {container.name} to IDLE")
     await update_container_status(STATUS.IDLE.value, container, db)
     if await ensemble.container_is_last_one_running(container=container, db=db):
         await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
+        print(f"Updated status of ensemble {ensemble.name} to IDLE")
         ensemble.current_analysis_id = None
     return Response(content=f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}", status_code=200)
 
@@ -188,9 +190,12 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
     if alert_data.analysis_type == "static":
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
         if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
+            print(f"Successfully pushed alerts for container {container.name}")
             return Response(content=f"Successfully pushed alerts for container {container.name}", status_code=200) 
         else:
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
+            for container_name, alerts in all_alerts.items():
+                print(f"From {container_name}, received {len(alerts)} alerts")
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"

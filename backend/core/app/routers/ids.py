@@ -6,7 +6,7 @@ from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, N
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
-from ..utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from ..utils import get_background_tasks,get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -18,9 +18,6 @@ from ..models.docker_host_system import get_host_by_id
 router = APIRouter(
     prefix="/ids"
 )
-
-# set to prevent asynch tasks from being garbage collected
-background_tasks = set()
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
@@ -123,11 +120,12 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container = get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(STATUS.IDLE.value, container, db)
-    return Response(content=f"Successfully stopped analysis for fontainer {analysisFinishedData.container_id}", status_code=200)
+    print(f"Updated status of {container.name} to IDLE")
+    return Response(content=f"Successfully stopped analysis for container {container.name}", status_code=200)
 
 
 @router.post("/publish/alerts")
-async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):
+async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks=Depends(get_background_tasks)):
     container = get_container_by_id(db, alert_data.container_id)
     print(f"Received Logs for container {container.name}")
     labels = {
