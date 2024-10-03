@@ -23,17 +23,14 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
         'Content-Type': 'application/json'
     }
 
-
-    # set timeout to 90 seconds to be able to send all logs
-
     async with httpx.AsyncClient() as client:
         data= json.dumps(log_entry)
-        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=180)
+        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=300)
     return response
 
 
 async def get_timestamp_in_nanoseconds():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(tz=None)
     seconds_since_epoch = now.timestamp()
     nanoseconds_since_epoch = int(seconds_since_epoch * 1_000_000_000)
     nanoseconds_since_epoch += now.microsecond * 1000  
@@ -45,18 +42,23 @@ async def get_alerts_from_analysis_id(analysis_id: str):
     path = "/loki/api/v1/query_range"
 
     query = f'{{ensemble_analysis_id="{analysis_id}"}}'
-    today = datetime.today().date()
-    beginngin_of_day = datetime.combine(today, time(0, 0)).isoformat()+ 'Z'
-    end_of_day = datetime.combine(today, time(23, 59)).isoformat()+ 'Z'
+    # Get the current time
+    now = datetime.now()
+
+    # Define the 24-hour window (12 hours before and 12 hours after now)
+    start_time = (now - timedelta(hours=12)).isoformat() + 'Z'
+    end_time = (now + timedelta(hours=12)).isoformat() + 'Z'
+    print(start_time)
+    print(end_time)
     params = {
         'query': query,
-        'start': beginngin_of_day,  
+        'start': start_time,  
         # reasonable ammount of time delta to have all ids been executed
-        'end': end_of_day,
-        'limit': 100000
+        'end': end_time,
+        'limit': 999999999
     }
     async with httpx.AsyncClient() as client:
-        response = await client.get(LOKI_URL+path,params=params, timeout=90)
+        response = await client.get(LOKI_URL+path,params=params, timeout=300)
 
     if response.status_code == 200:
         try:
@@ -72,7 +74,14 @@ async def get_alerts_from_analysis_id(analysis_id: str):
                         print(f"could not parse alert from json {log}")
                         print(20*"-----")
                 label = stream["stream"]["container_name"]
-                alerts[label] = alerts_of_container
+                # This check is necessary as the logs are potentially chunked, so the same container can have 2 streams of logs
+                # Thus check if there are already logs gathered for a container and then append it or create the key
+                if label in alerts:
+                    alerts[label].extend(alerts_of_container)
+                else:
+                    alerts[label] = alerts_of_container
+            for container, logs in alerts.items():
+                print(f"Found {len(logs)} alerts for {container}")
             return alerts
         except Exception as e:
             raise(e)
@@ -99,49 +108,49 @@ async def clean_up_alerts_in_loki(analysis_id: str):
         response = await client.post(LOKI_URL+path,params=params, timeout=90)
     return response
 
-async def containers_already_pushed_to_loki(containers: list, analysis_id: str) -> bool:
-    container_names = [c.name for c in containers]
-    containers_with_logs = []
-    path = "/loki/api/v1/query_range"
+# async def containers_already_pushed_to_loki(containers: list, analysis_id: str) -> bool:
+#     container_names = [c.name for c in containers]
+#     containers_with_logs = []
+#     path = "/loki/api/v1/query_range"
 
-    query = f'{{ensemble_analysis_id="{analysis_id}"}}'
-    now = datetime.now()
-    t_minus_30_minutes = now - timedelta(minutes=30)
-    timestamp_now = now.isoformat().rsplit(".")[0]+ 'Z'
-    timestamp_t_minus_30_minutes = t_minus_30_minutes.isoformat().rsplit(".")[0]+ 'Z'
+#     query = f'{{ensemble_analysis_id="{analysis_id}"}}'
+#     now = datetime.now()
+#     t_minus_30_minutes = now - timedelta(minutes=30)
+#     timestamp_now = now.isoformat().rsplit(".")[0]+ 'Z'
+#     timestamp_t_minus_30_minutes = t_minus_30_minutes.isoformat().rsplit(".")[0]+ 'Z'
 
-    params = {
-        'query': query,
-        'start': timestamp_t_minus_30_minutes,  
-        # 30 minutes should be enough since old logs are delted 
-        'end': timestamp_now,
-        'limit': 100000
-    }
-    print(params)
-    async with httpx.AsyncClient() as client:
-        response = await client.get(LOKI_URL+path,params=params, timeout=90)
-    print(response)
-    print(response.content)
-    if response.status_code == 200:
-        try:
-            logs = response.json()
-            for stream in logs["data"]["result"]:
-                labels = stream["stream"]
-                print(labels)
-                container_name = labels["container_name"]
-                containers_with_logs.append(container_name) 
-            containers_without_logs = list(set(container_names) - set(containers_with_logs))
-            print(container_names)
-            print(containers_with_logs)
-            print(containers_without_logs)
-            if containers_without_logs == []:
-                # all containers have pushed logs
-                return True
-            else:
-                # some container logs are missing
-                return False
-        except Exception as e:
-            raise(e)
-    else:
-        raise Exception("Could not successfully scrape the API")
+#     params = {
+#         'query': query,
+#         'start': timestamp_t_minus_30_minutes,  
+#         # 30 minutes should be enough since old logs are delted 
+#         'end': timestamp_now,
+#         'limit': 999999999
+#     }
+#     print(params)
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get(LOKI_URL+path,params=params, timeout=90)
+#     print(response)
+#     print(response.content)
+#     if response.status_code == 200:
+#         try:
+#             logs = response.json()
+#             for stream in logs["data"]["result"]:
+#                 labels = stream["stream"]
+#                 print(labels)
+#                 container_name = labels["container_name"]
+#                 containers_with_logs.append(container_name) 
+#             containers_without_logs = list(set(container_names) - set(containers_with_logs))
+#             print(container_names)
+#             print(containers_with_logs)
+#             print(containers_without_logs)
+#             if containers_without_logs == []:
+#                 # all containers have pushed logs
+#                 return True
+#             else:
+#                 # some container logs are missing
+#                 return False
+#         except Exception as e:
+#             raise(e)
+#     else:
+#         raise Exception("Could not successfully scrape the API")
     

@@ -3,7 +3,25 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
-  grpc_server_max_recv_msg_size: 10000000000
+  grpc_server_max_recv_msg_size: 999999999
+                                 
+compactor_grpc_client:
+  # gRPC client max receive message size (bytes).
+  # CLI flag: -compactor.grpc-client.grpc-max-recv-msg-size
+  max_recv_msg_size: 999999999
+
+  # gRPC client max send message size (bytes).
+  # CLI flag: -compactor.grpc-client.grpc-max-send-msg-size
+  max_send_msg_size: 999999999
+ingester_client:
+  grpc_client_config:
+    max_recv_msg_size: 999999999
+    max_send_msg_size: 999999999
+
+frontend_worker:
+  grpc_client_config:
+    max_recv_msg_size: 999999999
+    max_send_msg_size: 999999999
 
 common:
   instance_addr: 127.0.0.1
@@ -22,13 +40,14 @@ compactor:
   retention_delete_delay: 1m
   # make this smaller --> are logs then still present !?
   compaction_interval: 1m
+  delete_request_store: filesystem
 
 query_range:
   results_cache:
     cache:
       embedded_cache:
         enabled: true
-        max_size_mb: 100
+        max_size_mb: 9999
 
 schema_config:
   configs:
@@ -58,18 +77,18 @@ ruler:
 
 # CLI flag: -ingester.per-stream-rate-limit
 limits_config:
-  per_stream_rate_limit: 10000MB 
+  per_stream_rate_limit: 99999MB 
 
   # Maximum burst bytes per stream, also expressible in human readable forms (1MB,
   # 256KB, etc). This is how far above the rate limit a stream can 'burst' before
   # the stream is limited.
   # CLI flag: -ingester.per-stream-rate-limit-burst
-  per_stream_rate_limit_burst: 20000MB 
+  per_stream_rate_limit_burst: 99999MB 
 
-  max_line_size: 5MB
+  max_line_size: 9MB
   deletion_mode: filter-and-delete
   retention_period: 1m
-  cardinality_limit: 200000
-  ingestion_rate_mb: 10000
-  max_entries_limit_per_query: 1000000
-  ingestion_burst_size_mb: 1000
+  cardinality_limit: 999999999
+  ingestion_rate_mb: 99999
+  max_entries_limit_per_query: 999999999
+  ingestion_burst_size_mb: 9999
