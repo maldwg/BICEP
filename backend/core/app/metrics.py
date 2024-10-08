@@ -78,15 +78,11 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     # save in a dict for performance reasons 
     alerts_dict = {}
     for alert in alerts:
-        unsuccessful_counter = 0
-        try:
-            timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
-            key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
-            # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
-            alerts_dict[key] = alerts_dict.get(key, []) + [alert]
-        except:
-            unsuccessful_counter +=1
-    print(f"{unsuccessful_counter} log entries were parsed unsuccesfully")
+        timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+        key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
+        # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
+        alerts_dict[key] = alerts_dict.get(key, []) + [alert]
+            
 
     TOTAL_ALERTS = await get_item_counts_of_dict(alerts_dict)
     # iterate over ground truth csv and compare each entry to the alerts
@@ -97,16 +93,11 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
         label_col_id, timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id = await get_column_ids(header)
 
         for row in reader:
-            unsuccessful_csv_counter = 0
-            try:
-                row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
-                row_source_ip = row[src_ip_col_id].strip()
-                row_source_port = row[src_port_col_id].strip()
-                row_destination_ip = row[dst_ip_col_id].strip()
-                row_destination_port = row[dst_port_col_id].strip()
-            except:
-                unsuccessful_csv_counter += 1
-                continue
+            row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
+            row_source_ip = row[src_ip_col_id].strip()
+            row_source_port = row[src_port_col_id].strip()
+            row_destination_ip = row[dst_ip_col_id].strip()
+            row_destination_port = row[dst_port_col_id].strip()
             key = f"{row_timestamp}-{row_source_ip}-{row_source_port}-{row_destination_ip}-{row_destination_port}"
             if key in alerts_dict:
                 alert = alerts_dict[key].pop(0)
@@ -122,8 +113,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                     TN += 1
                 else:
                     FN += 1
-        print(f"{unsuccessful_csv_counter} lines of the csv were processed unsucesfully")
-    # ammount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
+    # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = await get_item_counts_of_dict(alerts_dict)
     print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
 

@@ -155,7 +155,14 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
     print(f"recievd {len(alerts)} alerts")
     send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
     background_tasks.add(send_task)
+    print(f"analysis-type: {alert_data.analysis_type}")
     if alert_data.analysis_type == "static":
         calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
         background_tasks.add(calc_task)
     return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)
+
+
+@router.get("/help/background-tasks")
+async def display_background_tasks(background_tasks=Depends(get_background_tasks)):
+    for t in background_tasks:
+        print(t)

@@ -25,7 +25,7 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
 
     async with httpx.AsyncClient() as client:
         data= json.dumps(log_entry)
-        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=300)
+        response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=600)
     return response
 
 
@@ -58,7 +58,7 @@ async def get_alerts_from_analysis_id(analysis_id: str):
         'limit': 999999999
     }
     async with httpx.AsyncClient() as client:
-        response = await client.get(LOKI_URL+path,params=params, timeout=300)
+        response = await client.get(LOKI_URL+path,params=params, timeout=600)
 
     if response.status_code == 200:
         try:
@@ -105,7 +105,7 @@ async def clean_up_alerts_in_loki(analysis_id: str):
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(LOKI_URL+path,params=params, timeout=90)
+        response = await client.post(LOKI_URL+path,params=params, timeout=600)
     return response
 
 # async def containers_already_pushed_to_loki(containers: list, analysis_id: str) -> bool:
