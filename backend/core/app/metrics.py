@@ -7,9 +7,11 @@ from .bicep_utils.models.ids_base import Alert
 from datetime import datetime, timezone
 from .utils import extract_ts_srcip_srcport_dstip_dstport_from_alert, normalize_and_parse_alert_timestamp
 async def calculate_evaluation_metrics(dataset, alerts):
+    print("start calculation")
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious
+    print("got benign malicious etc.")
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
 
     # FPR: False Positive Rate
@@ -27,7 +29,9 @@ async def calculate_evaluation_metrics(dataset, alerts):
         # if there is no malicious return DR of 100 %
         dr = 1 if true_malicious == 0 and dr == 0 else dr
         return round(dr,2)
-
+    def calculate_fdr():
+        fdr = FP / (FP + TP)
+        return round(fdr, 2)
     # Accuracy
     def calculate_accuracy():
         acc = (TP + TN) / total if total > 0 else 0
@@ -55,6 +59,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
         "FPR": calculate_fpr(),
         "FNR": calculate_fnr(),
         "DR": calculate_dr(),
+        "FDR": calculate_fdr(),
         "ACCURACY": calculate_accuracy(),
         "PRECISION": calculate_precision(),
         "F_SCORE": calculate_f_score(),
@@ -73,10 +78,15 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     # save in a dict for performance reasons 
     alerts_dict = {}
     for alert in alerts:
-        timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
-        key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
-        # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
-        alerts_dict[key] = alerts_dict.get(key, []) + [alert]
+        unsuccessful_counter = 0
+        try:
+            timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+            key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
+            # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
+            alerts_dict[key] = alerts_dict.get(key, []) + [alert]
+        except:
+            unsuccessful_counter +=1
+    print(f"{unsuccessful_counter} log entries were parsed unsuccesfully")
 
     TOTAL_ALERTS = await get_item_counts_of_dict(alerts_dict)
     # iterate over ground truth csv and compare each entry to the alerts
@@ -87,12 +97,16 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
         label_col_id, timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id = await get_column_ids(header)
 
         for row in reader:
-            row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
-            row_source_ip = row[src_ip_col_id].strip()
-            row_source_port = row[src_port_col_id].strip()
-            row_destination_ip = row[dst_ip_col_id].strip()
-            row_destination_port = row[dst_port_col_id].strip()
-
+            unsuccessful_csv_counter = 0
+            try:
+                row_timestamp = await normalize_and_parse_alert_timestamp(row[timestamp_col_id])
+                row_source_ip = row[src_ip_col_id].strip()
+                row_source_port = row[src_port_col_id].strip()
+                row_destination_ip = row[dst_ip_col_id].strip()
+                row_destination_port = row[dst_port_col_id].strip()
+            except:
+                unsuccessful_csv_counter += 1
+                continue
             key = f"{row_timestamp}-{row_source_ip}-{row_source_port}-{row_destination_ip}-{row_destination_port}"
             if key in alerts_dict:
                 alert = alerts_dict[key].pop(0)
@@ -108,6 +122,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                     TN += 1
                 else:
                     FN += 1
+        print(f"{unsuccessful_csv_counter} lines of the csv were processed unsucesfully")
     # ammount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = await get_item_counts_of_dict(alerts_dict)
     print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")

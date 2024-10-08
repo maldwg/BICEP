@@ -343,6 +343,20 @@
           "legendFormat": "__auto",
           "range": false,
           "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cduw0oiwj7vuof"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "last_over_time(FDR{metric=\"alert-metrics\"}[5h])",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "H"
         }
       ],
       "title": "Evaluation metrics",
@@ -470,7 +484,7 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
