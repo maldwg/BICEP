@@ -311,6 +311,6 @@ csv_files =  [
     "/mnt/d/master/Thursday-WorkingHours_newly_corrected.csv",
     "/mnt/d/master/Friday-WorkingHours_newly_corrected.csv",
 ]
-output_pcap_file = "/mnt/d/master/All-WorkingHours_slips_1percent.pcap"
-output_csv_file =  "/mnt/d/master/All-WorkingHours_slips_1percent.csv"
-assemble_slips(pcap_files, csv_files, output_pcap_file, output_csv_file, ratio=0.01)
+output_pcap_file = "/mnt/d/master/All-WorkingHours_slips_0point25percent.pcap"
+output_csv_file =  "/mnt/d/master/All-WorkingHours_slips_0point25percent.csv"
+assemble_slips(pcap_files, csv_files, output_pcap_file, output_csv_file, ratio=0.0025)

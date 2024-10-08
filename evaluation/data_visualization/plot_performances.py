@@ -92,9 +92,9 @@ def calculate_metrics(TP, FP, FN, TN, TOTAL_ALERTS, UNASSIGNED_ALERTS):
 
     return metrics
 if __name__ == "__main__":
-    metrics = calculate_metrics(TP=0, FP=3429, TN=7938, FN=2791, TOTAL_ALERTS=6156, UNASSIGNED_ALERTS=2727)
-    file_name = "/mnt/c/Users/Max/Desktop/slips-ai-only-static.svg"
-    title = "Slips - AI modules only"
+    metrics = calculate_metrics(TP=1756, FP=6681, TN=4686, FN=1035, TOTAL_ALERTS=16281, UNASSIGNED_ALERTS=7844)
+    file_name = "/mnt/c/Users/Max/Desktop/slips-no-ai-only-static.svg"
+    title = "Slips - No AI modules"
     plot_chart(output_file=file_name, metrics=metrics, title=title)
     print(metrics)
 # Suricata Alerts only
@@ -125,3 +125,8 @@ if __name__ == "__main__":
 # Slips AI-only
 # metrics = calculate_metrics(TP=0, FP=3429, TN=7938, FN=2791, TOTAL_ALERTS=6156, UNASSIGNED_ALERTS=2727)
 # {'FPR': 0.3, 'FNR': 1.0, 'DR': 0.0, 'FDR': 1.0, 'ACCURACY': 0.56, 'PRECISION': 0.0, 'F_SCORE': 0, 'UNASSIGNED': 0.44}
+
+
+# Slips NO- AI-only
+# metrics = calculate_metrics(TP=1756, FP=6681, TN=4686, FN=1035, TOTAL_ALERTS=16281, UNASSIGNED_ALERTS=7844)
+# {'FPR': 0.59, 'FNR': 0.37, 'DR': 0.63, 'FDR': 0.79, 'ACCURACY': 0.46, 'PRECISION': 0.21, 'F_SCORE': 0.32, 'UNASSIGNED': 0.48}
