@@ -14,9 +14,9 @@ async def calculate_evaluation_metrics(dataset, alerts):
     print("got benign malicious etc.")
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
 
-    def calculate_fdr():
-        fdr = round(FP / (FP +TP), 2) if FP + TP > 0 else 0
-        return fdr
+    def calculate_fpr():
+        fpr = round(FP / (FP + TN), 2) if FP + TN > 0 else 0
+        return fpr
 
     # FNR: False Negative Rate
     def calculate_fnr():
@@ -29,8 +29,9 @@ async def calculate_evaluation_metrics(dataset, alerts):
         dr = 1 if true_malicious == 0 and dr == 0 else dr
         return round(dr,2)
     def calculate_fdr():
-        fdr = FP / (FP + TP)
-        return round(fdr, 2)
+        fdr = round(FP / (FP +TP), 2) if FP + TP > 0 else 0
+        return fdr
+    
     # Accuracy
     def calculate_accuracy():
         acc = (TP + TN) / total if total > 0 else 0
