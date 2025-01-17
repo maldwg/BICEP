@@ -184,28 +184,6 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     return benign_count, malicious_count
 
 
-async def dataset_callback(pcap_file, labels_file, name, description, db, future):
-    from .models.dataset import Dataset, add_dataset
-    try:
-        benign, malicious = future.result()
-        print(benign)
-        print(malicious)
-    except Exception as e:
-        print("Task raised an exception:")
-
-    dataset = Dataset(
-        name=name,
-        description=description,
-        pcap_file=pcap_file,
-        labels_file=labels_file,
-        ammount_benign=benign,
-        ammount_malicious=malicious,
-    )
-    add_dataset(db, dataset)
-        
-    dataset_addition_tasks.discard(future)
-
-
 async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
