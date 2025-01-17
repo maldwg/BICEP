@@ -12,7 +12,6 @@ from ..docker import (
     calculate_cpu_usage
 )
 
-# Fixture for mock database
 @pytest.fixture
 def mock_database():
     mock_db = MagicMock()
@@ -20,42 +19,34 @@ def mock_database():
     mock_db.SessionLocal = MagicMock()
     return mock_db
 
-# Fixture for mock client
 @pytest.fixture
 def mock_client():
     return MagicMock(spec=DockerClient)
 
-# Fixture for mock host system
 @pytest.fixture
 def mock_host_system():
     return MagicMock()
 
-# Fixture for mock ids container
 @pytest.fixture
 def mock_ids_container():
     return MagicMock()
 
-# Fixture for mock ids tool
 @pytest.fixture
 def mock_ids_tool():
     return MagicMock()
 
-# Fixture for mock config
 @pytest.fixture
 def mock_config():
     return MagicMock()
 
-# Fixture for mock ruleset
 @pytest.fixture
 def mock_ruleset():
     return MagicMock()
 
-# Fixture for mock container
 @pytest.fixture
 def mock_container():
     return MagicMock()
 
-# Test for get_docker_client
 @patch("docker.DockerClient")
 @patch("app.docker.get_core_host")
 def test_get_docker_client(mock_get_core_host, mock_docker_client, mock_client, mock_host_system):
@@ -69,7 +60,6 @@ def test_get_docker_client(mock_get_core_host, mock_docker_client, mock_client, 
     client = get_docker_client(mock_host_system)
     assert client == mock_client
 
-# Test for start_docker_container
 @pytest.mark.asyncio
 @patch("app.docker.get_docker_client")
 @patch("app.docker.run_container_async")
@@ -89,7 +79,6 @@ async def test_start_docker_container(
     mock_inject_config.assert_called_once()
     mock_inject_ruleset.assert_called_once()
 
-# Test for inject_config
 @pytest.mark.asyncio
 @patch("app.docker.httpx.AsyncClient")
 async def test_inject_config(mock_httpx_client, mock_ids_container, mock_config):
@@ -101,7 +90,6 @@ async def test_inject_config(mock_httpx_client, mock_ids_container, mock_config)
 
     assert response == mock_response
 
-# Test for remove_docker_container
 @pytest.mark.asyncio
 @patch("docker.DockerClient")
 async def test_remove_docker_container(mock_docker_client, mock_client, mock_container, mock_ids_container):
@@ -113,7 +101,6 @@ async def test_remove_docker_container(mock_docker_client, mock_client, mock_con
     mock_container.stop.assert_called_once()
     mock_container.remove.assert_called_once()
 
-# Test for check_container_health
 @pytest.mark.asyncio
 @patch("app.docker.httpx.AsyncClient")
 async def test_check_container_health(mock_httpx_client, mock_ids_container):
@@ -125,14 +112,12 @@ async def test_check_container_health(mock_httpx_client, mock_ids_container):
 
     assert result is True
 
-# Test for calculate_memory_usage
 @pytest.mark.asyncio
 async def test_calculate_memory_usage():
     stats = {"memory_stats": {"usage": 10485760}}  # 10MB
     memory_usage = await calculate_memory_usage(stats)
     assert memory_usage == 10.0
 
-# Test for calculate_cpu_usage
 @pytest.mark.asyncio
 async def test_calculate_cpu_usage():
     stats = {
