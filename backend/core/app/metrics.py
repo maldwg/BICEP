@@ -29,7 +29,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
         dr = 1 if true_malicious == 0 and dr == 0 else dr
         return round(dr,2)
     def calculate_fdr():
-        fdr = round(FP / (FP +TP), 2) if FP + TP > 0 else 0
+        fdr = round(FP / (FP + TP), 2) if FP + TP > 0 else 0
         return fdr
     
     # Accuracy

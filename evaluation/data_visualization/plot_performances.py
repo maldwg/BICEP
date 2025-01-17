@@ -77,7 +77,9 @@ def calculate_metrics(TP, FP, FN, TN, TOTAL_ALERTS, UNASSIGNED_ALERTS):
             return 0
 
     def calculate_fdr():
-        return round(FP / (FP +TP), 2)
+        fdr = round(FP / (FP +TP), 2) if FP + TP > 0 else 0
+        return fdr
+
 
     metrics = {
         "FPR": calculate_fpr(),
@@ -92,9 +94,9 @@ def calculate_metrics(TP, FP, FN, TN, TOTAL_ALERTS, UNASSIGNED_ALERTS):
 
     return metrics
 if __name__ == "__main__":
-    metrics = calculate_metrics(TP=1756, FP=6681, TN=4686, FN=1035, TOTAL_ALERTS=16281, UNASSIGNED_ALERTS=7844)
-    file_name = "/mnt/c/Users/Max/Desktop/slips-no-ai-only-static.svg"
-    title = "Slips - No AI modules"
+    metrics = calculate_metrics(TP=0, FP=0, TN=8526, FN=2093, TOTAL_ALERTS=0, UNASSIGNED_ALERTS=0)
+    file_name = "/mnt/c/Users/Max/Desktop/suricata-slips-ensemble.svg"
+    title = "Suricata and Slips ensemble"
     plot_chart(output_file=file_name, metrics=metrics, title=title)
     print(metrics)
 # Suricata Alerts only
@@ -114,19 +116,27 @@ if __name__ == "__main__":
 # {'FPR': 0.04, 'FNR': 0.63, 'DR': 0.37, 'FDR': 0.3, 'ACCURACY': 0.84, 'PRECISION': 0.7, 'F_SCORE': 0.48, 'UNASSIGNED': 0.54}
 
 #Suricata small ds
-#    metrics = calculate_metrics(TP=58, FP=1217, TN=10150, FN=2733, TOTAL_ALERTS=4184, UNASSIGNED_ALERTS=2909)
-#    {'FPR': 0.11, 'FNR': 0.98, 'DR': 0.02, 'FDR': 0.95, 'ACCURACY': 0.72, 'PRECISION': 0.05, 'F_SCORE': 0.03, 'UNASSIGNED': 0.7}
+#    metrics = calculate_metrics(TP=43, FP=1017, TN=7509, FN=2050, TOTAL_ALERTS=3195, UNASSIGNED_ALERTS=2135)
+#    {'FPR': 0.12, 'FNR': 0.98, 'DR': 0.02, 'FDR': 0.96, 'ACCURACY': 0.71, 'PRECISION': 0.04, 'F_SCORE': 0.03, 'UNASSIGNED': 0.67}
 
 
 # Slips all
-# metrics = calculate_metrics(TP=1668, FP=5045, TN=6322, FN=1123, TOTAL_ALERTS=13929, UNASSIGNED_ALERTS=7216)
-# {'FPR': 0.44, 'FNR': 0.4, 'DR': 0.6, 'FDR': 0.75, 'ACCURACY': 0.56, 'PRECISION': 0.25, 'F_SCORE': 0.35, 'UNASSIGNED': 0.52}
+# metrics = calculate_metrics(TP=1365, FP=4959, TN=3567, FN=728, TOTAL_ALERTS=12862, UNASSIGNED_ALERTS=6538)
+# {'FPR': 0.58, 'FNR': 0.35, 'DR': 0.65, 'FDR': 0.78, 'ACCURACY': 0.46, 'PRECISION': 0.22, 'F_SCORE': 0.33, 'UNASSIGNED': 0.51}
 
 # Slips AI-only
-# metrics = calculate_metrics(TP=0, FP=3429, TN=7938, FN=2791, TOTAL_ALERTS=6156, UNASSIGNED_ALERTS=2727)
-# {'FPR': 0.3, 'FNR': 1.0, 'DR': 0.0, 'FDR': 1.0, 'ACCURACY': 0.56, 'PRECISION': 0.0, 'F_SCORE': 0, 'UNASSIGNED': 0.44}
+# metrics = calculate_metrics(TP=0, FP=2, TN=8524, FN=2093, TOTAL_ALERTS=2, UNASSIGNED_ALERTS=0)
+# {'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 1.0, 'ACCURACY': 0.8, 'PRECISION': 0.0, 'F_SCORE': 0, 'UNASSIGNED': 0.0}
 
 
 # Slips NO- AI-only
-# metrics = calculate_metrics(TP=1756, FP=6681, TN=4686, FN=1035, TOTAL_ALERTS=16281, UNASSIGNED_ALERTS=7844)
-# {'FPR': 0.59, 'FNR': 0.37, 'DR': 0.63, 'FDR': 0.79, 'ACCURACY': 0.46, 'PRECISION': 0.21, 'F_SCORE': 0.32, 'UNASSIGNED': 0.48}
+# metrics = calculate_metrics(TP=1365, FP=4946, TN=3580, FN=728, TOTAL_ALERTS=12711, UNASSIGNED_ALERTS=6400)
+# {'FPR': 0.58, 'FNR': 0.35, 'DR': 0.65, 'FDR': 0.78, 'ACCURACY': 0.47, 'PRECISION': 0.22, 'F_SCORE': 0.33, 'UNASSIGNED': 0.5}
+
+# Slips and Suricata Ensemble, reduced dataset
+# metrics = calculate_metrics(TP=0, FP=0, TN=8526, FN=2093, TOTAL_ALERTS=0, UNASSIGNED_ALERTS=0)
+# {'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.8, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED': 0}
+
+# Slips ensemble 
+# # metrics = calculate_metrics(TP=0, FP=0, TN=8526, FN=2093, TOTAL_ALERTS=0, UNASSIGNED_ALERTS=0)
+# {'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.8, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED': 0}
