@@ -1,8 +1,18 @@
-# BICEP
-BICEP - Benchmarking IDS in a Comparative Evaluation Platform 
+<div align="center">
 
+![](./assets/Biceps_logo.gif)
 
-## Initialize project
+</div>
+
+## About the Project
+
+BICEP presents an evaluation platform to benchmark arbitrary IDS solutions like Suricata, Snort, Zeek or Slips, in order to achieve comparability amongst IDS tools and novel apporaches. Practically every (D)IDS or (C)IDS can be added to the system via its plugin capability. 
+
+Currently only Suricata and Slips modules are implemented and supported in terms of setup, configuration, lifecycle management and benchmarking.
+
+The project is still under development and breaking changes are likely to occur. 
+
+## Initialize Project
 
 In order to be able to start the project you will need to initialize it first. Do this by running:
 
@@ -12,14 +22,42 @@ git submodule update
 ```
 This fetches the newest version of the submodule for the backend code and is necessary for the application to work seamlessly.
 
-## Start the project
+## Start the Project
 
-The project is comprised of several modules which can be started by running ```docker compose up```.
+Before running the project, it is advised, as of now, to manually pull the docker images for the IDS that are to be evaluated. For isntance, run
 
-<!-- 
-# start
-# suricata-update
-# suricata -c /usr/local/etc/suricata/suricata.yaml -l /usr/local/var/log/suricata  -i eth0  
-# insead of interface: -r pathtofile
-# -s /usr/local/var/lib/suricata/rules/suricata.rules for additional ruels
-# logfiles: /usr/local/var/log/suricata/special.json -->
+```
+docker pull maxldwg/bicep-suricata:latest
+docker pull maxldwg/bicep-slips:latest
+```
+
+Afterwards the whole project can be started by running running ```docker compose up```.
+
+## Use the Project
+
+To use the systems already included, you can navigate to http://localhost:3000 after the startup has completed. Generally you will have to follow these steps to setup and benchmark a system:
+
+1. Upload your configuration (rulesets and general configurations) for the system you want to deploy
+
+2. Deploy the system using the Web GUI
+
+3. Start either a live or a static analysis (for the latter you will need to upload a dataset to the application as explained in this [section](#supported-datasets) )
+
+4. Aggregate your results in the embedded Grafana dashboard
+
+
+## Supported Datasets
+
+In general every type of dataset is support as long as it fulfills the following requirements:
+
+1. It needs to be split into a pcap file containing the requests and a CSV file containing labels for each request
+
+2. The requests from the pcap need to be assignable to the CSV rows, therefor the following needs to be assured:
+
+    - In the CSV file, there must be a column named "Label" or "Class". which contains the keyowrd "benign" for each benign request. Malicious requests might be labled as desired
+    - The following Columns need to be present as well
+        - Time/Timestamp: containing a timestamp as exact as possible which corresponds to the one in the pcap file for the request
+        - Source IP: Source IP of the request
+        - Source Port: Source Port of the request
+        - Destination IP: Destination IP of the request
+        - Destination Port: Destination port of the request
