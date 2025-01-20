@@ -189,10 +189,10 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
-    benign, malicious = await calculate_malicious_benign_counts(text_stream)
+    benign, malicious = await calculate_malicious_benign_counts_from_text_stream(text_stream)
 
     uid = str(uuid.uuid4())
-    base_path = "/opt"
+    base_path = os.getenv("DATASET_BASE_PATH")
     dataset_storage_location = f"{base_path}/{name}/{uid}"
     
     pcap_file_path = f"{dataset_storage_location}/dataset.pcap"
@@ -228,7 +228,7 @@ async def create_directory(path):
         os.makedirs(path)
 
 # Efficient CSV processing using a genrator
-async def calculate_malicious_benign_counts(input_file):
+async def calculate_malicious_benign_counts_from_text_stream(input_file):
     benign_count = 0
     malicious_count = 0
     header = True
