@@ -85,7 +85,7 @@ async def test_save_file_to_disk():
 async def test_calculate_malicious_benign_counts_from_text_stream():
     labels_file_path = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'r')
     benign_count, malicious_count = await calculate_malicious_benign_counts_from_text_stream(labels_file_path)
-    assert (benign_count, malicious_count) == (998,1)
+    assert (benign_count, malicious_count) == (899,100)
 
 # TODO: find a way to test appropriately and test metrics.py alongside
 # @pytest.mark.asyncio

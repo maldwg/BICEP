@@ -68,9 +68,6 @@ async def calculate_evaluation_metrics(dataset, alerts):
 
     return metrics
 
-async def calculate_evaluation_metrics_for_ensemble():
-    pass
-
 async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
     TP = TN = FN = FP = 0
 
