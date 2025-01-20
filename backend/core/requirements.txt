@@ -9,3 +9,5 @@ asyncmy
 aiomysql
 psutil
 aiofiles
+pytest
+pytest-cov
