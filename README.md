@@ -1,4 +1,18 @@
+
 <div align="center">
+
+<img alt="Codecov" src="https://img.shields.io/codecov/c/github/maldwg/BICEP?style=for-the-badge">
+<img alt="GitHub branch status" src="https://img.shields.io/github/checks-status/maldwg/BICEP/main?style=for-the-badge&label=Tests">
+
+
+</div>
+
+<br>
+
+<div align="center">
+
+
+
 
 ![](./assets/Biceps_logo.gif)
 
