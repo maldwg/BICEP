@@ -19,7 +19,7 @@ jobs:
                
             - name: execute backend tests
               run: pytest --cov-branch --cov-report=xml 
-              working-directory: ./backend/app/core
+              working-directory: backend/core/app
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
