@@ -1,0 +1,25 @@
+name: Testing of the backend
+on:
+    pull_request:
+        types: opened
+        branches: main
+    push:
+jobs:
+    test_and_upload:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+
+            - name: install requirements
+              run: pip3 install -r backend/core/app/test/requirements.txt 
+               
+            - name: execute backend tests
+              run: pytest --cov-branch --cov-report=xml 
+              working-directory: ./backend/app/core
+
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v5
