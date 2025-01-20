@@ -18,8 +18,7 @@ jobs:
               run: pip3 install -r backend/core/requirements.txt 
                
             - name: execute backend tests
-              run: pytest --cov-branch --cov-report=xml 
-              working-directory: backend/core/app
+              run: pytest backend/core/app/test --cov-branch --cov-report=xml --cov
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@v5
