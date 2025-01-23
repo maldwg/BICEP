@@ -15,6 +15,8 @@ from ..metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
 from ..models.docker_host_system import get_host_by_id
+from fastapi.responses import JSONResponse
+
 router = APIRouter(
     prefix="/ids"
 )
@@ -38,7 +40,7 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
         )
     await ids_container.setup(db)
     await ids_container.start_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
-    return {"message": "setup done"}
+    return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 
 @router.delete("/remove/{container_id}")

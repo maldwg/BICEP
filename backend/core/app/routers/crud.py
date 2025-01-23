@@ -25,13 +25,13 @@ async def get_all_configs(db=Depends(get_db)):
     serialized_configurations = get_serialized_confgigurations(configurations)
     return serialized_configurations
 @router.get("/configuration/file-types")
-async def get_all_configs(db=Depends(get_db)):
+async def get_all_config_filetypes(db=Depends(get_db)):
     types = [t.value for t in FILE_TYPES]
     return types
 
 
 @router.get("/configuration/all/{file_type}")
-async def get_all_configs(file_type: str, db=Depends(get_db)):
+async def get_all_configs_of_a_filetype(file_type: str, db=Depends(get_db)):
     valid_file_types = [t.value for t in FILE_TYPES]
     if file_type in valid_file_types:
         configurations = get_all_configurations_by_type(db, file_type)
@@ -61,7 +61,7 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
 
 
 @router.post("/dataset/add")
-async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+async def add_new_dataset(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     # For rulesets and general configurations
     if len(configuration) == 2:
         pcap_file = await list(filter(lambda c: c.filename.split(".")[-1] == "pcap" , configuration ))[0].read()
@@ -73,14 +73,15 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
 
 
 @router.get("/dataset/all")
-async def get_all_configs(db=Depends(get_db)):
+async def get_all_ds(db=Depends(get_db)):
     datasets = get_all_datasets(db)
     serialized_datasets = get_serialized_datasets(datasets)
     return serialized_datasets
 
 @router.delete("/dataset/{id}")
-async def remove_config( id: int, db=Depends(get_db)):
+async def remove_dataset( id: int, db=Depends(get_db)):
     remove_dataset_by_id(db, id)
+    return JSONResponse(content={"message": f"Successfully removed dataset with id {id}"}, status_code=204)
 
 @router.get("/ids-tool/all")
 async def get_all_ids_tools(db=Depends(get_db)):
@@ -90,7 +91,7 @@ async def get_all_ids_tools(db=Depends(get_db)):
 async def get_all_ids_container(db=Depends(get_db)):
     return get_all_container(db)
 
-
+# TODO add test methods for these as well
 @router.get("/container/without/ensemble")
 async def get_all_available_ids_container(db=Depends(get_db)):
     container = get_all_container(db)
