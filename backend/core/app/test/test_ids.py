@@ -7,6 +7,8 @@ from app.utils import get_stream_metric_tasks
 from app.routers.ids import *
 from app.validation.models import *
 from app.models.docker_host_system import DockerHostSystem
+from http.client import HTTPResponse
+
 @pytest.fixture
 def db_session():
     mock_db = MagicMock()
@@ -49,40 +51,134 @@ async def test_setup_ids(_, docker_host_mock,__ ,db_session, mock_stream_metric_
     assert response_json == {"message": "setup done"}
 
 
-# @patch("app.models.ids_container.IdsContainer.stop_metric_collection")
-# @patch("app.models.ids_container.IdsContainer.teardown")
-# @patch("app.models.ids_container.IdsContainer.stop_analysis")
-# @patch("app.models.ids_container.get_container_by_id")
-# @pytest.mark.asyncio
-# async def test_remove_container(a,b,c,get_container_mock, db_session, mock_stream_metric_tasks):
-#     db_session = AsyncMock()
-#     container_id = 1
-#     get_container_mock.return_value = IdsContainer(
-#             id = 0,
-#             name = "container-0",
-#             port = 1234,
-#             status = "ACTIVE",
-#             description = "container 0 description",
-#             stream_metric_task_id = None,
-#             configuration_id = 1,
-#             ids_tool_id = 2,
-#             ruleset_id = 0,
-#             host_system_id = 0    
-#     )
-#     response = await remove_container(container_id=container_id,db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
+@patch("app.models.ids_container.IdsContainer.stop_metric_collection")
+@patch("app.models.ids_container.IdsContainer.teardown")
+@patch("app.models.ids_container.IdsContainer.stop_analysis")
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_remove_container(get_container_mock,_,__,___, db_session, mock_stream_metric_tasks):
+    db_session = AsyncMock()
+    container_id = 1
+    get_container_mock.return_value = AsyncMock(spec=IdsContainer)
+    response = await remove_container(container_id=container_id,db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 204
+    assert response_json == {"message": "teardown done"}
 
-#     assert response.status_code == 200
-#     assert response.json() == {"message": "teardown done"}
+@patch("app.routers.ids.update_container_status")
+@patch("app.routers.ids.get_dataset_by_id")
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_static_container_analysis_from_idle_container(
+    get_container_mock, 
+    get_dataset_mock, 
+    update_container_status_mock, 
+    db_session
+    ):
 
-# def test_start_static_container_analysis(client):
-#     request_data = {
-#         "container_id": 1,
-#         "dataset_id": 1,
-#     }
+    static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+        dataset_id=1
+    )
+    start_static_analysis_mock = AsyncMock(spec=HTTPResponse)
+    start_static_analysis_mock.return_value.status_code = 200 
 
-#     response = client.post("/ids/analysis/static", json=request_data)
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.start_static_analysis = start_static_analysis_mock
 
-#     assert response.status_code in [200, 500]
+    get_dataset_mock.return_value = MagicMock(spec=Dataset)
+    get_dataset_mock.return_value.id = 1
+
+    response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == { "message": "container 1 - static analysis triggered" }
+
+
+@patch("app.routers.ids.update_container_status")
+@patch("app.routers.ids.get_dataset_by_id")
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_static_container_analysis_from_idle_container_unsuccesfully(
+    get_container_mock, 
+    get_dataset_mock, 
+    update_container_status_mock, 
+    db_session
+    ):
+
+    static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+        dataset_id=1
+    )
+    start_static_analysis_mock = AsyncMock(spec=HTTPResponse)
+    start_static_analysis_mock.return_value.status_code = 500 
+
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.start_static_analysis = start_static_analysis_mock
+
+    get_dataset_mock.return_value = MagicMock(spec=Dataset)
+    get_dataset_mock.return_value.id = 1
+
+    response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"error": "container 1 - static analysis could not be triggered"}
+
+
+
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_static_container_analysis_from_busy_container(
+    get_container_mock, 
+    db_session
+    ):
+
+    static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+        dataset_id=1
+    )
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.ACTIVE.value
+    get_container_mock.return_value.id = 1
+    response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
+
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_static_container_analysis_from_unavailable_container(
+    get_container_mock, 
+    db_session
+    ):
+
+    static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+        dataset_id=1
+    )
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.is_available = AsyncMock(return_value = False)
+
+    response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
+
+
+
 
 # def test_start_network_container_analysis(client):
 #     request_data = {

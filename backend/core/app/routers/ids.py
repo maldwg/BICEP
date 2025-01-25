@@ -45,25 +45,26 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
+    container: IdsContainer = get_container_by_id(db, container_id)
     try:
-        container: IdsContainer = get_container_by_id(db, container_id)
         await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
     except Exception as e:
         print(e)
     await container.teardown(db)
-    return {"message": "teardown done"}
+    return JSONResponse({"message": "teardown done"}, status_code=204)
 
 @router.post("/analysis/static")
 async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, static_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500)
     
+    print(await container.is_available())
     if not await container.is_available():
-         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
@@ -83,7 +84,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     return response
 
 @router.post("/analysis/network")
-async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
+async def start_network_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
