@@ -88,11 +88,11 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500) 
+        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500) 
     
 
     if not await container.is_available():
-         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     data = json.dumps(network_analysis_data.__dict__)

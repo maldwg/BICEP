@@ -179,18 +179,123 @@ async def test_start_static_container_analysis_from_unavailable_container(
 
 
 
+#######
+# Network Analyses
+#######
 
-# def test_start_network_container_analysis(client):
-#     request_data = {
-#         "container_id": 1,
-#         "network_configuration": "Test network config",
-#     }
+@patch("app.routers.ids.update_container_status")
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_network_container_analysis_from_idle_container(
+    get_container_mock, 
+    update_container_status_mock, 
+    db_session
+    ):
 
-#     response = client.post("/ids/analysis/network", json=request_data)
+    network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+    )
+    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
+    start_network_analysis_mock.return_value.status_code = 200 
 
-#     assert response.status_code in [200, 500]
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
 
-# # Test for /ids/analysis/stop
+    response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == { "message": "container 1 - network analysis triggered" }
+
+
+
+
+
+@patch("app.routers.ids.update_container_status")
+@patch("app.routers.ids.get_dataset_by_id")
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_network_container_analysis_from_idle_container_unsuccesfully(
+    get_container_mock, 
+    get_dataset_mock, 
+    update_container_status_mock, 
+    db_session
+    ):
+
+    network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+    )
+    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
+    start_network_analysis_mock.return_value.status_code = 500 
+
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
+
+    get_dataset_mock.return_value = MagicMock(spec=Dataset)
+    get_dataset_mock.return_value.id = 1
+
+    response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"error": "container 1 - network analysis could not be triggered"}
+
+
+
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_network_container_analysis_from_busy_container(
+    get_container_mock, 
+    db_session
+    ):
+
+    network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+    )
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.ACTIVE.value
+    get_container_mock.return_value.id = 1
+
+    response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
+
+@patch("app.routers.ids.get_container_by_id")
+@pytest.mark.asyncio
+async def test_start_network_container_analysis_from_unavailable_container(
+    get_container_mock, 
+    db_session
+    ):
+    network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+    )
+    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
+    start_network_analysis_mock.return_value.status_code = 200 
+
+    get_container_mock.return_value = MagicMock(spec=IdsContainer)
+    get_container_mock.return_value.status = STATUS.IDLE.value
+    get_container_mock.return_value.id = 1
+    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
+    get_container_mock.return_value.is_available = AsyncMock(return_value = False)
+
+    response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 500
+    assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
+
+
+
+
 # def test_stop_analysis(client):
 #     request_data = {
 #         "container_id": 1,
