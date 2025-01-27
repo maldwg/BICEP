@@ -20,9 +20,6 @@ jobs:
 
             - name: install requirements
               run: pip3 install -r backend/core/requirements.txt 
-               
-            - name: execute backend tests terminal
-              run: pytest backend/core/app/test --cov-branch --cov-report term --cov
 
             - name: execute backend tests
               run: pytest backend/core/app/test --cov-branch --cov-report=xml --cov
