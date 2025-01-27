@@ -11,3 +11,4 @@ psutil
 aiofiles
 pytest
 pytest-cov
+pytest-asyncio
