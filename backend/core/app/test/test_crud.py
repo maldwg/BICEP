@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from app.main import app
 from app.database import get_db
 from app.models.configuration import Configuration
-from sqlalchemy.orm import Session
 from app.database import Base
 from app.routers.crud import *
 from starlette.datastructures import UploadFile

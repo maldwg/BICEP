@@ -6,7 +6,7 @@ from app.models.docker_host_system import DockerHostSystem
 from app.models.ids_tool import IdsTool
 from app.models.configuration import Configuration
 from app.models.dataset import Dataset
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 
 TESTS_BASE_DIR = "./backend/core/app/test"
 
