@@ -8,42 +8,18 @@ from app.routers.ids import *
 from app.validation.models import *
 from app.models.docker_host_system import DockerHostSystem
 from http.client import HTTPResponse
+from app.test.fixtures import *
 
-@pytest.fixture
-def db_session():
-    mock_db = MagicMock()
-    yield mock_db
-
-@pytest.fixture
-def mock_stream_metric_tasks():
-    return AsyncMock()
-
-@pytest.fixture
-def mock_background_tasks():
-    """
-    Mock the BackgroundTasks instance.
-    """
-    tasks = MagicMock(spec=set())
-    tasks.add_task = MagicMock()
-    return tasks
-
-@patch("app.models.ids_container.IdsContainer.setup")
-@patch("app.models.docker_host_system.get_host_by_id")
-@patch("app.models.ids_container.IdsContainer.start_metric_collection")
 @pytest.mark.asyncio
-async def test_setup_ids(_, docker_host_mock,__ ,db_session, mock_stream_metric_tasks):
-    docker_host_mock.return_value = DockerHostSystem(
-        id = 0,
-        name = "localhost",
-        host = "localhost",
-        docker_port = 2375
-    )
+async def test_setup_ids(db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
     request_data: IdsContainerCreate = IdsContainerCreate(   
         host_system_id=1,
         description= "Test IDS Container",
         configuration_id= 1,
         ids_tool_id= 1,
     )
+
+    db_session = db_session_fixture.get_db_session()
     response = await setup_ids(request_data, db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
     response_json = json.loads(response.body.decode())
 
@@ -51,79 +27,50 @@ async def test_setup_ids(_, docker_host_mock,__ ,db_session, mock_stream_metric_
     assert response_json == {"message": "setup done"}
 
 
-@patch("app.models.ids_container.IdsContainer.stop_metric_collection")
-@patch("app.models.ids_container.IdsContainer.teardown")
-@patch("app.models.ids_container.IdsContainer.stop_analysis")
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
-async def test_remove_container(get_container_mock,_,__,___, db_session, mock_stream_metric_tasks):
-    db_session = AsyncMock()
+async def test_remove_container(db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
+    db_session = db_session_fixture.get_db_session()
     container_id = 1
-    get_container_mock.return_value = AsyncMock(spec=IdsContainer)
     response = await remove_container(container_id=container_id,db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 204
     assert response_json == {"message": "teardown done"}
 
-@patch("app.routers.ids.update_container_status")
-@patch("app.routers.ids.get_dataset_by_id")
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
-async def test_start_static_container_analysis_from_idle_container(
-    get_container_mock, 
-    get_dataset_mock, 
-    update_container_status_mock, 
-    db_session
-    ):
-
+async def test_start_static_container_analysis_from_idle_container(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
     static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
         container_id = 1,
         ensemble_id = None,
         dataset_id=1
     )
-    start_static_analysis_mock = AsyncMock(spec=HTTPResponse)
-    start_static_analysis_mock.return_value.status_code = 200 
 
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.start_static_analysis = start_static_analysis_mock
-
-    get_dataset_mock.return_value = MagicMock(spec=Dataset)
-    get_dataset_mock.return_value.id = 1
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 200
+    mock_ids_container.start_static_analysis.return_value = mock_response
 
     response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
+    print(response_json)
     assert response.status_code == 200
     assert response_json == { "message": "container 1 - static analysis triggered" }
 
 
-@patch("app.routers.ids.update_container_status")
-@patch("app.routers.ids.get_dataset_by_id")
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_static_container_analysis_from_idle_container_unsuccesfully(
-    get_container_mock, 
-    get_dataset_mock, 
-    update_container_status_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
         container_id = 1,
         ensemble_id = None,
         dataset_id=1
     )
-    start_static_analysis_mock = AsyncMock(spec=HTTPResponse)
-    start_static_analysis_mock.return_value.status_code = 500 
-
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.start_static_analysis = start_static_analysis_mock
-
-    get_dataset_mock.return_value = MagicMock(spec=Dataset)
-    get_dataset_mock.return_value.id = 1
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 500 
+    mock_ids_container.start_static_analysis.return_value = mock_response
 
     response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -133,43 +80,36 @@ async def test_start_static_container_analysis_from_idle_container_unsuccesfully
 
 
 
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_static_container_analysis_from_busy_container(
-    get_container_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
         container_id = 1,
         ensemble_id = None,
         dataset_id=1
     )
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.ACTIVE.value
-    get_container_mock.return_value.id = 1
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.status = STATUS.ACTIVE.value
     response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 500
     assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
 
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_static_container_analysis_from_unavailable_container(
-    get_container_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
         container_id = 1,
         ensemble_id = None,
         dataset_id=1
     )
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.is_available = AsyncMock(return_value = False)
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.is_available = AsyncMock(return_value = False)
 
     response = await start_static_container_analysis(static_analysis_data=static_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -183,26 +123,20 @@ async def test_start_static_container_analysis_from_unavailable_container(
 # Network Analyses
 #######
 
-@patch("app.routers.ids.update_container_status")
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_network_container_analysis_from_idle_container(
-    get_container_mock, 
-    update_container_status_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
         container_id = 1,
         ensemble_id = None,
     )
-    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
-    start_network_analysis_mock.return_value.status_code = 200 
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200 
 
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.start_network_analysis = mock_response
 
     response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -211,33 +145,20 @@ async def test_start_network_container_analysis_from_idle_container(
 
 
 
-
-
-@patch("app.routers.ids.update_container_status")
-@patch("app.routers.ids.get_dataset_by_id")
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_network_container_analysis_from_idle_container_unsuccesfully(
-    get_container_mock, 
-    get_dataset_mock, 
-    update_container_status_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
         container_id = 1,
         ensemble_id = None,
     )
-    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
-    start_network_analysis_mock.return_value.status_code = 500 
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 500 
 
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
-
-    get_dataset_mock.return_value = MagicMock(spec=Dataset)
-    get_dataset_mock.return_value.id = 1
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.start_network_analysis = mock_response
 
     response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -247,20 +168,17 @@ async def test_start_network_container_analysis_from_idle_container_unsuccesfull
 
 
 
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_network_container_analysis_from_busy_container(
-    get_container_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
-
+    db_session = db_session_fixture.get_db_session()
     network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
         container_id = 1,
         ensemble_id = None,
     )
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.ACTIVE.value
-    get_container_mock.return_value.id = 1
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.status = STATUS.ACTIVE.value
 
     response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -268,24 +186,21 @@ async def test_start_network_container_analysis_from_busy_container(
     assert response.status_code == 500
     assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
 
-@patch("app.routers.ids.get_container_by_id")
 @pytest.mark.asyncio
 async def test_start_network_container_analysis_from_unavailable_container(
-    get_container_mock, 
-    db_session
+    db_session_fixture: DatabaseSessionFixture
     ):
+    db_session = db_session_fixture.get_db_session()
     network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
         container_id = 1,
         ensemble_id = None,
     )
-    start_network_analysis_mock = AsyncMock(spec=HTTPResponse)
-    start_network_analysis_mock.return_value.status_code = 200 
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200 
 
-    get_container_mock.return_value = MagicMock(spec=IdsContainer)
-    get_container_mock.return_value.status = STATUS.IDLE.value
-    get_container_mock.return_value.id = 1
-    get_container_mock.return_value.start_network_analysis = start_network_analysis_mock
-    get_container_mock.return_value.is_available = AsyncMock(return_value = False)
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.start_network_analysis = mock_response
+    mock_ids_container.is_available = AsyncMock(return_value = False)
 
     response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -294,52 +209,111 @@ async def test_start_network_container_analysis_from_unavailable_container(
     assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
 
 
+@pytest.mark.asyncio
+async def test_stop_analysis_successfully(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    stop_analysis_data: stop_analysisData = stop_analysisData(
+        container_id = 1,
+    )
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200
+
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.stop_analysis = mock_response
+
+    response = await stop_analysis(stop_data=stop_analysis_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == { "message": f"Analysis for container {stop_analysis_data.container_id} stopped successfully" }
+
+@pytest.mark.asyncio
+async def test_stop_analysis_unsuccessfully(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    stop_analysis_data: stop_analysisData = stop_analysisData(
+        container_id = 1,
+    )
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 500
+
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.stop_analysis = mock_response
+
+    response = await stop_analysis(stop_data=stop_analysis_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 500
+    assert response_json == { "error": f"Analysis for container {stop_analysis_data.container_id} did not stop successfully" }
 
 
-# def test_stop_analysis(client):
-#     request_data = {
-#         "container_id": 1,
-#     }
 
-#     response = client.post("/ids/analysis/stop", json=request_data)
+@pytest.mark.asyncio
+async def test_finished_analysis(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    analysis_finished_data: AnalysisFinishedData = AnalysisFinishedData(
+        container_id = 1
+    )
 
-#     assert response.status_code in [200, 500]
+    mock_ids_container = db_session_fixture.get_ids_container_model()
 
-# # Test for /ids/analysis/finished
-# def test_finished_analysis(client):
-#     request_data = {
-#         "container_id": 1,
-#     }
+    response = await finished_analysis(analysisFinishedData=analysis_finished_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == { "message": f"Successfully stopped analysis for container {mock_ids_container.name}" }
 
-#     response = client.post("/ids/analysis/finished", json=request_data)
 
-#     assert response.status_code == 200
 
-# def test_receive_alerts_from_ids(client):
-#     request_data = {
-#         "container_id": 1,
-#         "alerts": [
-#             {
-#                 "time": "2025-01-01T12:00:00Z",
-#                 "destination_ip": "192.168.0.1",
-#                 "destination_port": 8080,
-#                 "source_ip": "10.0.0.1",
-#                 "source_port": 1234,
-#                 "severity": "high",
-#                 "type": "test alert",
-#                 "message": "Test alert message",
-#             }
-#         ],
-#         "analysis_type": "static",
-#         "dataset_id": 1,
-#     }
+@patch("app.routers.ids.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_network(push_alerts_mock, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "network",
+        dataset_id = 1,
+        container_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
 
-#     response = client.post("/ids/publish/alerts", json=request_data)
+    response = await receive_alerts_from_ids(alert_data=alert_data,db=db_session, background_tasks=mock_background_tasks)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': 'Successfully pushed alerts and metrics to Loki'}
 
-#     assert response.status_code == 200
-#     assert response.text == "Successfully pushed alerts and metrics to Loki"
 
-# def test_display_background_tasks(client):
-#     response = client.get("/ids/help/background-tasks")
 
-#     assert response.status_code == 200
+
+@patch("app.routers.ids.push_alerts_to_loki")
+@patch("app.routers.ids.calculate_evaluation_metrics_and_push")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_static(calculate_and_push_mock, push_alerts_mock, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "static",
+        dataset_id = 1,
+        container_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    response = await receive_alerts_from_ids(alert_data=alert_data,db=db_session, background_tasks=mock_background_tasks)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': 'Successfully pushed alerts and metrics to Loki'}

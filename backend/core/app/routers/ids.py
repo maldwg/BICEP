@@ -124,7 +124,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     container = get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(STATUS.IDLE.value, container, db)
     print(f"Updated status of {container.name} to IDLE")
-    return Response(content=f"Successfully stopped analysis for container {container.name}", status_code=200)
+    return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 
 @router.post("/publish/alerts")
@@ -162,7 +162,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
     if alert_data.analysis_type == "static":
         calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
         background_tasks.add(calc_task)
-    return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)
+    return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)
 
 
 @router.get("/help/background-tasks")
