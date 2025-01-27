@@ -6,6 +6,9 @@ from app.models.docker_host_system import DockerHostSystem
 from app.models.ids_tool import IdsTool
 from app.models.configuration import Configuration
 from app.models.dataset import Dataset
+from app.models.ensemble import Ensemble
+from app.models.ensemble_ids import EnsembleIds
+from app.models.ensemble_technique import EnsembleTechnique
 from sqlalchemy.orm import Session
 
 TESTS_BASE_DIR = "./backend/core/app/test"
@@ -18,9 +21,24 @@ class DatabaseSessionFixture():
     mock_ids_tool: MagicMock
     mock_configuration: MagicMock
     mock_dataset: MagicMock
-    mock_ruleset: MagicMock()
+    mock_ruleset: MagicMock
+    mock_ensemble: MagicMock
+    mock_ensemble_ids: MagicMock
+    mock_ensemble_technique: MagicMock
 
-    def __init__(self, db_session, mock_docker_host_system, mock_ids_container, mock_ids_tool, mock_configuration, mock_ruleset, mock_dataset):
+    def __init__(
+            self,
+            db_session, 
+            mock_docker_host_system,
+            mock_ids_container, 
+            mock_ids_tool, 
+            mock_configuration, 
+            mock_ruleset, 
+            mock_dataset, 
+            mock_ensemble, 
+            mock_ensemble_ids,
+            mock_ensemble_technique     
+        ):
         self.db_session = db_session
         self.mock_docker_host_system = mock_docker_host_system
         self.mock_ids_container = mock_ids_container
@@ -28,6 +46,9 @@ class DatabaseSessionFixture():
         self.mock_configuration = mock_configuration
         self.mock_ruleset = mock_ruleset
         self.mock_dataset = mock_dataset
+        self.mock_ensemble = mock_ensemble
+        self.mock_ensemble_ids = mock_ensemble_ids
+        self.mock_ensemble_technique = mock_ensemble_technique
 
     def get_db_session(self):
         return self.db_session
@@ -45,22 +66,24 @@ class DatabaseSessionFixture():
         return self.mock_docker_host_system
     
     def get_ensemble_ids_model(self):
-        pass
+        return self.mock_ensemble_ids
+    
     def get_ensemble_technique_model(self):
-        pass
+        return self.mock_ensemble_technique
+    
     def get_ids_container_model(self):
         return self.mock_ids_container
     
     def get_ids_tool_model(self):
         return self.mock_ids_tool
-
+    
+    def get_ensemble_model(self):
+        return self.mock_ensemble
 
 @pytest.fixture
 def db_session_fixture():
-    # Create the mock database session
     mock_db = MagicMock()
 
-    # Create the mock DockerHostSystem object
     mock_docker_host_system = MagicMock(spec=DockerHostSystem)
     mock_docker_host_system.id = 1
     mock_docker_host_system.name = "localhost"
@@ -103,7 +126,22 @@ def db_session_fixture():
     mock_ids_container.teardown = AsyncMock()
     mock_ids_container.start_static_analysis = AsyncMock()
     mock_ids_container.start_network_analysis = AsyncMock()
+    mock_ids_container.is_available = AsyncMock(return_value = True)
 
+    mock_ensemble = AsyncMock(spec=Ensemble)
+    mock_ensemble.id = 1
+    mock_ensemble.add_container = AsyncMock()
+    mock_ensemble.get_containers = MagicMock()
+    mock_ensemble.start_static_analysis = AsyncMock()
+    mock_ensemble.start_network_analysis = AsyncMock()
+
+    mock_ensemble_technique = MagicMock()
+
+    mock_ensemble_ids = MagicMock()
+    mock_ensemble_ids.id = 1
+    mock_ensemble_ids.ids_container_id = 1
+    mock_ensemble_ids.ensemble_id = 1
+    
     def query_side_effect(model):
         mock_query = MagicMock()
         mock_filter = MagicMock()
@@ -118,19 +156,22 @@ def db_session_fixture():
             mock_query.all.return_value = [mock_ids_tool, second_mock_ids_tool]
         elif model == Configuration:
             mock_filter.first.return_value = mock_configuration
-            # mock_query.all is necessray since it is db.query.all and not db.query.filter.all
             mock_query.all.return_value = [mock_configuration, mock_configuration_ruleset]
-            # for db.query.filter(filetype).all
             mock_filter.all.return_value = [mock_configuration_ruleset]
-            # 
         elif model == Dataset:
             mock_filter.first.return_value = mock_dataset
             mock_query.all.return_value = [mock_dataset, second_mock_dataset]
+        elif model == Ensemble:
+            mock_filter.first.return_value = mock_ensemble
+        elif model == EnsembleTechnique:
+            mock_filter.first.return_value = mock_ensemble_technique
+        elif model == EnsembleIds:
+            mock_filter.first.return_value = mock_ensemble_ids
+            mock_query.all.return_value = [mock_ensemble_ids]
         else:
             raise ValueError(f"Unsupported model: {model}")
         return mock_query
 
-    # Configure the `query` method of the mock db session
     mock_db.query.side_effect = query_side_effect
 
     db_fixture: DatabaseSessionFixture = DatabaseSessionFixture(
@@ -140,10 +181,11 @@ def db_session_fixture():
         mock_ids_tool=mock_ids_tool,
         mock_configuration=mock_configuration,
         mock_ruleset=mock_configuration_ruleset,
-        mock_dataset=mock_dataset
+        mock_dataset=mock_dataset,
+        mock_ensemble=mock_ensemble,
+        mock_ensemble_ids=mock_ensemble_ids,
+        mock_ensemble_technique=mock_ensemble_technique
     )
-
-    # Yield the mock session
     yield db_fixture
 
 

@@ -46,7 +46,7 @@ async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.delete("/remove/{ensemble_id}")
-async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
+async def remove_ensemble(ensemble_id: int,db=Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     ids_ensembles: list[EnsembleIds] = get_all_ensemble_container(db)
     container_id_list = [ids_ensemble.ids_container_id  for ids_ensemble in ids_ensembles if ids_ensemble.ensemble_id == ensemble_id]
@@ -56,10 +56,10 @@ async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
         # deregister from ensemble and stop running analysis if one is running
         response: HTTPResponse = await deregister_container_from_ensemble(container)
         if response.status_code != 400 and response.status_code != 500:
-            message=f"message successfully removed container {id} from ensemble {ensemble.id}"
+            message=f"message successfully removed container {container.id} from ensemble {ensemble.id}"
             responses.append(create_generic_response_message_for_ensemble(message, 200))
         else:
-            message=f" Did not remove container {id} from ensemble {ensemble.id} successfully"
+            message=f" Did not remove container {container.id} from ensemble {ensemble.id} successfully"
             responses.append(create_generic_response_message_for_ensemble(message, 500))    
     remove_ensemble(ensemble, db)
     return JSONResponse(content={"content": responses}, status_code=200)
@@ -67,19 +67,20 @@ async def remove_ensembles(ensemble_id: int,db=Depends(get_db)):
 # TODO 5: update all returns to use new helper methdos (create_response_message/error) or delte helper methods
 
 @router.post("/analysis/static")
-async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
+async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
     
     ensemble: Ensemble = get_ensemble_by_id(static_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
-
     for container in containers:
         if container.status != STATUS.IDLE.value:
+            print("test")
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
         
         if not await container.is_available():
-            return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+            message = f"container with id {container.id} is not available! Check if it should be deleted"
+            return create_response_error(message, status_code=500)
 
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.PROCESSING.value )
 
@@ -96,7 +97,7 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     return JSONResponse(content={"content": content}, status_code=200)
 
 @router.post("/analysis/network")
-async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db = Depends(get_db)):
+async def start_network_ensemble_analysis(network_analysis_data: NetworkAnalysisData, db = Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(network_analysis_data.ensemble_id, db)
     containers: list[IdsContainer] = ensemble.get_containers(db)
 
@@ -143,7 +144,7 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.post("/analysis/finished")
-async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
+async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, analysisFinishedData.container_id)
     ensemble: Ensemble = get_ensemble_by_id(analysisFinishedData.ensemble_id, db)
     await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
@@ -153,7 +154,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
         await update_ensemble_status(STATUS.IDLE.value, ensemble, db)
         print(f"Updated status of ensemble {ensemble.name} to IDLE")
         ensemble.current_analysis_id = None
-    return Response(content=f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}", status_code=200)
+    return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db)):

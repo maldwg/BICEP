@@ -10,8 +10,9 @@ from app.models.docker_host_system import DockerHostSystem
 from http.client import HTTPResponse
 from app.test.fixtures import *
 
+@patch("app.models.ids_container.IdsContainer.start_metric_collection")
 @pytest.mark.asyncio
-async def test_setup_ids(db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
+async def test_setup_ids(start_metric_collection_mock,db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
     request_data: IdsContainerCreate = IdsContainerCreate(   
         host_system_id=1,
         description= "Test IDS Container",
