@@ -14,11 +14,16 @@ jobs:
                   submodules: 'true'
 
             - name: Set up Python
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
+              with:
+                python-version: 3.12
 
             - name: install requirements
               run: pip3 install -r backend/core/requirements.txt 
                
+            - name: execute backend tests terminal
+              run: pytest backend/core/app/test --cov-branch --cov-report terminal --cov
+
             - name: execute backend tests
               run: pytest backend/core/app/test --cov-branch --cov-report=xml --cov
 
