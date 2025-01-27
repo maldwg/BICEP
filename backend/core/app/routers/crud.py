@@ -24,6 +24,7 @@ async def get_all_configs(db=Depends(get_db)):
     configurations = get_all_configurations(db)
     serialized_configurations = get_serialized_confgigurations(configurations)
     return serialized_configurations
+
 @router.get("/configuration/file-types")
 async def get_all_config_filetypes(db=Depends(get_db)):
     types = [t.value for t in FILE_TYPES]
@@ -57,7 +58,7 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
         file_type=file_type,
     )
     add_config(db, configuration)
-    return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
+    return JSONResponse({"message": "configuration added successfully"}, status_code=200)
 
 
 @router.post("/dataset/add")
