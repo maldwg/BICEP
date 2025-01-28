@@ -127,6 +127,7 @@ def db_session_fixture():
     mock_ids_container.start_static_analysis = AsyncMock()
     mock_ids_container.start_network_analysis = AsyncMock()
     mock_ids_container.is_available = AsyncMock(return_value = True)
+    mock_ids_container.is_busy = AsyncMock(return_value=True)
 
     mock_ensemble_technique = MagicMock(spec=EnsembleTechnique)
     mock_ensemble_technique.id = 1
@@ -158,6 +159,7 @@ def db_session_fixture():
         elif model == IdsContainer:
             mock_filter.first.return_value = mock_ids_container
             mock_query.all.return_value = [mock_ids_container]
+            mock_filter.all.return_value = [mock_ids_container]
         elif model == IdsTool:
             mock_filter.first.return_value = mock_ids_tool
             mock_query.all.return_value = [mock_ids_tool, second_mock_ids_tool]
@@ -176,6 +178,8 @@ def db_session_fixture():
         elif model == EnsembleIds:
             mock_filter.first.return_value = mock_ensemble_ids
             mock_query.all.return_value = [mock_ensemble_ids]
+            # mocked for the get_containers method of the ensemble
+            mock_filter.all.return_value = [mock_ensemble_ids]
         else:
             raise ValueError(f"Unsupported model: {model}")
         return mock_query

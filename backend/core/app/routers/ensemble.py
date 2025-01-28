@@ -89,7 +89,7 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
     
 
 
-    responses: list[HTTPResponse] = await ensemble.start_static_analysis(static_analysis_data=static_analysis_data, dataset=dataset, db=db)
+    responses: list[HTTPResponse] = await ensemble.start_static_analysis(dataset=dataset, db=db)
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
