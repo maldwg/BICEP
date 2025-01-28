@@ -66,7 +66,7 @@ class Ensemble(Base):
         containers: list[IdsContainer] = db.query(IdsContainer).filter(IdsContainer.id.in_(id_list)).all()
         return containers
     
-    async def start_static_analysis(self, static_analysis_data, dataset, db):
+    async def start_static_analysis(self, dataset, db):
         from .ids_container import IdsContainer
         containers: list[IdsContainer] = self.get_containers(db)
         responses = []
@@ -82,8 +82,8 @@ class Ensemble(Base):
             
             # TODO 0: try with asyncio in background 
             response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
+            print(response)
             response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
-            
             if response.status_code != 200:
                 await update_container_status(STATUS.IDLE.value, container, db)
             else:
@@ -95,7 +95,10 @@ class Ensemble(Base):
         all_containers = self.get_containers(db)
         other_containers_in_ensemble = list(filter(lambda c: c.id != container.id, all_containers))
         other_containers_running = [ await c.is_busy() for c in other_containers_in_ensemble]    
-        if True not in other_containers_running:
+        # if there is only one container in the ensemble, then that is always the last one running
+        if len(all_containers) == 1:
+            return True
+        elif True not in other_containers_running:
             return True
         else:
             return False

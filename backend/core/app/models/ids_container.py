@@ -106,15 +106,18 @@ class IdsContainer(Base):
             # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been startedd
             return f"Could not stop metric collection for container {self.id}; No stream started"
         try:
+            print(stream_metric_tasks)
+            print(self.stream_metric_task_id)
             await stop_metric_stream(stream_metric_tasks=stream_metric_tasks, task_id=self.stream_metric_task_id, container=self)
             del stream_metric_tasks[self.stream_metric_task_id]
         except KeyError as e:
-            print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
             # set to none, because this indicates that the metric task has either been canceled or the server reloaded, 
             # #either way the ID is lost in the dict, hence remove it also from the object
             self.stream_metric_task_id = None
             db.commit()
             db.refresh(self)
+            print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
+            return f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task"
         self.stream_metric_task_id = None
         db.commit()
         db.refresh(self)

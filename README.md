@@ -75,3 +75,12 @@ In general every type of dataset is support as long as it fulfills the following
         - Source Port: Source Port of the request
         - Destination IP: Destination IP of the request
         - Destination Port: Destination port of the request
+
+
+## Add Your Own IDS
+To add your own IDS to the framework, you will need to provide the following in a docker image:
+- Your system, executable via CLI
+- The implementation of the base classes for the AlertParser and the IDSBase. 
+
+For inspiration and sample implentations, have a look at the modules for [Sruciata](https://github.com/maldwg/BICEP-suricata-image) and [Slips](https://github.com/maldwg/BICEP-slips-image). The modules to implement can be found in [BICEPs-utils](https://github.com/maldwg/BICEP-utils/tree/main)
+

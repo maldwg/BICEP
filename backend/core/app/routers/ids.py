@@ -15,6 +15,8 @@ from ..metrics import calculate_evaluation_metrics
 from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
 from ..models.docker_host_system import get_host_by_id
+from fastapi.responses import JSONResponse
+
 router = APIRouter(
     prefix="/ids"
 )
@@ -38,30 +40,31 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
         )
     await ids_container.setup(db)
     await ids_container.start_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
-    return {"message": "setup done"}
+    return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
+    container: IdsContainer = get_container_by_id(db, container_id)
     try:
-        container: IdsContainer = get_container_by_id(db, container_id)
         await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
     except Exception as e:
         print(e)
     await container.teardown(db)
-    return {"message": "teardown done"}
+    return JSONResponse({"message": "teardown done"}, status_code=204)
 
 @router.post("/analysis/static")
 async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, static_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500)
+        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500)
     
+    print(await container.is_available())
     if not await container.is_available():
-         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
@@ -81,15 +84,15 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     return response
 
 @router.post("/analysis/network")
-async def start_static_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
+async def start_network_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return Response(content=f"container with id {container.id} is not Idle!, aborting", status_code=500) 
+        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500) 
     
 
     if not await container.is_available():
-         return Response(content=f"container with id {container.id} is not available! Check if it should be deleted", status_code=500)
+         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     data = json.dumps(network_analysis_data.__dict__)
@@ -121,7 +124,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     container = get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(STATUS.IDLE.value, container, db)
     print(f"Updated status of {container.name} to IDLE")
-    return Response(content=f"Successfully stopped analysis for container {container.name}", status_code=200)
+    return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 
 @router.post("/publish/alerts")
@@ -159,7 +162,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
     if alert_data.analysis_type == "static":
         calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
         background_tasks.add(calc_task)
-    return Response(content=f"Successfully pushed alerts and metrics to Loki", status_code=200)
+    return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)
 
 
 @router.get("/help/background-tasks")
