@@ -132,3 +132,64 @@ async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture)
     assert response[0].name == "container-0"
     assert response[0].description == "Test description"
 
+
+
+
+# # TODO add test methods for these as well
+# @router.get("/container/without/ensemble")
+# async def get_all_available_ids_container(db=Depends(get_db)):
+#     container = get_all_container(db)
+#     ensemble_ids = get_all_ensemble_container(db)
+#     id_list = [e.ids_container_id for e in ensemble_ids]
+#     available_container = [ c for c in container if c.id not in id_list ]
+#     print(available_container)
+#     return available_container
+
+
+# @router.patch("/container")
+# async def patch_container(container: IdsContainerUpdate,db=Depends(get_db)):
+#     await update_container(container, db)
+#     return {"message": "updated container successfully"}
+
+
+# @router.get("/ensemble/technique/all")
+# async def get_ensemble_techniques(db=Depends(get_db)):
+#     return get_all_ensemble_techniques(db)
+
+# @router.get("/ensemble/all")
+# async def get_ensembles(db=Depends(get_db)):
+#     return get_all_ensembles(db)
+
+# @router.get("/ensemble/container/all")
+# async def get_ensembles(db=Depends(get_db)):
+#     return get_all_ensemble_container(db)
+
+# @router.patch("/ensemble")
+# async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
+#     result = await update_ensemble(ensmeble, db)
+#     for r in result:
+#         if r.status_code != 200:
+#             return JSONResponse(content={"messages": "Failed to change ensemble attributes"}, status_code=500)
+#         else:
+#             return JSONResponse(content={"messages": "successfully changed ensemble attributes"}, status_code=200)
+        
+
+# @router.get("/host/all")
+# async def return_all_hosts(db=Depends(get_db)):
+#     hosts = get_all_hosts(db)
+#     return hosts
+
+# @router.post("/host/add")
+# async def create_host(host_data: DockerHostCreationData,db=Depends(get_db)):
+#     host = DockerHostSystem(
+#         name = host_data.name,
+#         host = host_data.host,
+#         docker_port = host_data.docker_port
+#     )
+#     add_host_system(host, db)
+#     return JSONResponse(content={"message": "Successfully created host"}, status_code=200)
+
+# @router.delete("/host/delete/{id}")
+# async def delete_host(id: int,db=Depends(get_db)):
+#     remove_host(id, db)
+#     return Response(status_code=204)

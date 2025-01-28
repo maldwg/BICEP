@@ -128,14 +128,20 @@ def db_session_fixture():
     mock_ids_container.start_network_analysis = AsyncMock()
     mock_ids_container.is_available = AsyncMock(return_value = True)
 
+    mock_ensemble_technique = MagicMock(spec=EnsembleTechnique)
+    mock_ensemble_technique.id = 1
+    mock_ensemble_technique.function_name = "majority_vote"
+    mock_ensemble_technique.execute_technique_by_name_on_alerts = AsyncMock()
+
+
     mock_ensemble = AsyncMock(spec=Ensemble)
     mock_ensemble.id = 1
+    mock_ensemble.name = "Ensemble-1"
     mock_ensemble.add_container = AsyncMock()
     mock_ensemble.get_containers = MagicMock()
     mock_ensemble.start_static_analysis = AsyncMock()
     mock_ensemble.start_network_analysis = AsyncMock()
-
-    mock_ensemble_technique = MagicMock()
+    mock_ensemble.ensemble_technique = mock_ensemble_technique
 
     mock_ensemble_ids = MagicMock()
     mock_ensemble_ids.id = 1

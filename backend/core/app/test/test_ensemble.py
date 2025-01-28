@@ -148,20 +148,127 @@ async def test_start_static_ensemble_analysis_not_available(db_session_fixture: 
     assert response_json == {"error": f"container with id {mock_ids_container.id} is not available! Check if it should be deleted"}
 
 
-# @patch("app.models.ensemble.get_ensemble_by_id", new_callable=MagicMock)
-# def test_stop_analysis(mock_get_ensemble_by_id, client):
-#     mock_get_ensemble_by_id.return_value = Ensemble(id=1, name="Test Ensemble")
+@pytest.mark.asyncio
+async def test_stop_analysis(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
 
-#     stop_data = {
-#         "ensemble_id": 1
-#     }
+    stop_data: stop_analysisData =  stop_analysisData(
+        ensemble_id = 1
+    )
 
-#     response = client.post("/ensemble/analysis/stop", json=stop_data)
-#     assert response.status_code == 200
-#     assert "content" in response.json()
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 200
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids.stop_analysis.return_value = mock_response
+
+    response = await stop_ensemble_analysis(stop_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': [{'content': f'Successfully stopped analysis for container {mock_ids.id} and ensemble {mock_ensemble.id}', 'status_code': 200}]}
+
+
+@pytest.mark.asyncio
+async def test_stop_analysis_unsuccessful(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+
+    stop_data: stop_analysisData =  stop_analysisData(
+        ensemble_id = 1
+    )
+
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 500
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids.stop_analysis.return_value = mock_response
+
+    response = await stop_ensemble_analysis(stop_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': [{'content': f'Could not stop analysis for container {mock_ids.id} and ensemble {mock_ensemble.id}', 'status_code': 500}]}
 
 
 
+@pytest.mark.asyncio
+async def test_start_network_ensemble_analysis_successful(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
+        ensemble_id = 1
+    )
+
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 200
+    mock_response.body = b'{"message": "success"}'
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.start_network_analysis.return_value = [mock_response]
+    
+    response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': [{'content': '{"message": "success"}', 'status_code': 200}]}
+
+
+@pytest.mark.asyncio
+async def test_start_network_ensemble_analysis_failiure(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
+        ensemble_id = 1
+    )
+
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.status_code = 500
+    mock_response.body = b'{"message": "failiure"}'
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.start_network_analysis.return_value = [mock_response]
+    
+    response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': [{'content': '{"message": "failiure"}', 'status_code': 500}]}
+
+
+
+@pytest.mark.asyncio
+async def test_start_network_ensemble_analysis_unavailable(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
+        ensemble_id = 1
+    )
+
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ids.is_available = AsyncMock(return_value = False)
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    
+    response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 500
+    assert response_json == {'error': 'container with id 1 is not available! Check if it should be deleted'}
+
+
+
+@pytest.mark.asyncio
+async def test_start_network_ensemble_analysis_not_idle(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
+        ensemble_id = 1
+    )
+
+    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ids.status = STATUS.ACTIVE.value
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    
+    response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 500
+    assert response_json == {'error': 'container with id 1 is not Idle!, aborting'}
 
 @pytest.mark.asyncio
 async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFixture):
@@ -177,18 +284,197 @@ async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFix
     assert response.status_code == 200
     assert response_json == { "message": f"Successfully finished analysis for esemble {finished_data.ensemble_id} and container {finished_data.container_id}" }
 
-# @patch("app.models.ids_container.get_container_by_id", new_callable=MagicMock)
-# @patch("app.models.ensemble.get_ensemble_by_id", new_callable=MagicMock)
-# def test_publish_alerts(mock_get_ensemble_by_id, mock_get_container_by_id, client):
-#     mock_get_ensemble_by_id.return_value = Ensemble(id=1, name="Test Ensemble")
-#     mock_get_container_by_id.return_value = IdsContainer(id=1, name="Test Container")
 
-#     alert_data = {
-#         "container_id": 1,
-#         "ensemble_id": 1,
-#         "alerts": []
-#     }
 
-#     response = client.post("/ensemble/publish/alerts", json=alert_data)
-#     assert response.status_code == 200
-#     assert "Successfully pushed alerts" in response.text
+@patch("app.routers.ensemble.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_unsuccessful_loki_push(push_to_loki_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "network",
+        dataset_id = None,
+        container_id = 1,
+        ensemble_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    mock_response_loki = AsyncMock(spec=HTTPResponse)
+    mock_response_loki.status_code = 500
+    push_to_loki_mock.return_value = mock_response_loki
+
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    print(response_json)
+    assert response.status_code == 500
+    assert response_json == {'content': 'Could not push logs to loki for container'}
+
+
+
+@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_network_analysis_last_container(push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "network",
+        dataset_id = None,
+        container_id = 1,
+        ensemble_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    mock_response_loki = AsyncMock(spec=HTTPResponse)
+    mock_response_loki.status_code = 204
+    push_to_loki_mock.return_value = mock_response_loki
+
+    # return value is not realy correct, but does not matter as the technique method is mocked as well inm its return value
+    mock_response_get_alerts = AsyncMock(spec=[Alert],return_value=alert_data.alerts)
+    get_alerts_mock.return_value = mock_response_get_alerts
+
+    mock_technique = db_session_fixture.get_ensemble_technique_model()
+    mock_technique.execute_technique_by_name_on_alerts.return_value = alert_data.alerts
+
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': f'Successfully pushed alerts for ensemble {mock_ensemble.name}'}
+
+
+@patch("app.routers.ensemble.last_container_sending_logs", new_callable=AsyncMock)
+@patch("app.routers.ensemble.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_network_analysis_not_last_container(push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "network",
+        dataset_id = None,
+        container_id = 1,
+        ensemble_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    mock_response_loki = AsyncMock(spec=HTTPResponse)
+    mock_response_loki.status_code = 204
+    push_to_loki_mock.return_value = mock_response_loki
+    last_container_sending_mock.return_value = False
+    mock_container = db_session_fixture.get_ids_container_model()
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': f'Successfully pushed alerts for container {mock_container.name}'}
+
+
+
+
+@patch("app.routers.ensemble.last_container_sending_logs", new_callable=AsyncMock)
+@patch("app.routers.ensemble.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_static_analysis_not_last_container(push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "static",
+        dataset_id = 1,
+        container_id = 1,
+        ensemble_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    mock_response_loki = AsyncMock(spec=HTTPResponse)
+    mock_response_loki.status_code = 204
+    push_to_loki_mock.return_value = mock_response_loki
+    last_container_sending_mock.return_value = False
+    mock_container = db_session_fixture.get_ids_container_model()
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'content': f'Successfully pushed alerts for container {mock_container.name}'}
+
+@patch("app.routers.ensemble.push_evaluation_metrics_to_prometheus")
+@patch("app.routers.ensemble.calculate_evaluation_metrics")
+@patch("app.routers.ensemble.clean_up_alerts_in_loki")
+@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.push_alerts_to_loki")
+@pytest.mark.asyncio
+async def test_receive_alerts_from_ids_static_analysis_last_container(push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    alert_data: AlertData = AlertData(
+        analysis_type = "static",
+        dataset_id = 1,
+        container_id = 1,
+        ensemble_id = 1,
+        alerts = [
+            {
+                "time": "2025-01-01T12:00:00Z",
+                "destination_ip": "192.168.0.1",
+                "destination_port": "8080",
+                "source_ip": "10.0.0.1",
+                "source_port": "1234",
+                "severity": 0,
+                "type": "test alert",
+                "message": "Test alert message",
+            }
+        ]
+    )
+    mock_response_loki = AsyncMock(spec=HTTPResponse)
+    mock_response_loki.status_code = 204
+    push_to_loki_mock.return_value = mock_response_loki
+
+
+    # return value is not realy correct, but does not matter as the technique method is mocked as well inm its return value
+    mock_response_get_alerts = AsyncMock(spec=[Alert],return_value=alert_data.alerts)
+    get_alerts_mock.return_value = mock_response_get_alerts
+
+    mock_technique = db_session_fixture.get_ensemble_technique_model()
+    mock_technique.execute_technique_by_name_on_alerts.return_value = alert_data.alerts
+
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+
+    mock_container = db_session_fixture.get_ids_container_model()
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response_json = json.loads(response.body.decode())
+    print(response_json)
+    assert response.status_code == 200
+    assert response_json == {'content': f'Successfully pushed alerts for ensemble {mock_ensemble.name}'}
+
