@@ -92,9 +92,8 @@ async def get_all_ids_tools(db=Depends(get_db)):
 async def get_all_ids_container(db=Depends(get_db)):
     return get_all_container(db)
 
-# TODO add test methods for these as well
 @router.get("/container/without/ensemble")
-async def get_all_available_ids_container(db=Depends(get_db)):
+async def get_all_ids_container_not_assigned_to_an_ensemble(db=Depends(get_db)):
     container = get_all_container(db)
     ensemble_ids = get_all_ensemble_container(db)
     id_list = [e.ids_container_id for e in ensemble_ids]
@@ -106,7 +105,7 @@ async def get_all_available_ids_container(db=Depends(get_db)):
 @router.patch("/container")
 async def patch_container(container: IdsContainerUpdate,db=Depends(get_db)):
     await update_container(container, db)
-    return {"message": "updated container successfully"}
+    return JSONResponse({"message": "updated container successfully"}, status_code = 200)
 
 
 @router.get("/ensemble/technique/all")
@@ -149,4 +148,4 @@ async def create_host(host_data: DockerHostCreationData,db=Depends(get_db)):
 @router.delete("/host/delete/{id}")
 async def delete_host(id: int,db=Depends(get_db)):
     remove_host(id, db)
-    return Response(status_code=204)
+    return JSONResponse({"message": f"successfully deleted host with id {id}"},status_code=204)

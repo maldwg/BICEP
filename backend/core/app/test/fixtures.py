@@ -154,6 +154,7 @@ def db_session_fixture():
         mock_query.filter.return_value = mock_filter
         if model == DockerHostSystem:
             mock_filter.first.return_value = mock_docker_host_system
+            mock_query.all.return_value = [mock_docker_host_system]
         elif model == IdsContainer:
             mock_filter.first.return_value = mock_ids_container
             mock_query.all.return_value = [mock_ids_container]
@@ -171,6 +172,7 @@ def db_session_fixture():
             mock_filter.first.return_value = mock_ensemble
         elif model == EnsembleTechnique:
             mock_filter.first.return_value = mock_ensemble_technique
+            mock_query.all.return_value = [mock_ensemble_technique]
         elif model == EnsembleIds:
             mock_filter.first.return_value = mock_ensemble_ids
             mock_query.all.return_value = [mock_ensemble_ids]
@@ -207,3 +209,38 @@ def mock_background_tasks():
     tasks = MagicMock(spec=set())
     tasks.add_task = MagicMock()
     return tasks
+
+
+@pytest.fixture
+def mock_alerts():
+    alert1 = Alert(
+                    time= "2025-01-01T12:00:00Z",
+                    destination_ip= "192.168.0.1",
+                    destination_port= "8080",
+                    source_ip= "10.0.0.1",
+                    source_port= "1234",
+                    severity= 0,
+                    type= "test alert",
+                    message = "Test alert message"
+        )
+    alert2 = Alert(
+                    time= "2025-01-01T13:00:00Z",
+                    destination_ip= "169.168.0.1",
+                    destination_port= "3200",
+                    source_ip= "10.0.0.1",
+                    source_port= "1234",
+                    severity= 1,
+                    type= "test alert 2",
+                    message = "Test alert 2 message"
+        )
+    alert3 = Alert(
+                    time= "2025-01-01T14:00:00Z",
+                    destination_ip= "0.0.0.1",
+                    destination_port= "10230",
+                    source_ip= "10.0.0.1",
+                    source_port= "5678",
+                    severity= 0,
+                    type= "test alert 3",
+                    message = "Test alert 3 message"
+        )
+    return [alert1,alert2,alert3]
