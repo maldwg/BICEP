@@ -2,15 +2,16 @@ FROM node:latest as build
 
 RUN mkdir /opt/frontend
 WORKDIR /opt/frontend
-COPY ./ /opt/frontend/
+COPY ./ .
 RUN npm install
-RUN npm run build 
+RUN npm run build --prod
 
 
 FROM nginx:latest
 
-# Copy the build output to replace the default nginx contents.
-COPY --from=build /opt/frontend/dist/frontend/browser /usr/share/nginx/html
+RUN mkdir /etc/nginx/logs
 
-# Expose port 80
+# Copy the build output to replace the default nginx contents.
+COPY --from=build /opt/frontend/dist/frontend /usr/share/nginx/html
+COPY ./default.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

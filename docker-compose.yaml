@@ -7,7 +7,7 @@ services:
     networks:
       - bicep
     environment:
-      - BACKEND_URL=http://core:8000
+      - BACKEND_URL=http://localhost:8000
   grafana:
     build:
       context: ./grafana
