@@ -31,8 +31,7 @@ The project is still under development and breaking changes are likely to occur.
 In order to be able to start the project you will need to initialize it first. Do this by running:
 
 ```
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 This fetches the newest version of the submodule for the backend code and is necessary for the application to work seamlessly.
 
