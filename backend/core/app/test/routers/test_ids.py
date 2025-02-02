@@ -33,9 +33,7 @@ async def test_remove_container(db_session_fixture: DatabaseSessionFixture, mock
     db_session = db_session_fixture.get_db_session()
     container_id = 1
     response = await remove_container(container_id=container_id,db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
-    response_json = json.loads(response.body.decode())
     assert response.status_code == 204
-    assert response_json == {"message": "teardown done"}
 
 @pytest.mark.asyncio
 async def test_start_static_container_analysis_from_idle_container(db_session_fixture: DatabaseSessionFixture):

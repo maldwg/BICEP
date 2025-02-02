@@ -153,6 +153,7 @@ async def stop_analysis(container):
     endpoint = "/analysis/stop"
     async with httpx.AsyncClient() as client:
         response: HTTPResponse = await client.post(container_url+endpoint)
+        print(response)
     return response
 
 async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):

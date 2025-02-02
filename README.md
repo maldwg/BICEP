@@ -77,11 +77,13 @@ In general every type of dataset is support as long as it fulfills the following
 
 
 ## Add Your Own IDS
+The list of already registered systems is available in the README [here](https://github.com/maldwg/BICEP-utils/tree/main)
+
 To add your own IDS to the framework, you will need to provide the following in a docker image:
-- Your system, executable via CLI
+- Your system (executable via CLI) and all its dependencies
 - [BICEP_Utils](https://github.com/maldwg/BICEP-utils/tree/main) should be added as submodule as it contains the fastapi server for the IDS as well as class definitions on Alerts and Base classes. 
 - The implementation of the base classes for the AlertParser and the IDSBase from the Bicep_Utils repository. 
-
+- a main.py that starts the fastAPI server, as can be seen in the example of [suricata](https://github.com/maldwg/BICEP-suricata-image/blob/main/bicep-suricata/src/main.py) or [slips](https://github.com/maldwg/BICEP-slips-image/blob/main/bicep-slips/src/main.py) or [snort](https://github.com/maldwg/BICEP-snort-image/blob/main/bicep-snort/src/main.py) .
 For inspiration and sample implentations, have a look at the modules for [Sruciata](https://github.com/maldwg/BICEP-suricata-image) and [Slips](https://github.com/maldwg/BICEP-slips-image). The modules to implement can be found in [BICEPs-utils](https://github.com/maldwg/BICEP-utils/tree/main)
 
 At the current state, a new IDS needs to be introduced to the DB of BICEP. Either add id by modifying the Database or the sql script providing the default entries. A feature is planned that automatically checks for available BICEP models so that this step is not necessary anymore.
