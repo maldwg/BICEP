@@ -1,4 +1,4 @@
-FROM grafana/grafana:latest
+FROM grafana/grafana:11.4.0
 
 COPY ./defaults.ini /usr/share/grafana/conf/defaults.ini
 ADD ./provisioning /usr/share/grafana/conf/provisioning/
