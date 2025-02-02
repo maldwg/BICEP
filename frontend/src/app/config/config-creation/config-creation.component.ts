@@ -145,7 +145,7 @@ getAcceptType(): string {
     case fileTypes.testData:
       return '.pcap,.csv,.pcap_ISX';
     case fileTypes.configuration:
-      return '.yaml,.conf,.json';
+      return '.yaml,.conf,.json,.lua';
     case fileTypes.ruleSet:
       return '.rules';
     default:
