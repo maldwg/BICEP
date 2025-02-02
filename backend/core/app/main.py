@@ -3,7 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routers import crud, ids, ensemble
 from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.background_tasks = set()
+    app.state.stream_metric_tasks = {}
+    yield
+# @app.on_event("startup")
+# async def startup_event():
+#     app.state.background_tasks = set()
+#     app.state.stream_metric_tasks = {}
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "*"
@@ -18,14 +29,6 @@ app.add_middleware(
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    app.state.background_tasks = set()
-    app.state.stream_metric_tasks = {}
-# @app.on_event("startup")
-# async def startup_event():
-#     app.state.background_tasks = set()
-#     app.state.stream_metric_tasks = {}
 
 
 app.include_router(ids.router)
