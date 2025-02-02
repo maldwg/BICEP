@@ -82,7 +82,7 @@ async def get_all_ds(db=Depends(get_db)):
 @router.delete("/dataset/{id}")
 async def remove_dataset( id: int, db=Depends(get_db)):
     remove_dataset_by_id(db, id)
-    return JSONResponse(content={"message": f"Successfully removed dataset with id {id}"}, status_code=204)
+    return Response(status_code=204)
 
 @router.get("/ids-tool/all")
 async def get_all_ids_tools(db=Depends(get_db)):
@@ -148,4 +148,4 @@ async def create_host(host_data: DockerHostCreationData,db=Depends(get_db)):
 @router.delete("/host/delete/{id}")
 async def delete_host(id: int,db=Depends(get_db)):
     remove_host(id, db)
-    return JSONResponse({"message": f"successfully deleted host with id {id}"},status_code=204)
+    return Response(status_code=204)

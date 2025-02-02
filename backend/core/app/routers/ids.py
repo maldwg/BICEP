@@ -47,13 +47,17 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     container: IdsContainer = get_container_by_id(db, container_id)
     try:
+        print("test")
         await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
+        print("stopped metrics")
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
+        print("stopped container analysis")
     except Exception as e:
         print(e)
     await container.teardown(db)
-    return JSONResponse({"message": "teardown done"}, status_code=204)
+    print("teared down")
+    return Response(status_code=204)
 
 @router.post("/analysis/static")
 async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
@@ -109,13 +113,18 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
     response: HTTPResponse = await container.stop_analysis()
+    print(response)
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)
+        print(container.status)
         message = f"Analysis for container {container.id} stopped successfully"
+        print(message)
         return create_response_message(message, 200)
     else:
+        print("500")
         message = f"Analysis for container {container.id} did not stop successfully"
+        print(message)
         return create_response_error(message, 500)
 
 # Endpoint to receive notice when triggered analysis (static) has finished
