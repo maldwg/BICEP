@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Snort', 'NIDS', 'Signature-based', false, 'maxldwg/bicep-snort', 'latest');
 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 
