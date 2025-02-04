@@ -48,6 +48,9 @@ Afterwards the whole project can be started by running running ```docker compose
 
 ## Use the Project
 
+[!Important]
+If you run the framework in a new environment, please refere to the section [Add Nodes](#add-a-node), in order to be able to spin up containers on your localhost system
+
 To use the systems already included, you can navigate to http://localhost:3000 after the startup has completed. Generally you will have to follow these steps to setup and benchmark a system:
 
 1. Upload your configuration (rulesets and general configurations) for the system you want to deploy
@@ -91,3 +94,22 @@ At the current state, a new IDS needs to be introduced to the DB of BICEP. Eithe
 ### Tests 
 
 In the BICEP_Utils repository under ```tests/ids_plugin_test_templates``` are some templated tests that you can build on and extend. Your resulting IDS should be able to satisfy these and provide the necessary capabilities of the Base classes IDSBase and ParserBase
+
+
+
+## Add A Node
+To be able to add a new node or to run the framework on a new machine, the docker environment needs adaptation.
+In your docker config in `/etc/systemd/system/docker.service.d/docker.conf` add the following lines: 
+
+```
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
+```
+
+This will allow external services like the core to access the Docker daemon remotely. 
+Afterwards run:
+```
+sudo systemctl daemon-reload
+sudo systemctl restart docker.service
+```
