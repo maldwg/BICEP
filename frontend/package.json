@@ -22,7 +22,6 @@
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
     "@material/theme": "^15.0.0-canary.7f224ddd4.0",
-    "angular-server-side-configuration": "^18.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
