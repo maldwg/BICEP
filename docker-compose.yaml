@@ -35,7 +35,7 @@ services:
       context: ./backend/core
     volumes:
       - ./backend/core/app:/opt/backend
-    command: fastapi dev main.py --host 0.0.0.0 --port 8000
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 4
     ports:
       - 8000:8000
     networks:
@@ -77,4 +77,8 @@ services:
 networks:
   bicep:
     driver: bridge
-
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1
