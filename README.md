@@ -48,6 +48,9 @@ Afterwards the whole project can be started by running running ```docker compose
 
 ## Use the Project
 
+[!Important]
+If you run the framework in a new environment, please refere to the section [Add Nodes](#add-a-node), in order to be able to spin up containers on your localhost system
+
 To use the systems already included, you can navigate to http://localhost:3000 after the startup has completed. Generally you will have to follow these steps to setup and benchmark a system:
 
 1. Upload your configuration (rulesets and general configurations) for the system you want to deploy
@@ -77,11 +80,13 @@ In general every type of dataset is support as long as it fulfills the following
 
 
 ## Add Your Own IDS
+The list of already registered systems is available in the README [here](https://github.com/maldwg/BICEP-utils/tree/main)
+
 To add your own IDS to the framework, you will need to provide the following in a docker image:
-- Your system, executable via CLI
+- Your system (executable via CLI) and all its dependencies
 - [BICEP_Utils](https://github.com/maldwg/BICEP-utils/tree/main) should be added as submodule as it contains the fastapi server for the IDS as well as class definitions on Alerts and Base classes. 
 - The implementation of the base classes for the AlertParser and the IDSBase from the Bicep_Utils repository. 
-
+- a main.py that starts the fastAPI server, as can be seen in the example of [suricata](https://github.com/maldwg/BICEP-suricata-image/blob/main/bicep-suricata/src/main.py) or [slips](https://github.com/maldwg/BICEP-slips-image/blob/main/bicep-slips/src/main.py) or [snort](https://github.com/maldwg/BICEP-snort-image/blob/main/bicep-snort/src/main.py) .
 For inspiration and sample implentations, have a look at the modules for [Sruciata](https://github.com/maldwg/BICEP-suricata-image) and [Slips](https://github.com/maldwg/BICEP-slips-image). The modules to implement can be found in [BICEPs-utils](https://github.com/maldwg/BICEP-utils/tree/main)
 
 At the current state, a new IDS needs to be introduced to the DB of BICEP. Either add id by modifying the Database or the sql script providing the default entries. A feature is planned that automatically checks for available BICEP models so that this step is not necessary anymore.
@@ -89,3 +94,22 @@ At the current state, a new IDS needs to be introduced to the DB of BICEP. Eithe
 ### Tests 
 
 In the BICEP_Utils repository under ```tests/ids_plugin_test_templates``` are some templated tests that you can build on and extend. Your resulting IDS should be able to satisfy these and provide the necessary capabilities of the Base classes IDSBase and ParserBase
+
+
+
+## Add A Node
+To be able to add a new node or to run the framework on a new machine, the docker environment needs adaptation.
+In your docker config in `/etc/systemd/system/docker.service.d/docker.conf` add the following lines: 
+
+```
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
+```
+
+This will allow external services like the core to access the Docker daemon remotely. 
+Afterwards run:
+```
+sudo systemctl daemon-reload
+sudo systemctl restart docker.service
+```

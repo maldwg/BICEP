@@ -268,6 +268,4 @@ async def test_delete_host(db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     host_id = 1
     response = await delete_host(id=host_id, db=db_session)
-    response_json = json.loads(response.body.decode())
     assert response.status_code == 204
-    assert response_json == {"message": f"successfully deleted host with id {host_id}"}

@@ -13,6 +13,7 @@ from ..utils import STATUS, start_network_analysis, start_static_analysis, stop_
 from ..validation.models import IdsContainerUpdate, NetworkAnalysisData
 import uuid
 from ..database import Base
+from ..logger import LOGGER
 
 
 class IdsContainer(Base):

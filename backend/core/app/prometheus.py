@@ -1,6 +1,11 @@
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 import os
 from .bicep_utils.models.ids_base import Alert
+import logging
+
+logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger(__name__)
+
 
 
 # TODO 10 : refactor metrics to be not started or stopped by container setup/removal but have a permanent endpoint or background task ha ndle the job

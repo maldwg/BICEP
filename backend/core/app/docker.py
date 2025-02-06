@@ -8,6 +8,8 @@ import httpx
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
 
+from .logger import LOGGER
+
 def get_docker_client(host_system):
     if "Core" in host_system.name or host_system.host == "localhost":
          core_host = get_core_host()
@@ -31,20 +33,28 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
     # TODO 0: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
     # await pull_image_async(client, ids_properties.image)
-    await run_container_async(client=client, container=ids_container, ids_tool=ids_tool, url=core_url)
-    await check_container_health(ids_container)
-    await inject_config(ids_container, config)
-    if ruleset != None:
-        await inject_ruleset(ids_container, ruleset)
-    client.close()
+    try:
+        await run_container_async(client=client, container=ids_container, ids_tool=ids_tool, url=core_url)
+        await check_container_health(ids_container)
+        await inject_config(ids_container, config)
+        if ruleset != None:
+            await inject_ruleset(ids_container, ruleset)
+    finally:
+        client.close()
 
 async def pull_image_async(client, image):
     await asyncio.to_thread(client.images.pull, image)
 
 async def run_container_async(client, ids_tool, container, url):
     image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
-    await asyncio.to_thread(
-        client.containers.run, 
+    
+    if not await asyncio.to_thread(image_exists, client, image_name_and_version):
+        print("Image not found, pulling...")
+        await asyncio.to_thread(client.images.pull, image_name_and_version)
+    
+    # Create & start container
+    container_obj = await asyncio.to_thread(
+        client.containers.create,
         image=image_name_and_version,
         name=container.name,
         network_mode="host",
@@ -53,16 +63,19 @@ async def run_container_async(client, ids_tool, container, url):
             "CORE_URL": url,
             "TZ": "UTC"
         },
-        cap_add=["NET_ADMIN", "NET_RAW"],
-        detach=True  
-        )
-    
+        cap_add=["NET_ADMIN", "NET_RAW"]
+    )
+    await asyncio.to_thread(container_obj.start)
+
+def image_exists(client, image_name):
+    return any(image_name in img.tags for img in client.images.list())
+
 
 async def inject_config(ids_container, config):
     container_url = ids_container.get_container_http_url()
     endpoint = "/configuration"
     print(f"debug: {container_url}{endpoint}")
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10) as client:
         form_data={
             "file": (config.name, config.configuration, "application/octet-stream"),
             "container_id": (None, str(ids_container.id), "application/json"),
@@ -75,7 +88,7 @@ async def inject_ruleset(ids_container, config):
     container_url = ids_container.get_container_http_url()
     endpoint = "/ruleset"
     print(f"debug: {container_url}{endpoint}")
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10) as client:
         file={"file": (config.name, config.configuration)}
         response = await client.post(container_url+endpoint,files=file)
     return response
@@ -101,10 +114,10 @@ async def check_container_health(ids_container, timeout=30):
         except:
             pass
         if response.status_code == 200:
-            print(f"Healthcheck for container {url} was sucessful")
+            LOGGER.debug(f"Healthcheck for container {url} was sucessful")
             return True
         if time.time() - start_time > timeout:
-            print("Container did not become healthy in time.")
+            LOGGER.debug("Container did not become healthy in time.")
             await remove_docker_container(ids_container)
             return False
         await asyncio.sleep(2)
@@ -122,6 +135,7 @@ async def start_metric_stream(container, interval=1.0):
             except KeyError as e:
                 # Keyerrors occur on every 1st iteration as tehre is not pre_cpu statistic yet
                 continue            
+
             stat = {
                 "cpu_usage": cpu_usage,
                 "memory_usage": memory_usage,
@@ -130,7 +144,7 @@ async def start_metric_stream(container, interval=1.0):
             await asyncio.sleep(interval)
 
     except asyncio.CancelledError as e:
-        print(f"Task for sending metrics for container {container.name} was cancelled successfully")
+        LOGGER.error(f"Task for sending metrics for container {container.name} was cancelled successfully")
 
 async def stop_metric_stream(task_id, stream_metric_tasks, container):
     try:
@@ -153,6 +167,25 @@ async def calculate_memory_usage(stats) -> float:
     return round(memory_usage_mb, 2)
 
 async def calculate_cpu_usage(stats) -> float:
+    try:
+        return await calcualte_cpu_usage_unix(stats)
+    except:
+        try:
+            return await calculate_cpu_usage_wsl(stats)
+        except Exception as e:
+            LOGGER.error(e)
+            raise e
+
+
+async def calcualte_cpu_usage_unix(stats):
+    cpuDelta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
+    systemDelta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
+    cpuPercent = (cpuDelta / systemDelta) * (stats["cpu_stats"]["online_cpus"]) * 100
+    cpuPercent = float(cpuPercent)
+    
+    return round(cpuPercent, 2)
+
+async def calculate_cpu_usage_wsl(stats):
     UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
     SystemDelta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
     len_cpu = len(stats['cpu_stats']['cpu_usage']['percpu_usage'])
