@@ -3,7 +3,7 @@ from http.client import HTTPResponse
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
 from ..database import get_db
 from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, stop_analysisData, AnalysisFinishedData
-from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
+from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
 from ..utils import get_background_tasks,get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
@@ -16,6 +16,7 @@ from ..loki import push_alerts_to_loki
 from ..bicep_utils.models.ids_base import Alert
 from ..models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
+from ..logger import LOGGER
 
 router = APIRouter(
     prefix="/ids"
@@ -24,6 +25,7 @@ router = APIRouter(
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     host = get_host_by_id(data.host_system_id, db=db)
+
     free_port=find_free_port()
     if data.ruleset_id:
         ruleset_id = data.ruleset_id
@@ -151,6 +153,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
         dataset = get_dataset_by_id(dataset_id=alert_data.dataset_id, db=db)
         labels["dataset"] = dataset.name
 
+    
     alerts = [
         Alert(
             time=alert.time, 
@@ -164,6 +167,8 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
             ) 
         for alert in alert_data.alerts
     ]
+    print(alert_data.alerts[0:2])
+    print("test")
     print(f"recievd {len(alerts)} alerts")
     send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
     background_tasks.add(send_task)
@@ -178,3 +183,17 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
 async def display_background_tasks(background_tasks=Depends(get_background_tasks)):
     for t in background_tasks:
         print(t)
+
+
+@router.get("/help/metrics")
+async def display_metric_tasks(db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
+    print(stream_metric_tasks)
+    containers: list[IdsContainer] = get_all_container(db=db)
+    for container in containers:
+        print(container.name)
+        print(container.stream_metric_task_id)
+        try:
+            task = stream_metric_tasks[container.stream_metric_task_id]
+            print(task)
+        except:
+            print("Exce")
