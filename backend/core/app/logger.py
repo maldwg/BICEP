@@ -9,5 +9,5 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 LOGGER.propagate = True  # Ensure logs are propagated to Gunicorn
-
+LOGGER.setLevel(logging.DEBUG)
 

@@ -49,16 +49,13 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db), stream_metric_
 async def remove_container(container_id: int, db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
     container: IdsContainer = get_container_by_id(db, container_id)
     try:
-        print("test")
         await container.stop_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
-        print("stopped metrics")
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
-        print("stopped container analysis")
+        LOGGER.debug("stopped container analysis")
     except Exception as e:
         print(e)
     await container.teardown(db)
-    print("teared down")
     return Response(status_code=204)
 
 @router.post("/analysis/static")
@@ -119,14 +116,11 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)
-        print(container.status)
         message = f"Analysis for container {container.id} stopped successfully"
-        print(message)
         return create_response_message(message, 200)
     else:
         print("500")
         message = f"Analysis for container {container.id} did not stop successfully"
-        print(message)
         return create_response_error(message, 500)
 
 # Endpoint to receive notice when triggered analysis (static) has finished
@@ -134,14 +128,14 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container = get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(STATUS.IDLE.value, container, db)
-    print(f"Updated status of {container.name} to IDLE")
     return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks=Depends(get_background_tasks)):
     container = get_container_by_id(db, alert_data.container_id)
-    print(f"Received Logs for container {container.name}")
+    LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
+    LOGGER.debug(f"Received Logs for container {container.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -167,33 +161,10 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
             ) 
         for alert in alert_data.alerts
     ]
-    print(alert_data.alerts[0:2])
-    print("test")
-    print(f"recievd {len(alerts)} alerts")
+    LOGGER.debug(f"Created {len(alerts)} alerts")
     send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
     background_tasks.add(send_task)
-    print(f"analysis-type: {alert_data.analysis_type}")
     if alert_data.analysis_type == "static":
         calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
         background_tasks.add(calc_task)
     return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)
-
-
-@router.get("/help/background-tasks")
-async def display_background_tasks(background_tasks=Depends(get_background_tasks)):
-    for t in background_tasks:
-        print(t)
-
-
-@router.get("/help/metrics")
-async def display_metric_tasks(db=Depends(get_db), stream_metric_tasks=Depends(get_stream_metric_tasks)):
-    print(stream_metric_tasks)
-    containers: list[IdsContainer] = get_all_container(db=db)
-    for container in containers:
-        print(container.name)
-        print(container.stream_metric_task_id)
-        try:
-            task = stream_metric_tasks[container.stream_metric_task_id]
-            print(task)
-        except:
-            print("Exce")

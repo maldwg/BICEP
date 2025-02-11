@@ -19,7 +19,7 @@ def adjust_time_to_24_hour_format(csv_time):
     return csv_time
 
 
-
+# use dateutils parser instead...
 def parse_timestamp(timestamp_str):
     # List of possible formats
     formats = [
