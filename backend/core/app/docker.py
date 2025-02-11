@@ -180,10 +180,10 @@ async def calculate_cpu_usage(stats) -> float:
 async def calcualte_cpu_usage_unix(stats):
     cpuDelta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
     systemDelta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
-    cpuPercent = (cpuDelta / systemDelta) * (stats["cpu_stats"]["online_cpus"]) * 100
-    cpuPercent = float(cpuPercent)
-    
-    return round(cpuPercent, 2)
+    percentage_total = (cpuDelta / systemDelta) * (stats["cpu_stats"]["online_cpus"]) * 100
+    available_cpus = stats['precpu_stats']['online_cpus']
+    percentage = percentage_total / available_cpus    
+    return round(percentage, 2)
 
 async def calculate_cpu_usage_wsl(stats):
     UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
