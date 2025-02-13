@@ -17,11 +17,7 @@ from dateutil import parser
 import uuid
 import shutil
 from fastapi.responses import JSONResponse
-
-# global tasks dict that stores ids for stream tasks in containers 
-# stream_metric_tasks = {
-
-# }
+from .logger import LOGGER
 
 def get_stream_metric_tasks(request: Request):
     return request.app.state.stream_metric_tasks
@@ -32,7 +28,6 @@ def get_background_tasks(request: Request):
 
 dataset_addition_tasks = set()
 
-# asnycion craete task
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
@@ -49,41 +44,8 @@ class FILE_TYPES(Enum):
     RULE_SET = "rule-set"
 
 
-class IdsContainerBase(object):
-
-    def __init__(self, url: str, port: int, status: str, configuration_id: int, ids_tool_id: int, description: str = ""):
-        """
-            Default constructor with all parameters set
-        """
-
-        self.url = url
-        self.port = port
-        self.status = status
-        self.configuration_id = configuration_id
-        self.ids_tool_id = ids_tool_id
-
-        # optional arguments
-        if(description != ""):
-            self.description = description
-
-    @classmethod
-    def initFromFrontend(self, configuration_id: str, ids_tool_id: str, description: str = ""):
-        """
-            Constructor for values received by the frontend (no status, url and port)
-        """
-
-        self.configuration_id = configuration_id
-        self.ids_tool_id = ids_tool_id
-
-        # optional arguments
-        if(description != ""):
-            self.description = description
-
-
-
-
 def find_free_port():
-    # TODO 10: Adapt this to also find free ports on other systems
+    # TODO 10: Adapt this to also find free ports on remote hosts --> could be hard 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -136,9 +98,8 @@ async def start_static_analysis(container, form_data, dataset):
                     response = await client.post(container_url+endpoint,files=form_data, timeout=180)    
                     response.raise_for_status()
         except Exception as e:
-            print(e)
+            LOGGER.error(e)
     task = asyncio.create_task(send_request_in_background())
-    print(task)
     return JSONResponse(content={"message": "Successfully sending data in the background"}, status_code=200)
 
 async def start_network_analysis(container, data):
@@ -153,7 +114,6 @@ async def stop_analysis(container):
     endpoint = "/analysis/stop"
     async with httpx.AsyncClient() as client:
         response: HTTPResponse = await client.post(container_url+endpoint)
-        print(response)
     return response
 
 async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
@@ -180,8 +140,8 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
     malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
     
-    print(benign_count)
-    print(malicious_count)
+    LOGGER.debug(f"found {benign_count} benign entries in labels file")
+    LOGGER.debug(f"found {malicious_count} malicious entries in labels file")
     return benign_count, malicious_count
 
 
@@ -218,11 +178,10 @@ async def save_file_to_disk(file, path):
         f.write(file)
     
 def remove_directory(path):
-    print(path)
     try:
         shutil.rmtree(path)
     except Exception as e:
-        print(e)
+        LOGGER.error(e)
         
 async def create_directory(path):
     if not os.path.exists(path):
@@ -301,13 +260,6 @@ async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
             timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
             key = (timestamp, source_ip, source_port, destination_ip, destination_port)
             common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
-            # check if alert is already in dict, and increment counter for container detecting it
-            # common_alerts_for_key = common_alerts.get(key, {})
-            # if common_alerts_for_key == {}:
-            #     initial_container_alert_dict = {container_name: [alert]}
-            #     common_alerts[key] = initial_container_alert_dict
-            # else:
-            #     common_alerts[key][container_name] = common_alerts.get(key, {}).get(container_name, []) + [alert]
     return common_alerts
 
 

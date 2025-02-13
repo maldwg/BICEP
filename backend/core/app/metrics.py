@@ -6,12 +6,13 @@ import json
 from .bicep_utils.models.ids_base import Alert
 from datetime import datetime, timezone
 from .utils import extract_ts_srcip_srcport_dstip_dstport_from_alert, normalize_and_parse_alert_timestamp
+from .logger import LOGGER
+
 async def calculate_evaluation_metrics(dataset, alerts):
-    print("start calculation")
+    LOGGER.debug("start calculation of evaluation metrics")
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious
-    print("got benign malicious etc.")
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await get_positves_and_negatives_from_dataset(dataset, alerts)
 
     def calculate_fpr():
@@ -64,8 +65,6 @@ async def calculate_evaluation_metrics(dataset, alerts):
         "F_SCORE": calculate_f_score(),
         "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ration()
     }
-    print(metrics)
-
     return metrics
 
 async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
@@ -111,7 +110,7 @@ async def get_positves_and_negatives_from_dataset(dataset, alerts: list[Alert]):
                     FN += 1
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = await get_item_counts_of_dict(alerts_dict)
-    print(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
+    LOGGER.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
 
     return TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS
 

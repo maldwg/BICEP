@@ -48,8 +48,8 @@ Afterwards the whole project can be started by running running ```docker compose
 
 ## Use the Project
 
-[!Important]
-If you run the framework in a new environment, please refere to the section [Add Nodes](#add-a-node), in order to be able to spin up containers on your localhost system
+> [!Important]
+> If you run the framework in a new environment, please refere to the section [Add Nodes](#add-a-node), in order to be able to spin up containers on your localhost system
 
 To use the systems already included, you can navigate to http://localhost:3000 after the startup has completed. Generally you will have to follow these steps to setup and benchmark a system:
 
