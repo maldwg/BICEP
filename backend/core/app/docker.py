@@ -19,7 +19,7 @@ def get_docker_client(host_system):
     try:
         client = docker.DockerClient(base_url=host_url)
     except Exception as e:
-        print(e)
+        LOGGER.error(e)
         raise(Exception(f"Could not create a docker client for url {host_url} \n Try to use an IP instead of hostname"))
     return client
 
@@ -49,11 +49,10 @@ async def run_container_async(client, ids_tool, container, url):
     image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
     
     if not await asyncio.to_thread(image_exists, client, image_name_and_version):
-        print("Image not found, pulling...")
+        LOGGER.info("Image not found, pulling...")
         await asyncio.to_thread(client.images.pull, image_name_and_version)
     
-    # Create & start container
-    container_obj = await asyncio.to_thread(
+    ids_container = await asyncio.to_thread(
         client.containers.create,
         image=image_name_and_version,
         name=container.name,
@@ -65,7 +64,7 @@ async def run_container_async(client, ids_tool, container, url):
         },
         cap_add=["NET_ADMIN", "NET_RAW"]
     )
-    await asyncio.to_thread(container_obj.start)
+    await asyncio.to_thread(ids_container.start)
 
 def image_exists(client, image_name):
     return any(image_name in img.tags for img in client.images.list())
@@ -74,7 +73,6 @@ def image_exists(client, image_name):
 async def inject_config(ids_container, config):
     container_url = ids_container.get_container_http_url()
     endpoint = "/configuration"
-    print(f"debug: {container_url}{endpoint}")
     async with httpx.AsyncClient(timeout=10) as client:
         form_data={
             "file": (config.name, config.configuration, "application/octet-stream"),
@@ -87,7 +85,6 @@ async def inject_config(ids_container, config):
 async def inject_ruleset(ids_container, config):
     container_url = ids_container.get_container_http_url()
     endpoint = "/ruleset"
-    print(f"debug: {container_url}{endpoint}")
     async with httpx.AsyncClient(timeout=10) as client:
         file={"file": (config.name, config.configuration)}
         response = await client.post(container_url+endpoint,files=file)
@@ -157,8 +154,8 @@ async def stop_metric_stream(task_id, stream_metric_tasks, container):
         }
         await push_metrics_to_prometheus(stats, container.name)
     except Exception as e:
-        print(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
-        print(e)
+        LOGGER.info(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
+        LOGGER.error(e)
 
 
 async def calculate_memory_usage(stats) -> float:

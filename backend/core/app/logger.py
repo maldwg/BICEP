@@ -4,10 +4,12 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.StreamHandler()  # Ensure logs are printed to stdout
+        # Ensure logs are printed to stdout
+        logging.StreamHandler()  
     ]
 )
 LOGGER = logging.getLogger(__name__)
-LOGGER.propagate = True  # Ensure logs are propagated to Gunicorn
+# Ensure logs are propagated to Gunicorn
+LOGGER.propagate = True  
 LOGGER.setLevel(logging.DEBUG)
 

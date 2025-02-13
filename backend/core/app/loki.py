@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timedelta,timezone
 import httpx
 from .bicep_utils.models.ids_base import Alert
+from .logger import LOGGER
 
 LOKI_URL = os.environ.get('LOKI_URL')
 
@@ -48,8 +49,6 @@ async def get_alerts_from_analysis_id(analysis_id: str):
     # Define the 24-hour window (12 hours before and 12 hours after now)
     start_time = (now - timedelta(hours=12)).isoformat() + 'Z'
     end_time = (now + timedelta(hours=12)).isoformat() + 'Z'
-    print(start_time)
-    print(end_time)
     params = {
         'query': query,
         'start': start_time,  
@@ -71,8 +70,7 @@ async def get_alerts_from_analysis_id(analysis_id: str):
                     try:
                         alerts_of_container.append(Alert.from_json(log))
                     except:
-                        print(f"could not parse alert from json {log}")
-                        print(20*"-----")
+                        LOGGER.debug(f"could not parse alert from json {log}")
                 label = stream["stream"]["container_name"]
                 # This check is necessary as the logs are potentially chunked, so the same container can have 2 streams of logs
                 # Thus check if there are already logs gathered for a container and then append it or create the key
@@ -81,12 +79,12 @@ async def get_alerts_from_analysis_id(analysis_id: str):
                 else:
                     alerts[label] = alerts_of_container
             for container, logs in alerts.items():
-                print(f"Found {len(logs)} alerts for {container}")
+                LOGGER.debug(f"Found {len(logs)} alerts for {container}")
             return alerts
         except Exception as e:
             raise(e)
     else:
-        print(f"Failed to retrieve logs: {response.status_code}")
+        LOGGER.error(f"Failed to retrieve logs: {response.status_code}")
 
 
 async def clean_up_alerts_in_loki(analysis_id: str):
