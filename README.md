@@ -42,6 +42,7 @@ Before running the project, it is advised, as of now, to manually pull the docke
 ```
 docker pull maxldwg/bicep-suricata:latest
 docker pull maxldwg/bicep-slips:latest
+docker pull maxldwg/bicep-snort:latest
 ```
 
 Afterwards the whole project can be started by running running ```docker compose up```.
