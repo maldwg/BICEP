@@ -42,11 +42,14 @@ Before running the project, it is advised, as of now, to manually pull the docke
 ```
 docker pull maxldwg/bicep-suricata:latest
 docker pull maxldwg/bicep-slips:latest
+docker pull maxldwg/bicep-snort:latest
 ```
 
 Afterwards the whole project can be started by running running ```docker compose up```.
 
-## Use the Project
+![BICEP-DEMO](./assets/bicep-demo.gif)
+
+### First Use Of The Project
 
 > [!Important]
 > If you run the framework in a new environment, please refere to the section [Add Nodes](#add-a-node), in order to be able to spin up containers on your localhost system
