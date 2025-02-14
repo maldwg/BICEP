@@ -112,7 +112,7 @@ async def test_extract_ts_srcip_srcport_dstip_dstport_from_alert():
         message="Test malware injected" 
     )
 
-    timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+    timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
 
     assert timestamp == "2025-01-01T00:00"
     assert source_ip == "192.168.0.1"
@@ -124,5 +124,5 @@ async def test_extract_ts_srcip_srcport_dstip_dstport_from_alert():
 @pytest.mark.asyncio
 async def test_normalize_and_parse_alert_timestamp():
     timestamp = "2025-01-01T00:00:00Z"
-    normalized_timestamp = await normalize_and_parse_alert_timestamp(timestamp)
+    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp)
     assert normalized_timestamp == "2025-01-01T00:00" 

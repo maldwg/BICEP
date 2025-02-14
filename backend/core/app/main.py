@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.background_tasks = set()
     app.state.stream_metric_tasks = {}
     yield
 # @app.on_event("startup")

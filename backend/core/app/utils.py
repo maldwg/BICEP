@@ -22,10 +22,6 @@ from .logger import LOGGER
 def get_stream_metric_tasks(request: Request):
     return request.app.state.stream_metric_tasks
 
-
-def get_background_tasks(request: Request):
-    return request.app.state.background_tasks
-
 dataset_addition_tasks = set()
 
 class STATUS(Enum):
@@ -222,23 +218,22 @@ def get_serialized_datasets(datasets):
         serialized_datasets.append(serialized_config)
     return serialized_datasets
 
-async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str):
+async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
     metrics = await calculate_evaluation_metrics(dataset, alerts)
-    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name)   
+    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
 
-
-async def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
+def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
     source_ip = alert.source_ip.strip()
     source_port = alert.source_port.strip()
     destination_ip = alert.destination_ip.strip()
     destination_port = alert.destination_port.strip()
-    timestamp = await normalize_and_parse_alert_timestamp(alert.time)
+    timestamp = normalize_and_parse_alert_timestamp(alert.time)
     timestamp = timestamp.strip()
     return timestamp, source_ip, source_port, destination_ip, destination_port
 
 
-async def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
+def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     """
     Method to normalize timestamp formats, as these can differ from dataset to dataset
     Returns a normalized timestamp in minutes format (isoformat)
@@ -257,7 +252,7 @@ async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
     common_alerts = {}
     for container_name, alerts in alerts_dict.items():
         for alert in alerts:
-            timestamp, source_ip, source_port, destination_ip, destination_port = await extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+            timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
             key = (timestamp, source_ip, source_port, destination_ip, destination_port)
             common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
     return common_alerts

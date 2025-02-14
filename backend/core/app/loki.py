@@ -6,12 +6,17 @@ from datetime import datetime, timedelta,timezone
 import httpx
 from .bicep_utils.models.ids_base import Alert
 from .logger import LOGGER
+import asyncio
 
 LOKI_URL = os.environ.get('LOKI_URL')
 
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
-    values = [ [str(await get_timestamp_in_nanoseconds()), str(a.to_dict())] for a in alerts]
+    LOGGER.debug("beofre timestamps ")
+    LOGGER.debug(datetime.now().strftime("%H:%M:%S"))
+    values = await asyncio.to_thread(combine_timestamps_and_alerts, alerts)
+    LOGGER.debug("after timestamps ")
+    LOGGER.debug(datetime.now().strftime("%H:%M:%S"))
     log_entry = {
         'streams': [
             {
@@ -23,14 +28,20 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
     headers = {
         'Content-Type': 'application/json'
     }
-
     async with httpx.AsyncClient() as client:
         data= json.dumps(log_entry)
+        LOGGER.debug("before push ")
+        LOGGER.debug(datetime.now().strftime("%H:%M:%S"))
         response = await client.post(f'{LOKI_URL}/loki/api/v1/push',data=data,headers=headers, timeout=600)
+        LOGGER.debug("after push ")
+        LOGGER.debug(datetime.now().strftime("%H:%M:%S"))
     return response
 
+def combine_timestamps_and_alerts(alerts):
+    return  [ [str(get_timestamp_in_nanoseconds()), str(a.to_dict())] for a in alerts]
 
-async def get_timestamp_in_nanoseconds():
+
+def get_timestamp_in_nanoseconds():
     now = datetime.now(tz=None)
     seconds_since_epoch = now.timestamp()
     nanoseconds_since_epoch = int(seconds_since_epoch * 1_000_000_000)
