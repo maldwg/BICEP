@@ -69,7 +69,7 @@ def get_timestamp_in_nanoseconds():
     nanoseconds_since_epoch += now.microsecond * 1000  
     return nanoseconds_since_epoch
 
-async def get_alerts_from_analysis_id(analysis_id: str):
+async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
     from datetime import time
 
     path = "/loki/api/v1/query_range"

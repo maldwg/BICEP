@@ -318,11 +318,12 @@ async def test_receive_alerts_from_ids_unsuccessful_loki_push(bg_tasks, push_to_
 
 
 
-@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.get_all_alerts_for_ensemble_from_analysis_id")
 @patch("app.routers.ensemble.push_alerts_to_loki")
 @patch("app.routers.ensemble.BackgroundTasks")
+@patch("app.routers.ensemble.clean_up_alerts_in_loki")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_network_analysis_last_container(bg_tasks, push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_network_analysis_last_container(cleanup_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
@@ -435,11 +436,12 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(bg_tas
 @patch("app.routers.ensemble.push_evaluation_metrics_to_prometheus")
 @patch("app.routers.ensemble.calculate_evaluation_metrics")
 @patch("app.routers.ensemble.clean_up_alerts_in_loki")
-@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.get_all_alerts_for_ensemble_from_analysis_id")
 @patch("app.routers.ensemble.push_alerts_to_loki")
 @patch("app.routers.ensemble.BackgroundTasks")
+@patch("app.routers.ensemble.len")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_static_analysis_last_container(bg_tasks, push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_static_analysis_last_container(len_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "static",

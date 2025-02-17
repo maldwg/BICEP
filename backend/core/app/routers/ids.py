@@ -111,15 +111,19 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
+    if container.ensemble_ids != []:
+        for ensemble_ids_of_container in container.ensemble_ids:
+            ensemble = ensemble_ids_of_container.ensemble
+            if ensemble.status == STATUS.ACTIVE.value:
+                message = f"Container is part of a running ensemble. It is not possible to stop a container analysis individually"
+                return create_response_error(message, 500)
     response: HTTPResponse = await container.stop_analysis()
-    print(response)
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)
         message = f"Analysis for container {container.id} stopped successfully"
         return create_response_message(message, 200)
     else:
-        print("500")
         message = f"Analysis for container {container.id} did not stop successfully"
         return create_response_error(message, 500)
 
