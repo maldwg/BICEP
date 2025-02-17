@@ -36,9 +36,8 @@ async def test_remove_ensemble_succesful(deregister_mock,db_session_fixture: Dat
     mock_response.status_code = 200
     deregister_mock.return_value = mock_response
 
-    response = await remove_ensemble(ensemble_id=ensemble_id,db=db_session)
+    response = await remove_ensemble_endpoint(ensemble_id=ensemble_id,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response.body)
     assert response.status_code == 200
     assert response_json == {"content":[{"content":"message successfully removed container 1 from ensemble 1","status_code":200}]}
 
@@ -52,9 +51,8 @@ async def test_remove_ensemble_failiure(deregister_mock,db_session_fixture: Data
     mock_response.status_code = 500
     deregister_mock.return_value = mock_response
 
-    response = await remove_ensemble(ensemble_id=ensemble_id,db=db_session)
+    response = await remove_ensemble_endpoint(ensemble_id=ensemble_id,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response.body)
     assert response.status_code == 200
     assert response_json == {"content":[{"content":" Did not remove container 1 from ensemble 1 successfully","status_code":500}]}
 
@@ -79,7 +77,6 @@ async def test_start_static_ensemble_analysis_successful(db_session_fixture: Dat
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response_json)
     assert response.status_code == 200
     assert response_json == {'content': [{'content': '{"message": "success"}', 'status_code': 200}]}
 

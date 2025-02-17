@@ -32,6 +32,7 @@ import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
+import { repeat } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -78,6 +79,13 @@ export class DashboardComponent implements OnInit {
 
   getAllContainer(): void{
     this.idsService.getAllIdsContainer()
+      /*
+      This works, but do I realy want that many requests in the backgrun d? better having only on demand and update the object accordingly
+      .pipe(
+        repeat({
+          delay: 5000
+        })
+      )*/
       .subscribe(data =>  {
         this.containerList = data.map(container => ({
           id: container.id,

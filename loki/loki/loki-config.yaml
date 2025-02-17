@@ -3,25 +3,27 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
-  grpc_server_max_recv_msg_size: 999999999
-                                 
+  grpc_server_max_recv_msg_size: 10000000000  
+  grpc_server_max_send_msg_size: 10000000000
+
+
 compactor_grpc_client:
   # gRPC client max receive message size (bytes).
   # CLI flag: -compactor.grpc-client.grpc-max-recv-msg-size
-  max_recv_msg_size: 999999999
+  max_recv_msg_size: 10000000000
 
   # gRPC client max send message size (bytes).
   # CLI flag: -compactor.grpc-client.grpc-max-send-msg-size
-  max_send_msg_size: 999999999
+  max_send_msg_size: 10000000000
 ingester_client:
   grpc_client_config:
-    max_recv_msg_size: 999999999
-    max_send_msg_size: 999999999
+    max_recv_msg_size: 10000000000
+    max_send_msg_size: 10000000000
 
 frontend_worker:
   grpc_client_config:
-    max_recv_msg_size: 999999999
-    max_send_msg_size: 999999999
+    max_recv_msg_size: 10000000000
+    max_send_msg_size: 10000000000
 
 common:
   instance_addr: 127.0.0.1
@@ -47,7 +49,7 @@ query_range:
     cache:
       embedded_cache:
         enabled: true
-        max_size_mb: 9999
+        max_size_mb: 99999
 
 schema_config:
   configs:
@@ -77,18 +79,18 @@ ruler:
 
 # CLI flag: -ingester.per-stream-rate-limit
 limits_config:
-  per_stream_rate_limit: 99999MB 
+  per_stream_rate_limit: 999999MB 
 
   # Maximum burst bytes per stream, also expressible in human readable forms (1MB,
   # 256KB, etc). This is how far above the rate limit a stream can 'burst' before
   # the stream is limited.
   # CLI flag: -ingester.per-stream-rate-limit-burst
-  per_stream_rate_limit_burst: 99999MB 
+  per_stream_rate_limit_burst: 999999MB 
 
   max_line_size: 9MB
   deletion_mode: filter-and-delete
   retention_period: 1m
-  cardinality_limit: 999999999
-  ingestion_rate_mb: 99999
-  max_entries_limit_per_query: 999999999
-  ingestion_burst_size_mb: 9999
+  cardinality_limit: 10000000000
+  ingestion_rate_mb: 999999
+  max_entries_limit_per_query: 10000000000
+  ingestion_burst_size_mb: 99999

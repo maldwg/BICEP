@@ -21,6 +21,8 @@ from ..utils import calculate_evaluation_metrics_and_push, deregister_container_
 from fastapi.responses import JSONResponse
 from ..prometheus import push_evaluation_metrics_to_prometheus
 from ..loki import push_alerts_to_loki, get_alerts_from_analysis_id, clean_up_alerts_in_loki
+from ..logger import LOGGER
+
 router = APIRouter(
     prefix="/ensemble"
 )
@@ -46,7 +48,7 @@ async def setup_ensembles(ensembleData: EnsembleCreate,db=Depends(get_db)):
     return JSONResponse(content={"content": responses}, status_code=200)
 
 @router.delete("/remove/{ensemble_id}")
-async def remove_ensemble(ensemble_id: int,db=Depends(get_db)):
+async def remove_ensemble_endpoint(ensemble_id: int,db=Depends(get_db)):
     ensemble: Ensemble = get_ensemble_by_id(ensemble_id, db)
     ids_ensembles: list[EnsembleIds] = get_all_ensemble_container(db)
     container_id_list = [ids_ensemble.ids_container_id  for ids_ensemble in ids_ensembles if ids_ensemble.ensemble_id == ensemble_id]
@@ -61,6 +63,7 @@ async def remove_ensemble(ensemble_id: int,db=Depends(get_db)):
         else:
             message=f" Did not remove container {container.id} from ensemble {ensemble.id} successfully"
             responses.append(create_generic_response_message_for_ensemble(message, 500))    
+    LOGGER.debug(responses)
     remove_ensemble(ensemble, db)
     return JSONResponse(content={"content": responses}, status_code=200)
 
@@ -161,6 +164,8 @@ async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData,
 async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, backgroundtasks: BackgroundTasks, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db=db, id=alert_data.container_id)
     ensemble: Ensemble = get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
+    LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
+    LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -169,6 +174,7 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
         "ensemble_analysis_id": ensemble.current_analysis_id,
     }
     if alert_data.dataset_id != None:
+        LOGGER.debug("static analysis")
         dataset = get_dataset_by_id(dataset_id=alert_data.dataset_id, db=db)
         labels["dataset"] = dataset.name
     alerts = [
@@ -184,18 +190,24 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             ) 
         for alert in alert_data.alerts
     ]        
+    LOGGER.debug(f"Created {len(alerts)} alerts")
+
     # push alerts first, to ensure that enough tie has been passed for other containers to upload their logs
     response = await push_alerts_to_loki(alerts=alerts, labels=labels)
     if response.status_code != 204:
+        LOGGER.error("Could not push logs to loki effectively")
         return JSONResponse({"content": "Could not push logs to loki for container"},status_code=500)
 
     if alert_data.analysis_type == "static":
+        LOGGER.debug("update sending log status...")
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.IDLE.value)
+        LOGGER.debug("Updated log sending status")
         if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
-            print(f"Successfully pushed alerts for container {container.name}")
+            LOGGER.debug(f"Successfully pushed alerts for container {container.name}")
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200) 
         else:
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
+            LOGGER.debug(f"Ammount of total alerts: {len(all_alerts)}")
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
@@ -205,13 +217,13 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             backgroundtasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=all_alerts,ensemble_name=ensemble.name)
             return JSONResponse({"content": f"Successfully pushed alerts for ensemble {ensemble.name}"}, status_code=200)    
     else:
-        print(f"{container.name} got {len(alerts)}")
+        LOGGER.debug(f"{container.name} got {len(alerts)}")
         await update_sendig_logs_status(container=container, ensemble=ensemble,db=db, status=ANALYSIS_STATUS.LOGS_SENT.value)
         if not await last_container_sending_logs(container=container, ensemble=ensemble, db=db):
-            print(f"I am not the last one {container.name}")
+            LOGGER.debug(f"I am not the last one {container.name}")
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200)       
         else:
-            print(f"I am the last running container: {container.name}")
+            LOGGER.debug(f"I am the last running container: {container.name}")
             all_alerts: dict = await get_alerts_from_analysis_id(ensemble.current_analysis_id)
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
