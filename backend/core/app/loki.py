@@ -70,53 +70,66 @@ def get_timestamp_in_nanoseconds():
     return nanoseconds_since_epoch
 
 async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
-    from datetime import time
+    from datetime import datetime, timedelta
 
     path = "/loki/api/v1/query_range"
-
     query = f'{{ensemble_analysis_id="{analysis_id}"}}'
-    # Get the current time
     now = datetime.now()
 
-    # Define the 24-hour window (12 hours before and 12 hours after now)
-    start_time = (now - timedelta(hours=12)).isoformat() + 'Z'
-    end_time = (now + timedelta(hours=12)).isoformat() + 'Z'
-    params = {
-        'query': query,
-        'start': start_time,  
-        # reasonable ammount of time delta to have all ids been executed
-        'end': end_time,
-        'limit': 999999999
-    }
-    async with httpx.AsyncClient() as client:
-        response = await client.get(LOKI_URL+path,params=params, timeout=600)
+    # Define the total time range (24 hours: 12 before and 12 after now)
+    full_start_time = now - timedelta(hours=12)
+    full_end_time = now + timedelta(hours=12)
 
-    if response.status_code == 200:
-        try:
-            logs = response.json()
-            # Do something with the logs
-            alerts = {}
-            for stream in logs["data"]["result"]:
-                alerts_of_container = []
-                for _, log in stream["values"]:
-                    try:
-                        alerts_of_container.append(Alert.from_json(log))
-                    except:
-                        LOGGER.debug(f"could not parse alert from json {log}")
-                label = stream["stream"]["container_name"]
-                # This check is necessary as the logs are potentially chunked, so the same container can have 2 streams of logs
-                # Thus check if there are already logs gathered for a container and then append it or create the key
-                if label in alerts:
-                    alerts[label].extend(alerts_of_container)
-                else:
-                    alerts[label] = alerts_of_container
-            for container, logs in alerts.items():
-                LOGGER.debug(f"Found {len(logs)} alerts for {container}")
-            return alerts
-        except Exception as e:
-            raise(e)
-    else:
-        LOGGER.error(f"Failed to retrieve logs: {response.status_code}")
+    chunk_duration = timedelta(minutes=60)
+    current_start = full_start_time
+
+    alerts = {}
+
+    async with httpx.AsyncClient() as client:
+        while current_start < full_end_time:
+            current_end = min(current_start + chunk_duration, full_end_time)
+
+            params = {
+                'query': query,
+                'start': current_start.isoformat() + 'Z',
+                'end': current_end.isoformat() + 'Z',
+                'limit': 100000 
+            }
+
+            response = await client.get(LOKI_URL + path, params=params, timeout=600)
+
+            if response.status_code == 200:
+                try:
+                    logs = response.json()
+                    for stream in logs["data"]["result"]:
+                        alerts_of_container = []
+                        for _, log in stream["values"]:
+                            try:
+                                alerts_of_container.append(Alert.from_json(log))
+                            except:
+                                LOGGER.debug(f"Could not parse alert from JSON: {log}")
+
+                        label = stream["stream"]["container_name"]
+                        if label in alerts:
+                            alerts[label].extend(alerts_of_container)
+                        else:
+                            alerts[label] = alerts_of_container
+
+                except Exception as e:
+                    LOGGER.error(f"Error processing logs: {e}")
+                    raise
+
+            else:
+                LOGGER.error(f"Failed to retrieve logs: {response.status_code}")
+
+            # Move to the next time chunk
+            current_start = current_end
+
+    # **Log collected alerts**
+    for container, logs in alerts.items():
+        LOGGER.debug(f"Found {len(logs)} alerts for {container}")
+
+    return alerts
 
 
 async def clean_up_alerts_in_loki(analysis_id: str):

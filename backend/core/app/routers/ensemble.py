@@ -206,7 +206,6 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
         else:
             # get all alerts including the ones form the current container
             all_alerts: dict = await get_all_alerts_for_ensemble_from_analysis_id(ensemble.current_analysis_id)
-            LOGGER.debug(f"Ammount of total alerts: {len(all_alerts)}")
             # calculate which alerts the ensemble now alerts according to its technique
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
