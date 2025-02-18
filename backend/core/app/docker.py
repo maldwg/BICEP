@@ -47,9 +47,8 @@ async def run_container_async(client, ids_tool, container, url):
     image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
     
     if not await image_exists(client, image_name_and_version):
-        LOGGER.info("Image not found, pulling...")
+        LOGGER.info(f"Image {image_name_and_version} not found, pulling...")
         await asyncio.to_thread(client.images.pull, image_name_and_version)
-        LOGGER.debug("pulled image")
     
     docker_container = await asyncio.to_thread(
         client.containers.create,
