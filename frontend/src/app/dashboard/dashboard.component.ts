@@ -422,6 +422,26 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+
+  containerIsActive(container: Container){
+    if(container.status !== statusTypes.active){
+      return false;
+    }
+    else{
+      return true;
+    }
+  }
+
+
+  containerIsSettingUp(container: Container){
+    if(container.status !== statusTypes.setting_up){
+      return false;
+    }
+    else{
+      return true;
+    }
+  }
+
   ensembleIsIdle(ensemble: Ensemble){
     if(ensemble.status !== statusTypes.idle){
       return false;

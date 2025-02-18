@@ -27,6 +27,7 @@ dataset_addition_tasks = set()
 class STATUS(Enum):
     ACTIVE = "active"
     IDLE = "idle"
+    SETTING_UP = "setting-up"
 
 
 class ANALYSIS_STATUS(Enum):
