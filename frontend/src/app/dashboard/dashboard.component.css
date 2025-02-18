@@ -1,3 +1,8 @@
+
+.container-setting-up-status{
+  opacity: 0.7;
+}
+
 .flexbox-container{
     display: flex;
     flex-wrap: wrap;
@@ -52,4 +57,8 @@
 
 .spinning {
   animation: spin 3s linear infinite;
+}
+
+.info-message {
+  color: darkorange;
 }
