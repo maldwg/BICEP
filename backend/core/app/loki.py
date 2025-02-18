@@ -80,23 +80,17 @@ async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
     full_start_time = now - timedelta(hours=12)
     full_end_time = now + timedelta(hours=12)
 
-    chunk_duration = timedelta(minutes=60)
-    current_start = full_start_time
-
     alerts = {}
 
     async with httpx.AsyncClient() as client:
-        while current_start < full_end_time:
-            current_end = min(current_start + chunk_duration, full_end_time)
-
             params = {
                 'query': query,
-                'start': current_start.isoformat() + 'Z',
-                'end': current_end.isoformat() + 'Z',
-                'limit': 100000 
+                'start': full_start_time.isoformat() + 'Z',
+                'end': full_end_time.isoformat() + 'Z',
+                'limit': 999999999 
             }
 
-            response = await client.get(LOKI_URL + path, params=params, timeout=600)
+            response = await client.get(LOKI_URL + path, params=params, timeout=120)
 
             if response.status_code == 200:
                 try:
@@ -122,10 +116,6 @@ async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
             else:
                 LOGGER.error(f"Failed to retrieve logs: {response.status_code}")
 
-            # Move to the next time chunk
-            current_start = current_end
-
-    # **Log collected alerts**
     for container, logs in alerts.items():
         LOGGER.debug(f"Found {len(logs)} alerts for {container}")
 

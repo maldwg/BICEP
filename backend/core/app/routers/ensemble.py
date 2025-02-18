@@ -210,11 +210,11 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             ensembled_alerts = await ensemble.ensemble_technique.execute_technique_by_name_on_alerts(alerts_dict=all_alerts, ensemble=ensemble)
             # label change signals that the logs are not from a container but the ensemble
             labels["container_name"] = "None"
-            # LOGGER.debug(f"The dataset name is still accesible {dataset.name}")
             # cleanup loki alerts of the individiual containers
             backgroundtasks.add_task(clean_up_alerts_in_loki, ensemble.current_analysis_id)
             # push the logs for the ensemble
             backgroundtasks.add_task(push_alerts_to_loki, ensembled_alerts, labels=labels)
+            LOGGER.info(f"Start calculating evaluation metrics for ensemble {ensemble.name} and dataset {dataset.name}")
             backgroundtasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=ensembled_alerts,ensemble_name=ensemble.name)
             return JSONResponse({"content": f"Successfully pushed alerts for ensemble {ensemble.name}"}, status_code=200)    
     else:

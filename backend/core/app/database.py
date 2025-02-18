@@ -26,5 +26,7 @@ def get_db():
         raise RuntimeError("Database connection is not configured properly.")
 
     db = SessionLocal()
-    yield db
-
+    try:
+        yield db
+    finally:
+        db.close()
