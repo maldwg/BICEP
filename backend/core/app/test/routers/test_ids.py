@@ -208,6 +208,33 @@ async def test_start_network_container_analysis_from_unavailable_container(
     assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
 
 
+
+
+@pytest.mark.asyncio
+async def test_stop_analysis_for_ensemble_container_unsucsessfully(db_session_fixture: DatabaseSessionFixture):
+    db_session = db_session_fixture.get_db_session()
+    stop_analysis_data: stop_analysisData = stop_analysisData(
+        container_id = 1,
+    )
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200
+
+    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container.stop_analysis = mock_response
+    mock_ensemble_ids = db_session_fixture.get_ensemble_ids_model()
+    mock_ids_container.ensemble_ids = [mock_ensemble_ids]
+    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble.status = STATUS.ACTIVE.value
+    mock_ensemble_ids.ensemble = mock_ensemble
+
+
+    response = await stop_analysis(stop_data=stop_analysis_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 500
+    print(response_json)
+    assert response_json == { "error": f"Container is part of a running ensemble. It is not possible to stop a container analysis individually" }
+
+
 @pytest.mark.asyncio
 async def test_stop_analysis_successfully(db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()

@@ -1,4 +1,5 @@
 export const statusTypes = {
     idle: "idle",
-    active: "active"
+    active: "active",
+    setting_up: "setting-up"
 }

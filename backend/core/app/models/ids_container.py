@@ -45,7 +45,7 @@ class IdsContainer(Base):
         rulseset = None
         if ids_tool.requires_ruleset:
             rulseset = get_config_by_id(db, self.ruleset_id)
-
+        self.status = STATUS.SETTING_UP.value
         db.add(self)
         db.commit()
         db.refresh(self)
@@ -140,6 +140,7 @@ class IdsContainer(Base):
     
     async def is_available(self):
         return await check_container_health(self)
+    
     
 def get_container_by_id(db: Session, id: int):
     return db.query(IdsContainer).filter(IdsContainer.id == id).first()

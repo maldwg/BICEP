@@ -27,7 +27,7 @@ def plot_chart(output_file, metrics, title):
     ax.set_ylim(0, 100)
     ax.set_yticks([i for i in range(0, 101, 10)])
     
-    plt.xticks(rotation=90, ha='right')
+    plt.xticks(rotation=0, ha='right')
     plt.tight_layout()
     plt.savefig(output_file, format='svg')
 

@@ -6,7 +6,7 @@ from ..validation.models import AlertData, IdsContainerCreate, EnsembleCreate, N
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.dataset import Dataset, get_dataset_by_id
-from ..utils import get_background_tasks,get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from ..utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -111,15 +111,19 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = get_container_by_id(db, stop_data.container_id)
+    if container.ensemble_ids != []:
+        for ensemble_ids_of_container in container.ensemble_ids:
+            ensemble = ensemble_ids_of_container.ensemble
+            if ensemble.status == STATUS.ACTIVE.value:
+                message = f"Container is part of a running ensemble. It is not possible to stop a container analysis individually"
+                return create_response_error(message, 500)
     response: HTTPResponse = await container.stop_analysis()
-    print(response)
     # set container status to active/idle afterwards before
     if response.status_code == 200:
         await update_container_status(STATUS.IDLE.value, container, db)
         message = f"Analysis for container {container.id} stopped successfully"
         return create_response_message(message, 200)
     else:
-        print("500")
         message = f"Analysis for container {container.id} did not stop successfully"
         return create_response_error(message, 500)
 
@@ -132,7 +136,7 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
 
 
 @router.post("/publish/alerts")
-async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), background_tasks=Depends(get_background_tasks)):
+async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: BackgroundTasks, db=Depends(get_db)):
     container = get_container_by_id(db, alert_data.container_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for container {container.name}")
@@ -162,9 +166,7 @@ async def receive_alerts_from_ids(alert_data: AlertData, db=Depends(get_db), bac
         for alert in alert_data.alerts
     ]
     LOGGER.debug(f"Created {len(alerts)} alerts")
-    send_task = asyncio.create_task(push_alerts_to_loki(alerts=alerts, labels=labels))
-    background_tasks.add(send_task)
+    background_tasks.add_task(push_alerts_to_loki, alerts, labels)
     if alert_data.analysis_type == "static":
-        calc_task = asyncio.create_task(calculate_evaluation_metrics_and_push(dataset=dataset, alerts=alerts, container_name=container.name))
-        background_tasks.add(calc_task)
+        background_tasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=alerts,container_name=container.name)
     return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)

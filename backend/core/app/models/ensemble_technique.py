@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, Session
 from ..utils import combine_alerts_for_ids_in_alert_dict, get_length_of_nested_dict
 from ..database import Base
 import sys
-
+from ..logger import LOGGER
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 
@@ -47,7 +47,7 @@ async def majority_vote(common_alerts: dict, ensemble) -> list[Alert]:
             alert.severity = avg_severity
             majority_voted_alerts.append(alert)
             container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
-    print(f"length of total majority voted alerts is {len(majority_voted_alerts)}")
+    LOGGER.debug(f"length of total majority voted alerts is {len(majority_voted_alerts)}")
     return majority_voted_alerts
 
 

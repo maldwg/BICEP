@@ -36,9 +36,8 @@ async def test_remove_ensemble_succesful(deregister_mock,db_session_fixture: Dat
     mock_response.status_code = 200
     deregister_mock.return_value = mock_response
 
-    response = await remove_ensemble(ensemble_id=ensemble_id,db=db_session)
+    response = await remove_ensemble_endpoint(ensemble_id=ensemble_id,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response.body)
     assert response.status_code == 200
     assert response_json == {"content":[{"content":"message successfully removed container 1 from ensemble 1","status_code":200}]}
 
@@ -52,9 +51,8 @@ async def test_remove_ensemble_failiure(deregister_mock,db_session_fixture: Data
     mock_response.status_code = 500
     deregister_mock.return_value = mock_response
 
-    response = await remove_ensemble(ensemble_id=ensemble_id,db=db_session)
+    response = await remove_ensemble_endpoint(ensemble_id=ensemble_id,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response.body)
     assert response.status_code == 200
     assert response_json == {"content":[{"content":" Did not remove container 1 from ensemble 1 successfully","status_code":500}]}
 
@@ -79,7 +77,6 @@ async def test_start_static_ensemble_analysis_successful(db_session_fixture: Dat
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
-    print(response_json)
     assert response.status_code == 200
     assert response_json == {'content': [{'content': '{"message": "success"}', 'status_code': 200}]}
 
@@ -287,8 +284,9 @@ async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFix
 
 
 @patch("app.routers.ensemble.push_alerts_to_loki")
+@patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_unsuccessful_loki_push(push_to_loki_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_unsuccessful_loki_push(bg_tasks, push_to_loki_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
@@ -312,7 +310,7 @@ async def test_receive_alerts_from_ids_unsuccessful_loki_push(push_to_loki_mock,
     mock_response_loki.status_code = 500
     push_to_loki_mock.return_value = mock_response_loki
 
-    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     print(response_json)
     assert response.status_code == 500
@@ -320,10 +318,12 @@ async def test_receive_alerts_from_ids_unsuccessful_loki_push(push_to_loki_mock,
 
 
 
-@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.get_all_alerts_for_ensemble_from_analysis_id")
 @patch("app.routers.ensemble.push_alerts_to_loki")
+@patch("app.routers.ensemble.BackgroundTasks")
+@patch("app.routers.ensemble.clean_up_alerts_in_loki")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_network_analysis_last_container(push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_network_analysis_last_container(cleanup_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
@@ -356,7 +356,7 @@ async def test_receive_alerts_from_ids_network_analysis_last_container(push_to_l
 
     mock_ensemble = db_session_fixture.get_ensemble_model()
 
-    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {'content': f'Successfully pushed alerts for ensemble {mock_ensemble.name}'}
@@ -364,8 +364,9 @@ async def test_receive_alerts_from_ids_network_analysis_last_container(push_to_l
 
 @patch("app.routers.ensemble.last_container_sending_logs", new_callable=AsyncMock)
 @patch("app.routers.ensemble.push_alerts_to_loki")
+@patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_network_analysis_not_last_container(push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_network_analysis_not_last_container(bg_tasks,push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
@@ -390,7 +391,7 @@ async def test_receive_alerts_from_ids_network_analysis_not_last_container(push_
     push_to_loki_mock.return_value = mock_response_loki
     last_container_sending_mock.return_value = False
     mock_container = db_session_fixture.get_ids_container_model()
-    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session,backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {'content': f'Successfully pushed alerts for container {mock_container.name}'}
@@ -400,8 +401,9 @@ async def test_receive_alerts_from_ids_network_analysis_not_last_container(push_
 
 @patch("app.routers.ensemble.last_container_sending_logs", new_callable=AsyncMock)
 @patch("app.routers.ensemble.push_alerts_to_loki")
+@patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_static_analysis_not_last_container(push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_static_analysis_not_last_container(bg_tasks, push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "static",
@@ -426,7 +428,7 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(push_t
     push_to_loki_mock.return_value = mock_response_loki
     last_container_sending_mock.return_value = False
     mock_container = db_session_fixture.get_ids_container_model()
-    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {'content': f'Successfully pushed alerts for container {mock_container.name}'}
@@ -434,10 +436,12 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(push_t
 @patch("app.routers.ensemble.push_evaluation_metrics_to_prometheus")
 @patch("app.routers.ensemble.calculate_evaluation_metrics")
 @patch("app.routers.ensemble.clean_up_alerts_in_loki")
-@patch("app.routers.ensemble.get_alerts_from_analysis_id")
+@patch("app.routers.ensemble.get_all_alerts_for_ensemble_from_analysis_id")
 @patch("app.routers.ensemble.push_alerts_to_loki")
+@patch("app.routers.ensemble.BackgroundTasks")
+@patch("app.routers.ensemble.len")
 @pytest.mark.asyncio
-async def test_receive_alerts_from_ids_static_analysis_last_container(push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_receive_alerts_from_ids_static_analysis_last_container(len_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "static",
@@ -472,7 +476,7 @@ async def test_receive_alerts_from_ids_static_analysis_last_container(push_to_lo
     mock_ensemble = db_session_fixture.get_ensemble_model()
 
     mock_container = db_session_fixture.get_ids_container_model()
-    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session)
+    response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     print(response_json)
     assert response.status_code == 200

@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from app.metrics import calculate_evaluation_metrics, get_positves_and_negatives_from_dataset, get_column_ids, get_item_counts_of_dict
+from app.metrics import calculate_evaluation_metrics, get_positives_and_negatives_from_dataset, get_column_ids, get_item_counts_of_dict
 from app.utils import calculate_benign_and_malicious_ammount
 from app.models.dataset import Dataset
 from app.bicep_utils.models.ids_base import Alert
@@ -63,14 +63,14 @@ async def test_calculate_evaluation_metrics(sample_dataset, sample_alerts):
 
 @pytest.mark.asyncio
 async def test_get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts):
-    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await get_positves_and_negatives_from_dataset(sample_dataset, sample_alerts)
+    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts)
     assert (TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS) == (9,6,893,91,0,15)
 
 # Test for get_column_ids
 @pytest.mark.asyncio
 async def test_get_column_ids():
     header = ["Time", "Source IP", "Source Port", "Destination", "Destination Port", "Label"]
-    result_related_headers = await get_column_ids(header)
+    result_related_headers = get_column_ids(header)
 
     expected_related_headers = (
         5,  # Label column
@@ -82,7 +82,7 @@ async def test_get_column_ids():
     )
 
     header = ["Unknown", "Unrelated", "Time"]
-    result_unrelated_headers = await get_column_ids(header)
+    result_unrelated_headers = get_column_ids(header)
 
     expected_unrelated_headers = (
         None,  # Label column
@@ -101,12 +101,12 @@ async def test_get_item_counts_of_dict():
         "b": [4, 5],
         "c": []
     }
-    result_five_element_dict = await get_item_counts_of_dict(test_dict)
+    result_five_element_dict = get_item_counts_of_dict(test_dict)
 
     empty_dict = {}
-    result_empty_dict = await get_item_counts_of_dict(empty_dict)
+    result_empty_dict = get_item_counts_of_dict(empty_dict)
 
     single_item_dict = {"a": [1]}
-    result_single_dict = await get_item_counts_of_dict(single_item_dict)
+    result_single_dict = get_item_counts_of_dict(single_item_dict)
 
     assert (5, 1, 0) == (result_five_element_dict, result_single_dict, result_empty_dict)

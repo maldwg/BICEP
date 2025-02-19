@@ -8,6 +8,8 @@ import httpx
 from requests.models import Response
 from .prometheus import push_metrics_to_prometheus
 
+from .utils import STATUS
+
 from .logger import LOGGER
 
 def get_docker_client(host_system):
@@ -32,7 +34,6 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
     # TODO 0: docker needs longer or cant take it at all when image needs to be pulled. solution ?
     # TODO: 0 activate this again for prod to ensure the image is pulled. For local tests deactivate that
     # TODO 0: more spohisticated solution maybe with env variables to be abl to pull or use image locally if needed by cgheckoing ewith the dokcer sdk if image is present
-    # await pull_image_async(client, ids_properties.image)
     try:
         await run_container_async(client=client, container=ids_container, ids_tool=ids_tool, url=core_url)
         await check_container_health(ids_container)
@@ -42,17 +43,14 @@ async def start_docker_container(ids_container, ids_tool, config, ruleset):
     finally:
         client.close()
 
-async def pull_image_async(client, image):
-    await asyncio.to_thread(client.images.pull, image)
-
 async def run_container_async(client, ids_tool, container, url):
     image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
     
-    if not await asyncio.to_thread(image_exists, client, image_name_and_version):
-        LOGGER.info("Image not found, pulling...")
+    if not await image_exists(client, image_name_and_version):
+        LOGGER.info(f"Image {image_name_and_version} not found, pulling...")
         await asyncio.to_thread(client.images.pull, image_name_and_version)
     
-    ids_container = await asyncio.to_thread(
+    docker_container = await asyncio.to_thread(
         client.containers.create,
         image=image_name_and_version,
         name=container.name,
@@ -64,9 +62,10 @@ async def run_container_async(client, ids_tool, container, url):
         },
         cap_add=["NET_ADMIN", "NET_RAW"]
     )
-    await asyncio.to_thread(ids_container.start)
 
-def image_exists(client, image_name):
+    await asyncio.to_thread(docker_container.start)
+
+async def image_exists(client, image_name):
     return any(image_name in img.tags for img in client.images.list())
 
 
