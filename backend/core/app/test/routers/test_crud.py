@@ -85,7 +85,7 @@ async def test_get_all_configs_of_a_filetype(db_session_fixture: DatabaseSession
 async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     file_type = "invalid_type"
-    expected_response = {"message": "wrong file type"}
+    expected_response = {"error": "wrong file type"}
     result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     assert result == expected_response
 
@@ -237,7 +237,7 @@ async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mo
     response = await patch_ensemble(ensmeble=ensemble_update, db=db_session)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 500
-    assert response_json == {"messages": "Failed to change ensemble attributes"}
+    assert response_json == {"error": "Failed to change ensemble attributes"}
 
 @pytest.mark.asyncio
 async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):

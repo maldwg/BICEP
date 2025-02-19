@@ -314,7 +314,7 @@ async def test_receive_alerts_from_ids_unsuccessful_loki_push(bg_tasks, push_to_
     response_json = json.loads(response.body.decode())
     print(response_json)
     assert response.status_code == 500
-    assert response_json == {'content': 'Could not push logs to loki for container'}
+    assert response_json == {'error': 'Could not push logs to loki for container'}
 
 
 

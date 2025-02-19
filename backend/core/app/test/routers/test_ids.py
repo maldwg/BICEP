@@ -95,7 +95,7 @@ async def test_start_static_container_analysis_from_busy_container(
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 500
-    assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
+    assert response_json == {"error": "container with id 1 is not Idle!, aborting"}
 
 @pytest.mark.asyncio
 async def test_start_static_container_analysis_from_unavailable_container(
@@ -114,7 +114,7 @@ async def test_start_static_container_analysis_from_unavailable_container(
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 500
-    assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
+    assert response_json == {"error": "container with id 1 is not available! Check if it should be deleted"}
 
 
 
@@ -183,7 +183,7 @@ async def test_start_network_container_analysis_from_busy_container(
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 500
-    assert response_json == {"content": "container with id 1 is not Idle!, aborting"}
+    assert response_json == {"error": "container with id 1 is not Idle!, aborting"}
 
 @pytest.mark.asyncio
 async def test_start_network_container_analysis_from_unavailable_container(
@@ -205,7 +205,7 @@ async def test_start_network_container_analysis_from_unavailable_container(
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 500
-    assert response_json == {"content": "container with id 1 is not available! Check if it should be deleted"}
+    assert response_json == {"error": "container with id 1 is not available! Check if it should be deleted"}
 
 
 
