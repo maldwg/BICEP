@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
@@ -32,17 +32,17 @@ import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
-import { repeat } from 'rxjs';
+import { AlertComponent } from "../components/alert-component/alert-component.component";
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule],
+  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
-
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   containerList: Container[] = [];
   ensembleList: Ensemble[] = [];
   idsToolList: IdsTool[] = [];
@@ -76,7 +76,10 @@ export class DashboardComponent implements OnInit {
     this.getAllEnsembleContainer();
     this.getAllHosts();
   }
-
+  triggerError() {
+    this.errorPopup.showError('Something went wrong!');
+  }
+  
   getAllContainer(): void{
     this.idsService.getAllIdsContainer()
       /*
