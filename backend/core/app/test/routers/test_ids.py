@@ -225,7 +225,7 @@ async def test_stop_analysis_for_ensemble_container_unsucsessfully(db_session_fi
     mock_ids_container.ensemble_ids = [mock_ensemble_ids]
     mock_ensemble = db_session_fixture.get_ensemble_model()
     mock_ensemble.status = STATUS.ACTIVE.value
-    mock_ensemble_ids.ensemble = [mock_ensemble]
+    mock_ensemble_ids.ensemble = mock_ensemble
 
 
     response = await stop_analysis(stop_data=stop_analysis_data, db=db_session)
