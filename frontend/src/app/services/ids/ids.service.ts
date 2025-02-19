@@ -21,15 +21,14 @@ export class IdsService {
 
   }
 
-  sendContainerSetupData(containerData: ContainerSetupData): Observable<ContainerSetupData>{
+  sendContainerSetupData(containerData: ContainerSetupData): Observable<HttpResponse<any>>{
     let path = "/ids/setup";
-    console.log("send data")
-    return this.http.post<ContainerSetupData>(environment.backendUrl+path, containerData);
+    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, containerData, { observe: 'response' });
   }
 
-  updateContainer(container: ContainerUpdateData): Observable<ContainerUpdateData>{
+  updateContainer(container: ContainerUpdateData): Observable<HttpResponse<any>>{
     let path = "/crud/container"
-    return this.http.patch<ContainerUpdateData>(environment.backendUrl+path, container);
+    return this.http.patch<ContainerUpdateData>(environment.backendUrl+path, container, { observe: 'response' });
   }
 
   getAllIdsTools(): Observable<IdsTool[]> {
@@ -49,7 +48,7 @@ export class IdsService {
 
   removeContainerById(id: number) {
     let path = "/ids/remove/";
-    return this.http.delete(environment.backendUrl+path+id);
+    return this.http.delete(environment.backendUrl+path+id, { observe: 'response' });
   }
 
   start_static_analysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{

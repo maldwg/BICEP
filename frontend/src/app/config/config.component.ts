@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { ConfigService } from '../services/config/config.service';
 import { Configuration, ConfigurationSetupData, fileTypes } from '../models/configuration';
 import { MatCardModule } from '@angular/material/card';
@@ -19,14 +19,19 @@ import { Router } from '@angular/router';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { AlertComponent } from '../components/alert-component/alert-component.component';
+import { HttpResponse } from '@angular/common/http';
+
+
 @Component({
   selector: 'app-config',
   standalone: true,
-  imports: [ MatCardModule, MatButtonModule, CommonModule, MatExpansionModule],
+  imports: [ MatCardModule, MatButtonModule, CommonModule, MatExpansionModule, AlertComponent],
   templateUrl: './config.component.html',
   styleUrl: './config.component.css'
 })
 export class ConfigComponent implements OnInit{
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
 
   configurationList: Configuration[] = [];
   datasetList: Dataset[] = [];
@@ -75,13 +80,21 @@ export class ConfigComponent implements OnInit{
 
   removeConfiguration(configuration: Configuration){
     this.configService.removeConfiguration(configuration.id)
-      .subscribe(() => console.log("Removed configuration"));
-    this.configurationList = this.configurationList.filter(config => config !== configuration);
+      .subscribe(res => {
+          this.configurationList = this.configurationList.filter(config => config !== configuration);
+        },
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
+        });
   }
   removeDataset(dataset: Dataset){
     this.datasetService.removeDataset(dataset.id)
-      .subscribe(() => console.log("Removed dataset"));
-    this.datasetList = this.datasetList.filter(d => d !== dataset);
+    .subscribe(res => {
+        this.datasetList = this.datasetList.filter(d => d !== dataset);      
+      },
+      err => {
+        this.errorPopup.showError(err.error["error"], err.status);
+    });    
   }
 
   newConfig(): void {

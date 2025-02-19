@@ -32,14 +32,14 @@ export class EnsembleService {
     return this.http.post<any>(environment.backendUrl+path, ensembleData, { observe: 'response' })
   }
 
-  updateEnsemble(ensemble: EnsembleUpdateData): Observable<EnsembleUpdateData>{
+  updateEnsemble(ensemble: EnsembleUpdateData): Observable<HttpResponse<any>>{
     let path = "/crud/ensemble"
-    return this.http.patch<EnsembleUpdateData>(environment.backendUrl+path, ensemble);
+    return this.http.patch<EnsembleUpdateData>(environment.backendUrl+path, ensemble, { observe: 'response' });
   }
 
-  removeEnsemble(ensembleToRemove: Ensemble) : Observable<Ensemble>{
+  removeEnsemble(ensembleToRemove: Ensemble) : Observable<HttpResponse<any>>{
     let path="/ensemble/remove/"
-    return this.http.delete<Ensemble>(environment.backendUrl+path+ensembleToRemove.id);
+    return this.http.delete<Ensemble>(environment.backendUrl+path+ensembleToRemove.id, { observe: 'response' });
   }
 
   getEnsembleContainers(): Observable<EnsembleContainer[]>{

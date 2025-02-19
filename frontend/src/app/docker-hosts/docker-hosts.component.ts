@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,6 +7,7 @@ import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardModule, 
 import { CommonModule } from '@angular/common';
 import { MatButton, MatButtonModule } from '@angular/material/button';
 import { HttpResponse } from '@angular/common/http';
+import { AlertComponent } from "../components/alert-component/alert-component.component";
 
 @Component({
   selector: 'app-hosts',
@@ -14,13 +15,14 @@ import { HttpResponse } from '@angular/common/http';
   imports: [
     MatCardModule,
     MatButtonModule,
-    CommonModule
+    CommonModule,
+    AlertComponent
   ],
   templateUrl: './docker-hosts.component.html',
   styleUrl: './docker-hosts.component.css'
 })
 export class DockerHostsComponent implements OnInit{
-
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   constructor (
     private hostService: DockerHostService,
     public dialog: MatDialog
@@ -50,14 +52,12 @@ export class DockerHostsComponent implements OnInit{
 
 
   removeHost(host: DockerHostSystem){
-    this.hostService.removeHost(host.id).subscribe((response: HttpResponse<any>) => {
-      if(response.status == 204){
+    this.hostService.removeHost(host.id).subscribe(response => {
         this.hostSystemList = this.hostSystemList.filter(h => h.id != host.id)
-      } 
-      else{
-        console.error(response)
-      }
-    })
+      },
+      err => {
+        this.errorPopup.showError(err.error["error"], err.status);
+      })
 
   }
 
@@ -70,13 +70,11 @@ export class DockerHostsComponent implements OnInit{
     dialogRef.afterClosed().subscribe(hostData =>{
       if(hostData !== null){
         console.log(hostData)
-        	this.hostService.addHost(hostData).subscribe((result: HttpResponse<any>) => {
-            if(result.status == 200){
+        	this.hostService.addHost(hostData).subscribe(result => {
               window.location.reload()
-            }
-            else{
-              console.error(result)
-            }            
+            },
+            err => {
+              this.errorPopup.showError(err.error["error"], err.status);
           })
       }
       else {

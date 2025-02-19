@@ -39,7 +39,7 @@ async def get_all_configs_of_a_filetype(file_type: str, db=Depends(get_db)):
         serialized_configurations = get_serialized_confgigurations(configurations)
         return serialized_configurations
     else:
-        return {"message": "wrong file type"}
+        return {"error": "wrong file type"}
 
 @router.delete("/configuration/{id}")
 async def remove_config( id: int, db=Depends(get_db)):
@@ -70,7 +70,7 @@ async def add_new_dataset(configuration: list[UploadFile] = Form(...), name: str
         background_tasks.add_task(calculate_and_add_dataset, pcap_file=pcap_file, labels_file=labels_file, name=name, description=description, db=db)
         return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
     else:
-        return JSONResponse(content={"message": "Too many files attached"}, status_code=500)
+        return JSONResponse(content={"error": "Too many files attached"}, status_code=500)
 
 
 @router.get("/dataset/all")
@@ -125,7 +125,7 @@ async def patch_ensemble(ensmeble: EnsembleUpdate,db=Depends(get_db)):
     result = await update_ensemble(ensmeble, db)
     for r in result:
         if r.status_code != 200:
-            return JSONResponse(content={"messages": "Failed to change ensemble attributes"}, status_code=500)
+            return JSONResponse(content={"error": "Failed to change ensemble attributes"}, status_code=500)
         else:
             return JSONResponse(content={"messages": "successfully changed ensemble attributes"}, status_code=200)
         

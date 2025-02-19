@@ -1,6 +1,10 @@
     <div class="errors-container">
       <div *ngFor="let error of errors" class="error-popup">
-          <span>{{ error.message }}</span>
+          <div>
+            <span>{{ error.message }}</span>
+            <br>
+            <span style="padding-top: 200px;"> Status Code: {{ error.statusCode }}</span>
+          </div>
           <mat-icon aria-hidden="true" class="red-icon" fontIcon="cancel" (click)="removeError(error)"></mat-icon>
       </div>
     </div>

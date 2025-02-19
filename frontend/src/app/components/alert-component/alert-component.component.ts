@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
+import {v4 as uuidv4} from 'uuid';
 
 @Component({
   selector: 'app-alert-component',
@@ -10,21 +11,21 @@ import {MatIconModule} from '@angular/material/icon';
   styleUrl: './alert-component.component.css'
 })
 export class AlertComponent {
-  errors: { id: number, message: string }[] = [];
+  errors: { id: string, message: string, statusCode: number }[] = [];
 
-  showError(msg: string) {
-    const id = Date.now(); // Unique ID for tracking
-    this.errors.push({ id, message: msg });
+  showError(msg: string, statusCode: number) {
+    const id = uuidv4();
+    this.errors.push({ id, message: msg, statusCode: statusCode });
 
     // Auto-remove after 5 seconds
     setTimeout(() => this.removeErrorById(id), 5000);
   }
 
-  removeError(error: { id: number, message: string }) {
+  removeError(error: { id: string, message: string, statusCode: number }) {
     this.errors = this.errors.filter(e => e.id !== error.id);
   }
 
-  private removeErrorById(id: number) {
+  private removeErrorById(id: string) {
     this.errors = this.errors.filter(e => e.id !== id);
   }
 

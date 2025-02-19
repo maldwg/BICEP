@@ -63,11 +63,11 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
     container: IdsContainer = get_container_by_id(db, static_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500)
+        return JSONResponse({"error": f"container with id {container.id} is not Idle!, aborting"}, status_code=500)
     
     print(await container.is_available())
     if not await container.is_available():
-         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
+         return JSONResponse({"error": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
@@ -91,11 +91,11 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
     container: IdsContainer = get_container_by_id(db, network_analysis_data.container_id)
 
     if container.status != STATUS.IDLE.value:
-        return JSONResponse({"content": f"container with id {container.id} is not Idle!, aborting"}, status_code=500) 
+        return JSONResponse({"error": f"container with id {container.id} is not Idle!, aborting"}, status_code=500) 
     
 
     if not await container.is_available():
-         return JSONResponse({"content": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
+         return JSONResponse({"error": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
 
 
     data = json.dumps(network_analysis_data.__dict__)

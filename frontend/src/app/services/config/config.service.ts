@@ -36,9 +36,9 @@ export class ConfigService {
     return this.http.get<string[]>(environment.backendUrl+path);
   }
 
-  removeConfiguration(id: number) {
+  removeConfiguration(id: number): Observable<HttpResponse<any>> {
     let path = "/crud/configuration/";
-    return this.http.delete(environment.backendUrl+path+id);
+    return this.http.delete<HttpResponse<any>>(environment.backendUrl+path+id, { observe: 'response' });
   }
 
   addConfiguration(configuration: ConfigurationSetupData){
