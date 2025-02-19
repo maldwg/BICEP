@@ -1,6 +1,6 @@
-<div *ngIf="visible" class="error-popup">
-  <div class="error-content">
-    <p>{{ message }}</p>
-    <button (click)="closePopup()">Dismiss</button>
-  </div>
-</div>
+    <div class="errors-container">
+      <div *ngFor="let error of errors" class="error-popup">
+          <span>{{ error.message }}</span>
+          <mat-icon aria-hidden="true" class="red-icon" fontIcon="cancel" (click)="removeError(error)"></mat-icon>
+      </div>
+    </div>

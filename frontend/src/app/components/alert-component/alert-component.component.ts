@@ -1,27 +1,31 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {MatIconModule} from '@angular/material/icon';
 
 @Component({
   selector: 'app-alert-component',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './alert-component.component.html',
   styleUrl: './alert-component.component.css'
 })
 export class AlertComponent {
-  visible = false;
-  message = '';
+  errors: { id: number, message: string }[] = [];
 
   showError(msg: string) {
-    this.message = msg;
-    this.visible = true;
+    const id = Date.now(); // Unique ID for tracking
+    this.errors.push({ id, message: msg });
 
-    // Auto-hide after 5 seconds
-    setTimeout(() => this.visible = false, 5000);
+    // Auto-remove after 5 seconds
+    setTimeout(() => this.removeErrorById(id), 5000);
   }
 
-  closePopup() {
-    this.visible = false;
+  removeError(error: { id: number, message: string }) {
+    this.errors = this.errors.filter(e => e.id !== error.id);
+  }
+
+  private removeErrorById(id: number) {
+    this.errors = this.errors.filter(e => e.id !== id);
   }
 
 }
