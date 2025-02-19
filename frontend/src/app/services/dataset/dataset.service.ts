@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, finalize, map } from 'rxjs';
 import { Dataset, DatasetSetupData, SerializedDataset } from '../../models/dataset';
@@ -23,9 +23,9 @@ export class DatasetService {
     );
   }
 
-  removeDataset(id: number) {
+  removeDataset(id: number): Observable<HttpResponse<any>> {
     let path = "/crud/dataset/";
-    return this.http.delete(environment.backendUrl+path+id);
+    return this.http.delete<HttpResponse<any>>(environment.backendUrl+path+id, {observe: "response"});
   }
 
   addDataset(dataset: DatasetSetupData){

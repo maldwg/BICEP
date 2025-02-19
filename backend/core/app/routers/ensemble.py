@@ -195,7 +195,7 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
     response = await push_alerts_to_loki(alerts=alerts, labels=labels)
     if response.status_code not in [200,204]:
         LOGGER.error("Could not push logs to loki effectively")
-        return JSONResponse({"content": "Could not push logs to loki for container"},status_code=500)
+        return JSONResponse({"error": "Could not push logs to loki for container"},status_code=500)
 
     if analysis_is_static:
         LOGGER.debug("Static analysis data received")

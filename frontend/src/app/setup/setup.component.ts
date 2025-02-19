@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
 import {MatSelectModule} from '@angular/material/select';
 import {MatInputModule} from '@angular/material/input';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -20,15 +20,16 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import { HttpResponse } from '@angular/common/http';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
-
+import { AlertComponent } from '../components/alert-component/alert-component.component';
 @Component({
   selector: 'app-setup',
   standalone: true,
-  imports: [MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule ],
+  imports: [AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule ],
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.css'
 })
 export class SetupComponent implements OnInit {
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   //  TODO 5: add name to IDS creation
   idsForm = new FormGroup({
     host: new FormControl("localhost"),
@@ -93,7 +94,10 @@ export class SetupComponent implements OnInit {
         ruleset_id: this.idsForm.value.ruleset ? parseInt( this.idsForm.value.ruleset ) : undefined 
       };    
       this.idsService.sendContainerSetupData(containerData)
-        .subscribe(res => console.log(res));
+        .subscribe(res => console.log(res),
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
+        });
       this.router.navigate(["/"]);
     }
   }
@@ -109,15 +113,12 @@ export class SetupComponent implements OnInit {
       console.log(this.ensembleForm)
       console.log(this.ensembleForm.value.containers);
       this.ensembleService.sendEnsembleData(ensembleData)
-        .subscribe((res: HttpResponse<any>) => {
-          console.log(res)
+        .subscribe(res => {
           // TODO 5: go thorugh each response object here and see if it was succesful??
-          if(res.status == 200){
             this.router.navigate(["/"])
-          }
-          else{
-            // TODO 10: popup error
-          }
+          },
+          err =>{
+            this.errorPopup.showError(err.error["error"], err.status);
         })
     }
       

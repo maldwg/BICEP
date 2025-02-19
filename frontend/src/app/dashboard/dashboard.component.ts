@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
@@ -32,17 +32,17 @@ import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
-import { repeat } from 'rxjs';
+import { AlertComponent } from "../components/alert-component/alert-component.component";
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule],
+  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
-
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   containerList: Container[] = [];
   ensembleList: Ensemble[] = [];
   idsToolList: IdsTool[] = [];
@@ -76,7 +76,7 @@ export class DashboardComponent implements OnInit {
     this.getAllEnsembleContainer();
     this.getAllHosts();
   }
-
+  
   getAllContainer(): void{
     this.idsService.getAllIdsContainer()
       /*
@@ -199,15 +199,11 @@ export class DashboardComponent implements OnInit {
             dataset_id: res.dataset
           }
           this.idsService.start_static_analysis(staticAnalysisData)
-            .subscribe((backendRes: HttpResponse<any>) => {
-              console.log(backendRes)
-              if(backendRes.status === 200){
-                console.log("success")
+            .subscribe(backendRes => {
                 container.status = statusTypes.active
-              }
-              else{
-                console.log("not")
-              }
+              },
+              err => {
+                this.errorPopup.showError(err.error["error"], err.status);
             })
         }
         else if(res.type === analysisTypes.network){
@@ -217,16 +213,16 @@ export class DashboardComponent implements OnInit {
   
           // TODO 10: Refactor all endpoints like this to propagate backend errors/m,essages
           this.idsService.start_network_analysis(networkAnalysisData)
-            .subscribe((backendRes: HttpResponse<any>) => {
-              console.log(backendRes)
-              if(backendRes.status === 200){
+            .subscribe(backendRes => {
                 container.status = statusTypes.active
-              }
+              },
+              err => {
+                this.errorPopup.showError(err.error["error"], err.status);
             })
         }  
       }
       else {
-        console.log("Canceled analysis start");
+        console.log("User Canceled analysis start");
       }
     })
   }
@@ -248,12 +244,14 @@ export class DashboardComponent implements OnInit {
     let stopData: stop_analysisData = {
       container_id: container.id
     }
+    console.log("analysis is stopped")
     this.idsService.stop_analysis(stopData)
-      .subscribe((res: HttpResponse<any>) => {
-        console.log(res)
-        if(res.status == 200){
+      .subscribe(
+        res => {
           container.status = statusTypes.idle
-        }
+        },
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
       })
   }
 
@@ -274,11 +272,12 @@ export class DashboardComponent implements OnInit {
             dataset_id: res.dataset
           }
           this.ensembleService.start_static_analysis(staticAnalysisData)
-            .subscribe((backendRes: HttpResponse<any>) => {
-              console.log(backendRes)
-              if(backendRes.status === 200){
+            .subscribe( 
+              response => {
                 ensemble.status = statusTypes.active
-              }
+              },
+              err => {
+                this.errorPopup.showError(err.error["error"], err.status);
             })
         }
         else if(res.type === analysisTypes.network){
@@ -286,12 +285,12 @@ export class DashboardComponent implements OnInit {
             ensemble_id: ensemble.id
           }
           this.ensembleService.start_network_analysis(networkAnalysisData)
-            .subscribe((backendRes: HttpResponse<any>) => {
-              console.log(backendRes)
-              if(backendRes.status === 200){
+            .subscribe(response => {
                 ensemble.status = statusTypes.active
                 // TODO 5: update status of each container
-              }
+              },
+              err => {
+                this.errorPopup.showError(err.error["error"], err.status);
             })
         }
       }
@@ -306,12 +305,12 @@ export class DashboardComponent implements OnInit {
       ensemble_id: ensemble.id
     }
     this.ensembleService.stop_analysis(stopData)
-      .subscribe((res: HttpResponse<any>) => {
-        console.log(res)
-        if(res.status === 200){
+      .subscribe(res  => {
           ensemble.status = statusTypes.idle
           // TODO 5: update containers to dile again 
-        }
+        },
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
       })
   }
   editEnsemble(ensemble: Ensemble){
@@ -337,11 +336,17 @@ export class DashboardComponent implements OnInit {
           container_ids: res.idsContainer
         }
         this.ensembleService.updateEnsemble(ensembleUpdate)
-          .subscribe(() => console.log("send update data for ensemble"));
+          .subscribe(backendres => {
+              ensemble.status = statusTypes.idle
+              ensemble.name = ensembleUpdate.name;
+              ensemble.description = ensembleUpdate.description;
+              ensemble.technique_id = ensembleUpdate.technique_id;
+              // TODO 5: update containers to dile again 
+            },
+            err => {
+              this.errorPopup.showError(err.error["error"], err.status);
+            })
         
-        ensemble.name = ensembleUpdate.name;
-        ensemble.description = ensembleUpdate.description;
-        ensemble.technique_id = ensembleUpdate.technique_id;
         
         // location.reload();
       } 
@@ -371,11 +376,15 @@ export class DashboardComponent implements OnInit {
           ruleset_id: rulesetId.toString() !== '' ? rulesetId : container.ruleset_id
         }
         this.idsService.updateContainer(data)
-          .subscribe(() => console.log("Successfully send update"))
+          .subscribe(backendres => {
+              container.description = res.description;
+              container.configuration_id = configId;
+              container.ruleset_id = rulesetId;
+            },
+            err => {
+              this.errorPopup.showError(err.error["error"], err.status);
+          })
 
-        container.description = res.description;
-        container.configuration_id = configId;
-        container.ruleset_id = rulesetId;
 
         // TODO 0: update or refetch the ensembleContainers as well
       }
@@ -385,14 +394,23 @@ export class DashboardComponent implements OnInit {
 
   removeEnsemble(ensembleToRemove: Ensemble){
     this.ensembleService.removeEnsemble(ensembleToRemove)
-      .subscribe(() => console.log("ordered removal"))
-    this.ensembleList = this.ensembleList.filter(ensemble => ensemble.id !== ensembleToRemove.id)
+      .subscribe(backendres => {
+          this.ensembleList = this.ensembleList.filter(ensemble => ensemble.id !== ensembleToRemove.id)
+        },
+        err =>  {
+          this.errorPopup.showError(err.error["error"], err.status);
+      })
+
   }
 
   remove(containerToRemove: Container){
     this.idsService.removeContainerById(containerToRemove.id)
-      .subscribe(() => console.log("Deleted item with id " + containerToRemove.id + " successfully"));
-    this.containerList = this.containerList.filter(container => container !== containerToRemove);
+      .subscribe(backendres => {
+          this.containerList = this.containerList.filter(container => container !== containerToRemove);
+        },
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
+      })
 
   }
 

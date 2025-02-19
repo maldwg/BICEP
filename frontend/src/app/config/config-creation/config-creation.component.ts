@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
@@ -15,7 +15,7 @@ import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { DatasetSetupData } from '../../models/dataset';
 import { DatasetService } from '../../services/dataset/dataset.service';
-
+import { AlertComponent } from '../../components/alert-component/alert-component.component';
 @Component({
   selector: 'app-config-creation',
   standalone: true,
@@ -33,12 +33,13 @@ import { DatasetService } from '../../services/dataset/dataset.service';
     MatDialogClose,
     MatDialogModule,
     MatIconModule,
-    CommonModule
+    CommonModule,
+    AlertComponent
   ],  templateUrl: './config-creation.component.html',
   styleUrl: './config-creation.component.css'
 })
 export class ConfigCreationComponent implements OnInit{
-
+  @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   fileTypeList: string[] = [];
 
   configForm = new FormGroup({
@@ -88,8 +89,8 @@ export class ConfigCreationComponent implements OnInit{
                 console.log("close");
                 break;
             }
-          }, error => {
-            console.error(error);
+          }, err => {
+            this.errorPopup.showError(err.error["error"], err.status);
           });
       }
       else{
@@ -113,8 +114,8 @@ export class ConfigCreationComponent implements OnInit{
                 console.log("close");
                 break;
             }
-          }, error => {
-            console.error(error);
+          }, err => {
+            this.errorPopup.showError(err.error["error"], err.status);
           });
       }
     }
