@@ -5,21 +5,14 @@ export interface Dataset{
     labels_file_path: string,
     description: string,
     ammount_benign: number,
-    ammount_malicious: number
+    ammount_malicious: number,
+    dataset_type_id: number,
 }
 
 export interface DatasetSetupData{
     name: string,
-    configuration: any,
+    data_file: any,
+    labels_file: any,
     description: string,
+    dataset_type_id: string
 }
-
-export interface SerializedDataset {
-    id: number,
-    name: string,
-    pcap_file_path: string,
-    labels_file_path: string, 
-    description: string,
-    ammount_benign: number,
-    ammount_malicious: number
-  }

@@ -17,10 +17,6 @@ export class IdsService {
   ) { }
 
   
-  getContainers(): void{
-
-  }
-
   sendContainerSetupData(containerData: ContainerSetupData): Observable<HttpResponse<any>>{
     let path = "/ids/setup";
     return this.http.post<HttpResponse<any>>(environment.backendUrl+path, containerData, { observe: 'response' });
