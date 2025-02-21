@@ -1,7 +1,5 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.types import BLOB
-from sqlalchemy.orm import Session, defer
-import aiofiles
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import Session, relationship
 from ..database import Base
 
 class Dataset(Base):
@@ -14,12 +12,9 @@ class Dataset(Base):
     description = Column(String(2048), nullable=False)
     ammount_benign = Column(Integer, nullable=False)
     ammount_malicious = Column(Integer, nullable=False)
+    dataset_type_id = Column(Integer, ForeignKey("dataset_type.id"), nullable=False)
 
-    async def read_pcap_file(self):
-        async with aiofiles.open(self.pcap_file_path, 'rb') as file:
-            pcap_file = await file.read()
-            return pcap_file
-
+    dataset_type = relationship('DatasetType', back_populates="dataset")
 
 def get_dataset_by_id(db: Session, dataset_id: int):
     return db.query(Dataset).filter(Dataset.id == dataset_id).first()
