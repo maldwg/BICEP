@@ -77,7 +77,6 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
     containers: list[IdsContainer] = ensemble.get_containers(db)
     for container in containers:
         if container.status != STATUS.IDLE.value:
-            print("test")
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
         

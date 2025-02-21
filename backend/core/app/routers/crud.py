@@ -10,9 +10,12 @@ from ..models.ids_container import get_all_container, update_container
 from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, get_serialized_datasets
+from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
 from ..models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
+from ..models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
+from ..logger import LOGGER
+
 router = APIRouter(
     prefix="/crud"
 )
@@ -62,27 +65,31 @@ async def add_new_config(configuration: list[UploadFile] = Form(...), name: str 
 
 
 @router.post("/dataset/add")
-async def add_new_dataset(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), dataset_type_id: str = Form(...),  db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
     # For rulesets and general configurations
-    if len(configuration) == 2:
-        pcap_file = await list(filter(lambda c: c.filename.split(".")[-1] == "pcap" , configuration ))[0].read()
-        labels_file = await list(filter(lambda c: c.filename.split(".")[-1] != "pcap" , configuration ))[0].read()
-        background_tasks.add_task(calculate_and_add_dataset, pcap_file=pcap_file, labels_file=labels_file, name=name, description=description, db=db)
-        return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
-    else:
-        return JSONResponse(content={"error": "Too many files attached"}, status_code=500)
+    dataset_type = get_dataset_type_by_id(db, int(dataset_type_id))
+    data_file = await data_file.read()
+    labels_file = await labels_file.read()
+    background_tasks.add_task(calculate_and_add_dataset, pcap_file=data_file, labels_file=labels_file, name=name, description=description, dataset_type=dataset_type, db=db)
+    return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 
 @router.get("/dataset/all")
 async def get_all_ds(db=Depends(get_db)):
     datasets = get_all_datasets(db)
-    serialized_datasets = get_serialized_datasets(datasets)
-    return serialized_datasets
+    return datasets
 
 @router.delete("/dataset/{id}")
 async def remove_dataset( id: int, db=Depends(get_db)):
     remove_dataset_by_id(db, id)
     return Response(status_code=204)
+
+
+@router.get("/dataset-type/all")
+async def get_all_ds_types(db=Depends(get_db)):
+    dataset_types = get_all_dataset_types(db)
+    return dataset_types
+
 
 @router.get("/ids-tool/all")
 async def get_all_ids_tools(db=Depends(get_db)):

@@ -142,12 +142,12 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     return benign_count, malicious_count
 
 
-async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
+async def calculate_and_add_dataset(pcap_file, labels_file, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
-    benign, malicious = await calculate_malicious_benign_counts_from_text_stream(text_stream)
+    benign, malicious = await dataset_type.get_benign_and_malicious_counts(text_stream)
 
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
@@ -167,6 +167,7 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
         labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
+        dataset_type_id=dataset_type.id
     )
     add_dataset(db, dataset)
 
@@ -184,40 +185,15 @@ async def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-# Efficient CSV processing using a genrator
-async def calculate_malicious_benign_counts_from_text_stream(input_file):
-    benign_count = 0
-    malicious_count = 0
-    header = True
-    with input_file as input_csv:
-        reader = csv.reader(input_csv)
-        for row in reader:
-            if header:
-                header = False
-                continue
-            # Convert each cell in the row to lowercase and check for "benign"
-            if any("benign" in cell.lower() for cell in row):
-                benign_count += 1
-            else:
-                malicious_count += 1
 
-    return benign_count, malicious_count
-
-def get_serialized_datasets(datasets):
-    serialized_datasets = []
-    for dataset in datasets:
-        serialized_config = {
-            "id": dataset.id,
-            "name": dataset.name,
-            "pcap_file_path": dataset.pcap_file_path, 
-            "labels_file_path": dataset.labels_file_path,  
-            "description": dataset.description,
-            "ammount_benign": dataset.ammount_benign,
-            "ammount_malicious": dataset.ammount_malicious
-
-        }
-        serialized_datasets.append(serialized_config)
-    return serialized_datasets
+def get_item_counts_of_dict(d: dict):
+    """
+    Method that returns the ammount of items stored in a dict, regardless of the keys
+    """
+    items = 0
+    for _,v in d.items():
+        items += len(v)
+    return items
 
 async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
