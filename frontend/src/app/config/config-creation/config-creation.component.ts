@@ -6,7 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ConfigComponent } from '../config.component';
 import { Dialog } from '@angular/cdk/dialog';
-import { ConfigurationSetupData, fileTypes } from '../../models/configuration';
+import { ConfigurationSetupData} from '../../models/configuration';
+import { fileTypes, getAcceptedFileTypesForConfigurationType } from '../../models/acceptedFileTypes';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
@@ -169,32 +170,23 @@ export class ConfigCreationComponent implements OnInit{
       else if (fileType === 'configuration'){
           this.selectedConfigurationFileName = input.files[0].name;
           this.configForm.patchValue({configurationFile:file_to_upload });
+      }
     }
+  } 
+
+  getAllDatasetTypes(){
+    this.datasetTypeService.getAllDatasetTypes()
+      .subscribe(datasetTypes => this.datasetTypeList = datasetTypes)
   }
-}
 
-getAllDatasetTypes(){
-  this.datasetTypeService.getAllDatasetTypes()
-    .subscribe(datasetTypes => this.datasetTypeList = datasetTypes)
-}
-
-getAllFileTypes(){
-  this.configService.getAllFileTypes()
-    .subscribe(data => this.fileTypeList = data)
-}
-
-
-getAcceptType(): string {
-  switch (this.configForm.controls.fileType.value) {
-    case fileTypes.testData:
-      return '.pcap,.csv,.pcap_ISX';
-    case fileTypes.configuration:
-      return '.yaml,.conf,.json,.lua';
-    case fileTypes.ruleSet:
-      return '.rules';
-    default:
-      return '*/*';
+  getAllFileTypes(){
+    this.configService.getAllFileTypes()
+      .subscribe(data => this.fileTypeList = data)
   }
-}
+
+
+  getAcceptType(): string {
+    return getAcceptedFileTypesForConfigurationType(this.configForm.controls.fileType.value!);
+  }
 
 }

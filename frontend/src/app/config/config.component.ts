@@ -1,6 +1,7 @@
 import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { ConfigService } from '../services/config/config.service';
-import { Configuration, ConfigurationSetupData, fileTypes } from '../models/configuration';
+import { Configuration, ConfigurationSetupData } from '../models/configuration';
+import { fileTypes } from '../models/acceptedFileTypes';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
