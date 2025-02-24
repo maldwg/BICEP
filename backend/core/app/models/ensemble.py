@@ -2,7 +2,7 @@ import asyncio
 from http.client import HTTPResponse
 import json
 import uuid
-from ..utils import ANALYSIS_STATUS,STATUS, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
+from ..utils import ANALYSIS_STATUS,STATUS, read_pcap_file, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
@@ -70,7 +70,7 @@ class Ensemble(Base):
         from .ids_container import IdsContainer
         containers: list[IdsContainer] = self.get_containers(db)
         responses = []
-        pcap_file = await dataset.read_pcap_file()
+        pcap_file = await read_pcap_file(dataset)
 
         for container in containers:
             form_data= {

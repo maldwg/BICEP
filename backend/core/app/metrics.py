@@ -1,13 +1,17 @@
 from .logger import LOGGER
+from .database import get_db_session_context
+from .models.dataset_types import get_all_dataset_types
+from .models.dataset import get_dataset_by_id
 
-
-
-async def calculate_evaluation_metrics(dataset, alerts):
+async def calculate_evaluation_metrics(dataset_id, alerts):
     LOGGER.debug("start calculation of evaluation metrics")
-    true_benign = dataset.ammount_benign
-    true_malicious = dataset.ammount_malicious
-    total = true_benign + true_malicious
-    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = dataset.dataset_type.get_positives_and_negatives_from_dataset( dataset, alerts)
+    with get_db_session_context() as db: 
+        dataset = get_dataset_by_id(dataset_id=dataset_id, db=db)
+        true_benign = dataset.ammount_benign
+        true_malicious = dataset.ammount_malicious
+        total = true_benign + true_malicious
+        TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await dataset.dataset_type.get_positives_and_negatives_from_dataset( dataset, alerts)
+
     def calculate_fpr():
         fpr = round(FP / (FP + TN), 2) if FP + TN > 0 else 0
         return fpr
@@ -43,7 +47,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
         score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
         return round(score,2)
 
-    def calculate_unassigned_requests_ration():
+    def calculate_unassigned_requests_ratio():
         if TOTAL_ALERTS != 0:
             return round(UNASSIGNED_ALERTS / TOTAL_ALERTS, 2)
         else:
@@ -56,7 +60,7 @@ async def calculate_evaluation_metrics(dataset, alerts):
         "ACCURACY": calculate_accuracy(),
         "PRECISION": calculate_precision(),
         "F_SCORE": calculate_f_score(),
-        "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ration()
+        "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ratio()
     }
     LOGGER.debug(f"metrics: {metrics}")
     return metrics

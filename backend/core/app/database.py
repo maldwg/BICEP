@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os 
 
+from contextlib import contextmanager
 
 database_url = os.environ.get("DATABASE_URL")
 database_name = os.environ.get("DATABASE_NAME")
@@ -22,6 +23,21 @@ else:
 Base = declarative_base()
 
 def get_db():
+    if SessionLocal is None:
+        raise RuntimeError("Database connection is not configured properly.")
+
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@contextmanager
+def get_db_session_context():
+    """
+        Method to be able to create db connections without passing the db property from endpoint all the way to the desired function
+    """
     if SessionLocal is None:
         raise RuntimeError("Database connection is not configured properly.")
 

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import aiofiles
 from http.client import HTTPResponse
 import io
 import socket
@@ -206,7 +207,10 @@ def get_item_counts_of_dict(d: dict):
 
 async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
-    metrics = await calculate_evaluation_metrics(dataset, alerts)
+    # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
+    # and an error will be thrown
+    dataset_id = dataset.id
+    metrics = await calculate_evaluation_metrics(dataset_id, alerts)
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
 
 def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
@@ -250,3 +254,9 @@ def get_length_of_nested_dict(d: dict):
         for container, alerts in v.items():
             counter += len(alerts)
     return counter
+
+
+async def read_pcap_file(dataset):
+    async with aiofiles.open(dataset.pcap_file_path, 'rb') as file:
+        pcap_file = await file.read()
+        return pcap_file
