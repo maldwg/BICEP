@@ -35,7 +35,8 @@ class DatasetType(Base):
         Dynamically imports the correct module based on function_prefix.
         Uses relative import within the 'models' package.
         """
-        module_name = f"backend.models.dataset_types_implementation.{self.function_prefix.lower()}"  # Relative import
+        # in the container the code is injected as backend, not as app, therefor backend.models.... 
+        module_name = f"backend.models.dataset_types_implementation.{self.function_prefix.lower()}" 
         
         try:
             module = importlib.import_module(module_name)
