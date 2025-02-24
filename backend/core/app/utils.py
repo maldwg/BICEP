@@ -41,6 +41,15 @@ class FILE_TYPES(Enum):
     RULE_SET = "rule-set"
 
 
+def file_type_is_accepted(file_type: str, file_ending: str):
+    match file_type:
+        case FILE_TYPES.CONFIG.value:
+            return True if file_ending in ["lua", "yaml", "xml", "conf"] else False
+        case FILE_TYPES.TEST_DATA.value:
+            return True if file_ending in ["pcap", "csv"] else False
+        case FILE_TYPES.RULE_SET.value:
+            return True if file_ending in ["rules"] else False
+    return False
 def find_free_port():
     # TODO 10: Adapt this to also find free ports on remote hosts --> could be hard 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:

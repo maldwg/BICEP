@@ -10,7 +10,7 @@ from ..models.ids_container import get_all_container, update_container
 from ..models.ensemble import get_all_ensembles, update_ensemble
 from ..models.ensemble_technique import get_all_ensemble_techniques
 from ..models.ensemble_ids import get_all_ensemble_container
-from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset
+from ..utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, file_type_is_accepted
 from ..validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
 from ..models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from ..models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
@@ -51,21 +51,32 @@ async def remove_config( id: int, db=Depends(get_db)):
 
 # TODO 10: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
 @router.post("/configuration/add")
-async def add_new_config(configuration: list[UploadFile] = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+    file_ending = configuration.filename.split(".")[-1]
+    LOGGER.debug(file_ending)
+    if not file_type_is_accepted(file_type=file_type, file_ending=file_ending):
+        return JSONResponse({"message": f"file in {file_ending} format is not accepted as {file_type} "}, status_code=500)
     # For rulesets and general configurations
-    content = await configuration[0].read()  
-    configuration = Configuration(
+    content = await configuration.read()  
+    db_configuration = Configuration(
         name=name,
         description=description,
         configuration=content,
         file_type=file_type,
     )
-    add_config(db, configuration)
+    add_config(db, db_configuration)
     return JSONResponse({"message": "configuration added successfully"}, status_code=200)
 
 
 @router.post("/dataset/add")
 async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), dataset_type_id: str = Form(...),  db=Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks()):
+    data_file_ending = data_file.filename.split(".")[-1]
+    labels_file_ending = labels_file.filename.split(".")[-1]
+    LOGGER.debug(data_file_ending)
+    if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=data_file_ending):
+        return JSONResponse({"message": f"file in {data_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
+    if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=labels_file_ending):
+        return JSONResponse({"message": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
     # For rulesets and general configurations
     dataset_type = get_dataset_type_by_id(db, int(dataset_type_id))
     data_file = await data_file.read()
