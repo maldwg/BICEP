@@ -14,7 +14,7 @@ def sample_dataset():
     return Dataset(
         name="TestDataset",
         description="Test dataset for IDS evaluation",
-        pcap_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
+        data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
         labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv",
         ammount_benign=899,
         ammount_malicious=100

@@ -81,7 +81,7 @@ async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadF
     dataset_type = get_dataset_type_by_id(db, int(dataset_type_id))
     data_file = await data_file.read()
     labels_file = await labels_file.read()
-    background_tasks.add_task(calculate_and_add_dataset, pcap_file=data_file, labels_file=labels_file, name=name, description=description, dataset_type=dataset_type, db=db)
+    background_tasks.add_task(calculate_and_add_dataset, data_file=data_file, labels_file=labels_file, name=name, description=description, dataset_type=dataset_type, db=db)
     return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 

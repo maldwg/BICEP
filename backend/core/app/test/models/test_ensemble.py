@@ -94,7 +94,7 @@ async def test_start_static_analysis(mock_ensemble:Ensemble, db_session_fixture:
     mock_container_response = AsyncMock(spec=HTTPResponse)
     mock_container_response.status_code = 200
     mock_container.start_static_analysis.return_value = mock_container_response
-    mock_dataset.read_pcap_file = AsyncMock(return_value=b"mocked pcap content")
+    mock_dataset.read_data_file = AsyncMock(return_value=b"mocked pcap content")
     mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_static_analysis(mock_dataset, db_session)
@@ -110,7 +110,7 @@ async def test_start_static_analysis_failiure(mock_ensemble:Ensemble, db_session
     mock_container_response = AsyncMock(spec=HTTPResponse)
     mock_container_response.status_code = 500
     mock_container.start_static_analysis.return_value = mock_container_response
-    mock_dataset.read_pcap_file = AsyncMock(return_value=b"mocked pcap content")
+    mock_dataset.read_data_file = AsyncMock(return_value=b"mocked pcap content")
     mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_static_analysis(mock_dataset, db_session)

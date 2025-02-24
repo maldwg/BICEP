@@ -99,7 +99,7 @@ async def start_static_analysis(container, form_data, dataset):
     async def send_request_in_background(): 
         try:
             async with httpx.AsyncClient() as client:  
-                with open(dataset.pcap_file_path, "rb") as f:
+                with open(dataset.data_file_path, "rb") as f:
                     form_data["dataset"] = (dataset.name, f, "application/octet-stream")
                     # set timeout to 600 seconds, as uploads can take a while
                     response = await client.post(container_url+endpoint,files=form_data, timeout=180)    
@@ -152,7 +152,7 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     return benign_count, malicious_count
 
 
-async def calculate_and_add_dataset(pcap_file, labels_file, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
@@ -163,17 +163,17 @@ async def calculate_and_add_dataset(pcap_file, labels_file, name, description, d
     base_path = os.getenv("DATASET_BASE_PATH")
     dataset_storage_location = f"{base_path}/{name}/{uid}"
     
-    pcap_file_path = f"{dataset_storage_location}/dataset.pcap"
+    data_file_path = f"{dataset_storage_location}/dataset.pcap"
     labels_file_path = f"{dataset_storage_location}/dataset.csv"
 
     await create_directory(dataset_storage_location)
-    await save_file_to_disk(pcap_file, pcap_file_path)
+    await save_file_to_disk(data_file, data_file_path)
     await save_file_to_disk(labels_file, labels_file_path)
 
     dataset = Dataset(
         name=name,
         description=description,
-        pcap_file_path=pcap_file_path,
+        data_file_path=data_file_path,
         labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
@@ -256,7 +256,7 @@ def get_length_of_nested_dict(d: dict):
     return counter
 
 
-async def read_pcap_file(dataset):
-    async with aiofiles.open(dataset.pcap_file_path, 'rb') as file:
-        pcap_file = await file.read()
-        return pcap_file
+async def read_data_file(dataset):
+    async with aiofiles.open(dataset.data_file_path, 'rb') as file:
+        data_file = await file.read()
+        return data_file

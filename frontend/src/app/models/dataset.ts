@@ -1,7 +1,7 @@
 export interface Dataset{
     id: number,
     name: string,
-    pcap_file_path: string,
+    data_file_path: string,
     labels_file_path: string,
     description: string,
     ammount_benign: number,

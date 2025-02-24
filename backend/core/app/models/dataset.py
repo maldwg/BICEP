@@ -7,7 +7,7 @@ class Dataset(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64), nullable=False)
-    pcap_file_path = Column(String(1024), nullable=False)
+    data_file_path = Column(String(1024), nullable=False)
     labels_file_path = Column(String(1024), nullable=False)
     description = Column(String(2048), nullable=False)
     ammount_benign = Column(Integer, nullable=False)

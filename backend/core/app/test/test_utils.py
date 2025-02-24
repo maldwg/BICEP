@@ -43,7 +43,7 @@ async def test_start_static_analysis():
     container.get_container_http_url.return_value = "http://test-container"
     form_data = {"key": "value"}
     dataset = MagicMock()
-    dataset.pcap_file_path = "path/to/pcap"
+    dataset.data_file_path = "path/to/pcap"
 
     with patch('asyncio.create_task') as mock_create_task:
         response = await start_static_analysis(container, form_data, dataset)
@@ -53,7 +53,7 @@ async def test_start_static_analysis():
 @pytest.mark.asyncio
 async def test_calculate_and_add_dataset():
     labels_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'rb').read()
-    pcap_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
+    data_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
 
     name = "sample_data"
     description = "Test dataset"
@@ -63,7 +63,7 @@ async def test_calculate_and_add_dataset():
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
 
     try:
-        await calculate_and_add_dataset(pcap_file_in_bytes, labels_file_in_bytes, name, description, db)
+        await calculate_and_add_dataset(data_file_in_bytes, labels_file_in_bytes, name, description, db)
     finally:
         shutil.rmtree(dataset_storage_location)
 

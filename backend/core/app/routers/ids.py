@@ -72,10 +72,10 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
 
     dataset: Dataset = get_dataset_by_id(db, static_analysis_data.dataset_id)
     await update_container_status(STATUS.ACTIVE.value, container, db)
-    # pcap_file = await dataset.read_pcap_file()
+    # data_file = await dataset.read_data_file()
     form_data= {
             "container_id": (None, str(container.id), "application/json"),
-            # "dataset": (dataset.name, pcap_file, "application/octet-stream"),
+            # "dataset": (dataset.name, data_file, "application/octet-stream"),
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
