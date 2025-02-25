@@ -1,8 +1,9 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
-
+from ..database import get_db_session_context
 from ..database import Base
+from sqlalchemy.future import select
 
 class IdsTool(Base):
     __tablename__ = "ids_tool"
@@ -18,9 +19,14 @@ class IdsTool(Base):
     container = relationship("IdsContainer", back_populates="ids_tool")
 
 
-def get_ids_by_id(db: Session, ids_id: int):
-    return db.query(IdsTool).filter(IdsTool.id == ids_id).first()
+async def get_ids_by_id(ids_id: int):
+    async with get_db_session_context() as db:
+        stmt = select(IdsTool).where(IdsTool.id == ids_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()  # Return a single result or None
 
-
-def get_all_tools(db: Session):
-    return db.query(IdsTool).all()
+async def get_all_tools():
+    async with get_db_session_context() as db:
+        stmt = select(IdsTool)
+        result = await db.execute(stmt)
+        return result.scalars().all()  # Return all results

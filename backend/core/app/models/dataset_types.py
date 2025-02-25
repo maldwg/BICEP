@@ -1,12 +1,12 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, Session
-from ..database import Base
+from ..database import Base, get_db_session_context
 from .dataset_types_implementation import *
 import asyncio
 from ..bicep_utils.models.ids_base import Alert
 from ..logger import LOGGER
 import importlib
-import sys
+from sqlalchemy.future import select
 class DatasetType(Base):
     __tablename__ = "dataset_type"
 
@@ -44,9 +44,16 @@ class DatasetType(Base):
         except ModuleNotFoundError as e:
             LOGGER.error(f"Module {module_name} not found: {e}")
             raise
-def get_dataset_type_by_id(db: Session, id: int):
-    return db.query(DatasetType).filter(DatasetType.id == id).first()
 
-def get_all_dataset_types(db: Session):
-    return db.query(DatasetType).all()
+async def get_dataset_type_by_id(id: int):
+    async with get_db_session_context() as db:
+        stmt = select(DatasetType).where(DatasetType.id == id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+async def get_all_dataset_types():
+    async with get_db_session_context() as db:
+        stmt = select(DatasetType)
+        result = await db.execute(stmt)
+        return result.scalars().all()
 

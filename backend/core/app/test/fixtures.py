@@ -139,7 +139,7 @@ def db_session_fixture():
     mock_ensemble.id = 1
     mock_ensemble.name = "Ensemble-1"
     mock_ensemble.add_container = AsyncMock()
-    mock_ensemble.get_containers = MagicMock()
+    mock_ensemble.get_assigned_containers = MagicMock()
     mock_ensemble.start_static_analysis = AsyncMock()
     mock_ensemble.start_network_analysis = AsyncMock()
     mock_ensemble.ensemble_technique = mock_ensemble_technique
@@ -178,7 +178,7 @@ def db_session_fixture():
         elif model == EnsembleIds:
             mock_filter.first.return_value = mock_ensemble_ids
             mock_query.all.return_value = [mock_ensemble_ids]
-            # mocked for the get_containers method of the ensemble
+            # mocked for the get_assigned_containers method of the ensemble
             mock_filter.all.return_value = [mock_ensemble_ids]
         else:
             raise ValueError(f"Unsupported model: {model}")

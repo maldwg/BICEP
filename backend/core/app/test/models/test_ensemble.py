@@ -78,10 +78,10 @@ async def test_remove_container_failiure(deregister_mock, mock_ensemble: Ensembl
     response = await mock_ensemble.remove_container(mock_container.id, db_session)
     assert response.status_code == 400
 
-def test_get_containers(mock_ensemble: Ensemble,db_session_fixture:DatabaseSessionFixture):
+def test_get_assigned_containers(mock_ensemble: Ensemble,db_session_fixture:DatabaseSessionFixture):
     db_session = db_session_fixture.get_db_session()
     mock_ids_containers = [db_session_fixture.get_ids_container_model()]
-    container_list = mock_ensemble.get_containers(db=db_session)
+    container_list = mock_ensemble.get_assigned_containers(db=db_session)
     assert container_list == mock_ids_containers
 
 
@@ -95,7 +95,7 @@ async def test_start_static_analysis(mock_ensemble:Ensemble, db_session_fixture:
     mock_container_response.status_code = 200
     mock_container.start_static_analysis.return_value = mock_container_response
     mock_dataset.read_data_file = AsyncMock(return_value=b"mocked pcap content")
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_static_analysis(mock_dataset, db_session)
     assert responses[0].status_code == 200
@@ -111,7 +111,7 @@ async def test_start_static_analysis_failiure(mock_ensemble:Ensemble, db_session
     mock_container_response.status_code = 500
     mock_container.start_static_analysis.return_value = mock_container_response
     mock_dataset.read_data_file = AsyncMock(return_value=b"mocked pcap content")
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_static_analysis(mock_dataset, db_session)
     assert responses[0].status_code == 500
@@ -129,7 +129,7 @@ async def test_start_network_analysis(mock_ensemble:Ensemble, db_session_fixture
     mock_container_response = AsyncMock(spec=HTTPResponse)
     mock_container_response.status_code = 200
     mock_container.start_network_analysis.return_value = mock_container_response
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_network_analysis(network_analysis_data, db_session)
     assert responses[0].status_code == 200
@@ -147,7 +147,7 @@ async def test_start_network_analysis_failiure(mock_ensemble:Ensemble, db_sessio
     mock_container_response = AsyncMock(spec=HTTPResponse)
     mock_container_response.status_code = 500
     mock_container.start_network_analysis.return_value = mock_container_response
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
 
     responses = await mock_ensemble.start_network_analysis(network_analysis_data, db_session)
     assert responses[0].status_code == 500
@@ -159,7 +159,7 @@ async def test_stop_analysis(mock_ensemble:Ensemble, db_session_fixture: Databas
     db_session = db_session_fixture.get_db_session()
     mock_container = db_session_fixture.get_ids_container_model()
 
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
     container_mock_response = AsyncMock(spec=HTTPResponse)
     container_mock_response.status_code = 200
     mock_container.stop_analysis.return_value = container_mock_response
@@ -174,7 +174,7 @@ async def test_stop_analysis_failiure(mock_ensemble:Ensemble, db_session_fixture
     db_session = db_session_fixture.get_db_session()
     mock_container = db_session_fixture.get_ids_container_model()
 
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container])
     container_mock_response = AsyncMock(spec=HTTPResponse)
     container_mock_response.status_code = 500
     mock_container.stop_analysis.return_value = container_mock_response
@@ -197,7 +197,7 @@ async def test_container_is_last_one_running(mock_ensemble: Ensemble, db_session
     second_mock_container = MagicMock(spec=IdsContainer)
     second_mock_container.id = 2
     second_mock_container.is_busy = AsyncMock(return_value=False)
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container, second_mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container, second_mock_container])
     assert await mock_ensemble.container_is_last_one_running(mock_container, db=db_session) is True
 
 @pytest.mark.asyncio
@@ -207,5 +207,5 @@ async def test_container_is_not_last_one_running(mock_ensemble: Ensemble, db_ses
     second_mock_container = MagicMock(spec=IdsContainer)
     second_mock_container.id = 2
     second_mock_container.is_busy = AsyncMock(return_value=True)
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_container, second_mock_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_container, second_mock_container])
     assert await mock_ensemble.container_is_last_one_running(mock_container, db=db_session) is False

@@ -2,8 +2,8 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.types import BLOB
 from sqlalchemy.orm import relationship, Session
 from .ids_container import IdsContainer
-
-from ..database import Base
+from sqlalchemy.future import select
+from ..database import Base, get_db_session_context
 
 class Configuration(Base):
     __tablename__ = "configuration"
@@ -17,21 +17,33 @@ class Configuration(Base):
     container = relationship("IdsContainer", back_populates="configuration", foreign_keys=[IdsContainer.configuration_id])
     containerRuleset = relationship('IdsContainer', back_populates='ruleset', foreign_keys=[IdsContainer.ruleset_id])
 
-def get_config_by_id(db: Session, config_id: int):
-    return db.query(Configuration).filter(Configuration.id == config_id).first()
-    
-def get_all_configurations(db: Session):
-    return db.query(Configuration).all()
+async def get_config_by_id(config_id: int):
+    async with get_db_session_context() as db:
+        stmt = select(Configuration).where(Configuration.id == config_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()  # Return a single row or None
 
-def remove_configuration_by_id(db, id):
-    config = get_config_by_id(db, id)
-    db.delete(config)
-    db.commit()
+async def get_all_configurations():
+    async with get_db_session_context() as db:
+        stmt = select(Configuration)
+        result = await db.execute(stmt)
+        return result.scalars().all()  # Return all results
 
-def add_config(db: Session, configuration: Configuration):
-    db.add(configuration)
-    db.commit()
+async def remove_configuration_by_id(config_id: int):
+    async with get_db_session_context() as db:
+        config = await get_config_by_id(config_id)
+        if config:
+            await db.delete(config)
+            await db.commit()
 
+async def add_config(configuration: Configuration):
+    async with get_db_session_context() as db:
+        db.add(configuration)
+        await db.commit()  # Commit asynchronously
+        await db.refresh(configuration)  # Refresh to get updated values
 
-def get_all_configurations_by_type(db: Session, file_type: str):
-    return db.query(Configuration).filter(Configuration.file_type == file_type).all()
+async def get_all_configurations_by_type(file_type: str):
+    async with get_db_session_context() as db:
+        stmt = select(Configuration).where(Configuration.file_type == file_type)
+        result = await db.execute(stmt)
+        return result.scalars().all()

@@ -123,9 +123,8 @@ async def stop_analysis(container):
         response: HTTPResponse = await client.post(container_url+endpoint)
     return response
 
-async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
+async def parse_response_for_triggered_analysis(response: HTTPResponse, container, analysis_type: str, ensemble_id: int = None):
     if response.status_code == 200:
-        # await update_container_status(STATUS.ACTIVE.value, container, db)
         message = f"container {container.id} - {analysis_type} analysis triggered"
         if ensemble_id != None:
             message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} triggered"
@@ -152,7 +151,7 @@ async def calculate_benign_and_malicious_ammount(labels_file):
     return benign_count, malicious_count
 
 
-async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
@@ -179,7 +178,7 @@ async def calculate_and_add_dataset(data_file, labels_file, name, description, d
         ammount_malicious=malicious,
         dataset_type_id=dataset_type.id
     )
-    add_dataset(db, dataset)
+    await add_dataset(dataset)
 
 async def save_file_to_disk(file, path):
     with open(path, "wb") as f:

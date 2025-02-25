@@ -67,7 +67,7 @@ async def test_start_static_ensemble_analysis_successful(db_session_fixture: Dat
 
     mock_ids_container = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids_container])
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 200
@@ -91,7 +91,7 @@ async def test_start_static_ensemble_analysis_failiure(db_session_fixture: Datab
 
     mock_ids_container = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids_container])
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 500
@@ -118,7 +118,7 @@ async def test_start_static_ensemble_analysis_not_idle(db_session_fixture: Datab
     mock_ids_container = db_session_fixture.get_ids_container_model()
     mock_ids_container.status = STATUS.ACTIVE.value
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids_container])
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -137,7 +137,7 @@ async def test_start_static_ensemble_analysis_not_available(db_session_fixture: 
     mock_ids_container = db_session_fixture.get_ids_container_model()
     mock_ids_container.is_available = AsyncMock(return_value = False)
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids_container])
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -157,7 +157,7 @@ async def test_stop_analysis(db_session_fixture: DatabaseSessionFixture):
     mock_response.status_code = 200
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     mock_ids.stop_analysis.return_value = mock_response
 
     response = await stop_ensemble_analysis(stop_data, db=db_session)
@@ -178,7 +178,7 @@ async def test_stop_analysis_unsuccessful(db_session_fixture: DatabaseSessionFix
     mock_response.status_code = 500
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     mock_ids.stop_analysis.return_value = mock_response
 
     response = await stop_ensemble_analysis(stop_data, db=db_session)
@@ -200,7 +200,7 @@ async def test_start_network_ensemble_analysis_successful(db_session_fixture: Da
     mock_response.body = b'{"message": "success"}'
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     mock_ensemble.start_network_analysis.return_value = [mock_response]
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
@@ -221,7 +221,7 @@ async def test_start_network_ensemble_analysis_failiure(db_session_fixture: Data
     mock_response.body = b'{"message": "failiure"}'
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     mock_ensemble.start_network_analysis.return_value = [mock_response]
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
@@ -241,7 +241,7 @@ async def test_start_network_ensemble_analysis_unavailable(db_session_fixture: D
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ids.is_available = AsyncMock(return_value = False)
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -260,7 +260,7 @@ async def test_start_network_ensemble_analysis_not_idle(db_session_fixture: Data
     mock_ids = db_session_fixture.get_ids_container_model()
     mock_ids.status = STATUS.ACTIVE.value
     mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble.get_assigned_containers = MagicMock(return_value=[mock_ids])
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())

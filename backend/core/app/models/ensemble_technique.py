@@ -5,6 +5,9 @@ from ..database import Base
 from ..logger import LOGGER
 from .ensemble_techniques_implementation import *
 import importlib
+from ..database import get_db_session_context
+from sqlalchemy.future import select
+
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 
@@ -31,8 +34,13 @@ class EnsembleTechnique(Base):
             LOGGER.error(f"Module {module_name} not found: {e}")
             raise
 
-def get_all_ensemble_techniques(db: Session):
-    return db.query(EnsembleTechnique).all()
+async def get_all_ensemble_techniques():
+    async with get_db_session_context() as db:
+        stmt = select(EnsembleTechnique)
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
-def get_ensemble_technique_by_id(db: Session, id: int):
-    return db.query(EnsembleTechnique).filter(EnsembleTechnique.id == id).first()
+async def get_ensemble_technique_by_id(id: int):
+    async with get_db_session_context() as db:
+        stmt = select(EnsembleTechnique).where(EnsembleTechnique.id == id)
+        return await db.execute(stmt).scalar_one_or_none()

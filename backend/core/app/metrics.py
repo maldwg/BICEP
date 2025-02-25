@@ -1,16 +1,13 @@
 from .logger import LOGGER
-from .database import get_db_session_context
-from .models.dataset_types import get_all_dataset_types
 from .models.dataset import get_dataset_by_id
 
 async def calculate_evaluation_metrics(dataset_id, alerts):
     LOGGER.debug("start calculation of evaluation metrics")
-    with get_db_session_context() as db: 
-        dataset = get_dataset_by_id(dataset_id=dataset_id, db=db)
-        true_benign = dataset.ammount_benign
-        true_malicious = dataset.ammount_malicious
-        total = true_benign + true_malicious
-        TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await dataset.dataset_type.get_positives_and_negatives_from_dataset( dataset, alerts)
+    dataset = await get_dataset_by_id(dataset_id=dataset_id)
+    true_benign = dataset.ammount_benign
+    true_malicious = dataset.ammount_malicious
+    total = true_benign + true_malicious
+    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await dataset.dataset_type.get_positives_and_negatives_from_dataset( dataset, alerts)
 
     def calculate_fpr():
         fpr = round(FP / (FP + TN), 2) if FP + TN > 0 else 0
