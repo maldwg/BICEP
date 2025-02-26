@@ -1,9 +1,9 @@
 from .logger import LOGGER
 from .models.dataset import get_dataset_by_id
 
-async def calculate_evaluation_metrics(dataset_id, alerts):
+async def calculate_evaluation_metrics(db, dataset_id, alerts):
     LOGGER.debug("start calculation of evaluation metrics")
-    dataset = await get_dataset_by_id(dataset_id=dataset_id)
+    dataset = await get_dataset_by_id(db, dataset_id=dataset_id)
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious
     total = true_benign + true_malicious

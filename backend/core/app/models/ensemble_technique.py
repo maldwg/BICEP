@@ -7,6 +7,7 @@ from .ensemble_techniques_implementation import *
 import importlib
 from ..database import get_db_session_context
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
@@ -16,7 +17,7 @@ class EnsembleTechnique(Base):
     description = Column(String(2048), nullable=False)
     function_name = Column(String(128), nullable=False)
 
-    ensemble = relationship('Ensemble', back_populates='ensemble_technique')
+    ensemble = relationship('Ensemble', back_populates='ensemble_technique', lazy="selectin")
 
     async def execute_technique_by_name_on_alerts(self, alerts_dict: dict, ensemble):
         module = self._import_ensemble_technique_module()
@@ -34,13 +35,11 @@ class EnsembleTechnique(Base):
             LOGGER.error(f"Module {module_name} not found: {e}")
             raise
 
-async def get_all_ensemble_techniques():
-    async with get_db_session_context() as db:
-        stmt = select(EnsembleTechnique)
-        result = await db.execute(stmt)
-        return result.scalars().all()
+async def get_all_ensemble_techniques(db: AsyncSession):
+    stmt = select(EnsembleTechnique)
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
-async def get_ensemble_technique_by_id(id: int):
-    async with get_db_session_context() as db:
-        stmt = select(EnsembleTechnique).where(EnsembleTechnique.id == id)
-        return await db.execute(stmt).scalar_one_or_none()
+async def get_ensemble_technique_by_id(db: AsyncSession, id: int):
+    stmt = select(EnsembleTechnique).where(EnsembleTechnique.id == id)
+    return await db.execute(stmt).scalar_one_or_none()

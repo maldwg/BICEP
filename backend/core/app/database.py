@@ -20,16 +20,15 @@ else:
     SessionLocal = None
 Base = declarative_base()
 
-def get_db():
+async def get_db():
     if SessionLocal is None:
         raise RuntimeError("Database connection is not configured properly.")
 
-    db = SessionLocal()
+    db: AsyncSession = SessionLocal()
     try:
-        yield db
+        yield db  
     finally:
-        db.close()
-
+        await db.close()  
 
 @asynccontextmanager
 async def get_db_session_context():
