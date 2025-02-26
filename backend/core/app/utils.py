@@ -137,20 +137,6 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_benign_and_malicious_ammount(labels_file):
-    # convert bytes to bytestream to be able to read it into pandas
-    byte_stream = io.BytesIO(labels_file)
-    df = pd.read_csv(byte_stream)
-
-    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
-    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
-    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
-    
-    LOGGER.debug(f"found {benign_count} benign entries in labels file")
-    LOGGER.debug(f"found {malicious_count} malicious entries in labels file")
-    return benign_count, malicious_count
-
-
 async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)

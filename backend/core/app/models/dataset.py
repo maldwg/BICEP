@@ -20,7 +20,7 @@ class Dataset(Base):
     dataset_type = relationship('DatasetType', back_populates="dataset", lazy="selectin")
 
 
-async def get_dataset_by_id(db: AsyncSession=None, dataset_id: int=None):
+async def get_dataset_by_id(db: AsyncSession, dataset_id: int):
     stmt = select(Dataset).where(Dataset.id == dataset_id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none() 

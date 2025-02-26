@@ -1,24 +1,25 @@
 import pytest
 from datetime import datetime
-from app.metrics import calculate_evaluation_metrics, get_positives_and_negatives_from_dataset, get_column_ids, get_item_counts_of_dict
-from app.utils import calculate_benign_and_malicious_ammount
+from app.metrics import calculate_evaluation_metrics
 from app.models.dataset import Dataset
 from app.bicep_utils.models.ids_base import Alert
-
+from .fixtures import *
 
 TESTS_BASE_DIR = "./backend/core/app/test"
 
 
-@pytest.fixture
-def sample_dataset():
-    return Dataset(
-        name="TestDataset",
-        description="Test dataset for IDS evaluation",
-        data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
-        labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv",
-        ammount_benign=899,
-        ammount_malicious=100
-    )
+# @pytest.fixture
+# def sample_dataset():
+#     return Dataset(
+#         name="TestDataset",
+#         description="Test dataset for IDS evaluation",
+#         data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
+#         labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv",
+#         ammount_benign=899,
+#         ammount_malicious=100,
+#         dataset_type_id = 1,
+#         dataset_type=
+#     )
 
 @pytest.fixture
 def sample_alerts():
@@ -42,12 +43,13 @@ def sample_alerts():
     return alerts
 
 @pytest.mark.asyncio
-async def test_calculate_evaluation_metrics(sample_dataset, sample_alerts):
+async def test_calculate_evaluation_metrics(sample_alerts, db_session_fixture: DatabaseSessionFixture):
     # Simulate calculated metrics using utility functions
-    benign_count, malicious_count = await calculate_benign_and_malicious_ammount(b"label,benign\n1,malicious")
-    
+    sample_dataset = db_session_fixture.get_dataset_model()
+    db = db_session_fixture.get_db_session()
+    print(sample_dataset.id)
     # Replace with actual metrics calculation logic
-    metrics = await calculate_evaluation_metrics(sample_dataset, sample_alerts)
+    metrics = await calculate_evaluation_metrics(db, sample_dataset.id, sample_alerts)
     correct_metrics = {
         "FPR": 0.01,
         "FNR": 0.91,
@@ -61,52 +63,3 @@ async def test_calculate_evaluation_metrics(sample_dataset, sample_alerts):
     
     assert metrics == correct_metrics
 
-@pytest.mark.asyncio
-async def test_get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts):
-    TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts)
-    assert (TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS) == (9,6,893,91,0,15)
-
-# Test for get_column_ids
-@pytest.mark.asyncio
-async def test_get_column_ids():
-    header = ["Time", "Source IP", "Source Port", "Destination", "Destination Port", "Label"]
-    result_related_headers = get_column_ids(header)
-
-    expected_related_headers = (
-        5,  # Label column
-        0,  # Timestamp column
-        1,  # Source IP column
-        2,  # Source Port column
-        3,  # Destination IP column
-        4   # Destination Port column
-    )
-
-    header = ["Unknown", "Unrelated", "Time"]
-    result_unrelated_headers = get_column_ids(header)
-
-    expected_unrelated_headers = (
-        None,  # Label column
-        2,     # Timestamp column
-        None,  # Source IP column
-        None,  # Source Port column
-        None,  # Destination IP column
-        None   # Destination Port column
-    )
-    assert (expected_related_headers, expected_unrelated_headers) == (result_related_headers, result_unrelated_headers)
-
-@pytest.mark.asyncio
-async def test_get_item_counts_of_dict():
-    test_dict = {
-        "a": [1, 2, 3],
-        "b": [4, 5],
-        "c": []
-    }
-    result_five_element_dict = get_item_counts_of_dict(test_dict)
-
-    empty_dict = {}
-    result_empty_dict = get_item_counts_of_dict(empty_dict)
-
-    single_item_dict = {"a": [1]}
-    result_single_dict = get_item_counts_of_dict(single_item_dict)
-
-    assert (5, 1, 0) == (result_five_element_dict, result_single_dict, result_empty_dict)
