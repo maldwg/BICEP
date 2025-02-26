@@ -12,7 +12,7 @@ database_password = os.environ.get("DATABASE_PASSWORD")
 
 if all([database_url, database_name, database_user, database_password]):
     SQLALCHEMY_DATABASE_URL = f"mariadb+asyncmy://{database_user}:{database_password}@{database_url}/{database_name}"
-    engine = create_async_engine(SQLALCHEMY_DATABASE_URL, future=True)
+    engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=False, future=True)
     SessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 else:
     SQLALCHEMY_DATABASE_URL = None

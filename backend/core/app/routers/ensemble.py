@@ -4,7 +4,7 @@ import json
 
 from ..metrics import calculate_evaluation_metrics
 from ..bicep_utils.models.ids_base import Alert
-from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds, update_sendig_logs_status, last_container_sending_logs
+from ..models.ensemble_ids import get_all_ensemble_container, EnsembleIds, get_ensemble_ids_by_ids, update_sendig_logs_status, last_container_sending_logs
 from ..models.configuration import Configuration, get_config_by_id
 from ..models.ids_container import IdsContainer, get_container_by_id, update_container_status
 from ..models.ensemble_technique import EnsembleTechnique, get_ensemble_technique_by_id
@@ -85,10 +85,19 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
         await update_sendig_logs_status(container=container, ensemble=ensemble, status=ANALYSIS_STATUS.PROCESSING.value )
    
     await generate_new_analysis_id(ensemble)
+
+    # test
+    ensemble: Ensemble = await get_ensemble_by_id(static_analysis_data.ensemble_id)
+
+
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(dataset=dataset)
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
+
+    # test
+    ensemble: Ensemble = await get_ensemble_by_id(static_analysis_data.ensemble_id)
+
     await update_ensemble_status(ensemble=ensemble, status=STATUS.ACTIVE.value)
     return JSONResponse(content={"content": content}, status_code=200)
 
@@ -104,11 +113,23 @@ async def start_network_ensemble_analysis(network_analysis_data: NetworkAnalysis
         if not await container.is_available():
          content=f"container with id {container.id} is not available! Check if it should be deleted"
          return create_response_error(content, status_code=500)
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"container {e_ids.ids_container_id} has the status {e_ids.status} = prolly idle")
         await update_sendig_logs_status(container=container, ensemble=ensemble, status=ANALYSIS_STATUS.PROCESSING.value)
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"container {e_ids.ids_container_id} has the status {e_ids.status} = processing")
+    # test
+    ensemble: Ensemble = await get_ensemble_by_id(network_analysis_data.ensemble_id)
 
     await generate_new_analysis_id(ensemble)
 
+    # test
+    ensemble: Ensemble = await get_ensemble_by_id(network_analysis_data.ensemble_id)
+
     responses: list[HTTPResponse] = await ensemble.start_network_analysis(network_analysis_data=network_analysis_data)
+
+    # test
+    ensemble: Ensemble = await get_ensemble_by_id(network_analysis_data.ensemble_id)
 
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
@@ -132,9 +153,11 @@ async def stop_ensemble_analysis(stop_data: stop_analysisData):
         else:
             message = f"Could not stop analysis for container {container.id} and ensemble {ensemble.id}"
             responses.append(create_generic_response_message_for_ensemble(message, 500))
-
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"stopping: container {e_ids.ids_container_id} has the status {e_ids.status} ")
         await update_sendig_logs_status(container=container, ensemble=ensemble, status=ANALYSIS_STATUS.IDLE.value)
-
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"stopping: container {e_ids.ids_container_id} has the status {e_ids.status} ")
     await update_ensemble_status(ensemble=ensemble, status=STATUS.IDLE.value)
     return JSONResponse(content={"content": responses}, status_code=200)
 
@@ -142,21 +165,36 @@ async def stop_ensemble_analysis(stop_data: stop_analysisData):
 async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData):
     container: IdsContainer = await get_container_by_id(analysisFinishedData.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(analysisFinishedData.ensemble_id)
+    e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+    LOGGER.debug(f"finished: container {e_ids.ids_container_id} has the status {e_ids.status} = whatever")
     await update_sendig_logs_status(container=container, ensemble=ensemble, status=ANALYSIS_STATUS.IDLE.value)
+    e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+    LOGGER.debug(f"finished: container {e_ids.ids_container_id} has the status {e_ids.status} = IDLE")
+    #test 
+    container: IdsContainer = await get_container_by_id(analysisFinishedData.container_id)
+    LOGGER.debug(f"finished {container.name} status is {container.status} = wahtever ")
     await update_container_status(STATUS.IDLE.value, container)
-    LOGGER.debug(f"Updated sending log status of {container.name} to IDLE")
+    LOGGER.debug(f"finished {container.name} status is {container.status} != IDLE")
+    #test 
+    container: IdsContainer = await get_container_by_id(analysisFinishedData.container_id)
+    LOGGER.debug(f"finished {container.name} status is {container.status} should be IDLE ")
+
     if await ensemble.container_is_last_one_running(container=container):
         LOGGER.debug(f"container is the last one {container.name}, therefor shutting down the eneseble")
-        await update_ensemble_status(STATUS.IDLE.value, ensemble)       
+        await update_ensemble_status(STATUS.IDLE.value, ensemble)     
+        ensemble: Ensemble = await get_ensemble_by_id(analysisFinishedData.ensemble_id) 
+        LOGGER.debug(f"ensemble has analysis id {ensemble.current_analysis_id}") 
         await unset_analysis_id(ensemble)
+        LOGGER.debug(f"ensemble has analysis id {ensemble.current_analysis_id}, should be NOne") 
+
     return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
 @router.post("/publish/alerts")
 async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, backgroundtasks: BackgroundTasks):
     container: IdsContainer = await get_container_by_id(id=alert_data.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(id=alert_data.ensemble_id)
-    LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
-    LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")
+    # LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
+    # LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -191,6 +229,10 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
     if analysis_is_static:
         LOGGER.debug("Static analysis data received")
         await update_sendig_logs_status(container=container, ensemble=ensemble,status=ANALYSIS_STATUS.IDLE.value)
+
+        container: IdsContainer = await get_container_by_id(id=alert_data.container_id)
+        ensemble: Ensemble = await get_ensemble_by_id(id=alert_data.ensemble_id)
+
         if not await last_container_sending_logs(container=container, ensemble=ensemble):
             LOGGER.debug(f"Successfully pushed alerts for container {container.name}")
             LOGGER.debug(f"{container.name} I am not the last Container")
@@ -211,9 +253,15 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             backgroundtasks.add_task(calculate_evaluation_metrics_and_push, dataset=dataset, alerts=ensembled_alerts,ensemble_name=ensemble.name)
             return JSONResponse({"content": f"Successfully pushed alerts for ensemble {ensemble.name}"}, status_code=200)    
     else:
-        LOGGER.debug("Network analysis data received")
-        LOGGER.debug(f"{container.name} got {len(alerts)}")
+        # LOGGER.debug("Network analysis data received")
+        # LOGGER.debug(f"{container.name} got {len(alerts)}")
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"publish: container {e_ids.ids_container_id} has the status {e_ids.status}, should be PROCESSING ")
         await update_sendig_logs_status(container=container, ensemble=ensemble, status=ANALYSIS_STATUS.LOGS_SENT.value)
+        e_ids = await get_ensemble_ids_by_ids(ensemble.id,container.id)
+        LOGGER.debug(f"publish: container {e_ids.ids_container_id} has the status {e_ids.status}, sould be LOGS_SENT")
+        container: IdsContainer = await get_container_by_id(id=alert_data.container_id)
+        ensemble: Ensemble = await get_ensemble_by_id(id=alert_data.ensemble_id)
         if not await last_container_sending_logs(container=container, ensemble=ensemble):
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200)       
         else:

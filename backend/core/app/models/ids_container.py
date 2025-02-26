@@ -197,9 +197,7 @@ async def update_container(container: IdsContainerUpdate):
 
 async def update_container_status(status: STATUS, container: IdsContainer):
     async with get_db_session_context() as db:
-        LOGGER.debug(f"updating {container.name} to {status}")
         container = await db.merge(container) 
         container.status = status
         await db.commit()  # Commit asynchronously
         await db.refresh(container)  # Refresh after commit
-        LOGGER.debug(f"updated {container.name} to {status} sucsesssfully")

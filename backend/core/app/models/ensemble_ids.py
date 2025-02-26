@@ -55,7 +55,7 @@ async def update_sendig_logs_status(container, ensemble, status: ANALYSIS_STATUS
     async with get_db_session_context() as db:
         container = await db.merge(container)
         ensemble = await db.merge(ensemble)
-        LOGGER.debug(f"Updating for container {container.name} to status {status}")
+        LOGGER.debug(f"Updating sending logs status for {container.name} to status {status}")
         stmt = select(EnsembleIds).where(
             EnsembleIds.ensemble_id == ensemble.id,
             EnsembleIds.ids_container_id == container.id
@@ -67,4 +67,4 @@ async def update_sendig_logs_status(container, ensemble, status: ANALYSIS_STATUS
             entry.status = status
             await db.commit()  # Commit asynchronously
             await db.refresh(entry)  # Refresh asynchronously
-            LOGGER.debug(f"sucsesfully altered the status to {entry.status}")
+            db.expire_all()
