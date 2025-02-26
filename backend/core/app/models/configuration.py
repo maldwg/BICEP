@@ -15,18 +15,18 @@ class Configuration(Base):
     file_type = Column(String(32), nullable=False)
     description = Column(String(2048))
 
-    container = relationship("IdsContainer", back_populates="configuration", foreign_keys=[IdsContainer.configuration_id])
-    containerRuleset = relationship('IdsContainer', back_populates='ruleset', foreign_keys=[IdsContainer.ruleset_id])
+    container = relationship("IdsContainer", foreign_keys=[IdsContainer.configuration_id])
+    containerRuleset = relationship('IdsContainer', foreign_keys=[IdsContainer.ruleset_id])
 
 async def get_config_by_id(db: AsyncSession, config_id: int):
     stmt = select(Configuration).where(Configuration.id == config_id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single row or None
+    return result.scalar_one_or_none() 
 
 async def get_all_configurations(db: AsyncSession):
     stmt = select(Configuration)
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()  
 
 async def remove_configuration_by_id(db: AsyncSession, config_id: int):
     config = await get_config_by_id(db, config_id)
@@ -36,8 +36,8 @@ async def remove_configuration_by_id(db: AsyncSession, config_id: int):
 
 async def add_config(db: AsyncSession, configuration: Configuration):
     db.add(configuration)
-    await db.commit()  # Commit asynchronously
-    await db.refresh(configuration)  # Refresh to get updated values
+    await db.commit() 
+    await db.refresh(configuration)  
 
 async def get_all_configurations_by_type(db: AsyncSession, file_type: str):
         stmt = select(Configuration).where(Configuration.file_type == file_type)

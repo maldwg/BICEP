@@ -21,14 +21,14 @@ class Dataset(Base):
 
 
 async def get_dataset_by_id(db: AsyncSession=None, dataset_id: int=None):
-    stmt = select(Dataset).options(selectinload(Dataset.dataset_type)).where(Dataset.id == dataset_id)
+    stmt = select(Dataset).where(Dataset.id == dataset_id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single row or None
+    return result.scalar_one_or_none() 
 
 async def get_all_datasets(db: AsyncSession):
     stmt = select(Dataset)
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()  
 
 async def remove_dataset_by_id(db: AsyncSession, id: int):
     from ..utils import remove_directory
@@ -40,5 +40,5 @@ async def remove_dataset_by_id(db: AsyncSession, id: int):
         await db.commit()
 async def add_dataset(db: AsyncSession, dataset: Dataset):
         db.add(dataset)
-        await db.commit()  # Commit asynchronously
-        await db.refresh(dataset)  # Refresh to get updated values
+        await db.commit() 
+        await db.refresh(dataset) 

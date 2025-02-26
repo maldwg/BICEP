@@ -16,15 +16,15 @@ class IdsTool(Base):
     image_name = Column(String(128), nullable=False)
     image_tag = Column(String(64), nullable=False)
 
-    container = relationship("IdsContainer", back_populates="ids_tool", lazy="selectin")
+    container = relationship("IdsContainer", lazy="selectin")
 
 
 async def get_ids_by_id(db: AsyncSession, ids_id: int):
     stmt = select(IdsTool).where(IdsTool.id == ids_id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single result or None
+    return result.scalar_one_or_none()
 
 async def get_all_tools(db: AsyncSession):
     stmt = select(IdsTool)
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()

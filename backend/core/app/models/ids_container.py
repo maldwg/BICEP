@@ -31,10 +31,7 @@ class IdsContainer(Base):
 
 
     host_system = relationship('DockerHostSystem', back_populates='container', lazy="selectin")
-    configuration = relationship('Configuration', back_populates='container', foreign_keys=[configuration_id], lazy="selectin")
-    ids_tool = relationship('IdsTool', back_populates='container', lazy="selectin")
-    ensemble_ids = relationship('EnsembleIds', back_populates='container', cascade="all, delete", lazy="selectin")
-    ruleset = relationship('Configuration', back_populates='containerRuleset', foreign_keys=[ruleset_id], lazy="selectin")
+    ensemble_ids = relationship('EnsembleIds', cascade="all, delete", lazy="selectin")
 
 
     async def setup(self, db: AsyncSession):
@@ -57,7 +54,7 @@ class IdsContainer(Base):
             await db.delete(self)
             await db.commit()
             await db.refresh(self)
-        # set statu to idle again after finish setup
+        # set status to idle again after finish setup
         self.status = STATUS.IDLE.value
         await db.commit()
         await db.refresh(self)
@@ -98,7 +95,7 @@ class IdsContainer(Base):
         task = asyncio.create_task(start_metric_stream(container=self))
         stream_metric_tasks[task_id] = task
         await db.commit()
-        # await db.refresh(self)
+        await db.refresh(self)
         return f"started metric collection for container {self.id}"
     
     async def stop_metric_collection(self, db: AsyncSession, stream_metric_tasks):
@@ -138,40 +135,27 @@ class IdsContainer(Base):
     async def is_available(self):
         return await check_container_health(self)
     
-# Container-related functions
 async def get_container_by_id(db: AsyncSession, id: int):
-    stmt = select(IdsContainer).options(
-        selectinload(IdsContainer.host_system),
-        selectinload(IdsContainer.configuration),
-        selectinload(IdsContainer.ids_tool),
-        selectinload(IdsContainer.ensemble_ids),
-        selectinload(IdsContainer.ruleset),
-    ).where(IdsContainer.id == id)
+    stmt = select(IdsContainer).where(IdsContainer.id == id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single result or None
+    return result.scalar_one_or_none()  
 
 async def get_all_container(db: AsyncSession):
-    stmt = select(IdsContainer).options(
-        selectinload(IdsContainer.host_system),
-        selectinload(IdsContainer.configuration),
-        selectinload(IdsContainer.ids_tool),
-        selectinload(IdsContainer.ensemble_ids),
-        selectinload(IdsContainer.ruleset),
-    )
+    stmt = select(IdsContainer)
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()  
 async def remove_container_by_id(db: AsyncSession,  id: int):
-    container = await get_container_by_id(id)  # Await the result of the query
+    container = await get_container_by_id(id)  
     if container:
         await db.delete(container)
-        await db.commit()  # Commit asynchronously
+        await db.commit()  
 
 async def update_container(db, container: IdsContainerUpdate):
     stmt = select(IdsContainer).where(IdsContainer.id == container.id)
     result = await db.execute(stmt)
     container_db: IdsContainer = result.scalar_one_or_none()
     if not container_db:
-        return None  # Handle case where container is not found
+        return None  
     old_config_id = container_db.configuration_id
     new_config_id = container.configuration_id
     if old_config_id != new_config_id:
@@ -183,11 +167,10 @@ async def update_container(db, container: IdsContainerUpdate):
     # Update container attributes
     for key, value in container.dict().items():
         setattr(container_db, key, value)
-    await db.commit()  # Commit asynchronously
-    await db.refresh(container_db)  # Refresh after commit
+    await db.commit() 
+    await db.refresh(container_db)  
 
 async def update_container_status(db: AsyncSession, status: STATUS, container: IdsContainer):
-    container = await db.merge(container) 
     container.status = status
-    await db.commit()  # Commit asynchronously
-    await db.refresh(container)  # Refresh after commit
+    await db.commit()
+    await db.refresh(container) 

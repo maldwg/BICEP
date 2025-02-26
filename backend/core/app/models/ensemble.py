@@ -24,7 +24,7 @@ class Ensemble(Base):
     description = Column(String(2048))
     current_analysis_id = Column(String(64))
 
-    ensemble_ids = relationship('EnsembleIds', back_populates='ensemble', cascade="all, delete", lazy="selectin")
+    ensemble_ids = relationship('EnsembleIds', cascade="all, delete", lazy="selectin")
     ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble', lazy="selectin")
 
     async def add_container(self, db: AsyncSession, container_id: int):
@@ -58,10 +58,6 @@ class Ensemble(Base):
         stmt = select(EnsembleIds).where(EnsembleIds.ensemble_id == self.id)
         result = await db.execute(stmt)
         return result.scalars().all()
-
-    # async def get_assigned_containers(self, db: AsyncSession):
-    #     # try to use without the shitty relatoipnship modles
-    #     return [e_id.container for e_id in self.ensemble_ids]
     
     async def get_assigned_containers(self, db: AsyncSession):
         # refactor to not rely on the relationship shit
@@ -152,14 +148,12 @@ class Ensemble(Base):
             return False
         
     async def generate_new_analysis_id(self, db: AsyncSession):
-        # ensemble = await db.merge(ensemble)
         self.current_analysis_id = str(uuid.uuid4())
         await db.commit()
         await db.refresh(self)
             
 
     async def unset_analysis_id(self, db: AsyncSession):
-        # ensemble = await db.merge(ensemble)
         self.current_analysis_id = None
         await db.commit()
         await db.refresh(self)
@@ -167,27 +161,25 @@ class Ensemble(Base):
 async def get_all_ensembles(db: AsyncSession):
     stmt = select(Ensemble).options(
         selectinload(Ensemble.ensemble_ids),
-        selectinload(Ensemble.ensemble_technique)
         )
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()
 
 async def get_ensemble_by_id(db: AsyncSession, id: int):
     stmt = select(Ensemble).options(
         selectinload(Ensemble.ensemble_ids),
-        selectinload(Ensemble.ensemble_technique)
         ).where(Ensemble.id == id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single row or None
+    return result.scalar_one_or_none()
 
 async def remove_ensemble(db: AsyncSession, ensemble: Ensemble):
     await db.delete(ensemble)
-    await db.commit()  # Commit asynchronously
+    await db.commit()
 
 async def add_ensemble(db: AsyncSession, ensemble: Ensemble):
     db.add(ensemble)
-    await db.commit()  # Commit asynchronously
-    await db.refresh(ensemble)  # Refresh to get updated values
+    await db.commit()
+    await db.refresh(ensemble)
 
 async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
     stmt = select(Ensemble).where(Ensemble.id == ensemble.id)
@@ -195,7 +187,7 @@ async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
     ensemble_db = result.scalar_one_or_none()
     
     if not ensemble_db:
-        return None  # Handle case where Ensemble not found
+        return None 
     former_containers = [ensemble_container.ids_container_id for ensemble_container in await ensemble_db.get_ensemble_ids(db)]
     
     # Update ensemble attributes
@@ -203,7 +195,7 @@ async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
         setattr(ensemble_db, key, value)
     
     await db.commit()
-    await db.refresh(ensemble_db)  # Refresh after commit
+    await db.refresh(ensemble_db)
     
     new_containers = ensemble.container_ids
     added_containers = list(filter(lambda x: x not in former_containers, new_containers))
@@ -219,7 +211,6 @@ async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
     return responses
 
 async def update_ensemble_status(db: AsyncSession, status: STATUS, ensemble: Ensemble):
-    # ensemble = await db.merge(ensemble)
     ensemble.status = status
-    await db.commit()  # Commit asynchronously
-    await db.refresh(ensemble)  # Refresh after commit
+    await db.commit()
+    await db.refresh(ensemble)

@@ -17,7 +17,7 @@ class DatasetType(Base):
     description = Column(String(2048), nullable=False)
     function_prefix = Column(String(128), nullable= False)
 
-    dataset = relationship('Dataset', back_populates="dataset_type")
+    dataset = relationship('Dataset')
 
     async def get_benign_and_malicious_counts(self, labels_file_text_stream):
         function_name = f"{self.function_prefix.lower()}_get_benign_and_malicious_counts_of_labels_file"
