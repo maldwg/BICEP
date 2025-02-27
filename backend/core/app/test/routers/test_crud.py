@@ -115,74 +115,77 @@ from app.test.fixtures import *
 
 #     assert result.status_code == 204
 
-# @pytest.mark.asyncio
-# async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     result = await get_all_ids_tools(db=db_session)
-#     assert len(result) == 2
-#     assert result[0].name == "Suricata"
-#     assert result[1].name == "Slips"
+@pytest.mark.asyncio
+async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    result = await get_all_ids_tools(db=db_session)
+    assert len(result) == 2
+    assert result[0].name == "Suricata"
+    assert result[1].name == "Slips"
 
 
-# @pytest.mark.asyncio
-# async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     response = await get_all_ids_container(db=db_session)
-#     assert len(response) == 1
-#     assert response[0].name == "container-0"
-#     assert response[0].description == "Test description"
+@pytest.mark.asyncio
+async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    response = await get_all_ids_container(db=db_session)
+    print(response)
+    print("test")
+    assert len(response) == 1
+    print(response[0].name)
+    assert response[0].name == "container-0"
+    assert response[0].description == "Test description"
 
 
 
-# @pytest.mark.asyncio
-# async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     mock_container = await db_session_fixture.get_ids_container_model()
-#     available_mock_container = AsyncMock(spec=IdsContainer)
-#     available_mock_container.id = 2
-#     available_mock_container.status = STATUS.IDLE.value
-#     available_mock_container.ids_tool_id = 1
-#     available_mock_container.description = "Test description 2"
+@pytest.mark.asyncio
+async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_container = await db_session_fixture.get_ids_container_model()
+    available_mock_container = AsyncMock(spec=IdsContainer)
+    available_mock_container.id = 2
+    available_mock_container.status = STATUS.IDLE.value
+    available_mock_container.ids_tool_id = 1
+    available_mock_container.description = "Test description 2"
 
-#     with patch("app.routers.crud.get_all_container", new_callable=MagicMock,return_value=[mock_container,available_mock_container]):
-#         response = await get_all_ids_container_not_assigned_to_an_ensemble(db=db_session)
+    with patch("app.routers.crud.get_all_container", new_callable=AsyncMock,return_value=[mock_container,available_mock_container]):
+        response = await get_all_ids_container_not_assigned_to_an_ensemble(db=db_session)
 
-#     assert len(response) == 1
-#     assert response[0] == available_mock_container
+    assert len(response) == 1
+    assert response[0] == available_mock_container
 
-# @pytest.mark.asyncio
-# async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     container_update_data: IdsContainerUpdate = IdsContainerUpdate(
-#         id= 1,
-#         description= "new",
-#         configuration_id = 3,
-#         ruleset_id=2
-#     )
-#     response = await patch_container(container=container_update_data, db=db_session)
-#     response_json = json.loads(response.body.decode())
-#     assert response.status_code == 200
-#     assert response_json == {'message': 'updated container successfully'}
-
-
-# @pytest.mark.asyncio
-# async def test_get_ensemble_techniques(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     mock_ensemble_technique = await db_session_fixture.get_ensemble_technique_model()
-#     response = await get_ensemble_techniques(db=db_session)
-
-#     assert len(response) == 1
-#     assert response[0] == mock_ensemble_technique
+@pytest.mark.asyncio
+async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    container_update_data: IdsContainerUpdate = IdsContainerUpdate(
+        id= 1,
+        description= "new",
+        configuration_id = 3,
+        ruleset_id=2
+    )
+    response = await patch_container(container=container_update_data, db=db_session)
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {'message': 'updated container successfully'}
 
 
-# @pytest.mark.asyncio
-# async def test_get_ensembles(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     mock_ensemble_ids = await db_session_fixture.get_ensemble_ids_model()
-#     response = await get_ensembles(db=db_session)
+@pytest.mark.asyncio
+async def test_get_ensemble_techniques(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble_technique = await db_session_fixture.get_ensemble_technique_model()
+    response = await get_ensemble_techniques(db=db_session)
 
-#     assert len(response) == 1
-#     assert response[0] == mock_ensemble_ids
+    assert len(response) == 1
+    assert response[0] == mock_ensemble_technique
+
+
+@pytest.mark.asyncio
+async def test_get_ensembles(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble_ids = await db_session_fixture.get_ensemble_ids_model()
+    response = await get_ensembles(db=db_session)
+
+    assert len(response) == 1
+    assert response[0] == mock_ensemble_ids
 
 @patch("app.models.ensemble.Ensemble.remove_container")
 @patch("app.models.ensemble.Ensemble.add_container")

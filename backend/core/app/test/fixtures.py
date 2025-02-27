@@ -20,7 +20,7 @@ class DatabaseSessionFixture():
     
     db_session: AsyncSession 
     mock_docker_host_system: MagicMock
-    mock_ids_container: AsyncMock
+    mock_ids_container: MagicMock
     mock_ids_tool: MagicMock
     mock_configuration: MagicMock
     mock_dataset: MagicMock
@@ -93,54 +93,69 @@ class DatabaseSessionFixture():
 async def db_session_fixture():
     mock_db = AsyncMock(spec=AsyncSession)
 
-    mock_docker_host_system = MagicMock(spec=DockerHostSystem, id=1, name="localhost")
-    mock_dataset_type = MagicMock(spec=DatasetType, id=1, name="network_traffic_data")
+    mock_docker_host_system = MagicMock(spec=DockerHostSystem)
+    mock_docker_host_system.id=1
+    mock_docker_host_system.name="localhost"
+
+    mock_dataset_type = MagicMock(spec=DatasetType)
+    mock_dataset_type.id=1
+    mock_dataset_type.name="network_traffic_data"
     mock_dataset_type.get_benign_and_malicious_counts = AsyncMock(return_value=(899, 100))
     mock_dataset_type.get_positives_and_negatives_from_dataset = AsyncMock(return_value=(9,6,893,91,0,15))
-    mock_dataset = MagicMock(
-            spec=Dataset,
-            id=1,
-            name="TestDataset", 
-            description="Test dataset for IDS evaluation", 
-            dataset_type=mock_dataset_type,
-            data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
-            labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv",
-            ammount_benign=899,
-            ammount_malicious=100,
-            dataset_type_id = 1,
-        )
+    mock_dataset = MagicMock(spec=Dataset)
+    mock_dataset.id=1
+    mock_dataset.name="TestDataset"
+    mock_dataset.description="Test dataset for IDS evaluation"
+    mock_dataset.dataset_type=mock_dataset_type
+    mock_dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap"
+    mock_dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv"
+    mock_dataset.ammount_benign=899
+    mock_dataset.ammount_malicious=100
+    mock_dataset.dataset_type_id = 1
     
     second_mock_dataset = MagicMock(spec=Dataset, id=2, name="Test Dataset 2")
 
 
-    mock_configuration = MagicMock(
-        spec=Configuration,
-        id=1,
-        name="test-config 1",
-        file_type="configuration",
-        configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
-    )
-    mock_configuration_ruleset = MagicMock(
-        spec=Configuration,
-        id=2,
-        name="test-config 2",
-        file_type="rule-set",
-        configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
-    )
+    mock_configuration = MagicMock(spec=Configuration)
+    mock_configuration.id=1,
+    mock_configuration.name="test-config 1",
+    mock_configuration.file_type="configuration",
+    mock_configuration.configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    mock_configuration_ruleset = MagicMock(SPEC=Configuration)
+    mock_configuration_ruleset.id=2
+    mock_configuration_ruleset.name="test-config 2"
+    mock_configuration_ruleset.file_type="rule-set"
+    mock_configuration_ruleset.configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
 
-    mock_ids_tool = MagicMock(spec=IdsTool, id=1, name="Suricata")
-    second_mock_ids_tool = MagicMock(spec=IdsTool, id=2, name="Slips")
+    mock_ids_tool = MagicMock(spec=IdsTool)
+    mock_ids_tool.id=1
+    mock_ids_tool.name="Suricata"
+    second_mock_ids_tool = MagicMock(spec=IdsTool)
+    second_mock_ids_tool.id=2, 
+    second_mock_ids_tool.name="Slips"
 
-    mock_ids_container = AsyncMock(spec=IdsContainer, id=1, status=STATUS.IDLE.value, name="container-0")
+    mock_ids_container = MagicMock(spec=IdsContainer)
+    mock_ids_container.id=1
+    mock_ids_container.status=STATUS.IDLE.value
+    mock_ids_container.name="container-0"
+    mock_ids_container.description="Test description"
     mock_ids_container.host_system = mock_docker_host_system
     mock_ids_container.is_available = AsyncMock(return_value=True)
     mock_ids_container.is_busy = AsyncMock(return_value=True)
 
-    mock_ensemble_technique = MagicMock(spec=EnsembleTechnique, id=1, function_name="majority_vote")
+    mock_ensemble_technique = MagicMock(spec=EnsembleTechnique)
+    mock_ensemble_technique.id=1
+    mock_ensemble_technique.function_name="majority_vote"
     mock_ensemble_technique.execute_technique_by_name_on_alerts = AsyncMock()
 
-    mock_ensemble = AsyncMock(spec=Ensemble, id=1, name="Ensemble-1", ensemble_technique=mock_ensemble_technique)
-    mock_ensemble_ids = MagicMock(spec=EnsembleIds, id=1, ensemble_id=1, ids_container_id=1)
+    mock_ensemble = MagicMock(spec=Ensemble)
+    mock_ensemble.id=1
+    mock_ensemble.name="Ensemble-1"
+    mock_ensemble.ensemble_technique=mock_ensemble_technique
+    mock_ensemble_ids = MagicMock(spec=EnsembleIds)
+    mock_ensemble_ids.id=1
+    mock_ensemble_ids.ensemble_id=1
+    mock_ensemble_ids.ids_container_id=1
 
     async def execute_side_effect(stmt):
         if isinstance(stmt, Select):
