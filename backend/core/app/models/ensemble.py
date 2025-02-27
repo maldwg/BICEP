@@ -90,10 +90,8 @@ class Ensemble(Base):
             response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
             response = await parse_response_for_triggered_analysis(response, container, "static", self.id)
             if response.status_code != 200:
-                LOGGER.debug(f"respoonse for {container.name} was {response.status}")
                 await update_container_status(db, STATUS.IDLE.value, container)
             else:
-                LOGGER.debug(f"Container {container.name} started sucessfully, now it is active")
                 await update_container_status(db, STATUS.ACTIVE.value, container)
             responses.append(response)
         return responses
@@ -120,10 +118,8 @@ class Ensemble(Base):
             response: HTTPResponse = await container.start_network_analysis(data)
             response = await parse_response_for_triggered_analysis(response, container, "network", self.id)
             if response.status_code != 200:
-                LOGGER.debug(f"respoonse for {container.name} was {response.status}")
                 await update_container_status(db, STATUS.IDLE.value, container)
             else:
-                LOGGER.debug(f"Container {container.name} started sucessfully, now it is active")
                 await update_container_status(db, STATUS.ACTIVE.value, container)            
             responses.append(response)  
         return responses
