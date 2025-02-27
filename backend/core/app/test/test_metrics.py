@@ -45,8 +45,8 @@ def sample_alerts():
 @pytest.mark.asyncio
 async def test_calculate_evaluation_metrics(sample_alerts, db_session_fixture: DatabaseSessionFixture):
     # Simulate calculated metrics using utility functions
-    sample_dataset = db_session_fixture.get_dataset_model()
-    db = db_session_fixture.get_db_session()
+    sample_dataset = await db_session_fixture.get_dataset_model()
+    db = await db_session_fixture.get_db_session()
     print(sample_dataset.id)
     # Replace with actual metrics calculation logic
     metrics = await calculate_evaluation_metrics(db, sample_dataset.id, sample_alerts)

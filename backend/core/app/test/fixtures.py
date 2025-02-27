@@ -95,7 +95,8 @@ async def db_session_fixture():
 
     mock_docker_host_system = MagicMock(spec=DockerHostSystem, id=1, name="localhost")
     mock_dataset_type = MagicMock(spec=DatasetType, id=1, name="network_traffic_data")
-    mock_dataset_type.get_benign_and_malicious_counts = AsyncMock(return_value=(0, 1))
+    mock_dataset_type.get_benign_and_malicious_counts = AsyncMock(return_value=(899, 100))
+    mock_dataset_type.get_positives_and_negatives_from_dataset = AsyncMock(return_value=(9,6,893,91,0,15))
     mock_dataset = MagicMock(
             spec=Dataset,
             id=1,
@@ -145,7 +146,7 @@ async def db_session_fixture():
         if isinstance(stmt, Select):
             model = stmt.column_descriptions[0]['type']
 
-            mock_result = AsyncMock()
+            mock_result = MagicMock()
             if model == DockerHostSystem:
                 mock_result.scalar_one_or_none.return_value = mock_docker_host_system
                 mock_result.scalars.return_value.all.return_value = [mock_docker_host_system]
