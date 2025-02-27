@@ -17,7 +17,7 @@ from app.test.fixtures import *
 
 @pytest.mark.asyncio
 async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     pcap_mock_file = MagicMock(spec=UploadFile)
     pcap_mock_file.filename = "data.pcap"
     pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
@@ -40,7 +40,7 @@ async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_
 
 @pytest.mark.asyncio
 async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     config_mock_file = MagicMock(spec=UploadFile)
     config_mock_file.filename = "config.yaml"
     config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
@@ -63,7 +63,7 @@ async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, moc
 
 @pytest.mark.asyncio
 async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     result = await get_all_configs(db_session)
 
     assert len(result) == 2
@@ -73,17 +73,17 @@ async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture
 
 @pytest.mark.asyncio
 async def test_get_all_configs_of_a_filetype(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     file_type = "rule-set" 
     response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
-    mock_configuration_ruleset = db_session_fixture.get_ruleset_model()
+    mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
     assert len(response) == 1
     assert response[0]["name"] == mock_configuration_ruleset.name
 
 
 @pytest.mark.asyncio
 async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     file_type = "invalid_type"
     expected_response = {"error": "wrong file type"}
     result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
@@ -92,7 +92,7 @@ async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: Databa
 
 @pytest.mark.asyncio
 async def test_remove_config(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     config_id = 1
     result = await remove_config(id=config_id, db=db_session)
     assert result.status_code == 204
@@ -100,7 +100,7 @@ async def test_remove_config(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     response = await get_all_ds(db=db_session)
 
     assert len(response) == 2
@@ -109,7 +109,7 @@ async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     dataset_id = 1
     result = await remove_dataset(id=dataset_id, db=db_session)
 
@@ -117,7 +117,7 @@ async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     result = await get_all_ids_tools(db=db_session)
     assert len(result) == 2
     assert result[0].name == "Suricata"
@@ -126,7 +126,7 @@ async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     response = await get_all_ids_container(db=db_session)
     assert len(response) == 1
     assert response[0].name == "container-0"
@@ -136,8 +136,8 @@ async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture)
 
 @pytest.mark.asyncio
 async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
-    mock_container = db_session_fixture.get_ids_container_model()
+    db_session = await db_session_fixture.get_db_session()
+    mock_container = await db_session_fixture.get_ids_container_model()
     available_mock_container = AsyncMock(spec=IdsContainer)
     available_mock_container.id = 2
     available_mock_container.status = STATUS.IDLE.value
@@ -152,7 +152,7 @@ async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixt
 
 @pytest.mark.asyncio
 async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     container_update_data: IdsContainerUpdate = IdsContainerUpdate(
         id= 1,
         description= "new",
@@ -167,8 +167,8 @@ async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_get_ensemble_techniques(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
-    mock_ensemble_technique = db_session_fixture.get_ensemble_technique_model()
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble_technique = await db_session_fixture.get_ensemble_technique_model()
     response = await get_ensemble_techniques(db=db_session)
 
     assert len(response) == 1
@@ -177,8 +177,8 @@ async def test_get_ensemble_techniques(db_session_fixture: DatabaseSessionFixtur
 
 @pytest.mark.asyncio
 async def test_get_ensembles(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
-    mock_ensemble_ids = db_session_fixture.get_ensemble_ids_model()
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble_ids = await db_session_fixture.get_ensemble_ids_model()
     response = await get_ensembles(db=db_session)
 
     assert len(response) == 1
@@ -188,7 +188,7 @@ async def test_get_ensembles(db_session_fixture: DatabaseSessionFixture):
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
 async def test_patch_ensemble_add_and_remove_container(add_container_mock, remove_container_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     ensemble_update = EnsembleUpdate(
         id= 1,
         name="new-name",
@@ -202,7 +202,7 @@ async def test_patch_ensemble_add_and_remove_container(add_container_mock, remov
     mock_response_add = AsyncMock()
     mock_response_add.status_code = 200
 
-    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
     mock_ensemble.add_container.return_value = mock_response_add
     mock_ensemble.remove_container.return_value = mock_response_remove
 
@@ -216,7 +216,7 @@ async def test_patch_ensemble_add_and_remove_container(add_container_mock, remov
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
 async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mock, remove_container_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     ensemble_update = EnsembleUpdate(
         id= 1,
         name="new-name",
@@ -230,7 +230,7 @@ async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mo
     mock_response_add = AsyncMock()
     mock_response_add.status_code = 500
 
-    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
     mock_ensemble.add_container.return_value = mock_response_add
     mock_ensemble.remove_container.return_value = mock_response_remove
 
@@ -241,8 +241,8 @@ async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mo
 
 @pytest.mark.asyncio
 async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
-    mock_host = db_session_fixture.get_docker_host_system_model()
+    db_session = await db_session_fixture.get_db_session()
+    mock_host = await db_session_fixture.get_docker_host_system_model()
     response = await return_all_hosts(db=db_session)
 
     assert len(response) == 1
@@ -251,7 +251,7 @@ async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_create_host(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     host_data = DockerHostCreationData(
         name="new-host",
         host="localhost",
@@ -265,7 +265,7 @@ async def test_create_host(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_delete_host(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     host_id = 1
     response = await delete_host(id=host_id, db=db_session)
     assert response.status_code == 204
