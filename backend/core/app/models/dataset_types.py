@@ -6,7 +6,9 @@ import asyncio
 from ..bicep_utils.models.ids_base import Alert
 from ..logger import LOGGER
 import importlib
-import sys
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 class DatasetType(Base):
     __tablename__ = "dataset_type"
 
@@ -15,7 +17,7 @@ class DatasetType(Base):
     description = Column(String(2048), nullable=False)
     function_prefix = Column(String(128), nullable= False)
 
-    dataset = relationship('Dataset', back_populates="dataset_type")
+    dataset = relationship('Dataset')
 
     async def get_benign_and_malicious_counts(self, labels_file_text_stream):
         function_name = f"{self.function_prefix.lower()}_get_benign_and_malicious_counts_of_labels_file"
@@ -44,9 +46,14 @@ class DatasetType(Base):
         except ModuleNotFoundError as e:
             LOGGER.error(f"Module {module_name} not found: {e}")
             raise
-def get_dataset_type_by_id(db: Session, id: int):
-    return db.query(DatasetType).filter(DatasetType.id == id).first()
 
-def get_all_dataset_types(db: Session):
-    return db.query(DatasetType).all()
+async def get_dataset_type_by_id(db: AsyncSession, id: int):
+    stmt = select(DatasetType).where(DatasetType.id == id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+    
+async def get_all_dataset_types(db: AsyncSession):
+    stmt = select(DatasetType)
+    result = await db.execute(stmt)
+    return result.scalars().all()
 

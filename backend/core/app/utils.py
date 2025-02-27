@@ -123,9 +123,8 @@ async def stop_analysis(container):
         response: HTTPResponse = await client.post(container_url+endpoint)
     return response
 
-async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
+async def parse_response_for_triggered_analysis(response: HTTPResponse, container, analysis_type: str, ensemble_id: int = None):
     if response.status_code == 200:
-        # await update_container_status(STATUS.ACTIVE.value, container, db)
         message = f"container {container.id} - {analysis_type} analysis triggered"
         if ensemble_id != None:
             message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} triggered"
@@ -136,20 +135,6 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
             message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} could not be triggered"
         parsed_response = create_response_error(message, 500)
     return parsed_response
-
-
-async def calculate_benign_and_malicious_ammount(labels_file):
-    # convert bytes to bytestream to be able to read it into pandas
-    byte_stream = io.BytesIO(labels_file)
-    df = pd.read_csv(byte_stream)
-
-    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
-    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
-    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
-    
-    LOGGER.debug(f"found {benign_count} benign entries in labels file")
-    LOGGER.debug(f"found {malicious_count} malicious entries in labels file")
-    return benign_count, malicious_count
 
 
 async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
@@ -179,7 +164,7 @@ async def calculate_and_add_dataset(data_file, labels_file, name, description, d
         ammount_malicious=malicious,
         dataset_type_id=dataset_type.id
     )
-    add_dataset(db, dataset)
+    await add_dataset(db, dataset)
 
 async def save_file_to_disk(file, path):
     with open(path, "wb") as f:
@@ -205,13 +190,15 @@ def get_item_counts_of_dict(d: dict):
         items += len(v)
     return items
 
-async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
+async def calculate_evaluation_metrics_and_push(db, dataset_id: int, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
+    from .models.dataset import get_dataset_by_id
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
     # and an error will be thrown
-    dataset_id = dataset.id
-    metrics = await calculate_evaluation_metrics(dataset_id, alerts)
+    dataset = await get_dataset_by_id(db, dataset_id)
+    metrics = await calculate_evaluation_metrics(db, dataset_id, alerts)
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
+    await db.close()
 
 def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
     source_ip = alert.source_ip.strip()
@@ -256,7 +243,7 @@ def get_length_of_nested_dict(d: dict):
     return counter
 
 
-async def read_data_file(dataset):
-    async with aiofiles.open(dataset.data_file_path, 'rb') as file:
+async def read_data_file(file_path):
+    async with aiofiles.open(file_path, 'rb') as file:
         data_file = await file.read()
         return data_file

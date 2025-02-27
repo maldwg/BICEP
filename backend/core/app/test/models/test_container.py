@@ -30,7 +30,7 @@ def mock_ids_container():
 @patch("app.models.ids_container.start_metric_stream")
 @pytest.mark.asyncio
 async def test_start_metric_collection(start_metric_stream_mock,mock_ids_container: IdsContainer, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     mock_stream_metric_tasks = {}
     response = await mock_ids_container.start_metric_collection(db=db_session,stream_metric_tasks=mock_stream_metric_tasks)
     assert response == f"started metric collection for container {mock_ids_container.id}"
@@ -38,7 +38,7 @@ async def test_start_metric_collection(start_metric_stream_mock,mock_ids_contain
 @patch("app.models.ids_container.stop_metric_stream")
 @pytest.mark.asyncio
 async def test_stop_metric_collection_without_task_id(stop_metric_stream_mock, mock_ids_container: IdsContainer, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     mock_stream_metric_tasks = {}
     response = await mock_ids_container.stop_metric_collection(db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
     assert response == f"Could not stop metric collection for container {mock_ids_container.id}; No stream started"
@@ -46,7 +46,7 @@ async def test_stop_metric_collection_without_task_id(stop_metric_stream_mock, m
 @patch("app.models.ids_container.stop_metric_stream")
 @pytest.mark.asyncio
 async def test_stop_metric_collection_without_task_id_in_stream_set(stop_metric_stream_mock, mock_ids_container: IdsContainer, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     mock_ids_container.stream_metric_task_id = 12345
     mock_stream_metric_tasks = {}
     response = await mock_ids_container.stop_metric_collection(db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
@@ -55,7 +55,7 @@ async def test_stop_metric_collection_without_task_id_in_stream_set(stop_metric_
 @patch("app.models.ids_container.stop_metric_stream")
 @pytest.mark.asyncio
 async def test_stop_metric_collection(stop_metric_stream_mock, mock_ids_container: IdsContainer, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     mock_ids_container.stream_metric_task_id = 12345
     mock_stream_metric_tasks = {}
     mock_stream_metric_tasks[mock_ids_container.stream_metric_task_id] = "task-process-mock"

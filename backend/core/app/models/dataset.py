@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import Session, relationship
-from ..database import Base
+from sqlalchemy.orm import Session, relationship, selectinload
+from ..database import Base, get_db_session_context
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+import aiofiles
 
 class Dataset(Base):
     __tablename__ = "dataset"
@@ -14,23 +17,30 @@ class Dataset(Base):
     ammount_malicious = Column(Integer, nullable=False)
     dataset_type_id = Column(Integer, ForeignKey("dataset_type.id"), nullable=False)
 
-    dataset_type = relationship('DatasetType', back_populates="dataset")
+    dataset_type = relationship('DatasetType', back_populates="dataset", lazy="selectin")
 
-def get_dataset_by_id(db: Session, dataset_id: int):
-    return db.query(Dataset).filter(Dataset.id == dataset_id).first()
-    
 
-def get_all_datasets(db: Session):
-    return db.query(Dataset).all()
+async def get_dataset_by_id(db: AsyncSession, dataset_id: int):
+    stmt = select(Dataset).where(Dataset.id == dataset_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none() 
 
-def remove_dataset_by_id(db: Session, id: int):
+async def get_all_datasets(db: AsyncSession):
+    stmt = select(Dataset)
+    result = await db.execute(stmt)
+    return result.scalars().all()  
+
+async def remove_dataset_by_id(db: AsyncSession, id: int):
     from ..utils import remove_directory
-    dataset: Dataset = get_dataset_by_id(db, id)
-    directory = "/".join(dataset.labels_file_path.split("/")[:-2])
-    remove_directory(directory)
-    db.delete(dataset)
-    db.commit()
-
-def add_dataset(db: Session, dataset: Dataset):
-    db.add(dataset)
-    db.commit()
+    dataset: Dataset = await get_dataset_by_id(db, id)
+    if dataset:
+        print(dataset.labels_file_path)
+        directory = "/".join(dataset.labels_file_path.split("/")[:-1])
+        print(directory)
+        remove_directory(directory)
+        await db.delete(dataset)
+        await db.commit()
+async def add_dataset(db: AsyncSession, dataset: Dataset):
+        db.add(dataset)
+        await db.commit() 
+        await db.refresh(dataset) 

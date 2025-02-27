@@ -32,7 +32,7 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
         if response.status_code not in [200, 204]:
             LOGGER.debug(f"Did not sucessfully push all alerts to loki, got statuscode {response.status_code}")
             return JSONResponse(content={"message": f"Did not succesfully send data to loki in {len(responses)} chunks"}, status_code=500)
-    LOGGER.debug(f"Succesfully pushed all alerts to loki")
+    LOGGER.debug(f"Succesfully pushed alerts to loki")
     return JSONResponse(content={"message": f"succesfully send data to loki in {len(responses)} chunks"}, status_code=200)
 
 # chunksize of 50000 ~15MB per chunk

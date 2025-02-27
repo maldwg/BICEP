@@ -1,7 +1,8 @@
-from ..database import Base
+from ..database import Base, get_db_session_context
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship, Session
-
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 class DockerHostSystem(Base):
     __tablename__ = "docker_host_system"
 
@@ -10,21 +11,26 @@ class DockerHostSystem(Base):
     host = Column(String(1024), nullable=False)
     docker_port = Column(Integer)
 
-    container = relationship("IdsContainer", back_populates="host_system")
-
-def get_host_by_id(id: int, db: Session):
-    return db.query(DockerHostSystem).filter(DockerHostSystem.id == id).first()
-
-def get_all_hosts(db: Session):
-    return db.query(DockerHostSystem).all()
+    container = relationship("IdsContainer", back_populates="host_system",lazy="selectin")
 
 
-def add_host_system(host: DockerHostSystem ,db:Session):
+async def get_host_by_id(db: AsyncSession, id: int):
+    stmt = select(DockerHostSystem).where(DockerHostSystem.id == id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()  
+
+async def get_all_hosts(db: AsyncSession):
+    stmt = select(DockerHostSystem)
+    result = await db.execute(stmt)
+    return result.scalars().all()  
+
+async def add_host_system(db: AsyncSession, host: DockerHostSystem):
     db.add(host)
-    db.commit()
-    db.refresh(host)
+    await db.commit()  
+    await db.refresh(host) 
 
-def remove_host(host_id: int ,db:Session):
-    host: DockerHostSystem = get_host_by_id(host_id, db)
-    db.delete(host)
-    db.commit()
+async def remove_host(db: AsyncSession, host_id: int):
+    host: DockerHostSystem = await get_host_by_id(db, host_id) 
+    if host:  
+        await db.delete(host)
+        await db.commit()
