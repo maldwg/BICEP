@@ -103,14 +103,14 @@ async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: Databa
 #     assert result.status_code == 204
 
 
-# @pytest.mark.asyncio
-# async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     response = await get_all_ds(db=db_session)
-
-#     assert len(response) == 2
-#     assert response[0]["name"] == "Test Dataset"
-#     assert response[1]["name"] == "Test Dataset 2"
+@pytest.mark.asyncio
+async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    response = await get_all_ds(db=db_session)
+    print(response)
+    assert len(response) == 2
+    assert response[0].name == "TestDataset"
+    assert response[1].name == "Test Dataset 2"
 
 # @pytest.mark.asyncio
 # async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
