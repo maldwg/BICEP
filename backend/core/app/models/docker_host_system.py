@@ -17,20 +17,20 @@ class DockerHostSystem(Base):
 async def get_host_by_id(db: AsyncSession, id: int):
     stmt = select(DockerHostSystem).where(DockerHostSystem.id == id)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()  # Return a single result or None
+    return result.scalar_one_or_none()  
 
 async def get_all_hosts(db: AsyncSession):
     stmt = select(DockerHostSystem)
     result = await db.execute(stmt)
-    return result.scalars().all()  # Return all results
+    return result.scalars().all()  
 
 async def add_host_system(db: AsyncSession, host: DockerHostSystem):
     db.add(host)
-    await db.commit()  # Commit asynchronously
-    await db.refresh(host)  # Refresh after commit
+    await db.commit()  
+    await db.refresh(host) 
 
 async def remove_host(db: AsyncSession, host_id: int):
-    host: DockerHostSystem = await get_host_by_id(host_id)  # Await the result
-    if host:  # Ensure the host exists before attempting to delete
+    host: DockerHostSystem = await get_host_by_id(db, host_id) 
+    if host:  
         await db.delete(host)
-        await db.commit()  # Commit asynchronously
+        await db.commit()
