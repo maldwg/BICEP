@@ -12,8 +12,8 @@ import json
 from app.models.ids_tool import IdsTool
 from app.models.ids_container import IdsContainer
 from app.test.fixtures import *
-
-
+import shutil
+import os
 
 @pytest.mark.asyncio
 async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
@@ -95,12 +95,12 @@ async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: Databa
     assert result == expected_response
 
 
-# @pytest.mark.asyncio
-# async def test_remove_config(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     config_id = 1
-#     result = await remove_config(id=config_id, db=db_session)
-#     assert result.status_code == 204
+@pytest.mark.asyncio
+async def test_remove_config(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    config_id = 1
+    result = await remove_config(id=config_id, db=db_session)
+    assert result.status_code == 204
 
 
 @pytest.mark.asyncio
@@ -112,13 +112,19 @@ async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
     assert response[0].name == "TestDataset"
     assert response[1].name == "Test Dataset 2"
 
-# @pytest.mark.asyncio
-# async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     dataset_id = 1
-#     result = await remove_dataset(id=dataset_id, db=db_session)
-
-#     assert result.status_code == 204
+@pytest.mark.asyncio
+async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    dataset = await db_session_fixture.get_dataset_model()
+    dataset_id = 1
+    os.mkdir(f"{TESTS_BASE_DIR}/testfiles/tmpdir")
+    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap")
+    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv")
+    dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap"
+    dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv"
+    result = await remove_dataset(id=dataset_id, db=db_session)
+    shutil.rmtree(f"{TESTS_BASE_DIR}/testfiles/tmpdir")
+    assert result.status_code == 204
 
 @pytest.mark.asyncio
 async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
