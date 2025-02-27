@@ -34,7 +34,9 @@ async def remove_dataset_by_id(db: AsyncSession, id: int):
     from ..utils import remove_directory
     dataset: Dataset = await get_dataset_by_id(db, id)
     if dataset:
-        directory = "/".join(dataset.labels_file_path.split("/")[:-2])
+        print(dataset.labels_file_path)
+        directory = "/".join(dataset.labels_file_path.split("/")[:-1])
+        print(directory)
         remove_directory(directory)
         await db.delete(dataset)
         await db.commit()

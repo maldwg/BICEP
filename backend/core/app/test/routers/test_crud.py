@@ -123,8 +123,8 @@ async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
     dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap"
     dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv"
     result = await remove_dataset(id=dataset_id, db=db_session)
-    shutil.rmtree(f"{TESTS_BASE_DIR}/testfiles/tmpdir")
     assert result.status_code == 204
+
 
 @pytest.mark.asyncio
 async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
