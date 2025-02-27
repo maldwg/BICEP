@@ -56,36 +56,36 @@ class DatabaseSessionFixture():
         self.mock_ensemble_technique = mock_ensemble_technique
         self.mock_dataset_type = mock_dataset_type
 
-    def get_db_session(self):
+    async def get_db_session(self):
         return self.db_session
     
-    def get_configuration_model(self):
+    async def get_configuration_model(self):
         return self.mock_configuration
     
-    def get_ruleset_model(self):
+    async def get_ruleset_model(self):
         return self.mock_ruleset
     
-    def get_dataset_model(self):
+    async def get_dataset_model(self):
         return self.mock_dataset
     
-    def get_docker_host_system_model(self):
+    async def get_docker_host_system_model(self):
         return self.mock_docker_host_system
     
-    def get_ensemble_ids_model(self):
+    async def get_ensemble_ids_model(self):
         return self.mock_ensemble_ids
     
-    def get_ensemble_technique_model(self):
+    async def get_ensemble_technique_model(self):
         return self.mock_ensemble_technique
     
-    def get_ids_container_model(self):
+    async def get_ids_container_model(self):
         return self.mock_ids_container
     
-    def get_ids_tool_model(self):
+    async def get_ids_tool_model(self):
         return self.mock_ids_tool
     
-    def get_ensemble_model(self):
+    async def get_ensemble_model(self):
         return self.mock_ensemble
-    def get_dataset_type_model(self):
+    async def get_dataset_type_model(self):
         return self.mock_dataset_type
 
 
@@ -144,26 +144,41 @@ async def db_session_fixture():
     async def execute_side_effect(stmt):
         if isinstance(stmt, Select):
             model = stmt.column_descriptions[0]['type']
+
+            mock_result = AsyncMock()
             if model == DockerHostSystem:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_docker_host_system), scalars=AsyncMock(return_value=[mock_docker_host_system]))
+                mock_result.scalar_one_or_none.return_value = mock_docker_host_system
+                mock_result.scalars.return_value.all.return_value = [mock_docker_host_system]
             elif model == IdsContainer:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_ids_container), scalars=AsyncMock(return_value=[mock_ids_container]))
+                mock_result.scalar_one_or_none.return_value = mock_ids_container
+                mock_result.scalars.return_value.all.return_value = [mock_ids_container]
             elif model == IdsTool:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_ids_tool), scalars=AsyncMock(return_value=[mock_ids_tool, second_mock_ids_tool]))
+                mock_result.scalar_one_or_none.return_value = mock_ids_tool
+                mock_result.scalars.return_value.all.return_value = [mock_ids_tool, second_mock_ids_tool]
             elif model == Configuration:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_configuration), scalars=AsyncMock(return_value=[mock_configuration, mock_configuration_ruleset]))
+                mock_result.scalar_one_or_none.return_value = mock_configuration
+                mock_result.scalars.return_value.all.return_value = [mock_configuration, mock_configuration_ruleset]
             elif model == Dataset:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_dataset), scalars=AsyncMock(return_value=[mock_dataset, second_mock_dataset]))
+                mock_result.scalar_one_or_none.return_value = mock_dataset
+                mock_result.scalars.return_value.all.return_value = [mock_dataset, second_mock_dataset]
             elif model == Ensemble:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_ensemble))
+                mock_result.scalar_one_or_none.return_value = mock_ensemble
             elif model == EnsembleTechnique:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_ensemble_technique), scalars=AsyncMock(return_value=[mock_ensemble_technique]))
+                mock_result.scalar_one_or_none.return_value = mock_ensemble_technique
+                mock_result.scalars.return_value.all.return_value = [mock_ensemble_technique]
             elif model == EnsembleIds:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_ensemble_ids), scalars=AsyncMock(return_value=[mock_ensemble_ids]))
+                mock_result.scalar_one_or_none.return_value = mock_ensemble_ids
+                mock_result.scalars.return_value.all.return_value = [mock_ensemble_ids]
             elif model == DatasetType:
-                return MagicMock(scalar_one_or_none=AsyncMock(return_value=mock_dataset_type), scalars=AsyncMock(return_value=[mock_dataset_type]))
-        raise ValueError(f"Unsupported query: {stmt}")
-    
+                mock_result.scalar_one_or_none.return_value = mock_dataset_type
+                mock_result.scalars.return_value.all.return_value = [mock_dataset_type]
+            else:
+                raise ValueError(f"Unsupported query: {stmt}")
+
+            return mock_result
+
+        raise ValueError(f"Unsupported query type: {stmt}")
+
     mock_db.execute.side_effect = execute_side_effect
 
     db_fixture = DatabaseSessionFixture(

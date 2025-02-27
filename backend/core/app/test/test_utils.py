@@ -53,8 +53,8 @@ async def test_start_static_analysis():
 
 @pytest.mark.asyncio
 async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
-    dataset_type = db_session_fixture.get_dataset_type_model()
+    db_session = await db_session_fixture.get_db_session()
+    dataset_type = await db_session_fixture.get_dataset_type_model()
     labels_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'rb').read()
     data_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
 
