@@ -118,8 +118,8 @@ async def db_session_fixture():
 
     mock_configuration = MagicMock(spec=Configuration)
     mock_configuration.id=1,
-    mock_configuration.name="test-config 1",
-    mock_configuration.file_type="configuration",
+    mock_configuration.name="test-config 1"
+    mock_configuration.file_type="configuration"
     mock_configuration.configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
     mock_configuration_ruleset = MagicMock(SPEC=Configuration)
     mock_configuration_ruleset.id=2

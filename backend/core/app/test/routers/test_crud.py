@@ -15,60 +15,63 @@ from app.test.fixtures import *
 
 
 
-# @pytest.mark.asyncio
-# async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
-#     db_session = await db_session_fixture.get_db_session()
-#     pcap_mock_file = MagicMock(spec=UploadFile)
-#     pcap_mock_file.filename = "data.pcap"
-#     pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
+@pytest.mark.asyncio
+async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+    db_session = await db_session_fixture.get_db_session()
+    pcap_mock_file = MagicMock(spec=UploadFile)
+    pcap_mock_file.filename = "data.pcap"
+    pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
 
-#     labels_mock_file = MagicMock(spec=UploadFile)
-#     labels_mock_file.filename = "labels.csv"
-#     labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
+    labels_mock_file = MagicMock(spec=UploadFile)
+    labels_mock_file.filename = "labels.csv"
+    labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
 
-#     response = await add_new_dataset(
-#         configuration=[pcap_mock_file, labels_mock_file],
-#         name="New dataset",
-#         description="Description",
-#         db=db_session,
-#         background_tasks=mock_background_tasks,
-#     )
-#     response_json = json.loads(response.body.decode())
+    response = await add_new_dataset(
+        data_file=pcap_mock_file,
+        labels_file=labels_mock_file,
+        name="New dataset",
+        description="Description",
+        db=db_session,
+        dataset_type_id="1",
+        background_tasks=mock_background_tasks,
+    )
+    response_json = json.loads(response.body.decode())
     
-#     assert response.status_code == 200
-#     assert response_json == {"message": "configuration added successfully"}
+    assert response.status_code == 200
+    assert response_json == {"message": "configuration added successfully"}
 
-# @pytest.mark.asyncio
-# async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
-#     db_session = await db_session_fixture.get_db_session()
-#     config_mock_file = MagicMock(spec=UploadFile)
-#     config_mock_file.filename = "config.yaml"
-#     config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
+@pytest.mark.asyncio
+async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+    db_session = await db_session_fixture.get_db_session()
+    config_mock_file = MagicMock(spec=UploadFile)
+    config_mock_file.filename = "config.yaml"
+    config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
 
-#     # Prepare mock inputs
-#     mock_files = [config_mock_file]
-#     name = "Test Config"
-#     description = "A description for the configuration"
+    # Prepare mock inputs
+    mock_file = config_mock_file
+    name = "Test Config"
+    description = "A description for the configuration"
 
-#     response = await add_new_config(
-#         configuration=mock_files,
-#         name=name,
-#         description=description,
-#         db=db_session,
-#         background_tasks=mock_background_tasks,
-#     )
-#     response_json = json.loads(response.body.decode())
-#     assert response.status_code == 200
-#     assert response_json == {"message": "configuration added successfully"}
+    response = await add_new_config(
+        configuration=mock_file,
+        name=name,
+        description=description,
+        file_type=FILE_TYPES.CONFIG.value,
+        db=db_session,
+        background_tasks=mock_background_tasks,
+    )
+    response_json = json.loads(response.body.decode())
+    assert response.status_code == 200
+    assert response_json == {"message": "configuration added successfully"}
 
-# @pytest.mark.asyncio
-# async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     result = await get_all_configs(db_session)
+@pytest.mark.asyncio
+async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    result = await get_all_configs(db_session)
 
-#     assert len(result) == 2
-#     assert result[0]["name"] == "test-config 1"
-#     assert result[1]["file_type"] == "rule-set"
+    assert len(result) == 2
+    assert result[0]["name"] == "test-config 1"
+    assert result[1]["file_type"] == "rule-set"
 
 
 # @pytest.mark.asyncio
