@@ -73,24 +73,26 @@ async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture
     assert result[0]["name"] == "test-config 1"
     assert result[1]["file_type"] == "rule-set"
 
+@patch("app.routers.crud.get_all_configurations_by_type")
+@pytest.mark.asyncio
+async def test_get_all_configs_of_a_filetype(all_configs_mock, db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ruleset = await db_session_fixture.get_ruleset_model()
+    all_configs_mock.return_value = [mock_ruleset]
+    file_type = "rule-set" 
+    response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
+    mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
+    assert len(response) == 1
+    assert response[0]["name"] == mock_configuration_ruleset.name
 
-# @pytest.mark.asyncio
-# async def test_get_all_configs_of_a_filetype(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     file_type = "rule-set" 
-#     response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
-#     mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
-#     assert len(response) == 1
-#     assert response[0]["name"] == mock_configuration_ruleset.name
 
-
-# @pytest.mark.asyncio
-# async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: DatabaseSessionFixture):
-#     db_session = await db_session_fixture.get_db_session()
-#     file_type = "invalid_type"
-#     expected_response = {"error": "wrong file type"}
-#     result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
-#     assert result == expected_response
+@pytest.mark.asyncio
+async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    file_type = "invalid_type"
+    expected_response = {"error": "wrong file type"}
+    result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
+    assert result == expected_response
 
 
 # @pytest.mark.asyncio
