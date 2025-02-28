@@ -2,15 +2,17 @@ import asyncio
 from http.client import HTTPResponse
 import json
 import uuid
-from ..utils import ANALYSIS_STATUS,STATUS, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
+from ..utils import ANALYSIS_STATUS,STATUS, read_data_file, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, selectinload
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
-from ..database import Base
+from ..database import Base, get_db_session_context
 from .ids_container import IdsContainer, update_container_status
 from ..validation.models import EnsembleUpdate
 import httpx 
-from ..docker import start_metric_stream, stop_metric_stream
+from sqlalchemy.future import select
+from ..logger import LOGGER
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class Ensemble(Base):
     __tablename__ = "ensemble"
@@ -22,77 +24,80 @@ class Ensemble(Base):
     description = Column(String(2048))
     current_analysis_id = Column(String(64))
 
-    ensemble_ids = relationship('EnsembleIds', back_populates='ensemble', cascade="all, delete")
-    ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble')
+    ensemble_ids = relationship('EnsembleIds', cascade="all, delete", lazy="selectin")
+    ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble', lazy="selectin")
 
-    async def add_container(self,container_id: int, db: Session):
-        from .ids_container import IdsContainer
+    async def add_container(self, db: AsyncSession, container_id: int):
+        from .ids_container import IdsContainer, get_container_by_id
         ensemble_ids = EnsembleIds(
             ensemble_id=self.id,
             ids_container_id=container_id,
             status=ANALYSIS_STATUS.IDLE.value
         )
-        container: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container_id).first() 
+        container: IdsContainer = await get_container_by_id(db, container_id)
         container_url = container.get_container_http_url()
         endpoint = f"/configure/ensemble/add/{self.id}"
         async with httpx.AsyncClient() as client:
                 response: HTTPResponse = await client.post(container_url+endpoint)
         if response.status_code == 200:
             db.add(ensemble_ids)
-            db.commit()
+            await db.commit()
         return response
     
-    async def remove_container(self, container_id: int, db: Session):
-        from .ids_container import IdsContainer
-
-        ensemble_ids = get_ensemble_ids_by_ids(self.id, container_id, db)
-
-        container: IdsContainer = db.query(IdsContainer).filter(IdsContainer.id == container_id).first() 
-        response = await deregister_container_from_ensemble(container)
-
+    async def remove_container(self, db: AsyncSession, container_id: int):
+        from .ids_container import IdsContainer, get_container_by_id
+        ensemble_ids = await get_ensemble_ids_by_ids(db, self.id, container_id)
+        container: IdsContainer = await get_container_by_id(db, container_id)
+        response = await deregister_container_from_ensemble(db, container)
         if response.status_code == 200:
-            db.delete(ensemble_ids)
-            db.commit()
-
+            await db.delete(ensemble_ids)
+            await db.commit()
         return response
 
-    def get_enssemble_ids(self, db: Session):
-        return db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == self.id).all()
-
-    def get_containers(self, db: Session):
-        from .ids_container import IdsContainer
-        ensemble_ids = db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == self.id).all()
-        id_list = [e_ids.ids_container_id for e_ids in ensemble_ids]
-        containers: list[IdsContainer] = db.query(IdsContainer).filter(IdsContainer.id.in_(id_list)).all()
-        return containers
+    async def get_ensemble_ids(self, db: AsyncSession):
+        stmt = select(EnsembleIds).where(EnsembleIds.ensemble_id == self.id)
+        result = await db.execute(stmt)
+        return result.scalars().all()
     
-    async def start_static_analysis(self, dataset, db):
+    async def get_assigned_containers(self, db: AsyncSession):
+        # refactor to not rely on the relationship shit
         from .ids_container import IdsContainer
-        containers: list[IdsContainer] = self.get_containers(db)
-        responses = []
-        pcap_file = await dataset.read_pcap_file()
+        ensemble_ids = await self.get_ensemble_ids(db)
+        id_list = [e_ids.ids_container_id for e_ids in ensemble_ids]
+        stmt = select(IdsContainer).where(IdsContainer.id.in_(id_list))
+        container_result = await db.execute(stmt)
+        return container_result.scalars().all()
 
+
+
+    async def start_static_analysis(self, db: AsyncSession, dataset_id: int):
+        from .ids_container import IdsContainer          
+        from .dataset import get_dataset_by_id 
+        LOGGER.debug(f"{dataset_id}")
+        dataset = await get_dataset_by_id(db, dataset_id)
+        containers: list[IdsContainer] = await self.get_assigned_containers(db)
+        responses = []
+        data_file = await read_data_file(dataset.data_file_path)
         for container in containers:
             form_data= {
                 "container_id": (None, str(container.id), "application/json"),
                 "ensemble_id": (None, str(self.id), "application/json"),
-                "dataset": (dataset.name, pcap_file, "application/octet-stream"),
+                "dataset": (dataset.name, data_file, "application/octet-stream"),
                 "dataset_id": (None, str(dataset.id), "application/json")
             }    
             
             # TODO 0: try with asyncio in background 
             response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
-            print(response)
-            response = await parse_response_for_triggered_analysis(response, container, db, "static", self.id)
+            response = await parse_response_for_triggered_analysis(response, container, "static", self.id)
             if response.status_code != 200:
-                await update_container_status(STATUS.IDLE.value, container, db)
+                await update_container_status(db, STATUS.IDLE.value, container)
             else:
-                await update_container_status(STATUS.ACTIVE.value, container, db)
+                await update_container_status(db, STATUS.ACTIVE.value, container)
             responses.append(response)
         return responses
     
-    async def container_is_last_one_running(self, container, db):
-        all_containers = self.get_containers(db)
+    async def container_is_last_one_running(self, db: AsyncSession, container):
+        all_containers = await self.get_assigned_containers(db)
         other_containers_in_ensemble = list(filter(lambda c: c.id != container.id, all_containers))
         other_containers_running = [ await c.is_busy() for c in other_containers_in_ensemble]    
         # if there is only one container in the ensemble, then that is always the last one running
@@ -104,27 +109,24 @@ class Ensemble(Base):
             return False
 
 
-    async def start_network_analysis(self, network_analysis_data, db):
+    async def start_network_analysis(self, db: AsyncSession, network_analysis_data):
         from .ids_container import IdsContainer
-        containers: list[IdsContainer] = self.get_containers(db)
+        containers: list[IdsContainer] = await self.get_assigned_containers(db)
         responses = []
-    
         for container in containers:
             data = json.dumps(network_analysis_data.__dict__)
             response: HTTPResponse = await container.start_network_analysis(data)
-            response = await parse_response_for_triggered_analysis(response, container, db, "network", self.id)
+            response = await parse_response_for_triggered_analysis(response, container, "network", self.id)
             if response.status_code != 200:
-                await update_container_status(STATUS.IDLE.value, container, db)
+                await update_container_status(db, STATUS.IDLE.value, container)
             else:
-                await update_container_status(STATUS.ACTIVE.value, container, db)                
+                await update_container_status(db, STATUS.ACTIVE.value, container)            
             responses.append(response)  
         return responses
 
-    async def stop_analysis(self, db):
-        containers: list[IdsContainer] = self.get_containers(db)
-
+    async def stop_analysis(self, db:AsyncSession):
+        containers: list[IdsContainer] = await self.get_assigned_containers(db)
         responses = []
-
         for container in containers:
             response: HTTPResponse = await container.stop_analysis()
             if response.status_code == 200:
@@ -141,46 +143,70 @@ class Ensemble(Base):
         else:
             return False
         
-def get_all_ensembles(db: Session):
-    return db.query(Ensemble).all()
+    async def generate_new_analysis_id(self, db: AsyncSession):
+        self.current_analysis_id = str(uuid.uuid4())
+        await db.commit()
+        await db.refresh(self)
+            
 
-def get_ensemble_by_id(id: int, db: Session):
-    return db.query(Ensemble).filter(Ensemble.id == id).first()
+    async def unset_analysis_id(self, db: AsyncSession):
+        self.current_analysis_id = None
+        await db.commit()
+        await db.refresh(self)
 
-def remove_ensemble(ensemble: Ensemble, db: Session):
-    db.delete(ensemble)
-    db.commit()
+async def get_all_ensembles(db: AsyncSession):
+    stmt = select(Ensemble).options(
+        selectinload(Ensemble.ensemble_ids),
+        )
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
-async def add_ensemble(ensemble: Ensemble, db):
+async def get_ensemble_by_id(db: AsyncSession, id: int):
+    stmt = select(Ensemble).options(
+        selectinload(Ensemble.ensemble_ids),
+        ).where(Ensemble.id == id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+async def remove_ensemble(db: AsyncSession, ensemble: Ensemble):
+    await db.delete(ensemble)
+    await db.commit()
+
+async def add_ensemble(db: AsyncSession, ensemble: Ensemble):
     db.add(ensemble)
-    db.commit()
+    await db.commit()
+    await db.refresh(ensemble)
 
-
-async def update_ensemble(ensemble: EnsembleUpdate, db: Session):
-    ensemble_db: Ensemble = db.query(Ensemble).filter(Ensemble.id == ensemble.id).first()
-    former_containers = [ensemble_container.ids_container_id for ensemble_container in ensemble_db.get_enssemble_ids(db) ]
+async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
+    stmt = select(Ensemble).where(Ensemble.id == ensemble.id)
+    result = await db.execute(stmt)
+    ensemble_db = result.scalar_one_or_none()
+    
+    if not ensemble_db:
+        return None 
+    former_containers = [ensemble_container.ids_container_id for ensemble_container in await ensemble_db.get_ensemble_ids(db)]
+    
+    # Update ensemble attributes
     for key, value in ensemble.dict().items():
         setattr(ensemble_db, key, value)
-    db.commit()
-    db.refresh(ensemble_db)
+    
+    await db.commit()
+    await db.refresh(ensemble_db)
+    
     new_containers = ensemble.container_ids
-
     added_containers = list(filter(lambda x: x not in former_containers, new_containers))
     removed_containers = list(filter(lambda x: x not in new_containers, former_containers))
-
     responses = []
-
     for container_id in removed_containers:
-        res = await ensemble_db.remove_container(container_id, db)
+        res = await ensemble_db.remove_container(container_id)
         responses.append(res)
     for container_id in added_containers:
-        res = await ensemble_db.add_container(container_id, db)
+        res = await ensemble_db.add_container(container_id)
         responses.append(res)
+    
     return responses
 
-
-async def update_ensemble_status(status: STATUS, ensemble: Ensemble, db: Session):
+async def update_ensemble_status(db: AsyncSession, status: STATUS, ensemble: Ensemble):
     ensemble.status = status
-    db.commit()
-    db.refresh(ensemble)
-
+    await db.commit()
+    await db.refresh(ensemble)

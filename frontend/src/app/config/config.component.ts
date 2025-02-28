@@ -1,6 +1,7 @@
 import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { ConfigService } from '../services/config/config.service';
-import { Configuration, ConfigurationSetupData, fileTypes } from '../models/configuration';
+import { Configuration, ConfigurationSetupData } from '../models/configuration';
+import { fileTypes } from '../models/acceptedFileTypes';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
@@ -21,6 +22,8 @@ import { Dataset } from '../models/dataset';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
 import { HttpResponse } from '@angular/common/http';
+import { DatasetType } from '../models/datasetType';
+import { DatasetTypesService } from '../services/dataset-type/dataset-type.service';
 
 
 @Component({
@@ -36,47 +39,43 @@ export class ConfigComponent implements OnInit{
   configurationList: Configuration[] = [];
   datasetList: Dataset[] = [];
   fileTypeDict = fileTypes;
+  datasetTypeList: DatasetType[] = [];
 
   constructor(
     private configService: ConfigService,
     private datasetService: DatasetService,
+    private datasetTypeService: DatasetTypesService,
     public dialog: MatDialog,
   ) {  }
 
   ngOnInit(): void {
     this.getAllConfigs();
     this.getAllDatasets();
+    this.getAllDatasetTypes();
   }
 
   getAllConfigs(){
     this.configService.getAllConfigurations()
       .subscribe(data => {
-        this.configurationList = data.map(config => ({
-          id: config.id,
-          name: config.name,
-          description: config.description,
-          configuration: config.configuration,
-          file_type: config.file_type
-        }));
+        this.configurationList = data
       });
     }
 
 
     getAllDatasets(){
       this.datasetService.getAllDatasets()
-        .subscribe(data => {
-          this.datasetList = data.map(config => ({
-            id: config.id,
-            name: config.name,
-            pcap_file_path: config.pcap_file_path,
-            description: config.description,
-            labels_file_path: config.labels_file_path,
-            ammount_benign: config.ammount_benign,
-            ammount_malicious: config.ammount_malicious,
-          }));
-        });
+        .subscribe(dataset => this.datasetList = dataset);
+        }
+
+    getAllDatasetTypes(){
+      this.datasetTypeService.getAllDatasetTypes()
+        .subscribe(datasetType => this.datasetTypeList = datasetType)
     }
 
+
+    getDatasetTypeName(id: number){
+      return this.datasetTypeList.find(datasetType => datasetType.id == id)?.name
+    }
 
   removeConfiguration(configuration: Configuration){
     this.configService.removeConfiguration(configuration.id)

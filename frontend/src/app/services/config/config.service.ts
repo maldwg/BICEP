@@ -4,6 +4,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable, finalize, map } from 'rxjs';
 import { ContainerSetupData } from '../../models/container';
+import { config } from 'process';
 
 @Injectable({
   providedIn: 'root'
@@ -46,9 +47,7 @@ export class ConfigService {
     const formData = new FormData();
     formData.append("name", configuration.name);
     formData.append("description", configuration.description);
-    for (var file of configuration.configuration) {
-      formData.append('configuration', file, file.name);
-    };    
+    formData.append('configuration', configuration.configuration, configuration.configuration.name);
     formData.append("file_type", configuration.file_type);
     return this.http.post(environment.backendUrl+path, formData, {
       reportProgress: true,

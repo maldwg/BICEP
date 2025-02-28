@@ -1,8 +1,12 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 
-from ..database import Base
+from ..database import Base, get_db_session_context
 from ..utils import ANALYSIS_STATUS
+from sqlalchemy.future import select
+from ..logger import LOGGER
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 class EnsembleIds(Base):
     __tablename__ = "ensemble_ids"
@@ -12,33 +16,40 @@ class EnsembleIds(Base):
     ids_container_id = Column(Integer, ForeignKey("ids_container.id"))
     status = Column(String(32))
 
-    ensemble = relationship('Ensemble', back_populates='ensemble_ids')
-    container = relationship('IdsContainer', back_populates='ensemble_ids')
+async def get_ensemble_ids_by_ids(db: AsyncSession, ensemble_id: int, container_id: int):
+    stmt = select(EnsembleIds).where(
+        EnsembleIds.ensemble_id == ensemble_id,
+        EnsembleIds.ids_container_id == container_id
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()  
 
+async def get_all_ensemble_container(db: AsyncSession):
+    stmt = select(EnsembleIds)
+    result = await db.execute(stmt)
+    return result.scalars().all() 
 
-def get_ensemble_ids_by_ids(ensemble_id: int, container_id: int, db: Session):
-    return db.query(EnsembleIds).filter(EnsembleIds.ensemble_id == ensemble_id, EnsembleIds.ids_container_id == container_id).first()
-
-def get_all_ensemble_container(db: Session):
-    return db.query(EnsembleIds).all()
-
-
-async def last_container_sending_logs(container, ensemble, db: Session):
-    analysis_status_of_other_containers_in_ensemble: list[EnsembleIds] = db.query(
-        EnsembleIds
-        ).filter(
-            EnsembleIds.ensemble_id == ensemble.id,
-            EnsembleIds.ids_container_id != container.id
-        ).all()
+async def last_container_sending_logs(db: AsyncSession ,container, ensemble):
+    stmt = select(EnsembleIds).where(
+        EnsembleIds.ensemble_id == ensemble.id,
+        EnsembleIds.ids_container_id != container.id
+    )
+    result = await db.execute(stmt)
+    analysis_status_of_other_containers_in_ensemble = result.scalars().all()
     for entry in analysis_status_of_other_containers_in_ensemble:
         if entry.status == ANALYSIS_STATUS.PROCESSING.value:
             return False
     return True
 
-async def update_sendig_logs_status(container, ensemble, db: Session, status: ANALYSIS_STATUS):
-    entry: EnsembleIds = db.query(EnsembleIds).filter(
+
+async def update_sendig_logs_status(db: AsyncSession, container, ensemble, status: ANALYSIS_STATUS):
+    stmt = select(EnsembleIds).where(
         EnsembleIds.ensemble_id == ensemble.id,
-        EnsembleIds.ids_container_id == container.id).first()
-    entry.status = status
-    db.commit()
-    db.refresh(entry)
+        EnsembleIds.ids_container_id == container.id
+    )
+    result = await db.execute(stmt)
+    entry: EnsembleIds = result.scalar_one_or_none()  
+    if entry:
+        entry.status = status
+        await db.commit()  #
+        await db.refresh(entry)  

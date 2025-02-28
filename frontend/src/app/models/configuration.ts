@@ -14,14 +14,6 @@ export interface ConfigurationSetupData{
     file_type: string
 }
 
-
-export const fileTypes = {
-    configuration: "configuration",
-    ruleSet: "rule-set",
-    testData: "test-data"
-}
-
-
 export interface SerializedConfiguration {
     id: number;
     name: string;

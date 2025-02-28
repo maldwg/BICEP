@@ -2,7 +2,7 @@ import pytest
 from docker import DockerClient
 from unittest.mock import patch, MagicMock, AsyncMock
 from app.test.fixtures import *
-from app.models.ensemble_technique import *
+from app.models.ensemble_techniques_implementation.majority_vote import majority_vote
 
 
 
@@ -30,7 +30,7 @@ async def test_execute_technique_by_name_on_alerts(mock_alerts):
 
 @pytest.mark.asyncio
 async def test_majority_vote(mock_alerts,db_session_fixture: DatabaseSessionFixture):
-    ensemble = db_session_fixture.get_ensemble_model()
+    ensemble = await db_session_fixture.get_ensemble_model()
     container1 = MagicMock()
     container2 = MagicMock()
     ensemble.ensemble_ids = [container1, container2]

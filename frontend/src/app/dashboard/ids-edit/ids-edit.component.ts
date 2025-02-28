@@ -6,7 +6,8 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
-import { Configuration, fileTypes } from '../../models/configuration';
+import { Configuration } from '../../models/configuration';
+import { fileTypes } from '../../models/acceptedFileTypes';
 import { MatButtonModule } from '@angular/material/button';
 import { IdsTool } from '../../models/ids';
 

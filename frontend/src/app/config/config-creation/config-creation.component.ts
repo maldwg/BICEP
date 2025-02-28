@@ -1,12 +1,13 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ConfigComponent } from '../config.component';
 import { Dialog } from '@angular/cdk/dialog';
-import { ConfigurationSetupData, fileTypes } from '../../models/configuration';
+import { ConfigurationSetupData} from '../../models/configuration';
+import { fileTypes, getAcceptedFileTypesForConfigurationType } from '../../models/acceptedFileTypes';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
@@ -16,6 +17,8 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { DatasetSetupData } from '../../models/dataset';
 import { DatasetService } from '../../services/dataset/dataset.service';
 import { AlertComponent } from '../../components/alert-component/alert-component.component';
+import { DatasetTypesService } from '../../services/dataset-type/dataset-type.service';
+import { DatasetType } from '../../models/datasetType';
 @Component({
   selector: 'app-config-creation',
   standalone: true,
@@ -41,12 +44,19 @@ import { AlertComponent } from '../../components/alert-component/alert-component
 export class ConfigCreationComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   fileTypeList: string[] = [];
+  datasetTypeList: DatasetType[] = [];
+  selectedDatasetFileName: string = "";
+  selectedLabelsFileName: string ="";
+  selectedConfigurationFileName: string = "";
 
   configForm = new FormGroup({
     name: new FormControl(""),
     description: new FormControl(""),
-    configuration: new FormControl(),
     fileType: new FormControl(""),
+    configurationFile: new FormControl(),
+    dataFile: new FormControl(),
+    labelsFile: new FormControl(),
+    datasetTypeId: new FormControl(""),
   });
 
   fileNames: string[] = [];
@@ -56,10 +66,12 @@ export class ConfigCreationComponent implements OnInit{
     public dialogRef: MatDialogRef<ConfigCreationComponent>, 
     private configService: ConfigService,
     private datasetService: DatasetService,
+    private datasetTypeService: DatasetTypesService,
   ){}
 
   ngOnInit(): void {
     this.getAllFileTypes();
+    this.getAllDatasetTypes();
 
   }
 
@@ -68,12 +80,20 @@ export class ConfigCreationComponent implements OnInit{
 // TODO 10: spinning circle while upload complete but not ready calcuating dataset
 // TODO 10: return is there from the backend however, it is not processed correctly for the reload in the FE
   save(): void{
+    if(this.configForm.value.fileType !== null){
+      if(!this.check_if_necessary_files_are_attached(this.configForm.value.fileType!)){
+        this.errorPopup.showError("Please select all required files before hitting save!", 400)
+      }
+    }
     if (this.configForm.valid){
       if(this.configForm.value.fileType === fileTypes.testData){
         let newDataset: DatasetSetupData = {
           name: this.configForm.value.name!,
           description: this.configForm.value.description!,
-          configuration: this.configForm.value.configuration!,
+          labels_file: this.configForm.value.labelsFile!,
+          data_file: this.configForm.value.dataFile!,
+          dataset_type_id: String(this.configForm.value.datasetTypeId),
+
         };
         this.datasetService.addDataset(newDataset)
           .subscribe((event: HttpEvent<any>) => {
@@ -84,9 +104,7 @@ export class ConfigCreationComponent implements OnInit{
                 }
                 break;
               case HttpEventType.Response:
-                console.log("Recorded event");
                 this.dialogRef.close(this.configForm.value);
-                console.log("close");
                 break;
             }
           }, err => {
@@ -94,10 +112,11 @@ export class ConfigCreationComponent implements OnInit{
           });
       }
       else{
+        // if it is not a dataset, it is a configuration/ruleset which can be handled indifferently
         let newConfiguration: ConfigurationSetupData = {
           name: this.configForm.value.name!,
           description: this.configForm.value.description!,
-          configuration: this.configForm.value.configuration!,
+          configuration: this.configForm.value.configurationFile!,
           file_type: this.configForm.value.fileType!,
         };
         this.configService.addConfiguration(newConfiguration)
@@ -109,9 +128,7 @@ export class ConfigCreationComponent implements OnInit{
                 }
                 break;
               case HttpEventType.Response:
-                console.log("Recorded event");
                 this.dialogRef.close(this.configForm.value);
-                console.log("close");
                 break;
             }
           }, err => {
@@ -121,37 +138,55 @@ export class ConfigCreationComponent implements OnInit{
     }
   }
 
+  check_if_necessary_files_are_attached(fileType: string): boolean{
+    if(this.configForm.value.fileType === fileTypes.testData){
+      if(this.configForm.value.dataFile && this.configForm.value.labelsFile){
+        return true;
+      }
+    }
+    else if(this.configForm.value.fileType === fileTypes.configuration || this.configForm.value.fileType === fileTypes.ruleSet){
+      if(this.configForm.value.configurationFile){
+        return true;
+      }
+    }
+    return false;
+  }
+
   exit(): void{
     this.dialogRef.close();
   }
 
-  onFileSelected(event: any) {
-    const files:File[] = event.target.files;
-    console.log(files)
-    if (files && files.length > 0) {
-        this.fileNames = Array.from(files).map(file => file.name);
-        this.configForm.patchValue({configuration: files});
+  onFileSelected(event: any, fileType: 'dataset' | 'labels' | 'configuration') {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      let file_to_upload = input.files[0]
+      if (fileType === 'dataset') {
+        this.selectedDatasetFileName = input.files[0].name;
+        this.configForm.patchValue({dataFile:file_to_upload });
+      } else if (fileType === 'labels') {
+        this.selectedLabelsFileName = input.files[0].name;
+        this.configForm.patchValue({labelsFile:file_to_upload });
       }
+      else if (fileType === 'configuration'){
+          this.selectedConfigurationFileName = input.files[0].name;
+          this.configForm.patchValue({configurationFile:file_to_upload });
+      }
+    }
+  } 
 
-}
-
-getAllFileTypes(){
-  this.configService.getAllFileTypes()
-    .subscribe(data => this.fileTypeList = data)
-}
-
-
-getAcceptType(): string {
-  switch (this.configForm.controls.fileType.value) {
-    case fileTypes.testData:
-      return '.pcap,.csv,.pcap_ISX';
-    case fileTypes.configuration:
-      return '.yaml,.conf,.json,.lua';
-    case fileTypes.ruleSet:
-      return '.rules';
-    default:
-      return '*/*';
+  getAllDatasetTypes(){
+    this.datasetTypeService.getAllDatasetTypes()
+      .subscribe(datasetTypes => this.datasetTypeList = datasetTypes)
   }
-}
+
+  getAllFileTypes(){
+    this.configService.getAllFileTypes()
+      .subscribe(data => this.fileTypeList = data)
+  }
+
+
+  getAcceptType(): string {
+    return getAcceptedFileTypesForConfigurationType(this.configForm.controls.fileType.value!);
+  }
 
 }

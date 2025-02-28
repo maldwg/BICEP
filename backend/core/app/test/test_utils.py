@@ -4,6 +4,7 @@ import shutil
 import pytest
 from app.utils import *
 from app.bicep_utils.models.ids_base import Alert
+from app.test.fixtures import *
 
 TESTS_BASE_DIR = "./backend/core/app/test"
 TEST_DIR = '/tmp/test_datasets'
@@ -43,7 +44,7 @@ async def test_start_static_analysis():
     container.get_container_http_url.return_value = "http://test-container"
     form_data = {"key": "value"}
     dataset = MagicMock()
-    dataset.pcap_file_path = "path/to/pcap"
+    dataset.data_file_path = "path/to/pcap"
 
     with patch('asyncio.create_task') as mock_create_task:
         response = await start_static_analysis(container, form_data, dataset)
@@ -51,19 +52,18 @@ async def test_start_static_analysis():
         assert response.body.decode() == '{"message":"Successfully sending data in the background"}'
 
 @pytest.mark.asyncio
-async def test_calculate_and_add_dataset():
+async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    dataset_type = await db_session_fixture.get_dataset_type_model()
     labels_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'rb').read()
-    pcap_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
+    data_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
 
     name = "sample_data"
     description = "Test dataset"
-    db = MagicMock()
-
     dataset_storage_location = f"{TEST_DIR}/{name}"
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
-
     try:
-        await calculate_and_add_dataset(pcap_file_in_bytes, labels_file_in_bytes, name, description, db)
+        await calculate_and_add_dataset(data_file_in_bytes, labels_file_in_bytes, name, description, dataset_type, db_session )
     finally:
         shutil.rmtree(dataset_storage_location)
 
@@ -81,11 +81,7 @@ async def test_save_file_to_disk():
     os.remove(path)
 
 
-@pytest.mark.asyncio
-async def test_calculate_malicious_benign_counts_from_text_stream():
-    labels_file_path = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'r')
-    benign_count, malicious_count = await calculate_malicious_benign_counts_from_text_stream(labels_file_path)
-    assert (benign_count, malicious_count) == (899,100)
+
 
 # TODO: find a way to test appropriately and test metrics.py alongside
 # @pytest.mark.asyncio
@@ -126,3 +122,22 @@ async def test_normalize_and_parse_alert_timestamp():
     timestamp = "2025-01-01T00:00:00Z"
     normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp)
     assert normalized_timestamp == "2025-01-01T00:00" 
+
+
+
+@pytest.mark.asyncio
+async def test_get_item_counts_of_dict():
+    test_dict = {
+        "a": [1, 2, 3],
+        "b": [4, 5],
+        "c": []
+    }
+    result_five_element_dict = get_item_counts_of_dict(test_dict)
+
+    empty_dict = {}
+    result_empty_dict = get_item_counts_of_dict(empty_dict)
+
+    single_item_dict = {"a": [1]}
+    result_single_dict = get_item_counts_of_dict(single_item_dict)
+
+    assert (5, 1, 0) == (result_five_element_dict, result_single_dict, result_empty_dict)

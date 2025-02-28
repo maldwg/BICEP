@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
 async def test_setup_ensembles_successfull(add_container_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     ensemble_data: EnsembleCreate = EnsembleCreate(
         name = "ensemble1",
         description="ensemble-test",
@@ -29,7 +29,7 @@ async def test_setup_ensembles_successfull(add_container_mock, db_session_fixtur
 @patch("app.routers.ensemble.deregister_container_from_ensemble", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_remove_ensemble_succesful(deregister_mock,db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     ensemble_id = 1
 
     mock_response = AsyncMock(spec=HTTPResponse)
@@ -44,7 +44,7 @@ async def test_remove_ensemble_succesful(deregister_mock,db_session_fixture: Dat
 @patch("app.routers.ensemble.deregister_container_from_ensemble", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_remove_ensemble_failiure(deregister_mock,db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     ensemble_id = 1
 
     mock_response = AsyncMock(spec=HTTPResponse)
@@ -59,15 +59,15 @@ async def test_remove_ensemble_failiure(deregister_mock,db_session_fixture: Data
 
 @pytest.mark.asyncio
 async def test_start_static_ensemble_analysis_successful(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     static_analysis_data: StaticAnalysisData = StaticAnalysisData(
         ensemble_id = 1,
         dataset_id = 1
     )
 
-    mock_ids_container = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids_container])
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 200
@@ -83,15 +83,15 @@ async def test_start_static_ensemble_analysis_successful(db_session_fixture: Dat
 
 @pytest.mark.asyncio
 async def test_start_static_ensemble_analysis_failiure(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     static_analysis_data: StaticAnalysisData = StaticAnalysisData(
         ensemble_id = 1,
         dataset_id = 1
     )
 
-    mock_ids_container = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids_container])
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 500
@@ -109,16 +109,16 @@ async def test_start_static_ensemble_analysis_failiure(db_session_fixture: Datab
 
 @pytest.mark.asyncio
 async def test_start_static_ensemble_analysis_not_idle(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     static_analysis_data: StaticAnalysisData = StaticAnalysisData(
         ensemble_id = 1,
         dataset_id = 1
     )
 
-    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
     mock_ids_container.status = STATUS.ACTIVE.value
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids_container])
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -128,16 +128,16 @@ async def test_start_static_ensemble_analysis_not_idle(db_session_fixture: Datab
 
 @pytest.mark.asyncio
 async def test_start_static_ensemble_analysis_not_available(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     static_analysis_data: StaticAnalysisData = StaticAnalysisData(
         ensemble_id = 1,
         dataset_id = 1
     )
 
-    mock_ids_container = db_session_fixture.get_ids_container_model()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
     mock_ids_container.is_available = AsyncMock(return_value = False)
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids_container])
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids_container])
 
     response = await start_static_ensemble_analysis(static_analysis_data=static_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -147,7 +147,7 @@ async def test_start_static_ensemble_analysis_not_available(db_session_fixture: 
 
 @pytest.mark.asyncio
 async def test_stop_analysis(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
 
     stop_data: stop_analysisData =  stop_analysisData(
         ensemble_id = 1
@@ -155,9 +155,9 @@ async def test_stop_analysis(db_session_fixture: DatabaseSessionFixture):
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 200
-    mock_ids = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     mock_ids.stop_analysis.return_value = mock_response
 
     response = await stop_ensemble_analysis(stop_data, db=db_session)
@@ -168,7 +168,7 @@ async def test_stop_analysis(db_session_fixture: DatabaseSessionFixture):
 
 @pytest.mark.asyncio
 async def test_stop_analysis_unsuccessful(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
 
     stop_data: stop_analysisData =  stop_analysisData(
         ensemble_id = 1
@@ -176,9 +176,9 @@ async def test_stop_analysis_unsuccessful(db_session_fixture: DatabaseSessionFix
 
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 500
-    mock_ids = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     mock_ids.stop_analysis.return_value = mock_response
 
     response = await stop_ensemble_analysis(stop_data, db=db_session)
@@ -190,7 +190,7 @@ async def test_stop_analysis_unsuccessful(db_session_fixture: DatabaseSessionFix
 
 @pytest.mark.asyncio
 async def test_start_network_ensemble_analysis_successful(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
         ensemble_id = 1
     )
@@ -198,9 +198,9 @@ async def test_start_network_ensemble_analysis_successful(db_session_fixture: Da
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 200
     mock_response.body = b'{"message": "success"}'
-    mock_ids = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     mock_ensemble.start_network_analysis.return_value = [mock_response]
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
@@ -211,7 +211,7 @@ async def test_start_network_ensemble_analysis_successful(db_session_fixture: Da
 
 @pytest.mark.asyncio
 async def test_start_network_ensemble_analysis_failiure(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
         ensemble_id = 1
     )
@@ -219,9 +219,9 @@ async def test_start_network_ensemble_analysis_failiure(db_session_fixture: Data
     mock_response = AsyncMock(spec=HTTPResponse)
     mock_response.status_code = 500
     mock_response.body = b'{"message": "failiure"}'
-    mock_ids = db_session_fixture.get_ids_container_model()
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ids = await db_session_fixture.get_ids_container_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     mock_ensemble.start_network_analysis.return_value = [mock_response]
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
@@ -233,15 +233,15 @@ async def test_start_network_ensemble_analysis_failiure(db_session_fixture: Data
 
 @pytest.mark.asyncio
 async def test_start_network_ensemble_analysis_unavailable(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
         ensemble_id = 1
     )
 
-    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ids = await db_session_fixture.get_ids_container_model()
     mock_ids.is_available = AsyncMock(return_value = False)
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -252,15 +252,15 @@ async def test_start_network_ensemble_analysis_unavailable(db_session_fixture: D
 
 @pytest.mark.asyncio
 async def test_start_network_ensemble_analysis_not_idle(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     network_analysis_data: NetworkAnalysisData = NetworkAnalysisData(
         ensemble_id = 1
     )
 
-    mock_ids = db_session_fixture.get_ids_container_model()
+    mock_ids = await db_session_fixture.get_ids_container_model()
     mock_ids.status = STATUS.ACTIVE.value
-    mock_ensemble = db_session_fixture.get_ensemble_model()
-    mock_ensemble.get_containers = MagicMock(return_value=[mock_ids])
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
+    mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_ids])
     
     response = await start_network_ensemble_analysis(network_analysis_data=network_analysis_data,db=db_session)
     response_json = json.loads(response.body.decode())
@@ -269,7 +269,7 @@ async def test_start_network_ensemble_analysis_not_idle(db_session_fixture: Data
 
 @pytest.mark.asyncio
 async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     finished_data: AnalysisFinishedData = AnalysisFinishedData(
         container_id = 1,
         ensemble_id = 1
@@ -287,7 +287,7 @@ async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFix
 @patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
 async def test_receive_alerts_from_ids_unsuccessful_loki_push(bg_tasks, push_to_loki_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
         dataset_id = None,
@@ -324,7 +324,7 @@ async def test_receive_alerts_from_ids_unsuccessful_loki_push(bg_tasks, push_to_
 @patch("app.routers.ensemble.clean_up_alerts_in_loki")
 @pytest.mark.asyncio
 async def test_receive_alerts_from_ids_network_analysis_last_container(cleanup_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
         dataset_id = None,
@@ -351,10 +351,10 @@ async def test_receive_alerts_from_ids_network_analysis_last_container(cleanup_m
     mock_response_get_alerts = AsyncMock(spec=[Alert],return_value=alert_data.alerts)
     get_alerts_mock.return_value = mock_response_get_alerts
 
-    mock_technique = db_session_fixture.get_ensemble_technique_model()
+    mock_technique = await db_session_fixture.get_ensemble_technique_model()
     mock_technique.execute_technique_by_name_on_alerts.return_value = alert_data.alerts
 
-    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
 
     response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
@@ -367,7 +367,7 @@ async def test_receive_alerts_from_ids_network_analysis_last_container(cleanup_m
 @patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
 async def test_receive_alerts_from_ids_network_analysis_not_last_container(bg_tasks,push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "network",
         dataset_id = None,
@@ -390,7 +390,7 @@ async def test_receive_alerts_from_ids_network_analysis_not_last_container(bg_ta
     mock_response_loki.status_code = 204
     push_to_loki_mock.return_value = mock_response_loki
     last_container_sending_mock.return_value = False
-    mock_container = db_session_fixture.get_ids_container_model()
+    mock_container = await db_session_fixture.get_ids_container_model()
     response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session,backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
@@ -404,7 +404,7 @@ async def test_receive_alerts_from_ids_network_analysis_not_last_container(bg_ta
 @patch("app.routers.ensemble.BackgroundTasks")
 @pytest.mark.asyncio
 async def test_receive_alerts_from_ids_static_analysis_not_last_container(bg_tasks, push_to_loki_mock, last_container_sending_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "static",
         dataset_id = 1,
@@ -427,7 +427,7 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(bg_tas
     mock_response_loki.status_code = 204
     push_to_loki_mock.return_value = mock_response_loki
     last_container_sending_mock.return_value = False
-    mock_container = db_session_fixture.get_ids_container_model()
+    mock_container = await db_session_fixture.get_ids_container_model()
     response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
@@ -442,7 +442,7 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(bg_tas
 @patch("app.routers.ensemble.len")
 @pytest.mark.asyncio
 async def test_receive_alerts_from_ids_static_analysis_last_container(len_mock, bg_tasks, push_to_loki_mock, get_alerts_mock, cleanup_mock, calculate_metrics_mock, push_metrics_mock, db_session_fixture: DatabaseSessionFixture):
-    db_session = db_session_fixture.get_db_session()
+    db_session = await db_session_fixture.get_db_session()
     alert_data: AlertData = AlertData(
         analysis_type = "static",
         dataset_id = 1,
@@ -470,12 +470,12 @@ async def test_receive_alerts_from_ids_static_analysis_last_container(len_mock, 
     mock_response_get_alerts = AsyncMock(spec=[Alert],return_value=alert_data.alerts)
     get_alerts_mock.return_value = mock_response_get_alerts
 
-    mock_technique = db_session_fixture.get_ensemble_technique_model()
+    mock_technique = await db_session_fixture.get_ensemble_technique_model()
     mock_technique.execute_technique_by_name_on_alerts.return_value = alert_data.alerts
 
-    mock_ensemble = db_session_fixture.get_ensemble_model()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()
 
-    mock_container = db_session_fixture.get_ids_container_model()
+    mock_container = await db_session_fixture.get_ids_container_model()
     response = await receive_alerts_from_ids_for_ensemble(alert_data=alert_data,db=db_session, backgroundtasks=bg_tasks)
     response_json = json.loads(response.body.decode())
     print(response_json)

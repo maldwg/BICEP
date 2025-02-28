@@ -22,7 +22,8 @@ import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 import { ConfigService } from '../services/config/config.service';
 import { IdsTool } from '../models/ids';
-import { Configuration, fileTypes } from '../models/configuration';
+import { Configuration } from '../models/configuration';
+import { fileTypes } from '../models/acceptedFileTypes';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
 import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
@@ -87,97 +88,49 @@ export class DashboardComponent implements OnInit {
         })
       )*/
       .subscribe(data =>  {
-        this.containerList = data.map(container => ({
-          id: container.id,
-          name: container.name,
-          host_system_id: container.host_system_id,
-          port: container.port,
-          status: container.status,
-          description: container.description,
-          configuration_id: container.configuration_id,
-          ids_tool_id: container.ids_tool_id ,
-          ruleset_id: container.ruleset_id
-        }));
+        this.containerList = data
       });
   }
 
   getAllConfigs(){
     this.configService.getAllConfigurations()
       .subscribe(data => {
-        this.configList = data.map(config => ({
-          id: config.id,
-          name: config.name,
-          configuration: config.configuration,
-          description: config.description,
-          file_type: config.file_type
-        }));
+        this.configList = data
       });
   }
 
   getAllDatasets(){
     this.datasetService.getAllDatasets()
       .subscribe(data => {
-        this.datasetList = data.map(config => ({
-          id: config.id,
-          name: config.name,
-          pcap_file_path: config.pcap_file_path,
-          description: config.description,
-          labels_file_path: config.labels_file_path,
-          ammount_benign: config.ammount_benign,
-          ammount_malicious: config.ammount_malicious,
-        }));
+        this.datasetList = data
       });
   }
 
   getAllTechnqiues(){
     this.ensembleService.getAllTechnqiues()
       .subscribe(data => {
-        this.ensembleTechniqueList = data.map(technique => ({
-          id: technique.id,
-          description: technique.description,
-          name: technique.name,
-          function_name: technique.function_name
-        }));
+        this.ensembleTechniqueList = data
       });   
   }
 
   getAllIdsTools(){
     this.idsService.getAllIdsTools()
       .subscribe(data => {
-        this.idsToolList = data.map(tool => ({
-          id: tool.id,
-          name: tool.name,
-          analysis_method: tool.analysis_method,
-          idsType: tool.idsType,
-          requires_ruleset: tool.requires_ruleset,
-          image_name: tool.image_name,
-          image_tag: tool.image_tag
-        }));
+        this.idsToolList = data
       });
   }
 
   getAllEnsembles(){
     this.ensembleService.getAllEnsembles()
       .subscribe(data => {
-        this.ensembleList = data.map(ensemble => ({
-          id: ensemble.id,
-          name: ensemble.name,
-          technique_id: ensemble.technique_id,
-          status: ensemble.status,
-          description: ensemble.description,
-          current_analysis_id: ensemble.current_analysis_id,
-        }));
+        this.ensembleList = data
       });
   }
 
   getAllEnsembleContainer(){
     this.ensembleService.getEnsembleContainers()  
       .subscribe(data => {
-        this.ensembleContainerList = data.map( ensembleContainer => ({
-          id: ensembleContainer.id,
-          ensemble_id: ensembleContainer.ensemble_id,
-          ids_container_id: ensembleContainer.ids_container_id
-        }));
+        this.ensembleContainerList = data
       });
   }
 

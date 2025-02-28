@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import aiofiles
 from http.client import HTTPResponse
 import io
 import socket
@@ -41,6 +42,15 @@ class FILE_TYPES(Enum):
     RULE_SET = "rule-set"
 
 
+def file_type_is_accepted(file_type: str, file_ending: str):
+    match file_type:
+        case FILE_TYPES.CONFIG.value:
+            return True if file_ending in ["lua", "yaml", "xml", "conf"] else False
+        case FILE_TYPES.TEST_DATA.value:
+            return True if file_ending in ["pcap", "csv"] else False
+        case FILE_TYPES.RULE_SET.value:
+            return True if file_ending in ["rules"] else False
+    return False
 def find_free_port():
     # TODO 10: Adapt this to also find free ports on remote hosts --> could be hard 
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
@@ -89,7 +99,7 @@ async def start_static_analysis(container, form_data, dataset):
     async def send_request_in_background(): 
         try:
             async with httpx.AsyncClient() as client:  
-                with open(dataset.pcap_file_path, "rb") as f:
+                with open(dataset.data_file_path, "rb") as f:
                     form_data["dataset"] = (dataset.name, f, "application/octet-stream")
                     # set timeout to 600 seconds, as uploads can take a while
                     response = await client.post(container_url+endpoint,files=form_data, timeout=180)    
@@ -113,9 +123,8 @@ async def stop_analysis(container):
         response: HTTPResponse = await client.post(container_url+endpoint)
     return response
 
-async def parse_response_for_triggered_analysis(response: HTTPResponse, container, db, analysis_type: str, ensemble_id: int = None):
+async def parse_response_for_triggered_analysis(response: HTTPResponse, container, analysis_type: str, ensemble_id: int = None):
     if response.status_code == 200:
-        # await update_container_status(STATUS.ACTIVE.value, container, db)
         message = f"container {container.id} - {analysis_type} analysis triggered"
         if ensemble_id != None:
             message = f"container {container.id} - {analysis_type} analysis for ensemble {ensemble_id} triggered"
@@ -128,47 +137,34 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_benign_and_malicious_ammount(labels_file):
-    # convert bytes to bytestream to be able to read it into pandas
-    byte_stream = io.BytesIO(labels_file)
-    df = pd.read_csv(byte_stream)
-
-    df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
-    benign_count = df.apply(lambda row: row.str.contains('benign', na=False).any(), axis=1).sum()
-    malicious_count = df.apply(lambda row: row.str.contains('malicious', na=False).any(), axis=1).sum()
-    
-    LOGGER.debug(f"found {benign_count} benign entries in labels file")
-    LOGGER.debug(f"found {malicious_count} malicious entries in labels file")
-    return benign_count, malicious_count
-
-
-async def calculate_and_add_dataset(pcap_file, labels_file, name, description, db):
+async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
-    benign, malicious = await calculate_malicious_benign_counts_from_text_stream(text_stream)
+    benign, malicious = await dataset_type.get_benign_and_malicious_counts(text_stream)
 
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
     dataset_storage_location = f"{base_path}/{name}/{uid}"
     
-    pcap_file_path = f"{dataset_storage_location}/dataset.pcap"
+    data_file_path = f"{dataset_storage_location}/dataset.pcap"
     labels_file_path = f"{dataset_storage_location}/dataset.csv"
 
     await create_directory(dataset_storage_location)
-    await save_file_to_disk(pcap_file, pcap_file_path)
+    await save_file_to_disk(data_file, data_file_path)
     await save_file_to_disk(labels_file, labels_file_path)
 
     dataset = Dataset(
         name=name,
         description=description,
-        pcap_file_path=pcap_file_path,
+        data_file_path=data_file_path,
         labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
+        dataset_type_id=dataset_type.id
     )
-    add_dataset(db, dataset)
+    await add_dataset(db, dataset)
 
 async def save_file_to_disk(file, path):
     with open(path, "wb") as f:
@@ -184,45 +180,25 @@ async def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-# Efficient CSV processing using a genrator
-async def calculate_malicious_benign_counts_from_text_stream(input_file):
-    benign_count = 0
-    malicious_count = 0
-    header = True
-    with input_file as input_csv:
-        reader = csv.reader(input_csv)
-        for row in reader:
-            if header:
-                header = False
-                continue
-            # Convert each cell in the row to lowercase and check for "benign"
-            if any("benign" in cell.lower() for cell in row):
-                benign_count += 1
-            else:
-                malicious_count += 1
 
-    return benign_count, malicious_count
+def get_item_counts_of_dict(d: dict):
+    """
+    Method that returns the ammount of items stored in a dict, regardless of the keys
+    """
+    items = 0
+    for _,v in d.items():
+        items += len(v)
+    return items
 
-def get_serialized_datasets(datasets):
-    serialized_datasets = []
-    for dataset in datasets:
-        serialized_config = {
-            "id": dataset.id,
-            "name": dataset.name,
-            "pcap_file_path": dataset.pcap_file_path, 
-            "labels_file_path": dataset.labels_file_path,  
-            "description": dataset.description,
-            "ammount_benign": dataset.ammount_benign,
-            "ammount_malicious": dataset.ammount_malicious
-
-        }
-        serialized_datasets.append(serialized_config)
-    return serialized_datasets
-
-async def calculate_evaluation_metrics_and_push(dataset: Dataset, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
+async def calculate_evaluation_metrics_and_push(db, dataset_id: int, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
-    metrics = await calculate_evaluation_metrics(dataset, alerts)
+    from .models.dataset import get_dataset_by_id
+    # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
+    # and an error will be thrown
+    dataset = await get_dataset_by_id(db, dataset_id)
+    metrics = await calculate_evaluation_metrics(db, dataset_id, alerts)
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
+    await db.close()
 
 def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
     source_ip = alert.source_ip.strip()
@@ -265,3 +241,9 @@ def get_length_of_nested_dict(d: dict):
         for container, alerts in v.items():
             counter += len(alerts)
     return counter
+
+
+async def read_data_file(file_path):
+    async with aiofiles.open(file_path, 'rb') as file:
+        data_file = await file.read()
+        return data_file

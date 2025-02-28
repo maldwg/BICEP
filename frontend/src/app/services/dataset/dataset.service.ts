@@ -1,7 +1,7 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, finalize, map } from 'rxjs';
-import { Dataset, DatasetSetupData, SerializedDataset } from '../../models/dataset';
+import { Dataset, DatasetSetupData } from '../../models/dataset';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -18,9 +18,7 @@ export class DatasetService {
 
   getAllDatasets(): Observable<Dataset[]> {
     let path = "/crud/dataset/all";
-    return this.http.get<SerializedDataset[]>(environment.backendUrl + path).pipe(
-      map((serializedDatasets) => serializedDatasets.map(serializedDataset => this.deserializeConfiguration(serializedDataset)))
-    );
+    return this.http.get<Dataset[]>(environment.backendUrl + path);
   }
 
   removeDataset(id: number): Observable<HttpResponse<any>> {
@@ -33,28 +31,13 @@ export class DatasetService {
     const formData = new FormData();
     formData.append("name", dataset.name);
     formData.append("description", dataset.description);
-    for (var file of dataset.configuration) {
-      formData.append('configuration', file, file.name);
-    };    
+    formData.append('data_file', dataset.data_file, dataset.data_file.name)
+    formData.append('labels_file', dataset.labels_file, dataset.labels_file.name)
+    formData.append('dataset_type_id', dataset.dataset_type_id)
+
     return this.http.post(environment.backendUrl+path, formData, {
       reportProgress: true,
       observe: "events"
     });
   }
-
-
-
-  deserializeConfiguration(serializedDataset: SerializedDataset): Dataset {
-    return {
-      id: serializedDataset.id,
-      name: serializedDataset.name,
-      pcap_file_path: serializedDataset.pcap_file_path,
-      labels_file_path: serializedDataset.labels_file_path, 
-      description: serializedDataset.description,
-      ammount_benign: serializedDataset.ammount_benign,
-      ammount_malicious: serializedDataset.ammount_malicious
-    };
-  }
-
-
 }
