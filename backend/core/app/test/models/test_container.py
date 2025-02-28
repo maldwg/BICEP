@@ -117,10 +117,15 @@ async def test_update_container_not_existing( db_session_fixture: DatabaseSessio
 async def test_update_container_no_changes( db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     mock_container = await db_session_fixture.get_ids_container_model()
+    mock_container is not None
+    old_config_id =mock_container.configuration_id 
+    old_ruleset_id = mock_container.ruleset_id 
+    old_description =mock_container.description
+
     container_update = IdsContainerUpdate(id=mock_container.id, configuration_id=mock_container.configuration_id, ruleset_id=mock_container.ruleset_id, description=mock_container.description)
     await update_container(db=db_session, container=container_update)
     
     assert mock_container is not None
-    assert mock_container.configuration_id == mock_container.configuration_id
-    assert mock_container.ruleset_id == mock_container.ruleset_id
-    assert mock_container.description==mock_container.description
+    assert mock_container.configuration_id == old_config_id
+    assert mock_container.ruleset_id == old_ruleset_id
+    assert mock_container.description==old_description
