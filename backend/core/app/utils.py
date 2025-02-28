@@ -221,18 +221,6 @@ def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     parsed_timestamp = parser.parse(timestamp_str).replace(tzinfo=None).isoformat().rsplit(":",maxsplit=1)[0]
     return parsed_timestamp
 
-async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
-    """
-        Gets a dict of this shape: {"ids": list[Alert], "ids2": list[Alert], ...}
-        returns a dict like : {ts-src_ip-src_port-dst_ip-dst_port: {"ids1": list[Alert], "ids2": list[Alert]}}
-    """
-    common_alerts = {}
-    for container_name, alerts in alerts_dict.items():
-        for alert in alerts:
-            timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
-            key = (timestamp, source_ip, source_port, destination_ip, destination_port)
-            common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
-    return common_alerts
 
 
 def get_length_of_nested_dict(d: dict):

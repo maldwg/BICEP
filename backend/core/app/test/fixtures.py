@@ -264,4 +264,14 @@ def mock_alerts():
                     type= "test alert 3",
                     message = "Test alert 3 message"
         )
-    return [alert1,alert2,alert3]
+    alert4 = Alert(
+                    time= "2025-01-01T14:00:00Z",
+                    destination_ip= "0.0.0.1",
+                    destination_port= "10230",
+                    source_ip= "10.0.0.1",
+                    source_port= "5678",
+                    severity= 0,
+                    type= "test alert 4",
+                    message = "Test alert 4 message"
+        )
+    return [alert1,alert2,alert3,alert4]

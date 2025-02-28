@@ -1,7 +1,9 @@
 from ...bicep_utils.models.ids_base import Alert
 from ...logger import LOGGER
+from ...utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
 
-async def majority_vote(common_alerts: dict, ensemble) -> list[Alert]:
+async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
+    common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
     ids_container_count = len(ensemble.ensemble_ids)
     majority_threshold = ids_container_count / 2
     majority_voted_alerts = []
@@ -22,4 +24,18 @@ async def majority_vote(common_alerts: dict, ensemble) -> list[Alert]:
             container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
     LOGGER.debug(f"length of total majority voted alerts is {len(majority_voted_alerts)}")
     return majority_voted_alerts
+
+
+async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
+    """
+        Gets a dict of this shape: {"ids": list[Alert], "ids2": list[Alert], ...}
+        returns a dict like : {ts-src_ip-src_port-dst_ip-dst_port: {"ids1": list[Alert], "ids2": list[Alert]}}
+    """
+    common_alerts = {}
+    for container_name, alerts in alerts_dict.items():
+        for alert in alerts:
+            timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
+            key = (timestamp, source_ip, source_port, destination_ip, destination_port)
+            common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
+    return common_alerts
 
