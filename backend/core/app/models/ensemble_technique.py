@@ -5,7 +5,6 @@ from ..database import Base
 from ..logger import LOGGER
 from .ensemble_techniques_implementation import *
 import importlib
-from ..database import get_db_session_context
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import os 
