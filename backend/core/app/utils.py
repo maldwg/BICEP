@@ -147,9 +147,12 @@ async def calculate_and_add_dataset(data_file, labels_file, name, description, d
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
     dataset_storage_location = f"{base_path}/{name}/{uid}"
-    
-    data_file_path = f"{dataset_storage_location}/dataset.pcap"
-    labels_file_path = f"{dataset_storage_location}/dataset.csv"
+
+    data_file_ending = data_file.filename.split["."][-1]
+    labels_file_ending = labels_file.filename.split["."][-1]
+
+    data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
+    labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"
 
     await create_directory(dataset_storage_location)
     await save_file_to_disk(data_file, data_file_path)
@@ -247,3 +250,7 @@ async def read_data_file(file_path):
     async with aiofiles.open(file_path, 'rb') as file:
         data_file = await file.read()
         return data_file
+    
+
+def directory_is_empty(path):
+    return True if len(os.listdir(path)) == 0 else False

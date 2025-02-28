@@ -14,6 +14,7 @@ from app.models.ids_container import IdsContainer
 from app.test.fixtures import *
 import shutil
 import os
+import pathlib
 
 @pytest.mark.asyncio
 async def test_get_all_ds_types(db_session_fixture: DatabaseSessionFixture):
@@ -238,6 +239,23 @@ async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
     shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv")
     dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap"
     dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv"
+    result = await remove_dataset(id=dataset_id, db=db_session)
+    assert result.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_remove_dataset_with_other_dataset_in_same_location(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    dataset = await db_session_fixture.get_dataset_model()
+    dataset_id = 1
+    pathlib.Path(f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1").mkdir(parents=True)
+    pathlib.Path(f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2").mkdir(parents=True)
+    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.pcap")
+    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.csv")
+    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2/sample_data.pcap")
+    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2/sample_data.csv")
+    dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.pcap"
+    dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.csv"
     result = await remove_dataset(id=dataset_id, db=db_session)
     assert result.status_code == 204
 

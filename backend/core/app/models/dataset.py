@@ -31,15 +31,19 @@ async def get_all_datasets(db: AsyncSession):
     return result.scalars().all()  
 
 async def remove_dataset_by_id(db: AsyncSession, id: int):
-    from ..utils import remove_directory
+    from ..utils import remove_directory, directory_is_empty
     dataset: Dataset = await get_dataset_by_id(db, id)
     if dataset:
-        print(dataset.labels_file_path)
-        directory = "/".join(dataset.labels_file_path.split("/")[:-1])
-        print(directory)
-        remove_directory(directory)
+        dataset_directory = "/".join(dataset.labels_file_path.split("/")[:-1])
+        remove_directory(dataset_directory)
+        # dataset_parent_directory: 
+        # datasets are saved like so: dataset-name/uuid/files.fileending
+        dataset_parent_directory = "/".join(dataset.labels_file_path.split("/")[:-2])
+        if directory_is_empty(dataset_parent_directory):
+             remove_directory(dataset_directory)
         await db.delete(dataset)
         await db.commit()
+
 async def add_dataset(db: AsyncSession, dataset: Dataset):
         db.add(dataset)
         await db.commit() 
