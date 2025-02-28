@@ -54,7 +54,7 @@ async def remove_config( id: int, db=Depends(get_db)):
 async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
     file_ending = configuration.filename.split(".")[-1]
     if not file_type_is_accepted(file_type=file_type, file_ending=file_ending):
-        return JSONResponse({"message": f"file in {file_ending} format is not accepted as {file_type} "}, status_code=500)
+        return JSONResponse({"error": f"file in {file_ending} format is not accepted as {file_type}"}, status_code=500)
     # For rulesets and general configurations
     content = await configuration.read()  
     db_configuration = Configuration(
@@ -72,9 +72,9 @@ async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadF
     data_file_ending = data_file.filename.split(".")[-1]
     labels_file_ending = labels_file.filename.split(".")[-1]
     if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=data_file_ending):
-        return JSONResponse({"message": f"file in {data_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
+        return JSONResponse({"error": f"file in {data_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
     if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=labels_file_ending):
-        return JSONResponse({"message": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
+        return JSONResponse({"error": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
     # For rulesets and general configurations
     dataset_type = await get_dataset_type_by_id(db, int(dataset_type_id))
     data_file = await data_file.read()

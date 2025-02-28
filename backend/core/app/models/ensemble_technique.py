@@ -8,7 +8,7 @@ import importlib
 from ..database import get_db_session_context
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+import os 
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 
@@ -21,13 +21,14 @@ class EnsembleTechnique(Base):
 
     async def execute_technique_by_name_on_alerts(self, alerts_dict: dict, ensemble):
         module = self._import_ensemble_technique_module()
+        print(module)
         func = getattr(module, self.function_name)
         common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
         return await func(common_alerts=common_alerts, ensemble=ensemble)
 
     def _import_ensemble_technique_module(self):
         # in the container the code is injected as backend, not as app, therefor backend.models.... 
-        module_name = f"backend.models.ensemble_techniques_implementation.{self.function_name.lower()}" 
+        module_name = f"app.models.ensemble_techniques_implementation.{self.function_name.lower()}" 
         try:
             module = importlib.import_module(module_name)
             return module
