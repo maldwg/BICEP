@@ -140,6 +140,7 @@ async def db_session_fixture():
     mock_ids_container.id=1
     mock_ids_container.status=STATUS.IDLE.value
     mock_ids_container.name="container-0"
+    mock_ids_container.configuration_id = 1
     mock_ids_container.description="Test description"
     mock_ids_container.host_system = mock_docker_host_system
     mock_ids_container.is_available = AsyncMock(return_value=True)

@@ -90,3 +90,37 @@ def test_get_container_http_url_proper_host(mock_ids_container: IdsContainer):
     mock_ids_container.host_system.host = "my-custom-dns-name"
     docker_host = mock_ids_container.get_container_http_url()
     assert docker_host == f"http://{mock_ids_container.host_system.host}:{mock_ids_container.port}"
+
+
+
+@pytest.mark.asyncio
+async def test_update_container_existing( db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_container = await db_session_fixture.get_ids_container_model()
+    container_update = IdsContainerUpdate(id=mock_container.id, configuration_id=2, ruleset_id=3, description="123-Test")
+    await update_container(db=db_session, container=container_update)
+    
+    assert mock_container is not None
+    assert mock_container.configuration_id == 2
+    assert mock_container.ruleset_id == 3
+    assert mock_container.description=="123-Test"
+
+@pytest.mark.asyncio
+async def test_update_container_not_existing( db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    container_update = IdsContainerUpdate(id=999, configuration_id=2, ruleset_id=3, description="123-Test") 
+    response = await update_container(db=db_session, container=container_update)
+    
+    assert response is None
+
+@pytest.mark.asyncio
+async def test_update_container_no_changes( db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_container = await db_session_fixture.get_ids_container_model()
+    container_update = IdsContainerUpdate(id=mock_container.id, configuration_id=mock_container.configuration_id, ruleset_id=mock_container.ruleset_id, description=mock_container.description)
+    await update_container(db=db_session, container=container_update)
+    
+    assert mock_container is not None
+    assert mock_container.configuration_id == mock_container.configuration_id
+    assert mock_container.ruleset_id == mock_container.ruleset_id
+    assert mock_container.description==mock_container.description
