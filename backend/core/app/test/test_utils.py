@@ -63,7 +63,7 @@ async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixt
     dataset_storage_location = f"{TEST_DIR}/{name}"
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
     try:
-        await calculate_and_add_dataset(data_file_in_bytes, labels_file_in_bytes, name, description, dataset_type, db_session )
+        await calculate_and_add_dataset(data_file_in_bytes, "pcap", labels_file_in_bytes, "csv", name, description, dataset_type, db_session )
     finally:
         shutil.rmtree(dataset_storage_location)
 

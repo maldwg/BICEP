@@ -137,7 +137,7 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file, data_file_ending, labels_file, labels_file_ending, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
@@ -146,11 +146,8 @@ async def calculate_and_add_dataset(data_file, labels_file, name, description, d
 
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
-    dataset_storage_location = f"{base_path}/{name}/{uid}"
-
-    data_file_ending = data_file.filename.split["."][-1]
-    labels_file_ending = labels_file.filename.split["."][-1]
-
+    dataset_storage_location = f"{base_path}/{name}/{uid}" 
+    
     data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
     labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"
 
