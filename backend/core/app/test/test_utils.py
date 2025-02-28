@@ -122,3 +122,22 @@ async def test_normalize_and_parse_alert_timestamp():
     timestamp = "2025-01-01T00:00:00Z"
     normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp)
     assert normalized_timestamp == "2025-01-01T00:00" 
+
+
+
+@pytest.mark.asyncio
+async def test_get_item_counts_of_dict():
+    test_dict = {
+        "a": [1, 2, 3],
+        "b": [4, 5],
+        "c": []
+    }
+    result_five_element_dict = get_item_counts_of_dict(test_dict)
+
+    empty_dict = {}
+    result_empty_dict = get_item_counts_of_dict(empty_dict)
+
+    single_item_dict = {"a": [1]}
+    result_single_dict = get_item_counts_of_dict(single_item_dict)
+
+    assert (5, 1, 0) == (result_five_element_dict, result_single_dict, result_empty_dict)
