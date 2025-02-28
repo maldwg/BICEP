@@ -35,12 +35,15 @@ async def remove_dataset_by_id(db: AsyncSession, id: int):
     dataset: Dataset = await get_dataset_by_id(db, id)
     if dataset:
         dataset_directory = "/".join(dataset.labels_file_path.split("/")[:-1])
+        print(dataset_directory)
         remove_directory(dataset_directory)
         # dataset_parent_directory: 
         # datasets are saved like so: dataset-name/uuid/files.fileending
         dataset_parent_directory = "/".join(dataset.labels_file_path.split("/")[:-2])
+        print(dataset_parent_directory)
         if directory_is_empty(dataset_parent_directory):
-             remove_directory(dataset_directory)
+             print("remove")
+             remove_directory(dataset_parent_directory)
         await db.delete(dataset)
         await db.commit()
 

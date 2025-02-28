@@ -234,13 +234,18 @@ async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     dataset = await db_session_fixture.get_dataset_model()
     dataset_id = 1
-    os.mkdir(f"{TESTS_BASE_DIR}/testfiles/tmpdir")
-    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap")
-    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv")
-    dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.pcap"
-    dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/tmpdir/sample_data.csv"
+    dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1"
+    pathlib.Path(dataset_path).mkdir(parents=True)
+    shutil.copyfile(dataset.data_file_path, f"{dataset_path}/sample_data.pcap")
+    shutil.copyfile(dataset.labels_file_path, f"{dataset_path}/sample_data.csv")
+    dataset.data_file_path=f"{dataset_path}/sample_data.pcap"
+    dataset.labels_file_path=f"{dataset_path}/sample_data.csv"
     result = await remove_dataset(id=dataset_id, db=db_session)
     assert result.status_code == 204
+    assert os.path.isdir(f"{dataset_path}") == False
+    dataset_path_parent_dir = "/".join(dataset_path.split("/")[:-1])
+    print(dataset_path_parent_dir)
+    assert os.path.isdir(f"{dataset_path_parent_dir}") == False
 
 
 @pytest.mark.asyncio
@@ -248,16 +253,22 @@ async def test_remove_dataset_with_other_dataset_in_same_location(db_session_fix
     db_session = await db_session_fixture.get_db_session()
     dataset = await db_session_fixture.get_dataset_model()
     dataset_id = 1
-    pathlib.Path(f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1").mkdir(parents=True)
-    pathlib.Path(f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2").mkdir(parents=True)
-    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.pcap")
-    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.csv")
-    shutil.copy(dataset.data_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2/sample_data.pcap")
-    shutil.copy(dataset.labels_file_path, f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2/sample_data.csv")
-    dataset.data_file_path=f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.pcap"
-    dataset.labels_file_path=f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1/sample_data.csv"
+    first_dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1"
+    second_dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2"
+    pathlib.Path(first_dataset_path).mkdir(parents=True)
+    pathlib.Path(second_dataset_path).mkdir(parents=True)
+    shutil.copyfile(dataset.data_file_path, f"{first_dataset_path}/sample_data.pcap")
+    shutil.copyfile(dataset.labels_file_path, f"{first_dataset_path}/sample_data.csv")
+    shutil.copyfile(dataset.data_file_path, f"{second_dataset_path}/sample_data.pcap")
+    shutil.copyfile(dataset.labels_file_path, f"{second_dataset_path}/sample_data.csv")
+    dataset.data_file_path=f"{first_dataset_path}/sample_data.pcap"
+    dataset.labels_file_path=f"{first_dataset_path}/sample_data.csv"
     result = await remove_dataset(id=dataset_id, db=db_session)
     assert result.status_code == 204
+    dataset_path_parent_dir = "/".join(first_dataset_path.split("/")[:-1])
+    print(dataset_path_parent_dir)
+    assert os.path.isdir(f"{dataset_path_parent_dir}") == True
+    shutil.rmtree(dataset_path_parent_dir)
 
 
 @pytest.mark.asyncio
