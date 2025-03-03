@@ -21,7 +21,7 @@ class EnsembleTechnique(Base):
         module = self._import_ensemble_technique_module()
         func = getattr(module, self.function_name)
         # common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
-        return await func(common_alerts=alerts_dict, ensemble=ensemble)
+        return await func(alerts_dict=alerts_dict, ensemble=ensemble)
 
     def _import_ensemble_technique_module(self):
         # in the container the code is injected as backend, not as app, therefor backend.models.... 
