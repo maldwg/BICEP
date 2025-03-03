@@ -137,7 +137,7 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_and_add_dataset(data_file, labels_file, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file, data_file_ending, labels_file, labels_file_ending, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
     byte_stream = io.BytesIO(labels_file)
     text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
@@ -146,10 +146,10 @@ async def calculate_and_add_dataset(data_file, labels_file, name, description, d
 
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
-    dataset_storage_location = f"{base_path}/{name}/{uid}"
+    dataset_storage_location = f"{base_path}/{name}/{uid}" 
     
-    data_file_path = f"{dataset_storage_location}/dataset.pcap"
-    labels_file_path = f"{dataset_storage_location}/dataset.csv"
+    data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
+    labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"
 
     await create_directory(dataset_storage_location)
     await save_file_to_disk(data_file, data_file_path)
@@ -221,18 +221,6 @@ def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
     parsed_timestamp = parser.parse(timestamp_str).replace(tzinfo=None).isoformat().rsplit(":",maxsplit=1)[0]
     return parsed_timestamp
 
-async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
-    """
-        Gets a dict of this shape: {"ids": list[Alert], "ids2": list[Alert], ...}
-        returns a dict like : {ts-src_ip-src_port-dst_ip-dst_port: {"ids1": list[Alert], "ids2": list[Alert]}}
-    """
-    common_alerts = {}
-    for container_name, alerts in alerts_dict.items():
-        for alert in alerts:
-            timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
-            key = (timestamp, source_ip, source_port, destination_ip, destination_port)
-            common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
-    return common_alerts
 
 
 def get_length_of_nested_dict(d: dict):
@@ -247,3 +235,7 @@ async def read_data_file(file_path):
     async with aiofiles.open(file_path, 'rb') as file:
         data_file = await file.read()
         return data_file
+    
+
+def directory_is_empty(path):
+    return True if len(os.listdir(path)) == 0 else False

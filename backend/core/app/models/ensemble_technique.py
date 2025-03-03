@@ -1,11 +1,9 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, Session
-from ..utils import combine_alerts_for_ids_in_alert_dict
 from ..database import Base
 from ..logger import LOGGER
 from .ensemble_techniques_implementation import *
 import importlib
-from ..database import get_db_session_context
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import os 
@@ -21,10 +19,9 @@ class EnsembleTechnique(Base):
 
     async def execute_technique_by_name_on_alerts(self, alerts_dict: dict, ensemble):
         module = self._import_ensemble_technique_module()
-        print(module)
         func = getattr(module, self.function_name)
-        common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
-        return await func(common_alerts=common_alerts, ensemble=ensemble)
+        # common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
+        return await func(alerts_dict=alerts_dict, ensemble=ensemble)
 
     def _import_ensemble_technique_module(self):
         # in the container the code is injected as backend, not as app, therefor backend.models.... 

@@ -34,7 +34,7 @@ services:
     build:
       context: ./backend/core
     volumes:
-      - ./backend/core/app:/opt/backend
+      - ./backend/core/app:/opt/app
     command: fastapi dev main.py --host 0.0.0.0 --port 8000
     ports:
       - 8000:8000

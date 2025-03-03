@@ -140,6 +140,8 @@ async def db_session_fixture():
     mock_ids_container.id=1
     mock_ids_container.status=STATUS.IDLE.value
     mock_ids_container.name="container-0"
+    mock_ids_container.configuration_id = 1
+    mock_ids_container.ruleset_id = 2
     mock_ids_container.description="Test description"
     mock_ids_container.host_system = mock_docker_host_system
     mock_ids_container.is_available = AsyncMock(return_value=True)
@@ -153,11 +155,13 @@ async def db_session_fixture():
     mock_ensemble = MagicMock(spec=Ensemble)
     mock_ensemble.id=1
     mock_ensemble.name="Ensemble-1"
+    mock_ensemble.description="Test-Description"
     mock_ensemble.ensemble_technique=mock_ensemble_technique
     mock_ensemble_ids = MagicMock(spec=EnsembleIds)
     mock_ensemble_ids.id=1
     mock_ensemble_ids.ensemble_id=1
     mock_ensemble_ids.ids_container_id=1
+    mock_ensemble.technique_id = 1
 
     async def execute_side_effect(stmt):
         if isinstance(stmt, Select):
@@ -260,4 +264,14 @@ def mock_alerts():
                     type= "test alert 3",
                     message = "Test alert 3 message"
         )
-    return [alert1,alert2,alert3]
+    alert4 = Alert(
+                    time= "2025-01-01T14:00:00Z",
+                    destination_ip= "0.0.0.1",
+                    destination_port= "10230",
+                    source_ip= "10.0.0.1",
+                    source_port= "5678",
+                    severity= 0,
+                    type= "test alert 4",
+                    message = "Test alert 4 message"
+        )
+    return [alert1,alert2,alert3,alert4]

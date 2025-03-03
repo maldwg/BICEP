@@ -63,7 +63,7 @@ async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixt
     dataset_storage_location = f"{TEST_DIR}/{name}"
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
     try:
-        await calculate_and_add_dataset(data_file_in_bytes, labels_file_in_bytes, name, description, dataset_type, db_session )
+        await calculate_and_add_dataset(data_file_in_bytes, "pcap", labels_file_in_bytes, "csv", name, description, dataset_type, db_session )
     finally:
         shutil.rmtree(dataset_storage_location)
 
@@ -141,3 +141,20 @@ async def test_get_item_counts_of_dict():
     result_single_dict = get_item_counts_of_dict(single_item_dict)
 
     assert (5, 1, 0) == (result_five_element_dict, result_single_dict, result_empty_dict)
+
+
+def test_check_directory_is_empty_with_empty_dir():
+    path = "/tmp/testing-temporary-empty-dir"
+    os.mkdir(path)
+    is_directory_empty = directory_is_empty(path)
+    assert is_directory_empty == True
+    shutil.rmtree(path)
+
+def test_check_directory_is_empty_with_filled_dir():
+    path = "/tmp/testing-temporary-empty-dir"
+    os.mkdir(path)
+    open(path+"/test-file.txt", "a").close()
+    is_directory_empty = directory_is_empty(path)
+    assert is_directory_empty == False
+    shutil.rmtree(path)
+

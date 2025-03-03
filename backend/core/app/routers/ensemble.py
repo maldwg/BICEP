@@ -63,7 +63,6 @@ async def remove_ensemble_endpoint(ensemble_id: int, db=Depends(get_db)):
         else:
             message=f" Did not remove container {container.id} from ensemble {ensemble.id} successfully"
             responses.append(create_generic_response_message_for_ensemble(message, 500))    
-    LOGGER.debug(responses)
     await remove_ensemble(db, ensemble)
     return JSONResponse(content={"content": responses}, status_code=200)
 
@@ -140,9 +139,7 @@ async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData,
     await update_sendig_logs_status(db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.IDLE.value)
     await update_container_status(db, STATUS.IDLE.value, container)
     if await ensemble.container_is_last_one_running(db=db, container=container):
-        LOGGER.debug(f"container is the last one {container.name}, therefor shutting down the eneseble")
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)     
-        ensemble: Ensemble = await get_ensemble_by_id(db, analysisFinishedData.ensemble_id) 
         await ensemble.unset_analysis_id(db)
     return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
@@ -186,15 +183,12 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
     if analysis_is_static:
         LOGGER.debug("Static analysis data received")
         await update_sendig_logs_status(db=db, container=container, ensemble=ensemble,status=ANALYSIS_STATUS.IDLE.value)
-        container: IdsContainer = await get_container_by_id(db=db, id=alert_data.container_id)
-        ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
-
         if not await last_container_sending_logs(db=db, container=container, ensemble=ensemble):
             LOGGER.debug(f"Successfully pushed alerts for container {container.name}")
-            LOGGER.debug(f"{container.name} I am not the last Container")
+            LOGGER.debug(f"{container.name} is not the last running container")
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200) 
         else:
-            LOGGER.debug(f"{container.name} I am the last container running")
+            LOGGER.debug(f"{container.name} is the last container running")
             # get all alerts including the ones form the current container
             all_alerts: dict = await get_all_alerts_for_ensemble_from_analysis_id(ensemble.current_analysis_id)
             # calculate which alerts the ensemble now alerts according to its technique
@@ -210,9 +204,6 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
     else:
         LOGGER.debug("Network analysis data received")
         LOGGER.debug(f"{container.name} got {len(alerts)}")
-        await update_sendig_logs_status(db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.LOGS_SENT.value)
-        container: IdsContainer = await get_container_by_id(db=db,id=alert_data.container_id)
-        ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
         if not await last_container_sending_logs(db=db, container=container, ensemble=ensemble):
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200)       
         else:
@@ -228,7 +219,6 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             # update the satus of all containers again to be processing
             all_containers_in_ensemble = await ensemble.get_assigned_containers(db)
             for c in all_containers_in_ensemble:
-                # await db.refresh(c)
                 await update_sendig_logs_status(db=db, container=c, ensemble=ensemble, status=ANALYSIS_STATUS.PROCESSING.value)
             # the refresh here is mandatory as the udpate_sending logs because of lazy loading
             message = f"Successfully pushed alerts for ensemble {ensemble.name}"

@@ -210,3 +210,76 @@ async def test_container_is_not_last_one_running(mock_ensemble: Ensemble, db_ses
     second_mock_container.is_busy = AsyncMock(return_value=True)
     mock_ensemble.get_assigned_containers = AsyncMock(return_value=[mock_container, second_mock_container])
     assert await mock_ensemble.container_is_last_one_running(container=mock_container, db=db_session) is False
+
+
+@pytest.mark.asyncio
+async def test_update_ensemble_existing(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()    
+    
+    ensemble_update = EnsembleUpdate(
+        id=mock_ensemble.id, 
+        container_ids=[1, 2, 3],
+        technique_id=2,
+        description= "Test_Ensemble",
+        name="New-Name"
+    )
+    
+    response = await update_ensemble(db=db_session, ensemble=ensemble_update)
+    
+    assert mock_ensemble is not None
+    assert mock_ensemble.name == ensemble_update.name
+    assert mock_ensemble.technique_id == ensemble_update.technique_id
+    assert mock_ensemble.description == ensemble_update.description
+
+
+@pytest.mark.asyncio
+async def test_update_ensemble_not_existing(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    # necessary to overwrite the db query so that the returned ensemble is None instead of the default fixture when executed in the method to test
+    async def execute_side_effect(stmt):
+        if isinstance(stmt, Select):
+            model = stmt.column_descriptions[0]['type']
+            mock_result = MagicMock()
+            if model == Ensemble:
+                mock_result.scalar_one_or_none.return_value = None
+            else:
+                raise ValueError(f"Unsupported query: {stmt}")
+
+            return mock_result
+
+        raise ValueError(f"Unsupported query type: {stmt}")
+
+    db_session.execute.side_effect = execute_side_effect
+
+
+    ensemble_update = EnsembleUpdate(
+        id=999, 
+        container_ids=[1, 2, 3],
+        technique_id=2,
+        description= "Test_Ensemble",
+        name="New-Name"
+    )    
+    response = await update_ensemble(db=db_session, ensemble=ensemble_update)
+    assert response is None
+
+@pytest.mark.asyncio
+async def test_update_ensemble_no_changes(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ensemble = await db_session_fixture.get_ensemble_model()    
+    old_technique=mock_ensemble.technique_id
+    old_description=mock_ensemble.description
+    old_name=mock_ensemble.name
+
+    ensemble_update = EnsembleUpdate(
+        id=1, 
+        container_ids=[1, 2],
+        technique_id=1,
+        description= "Test-Description",
+        name="Ensemble-1"
+    )        
+    response = await update_ensemble(db=db_session, ensemble=ensemble_update)
+    
+    assert old_technique==mock_ensemble.technique_id
+    assert old_description==mock_ensemble.description
+    assert old_name==mock_ensemble.name

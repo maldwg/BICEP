@@ -1,4 +1,4 @@
-from ..database import Base, get_db_session_context
+from ..database import Base
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.future import select

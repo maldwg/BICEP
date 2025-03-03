@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 
-from ..database import Base, get_db_session_context
+from ..database import Base
 from ..utils import ANALYSIS_STATUS
 from sqlalchemy.future import select
 from ..logger import LOGGER
@@ -30,6 +30,7 @@ async def get_all_ensemble_container(db: AsyncSession):
     return result.scalars().all() 
 
 async def last_container_sending_logs(db: AsyncSession ,container, ensemble):
+    from datetime import datetime
     stmt = select(EnsembleIds).where(
         EnsembleIds.ensemble_id == ensemble.id,
         EnsembleIds.ids_container_id != container.id
@@ -37,6 +38,8 @@ async def last_container_sending_logs(db: AsyncSession ,container, ensemble):
     result = await db.execute(stmt)
     analysis_status_of_other_containers_in_ensemble = result.scalars().all()
     for entry in analysis_status_of_other_containers_in_ensemble:
+        # necessary to refresh the entity as otherwise ensembles can work on oudated data and  perceive the status incorrectly
+        await db.refresh(entry)
         if entry.status == ANALYSIS_STATUS.PROCESSING.value:
             return False
     return True
@@ -50,6 +53,8 @@ async def update_sendig_logs_status(db: AsyncSession, container, ensemble, statu
     result = await db.execute(stmt)
     entry: EnsembleIds = result.scalar_one_or_none()  
     if entry:
+        # necessary to refresh the entity as otherwise ensembles can work on oudated data and set the status incorrectly
+        await db.refresh(entry)
         entry.status = status
-        await db.commit()  #
+        await db.commit()  
         await db.refresh(entry)  

@@ -10,7 +10,7 @@ from ..docker import *
 from ..utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis
 from ..validation.models import IdsContainerUpdate, NetworkAnalysisData
 import uuid
-from ..database import Base, get_db_session_context
+from ..database import Base
 from ..logger import LOGGER
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession

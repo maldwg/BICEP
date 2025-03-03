@@ -6,7 +6,7 @@ from ..utils import ANALYSIS_STATUS,STATUS, read_data_file, create_response_erro
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session, selectinload
 from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
-from ..database import Base, get_db_session_context
+from ..database import Base
 from .ids_container import IdsContainer, update_container_status
 from ..validation.models import EnsembleUpdate
 import httpx 
@@ -198,10 +198,10 @@ async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
     removed_containers = list(filter(lambda x: x not in new_containers, former_containers))
     responses = []
     for container_id in removed_containers:
-        res = await ensemble_db.remove_container(container_id)
+        res = await ensemble_db.remove_container(db, container_id)
         responses.append(res)
     for container_id in added_containers:
-        res = await ensemble_db.add_container(container_id)
+        res = await ensemble_db.add_container(db, container_id)
         responses.append(res)
     
     return responses
