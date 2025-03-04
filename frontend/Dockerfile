@@ -6,7 +6,8 @@ RUN mkdir /opt/frontend
 WORKDIR /opt/frontend
 COPY ./ .
 RUN npm install
-RUN if [ "$PRODUCTION" = "True" ]; then npm run build --configuration=production; else npm run build; fi
+RUN  npm install -g @angular/cli@
+RUN if [ "$PRODUCTION" = "True" ]; then ng build --configuration=production; else ng build --configuration=development; fi
 
 
 FROM nginx:latest

@@ -37,13 +37,14 @@ This fetches the newest version of the submodule for the backend code and is nec
 
 ## Start The Project
 
-The project can be started by running running ```docker compose up```. This will spin up all containers in deevelopment mode. To run the stack in production mode, simply add the env Variable PRODUCTION=True to your shell session or run the following command ```PRODUCTION=True docker compose up```
+The project can be started by running running ```docker compose --env-file environments/env up```. This will spin up all containers in development mode. To run the stack in production mode, simply use the production env file like so: ```docker compose --env-file environments/prod up```
 
 ### Differences Between Production and Development Mode
 The main difference between the two modes is how the Frontend connects to the backend. In development mode, it tries to reach out via "localhost". In Production mode, it uses the host name property to reach out to the services. This allows an user to connect to the fronten remotely i.e. BICEP can be deployed on a remote machine. If Porduction mode has not been enabled in such a setup, the frontend tries to reach the backend services on the localhost of the client, which is false. 
+The development mode is assumed as default. 
+
 > [!Warning]
 > Please not that the production mode currently does not support a distributed setup of the system, i.e. the different services of BICEP NEED to run on the same machine.
-The development mode is assumed as default. 
 
 ## How to Use The Porject
 

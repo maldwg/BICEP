@@ -18,7 +18,5 @@ export class MetricsComponent implements OnInit {
   ngOnInit(): void {
     const unsafeUrl = environment.grafanaUrl + "/d/edv2tl6dk6gaod/bicep?orgId=1";
     this.grafanaDashboardUrl = this.sanitizer.bypassSecurityTrustResourceUrl(unsafeUrl);
-    
-    console.log(this.grafanaDashboardUrl);
   }
 }
