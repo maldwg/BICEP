@@ -1,10 +1,13 @@
 FROM node:latest as build
+ARG PRODUCTION
 
+ENV PRODUCTION=${PRODUCTION}
 RUN mkdir /opt/frontend
 WORKDIR /opt/frontend
 COPY ./ .
 RUN npm install
-RUN npm run build --prod
+RUN  npm install -g @angular/cli@
+RUN if [ "$PRODUCTION" = "True" ]; then ng build --configuration=production; else ng build --configuration=development; fi
 
 
 FROM nginx:latest

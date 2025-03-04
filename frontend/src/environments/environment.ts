@@ -1,3 +1,5 @@
 export const environment = {
-    backendUrl: 'http://localhost:8000'
-  };
+  production: false,
+  backendUrl: 'http://localhost:8000',
+  grafanaUrl: 'http://localhost:3000'
+};
