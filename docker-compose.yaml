@@ -1,11 +1,17 @@
+version: '3.4'
+
 services:
   angular:
     build:
       context: ./frontend
+      args:
+        - PORDUCTION=${PRODUCTION:-False}
     ports:
       - 8080:80
     networks:
       - bicep
+    environment:
+      - PORDUCTION=${PRODUCTION:-False}
   grafana:
     build:
       context: ./grafana
@@ -49,7 +55,7 @@ services:
       - TZ=UTC
       - UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN=600
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
-
+      - PORDUCTION=${PRODUCTION:-False}
   database:
     build:
       context: ./database

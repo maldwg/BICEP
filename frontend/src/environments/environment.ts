@@ -1,4 +1,5 @@
 export const environment = {
-  backendUrl: 'http://' + window.location.hostname + ':8000',
-  grafanaUrl: 'http://' + window.location.hostname + ':3000'
+  production: false,
+  backendUrl: 'http://localhost:8000',
+  grafanaUrl: 'http://localhost:3000'
 };

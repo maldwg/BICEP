@@ -1,10 +1,12 @@
 FROM node:latest as build
+ARG PRODUCTION
 
+ENV PRODUCTION=${PRODUCTION}
 RUN mkdir /opt/frontend
 WORKDIR /opt/frontend
 COPY ./ .
 RUN npm install
-RUN npm run build --prod
+RUN if [ "$PRODUCTION" = "True" ]; then npm run build --configuration=production; else npm run build; fi
 
 
 FROM nginx:latest
