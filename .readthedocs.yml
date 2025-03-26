@@ -11,6 +11,7 @@ build:
     python: "3.13"
   jobs:
     pre_build:
+      - git submodule set-url backend/core/app/bicep_utils https://github.com/maldwg/BICEP_Utils.git
       - git submodule update --init --recursive
       - sphinx-apidoc -T -M -o docs/design backend/core/app/bicep_utils/
 # Build documentation in the "docs/" directory with Sphinx
