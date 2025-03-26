@@ -6,15 +6,16 @@
 
 
 </div>
-
 <br>
-
 <div align="center">
-
+<a href="https://bicep.readthedocs.io/en/latest/"><i>View Docs</i></a>
+<br>
+<br>
 
 
 
 ![](./assets/Biceps_logo.gif)
+
 
 </div>
 
