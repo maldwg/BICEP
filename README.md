@@ -8,7 +8,7 @@
 </div>
 <br>
 <div align="center">
-<a href="https://bicep.readthedocs.io/en/latest/"><i>View Docs</i></a>
+<a href="https://bicep.readthedocs.io/en/latest/"><i><u>View Docs</i></u></a>
 <br>
 <br>
 
