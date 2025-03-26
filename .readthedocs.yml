@@ -11,6 +11,7 @@ build:
     python: "3.13"
   jobs:
     pre_build:
+      - git submodule update --init --recursive
       - sphinx-apidoc -T -M -o docs/design backend/core/app/bicep_utils/
 # Build documentation in the "docs/" directory with Sphinx
 
