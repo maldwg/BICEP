@@ -6,4 +6,4 @@ Design
     :caption: packages
 
     architecture
-    bicep_utils.models
+    Generic Classes <bicep_utils.models>
