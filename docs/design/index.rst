@@ -7,3 +7,5 @@ Design
 
     architecture
     Generic Classes <bicep_utils.models>
+    Ensmebling Techniques <models.ensemble_techniques_implementation>
+    Dataset Formats <models.dataset_types_implementation>
