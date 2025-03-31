@@ -2,11 +2,16 @@
 Usage
 ======
 
+Below you will find the documentation links to several usage related topics which explain, for instance, how to run the framework, how to setup containers and ensembles, etc.  
+
 .. toctree::
     :maxdepth: 1
-    :caption: packages
+    :caption: Subsections
 
-    configuration
     prerequisites
-    setup
     start
+    configuration
+    usage
+    supported_ids
+    extend
+    
