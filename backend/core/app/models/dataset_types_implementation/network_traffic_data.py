@@ -1,7 +1,7 @@
-from ...logger import LOGGER
+from app.logger import LOGGER
 import csv
-from ...utils import normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict
-from ...bicep_utils.models.ids_base import Alert
+from app.utils import normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict
+from app.bicep_utils.models.ids_base import Alert
 
 #################################################
 ### Methods for Network traffic dataset types ###

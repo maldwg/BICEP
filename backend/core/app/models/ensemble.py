@@ -1,17 +1,16 @@
-import asyncio
 from http.client import HTTPResponse
 import json
 import uuid
-from ..utils import ANALYSIS_STATUS,STATUS, read_data_file, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
+from app.utils import ANALYSIS_STATUS,STATUS, read_data_file, create_response_error ,create_response_message, deregister_container_from_ensemble, parse_response_for_triggered_analysis
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session, selectinload
-from .ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
-from ..database import Base
-from .ids_container import IdsContainer, update_container_status
-from ..validation.models import EnsembleUpdate
+from app.models.ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
+from app.database import Base
+from app.models.ids_container import IdsContainer, update_container_status
+from app.validation.models import EnsembleUpdate
 import httpx 
 from sqlalchemy.future import select
-from ..logger import LOGGER
+from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class Ensemble(Base):
@@ -28,7 +27,7 @@ class Ensemble(Base):
     ensemble_technique = relationship('EnsembleTechnique', back_populates='ensemble', lazy="selectin")
 
     async def add_container(self, db: AsyncSession, container_id: int):
-        from .ids_container import IdsContainer, get_container_by_id
+        from app.models.ids_container import IdsContainer, get_container_by_id
         ensemble_ids = EnsembleIds(
             ensemble_id=self.id,
             ids_container_id=container_id,
@@ -45,7 +44,7 @@ class Ensemble(Base):
         return response
     
     async def remove_container(self, db: AsyncSession, container_id: int):
-        from .ids_container import IdsContainer, get_container_by_id
+        from app.models.ids_container import IdsContainer, get_container_by_id
         ensemble_ids = await get_ensemble_ids_by_ids(db, self.id, container_id)
         container: IdsContainer = await get_container_by_id(db, container_id)
         response = await deregister_container_from_ensemble(db, container)
@@ -61,7 +60,7 @@ class Ensemble(Base):
     
     async def get_assigned_containers(self, db: AsyncSession):
         # refactor to not rely on the relationship shit
-        from .ids_container import IdsContainer
+        from app.models.ids_container import IdsContainer
         ensemble_ids = await self.get_ensemble_ids(db)
         id_list = [e_ids.ids_container_id for e_ids in ensemble_ids]
         stmt = select(IdsContainer).where(IdsContainer.id.in_(id_list))
@@ -71,8 +70,8 @@ class Ensemble(Base):
 
 
     async def start_static_analysis(self, db: AsyncSession, dataset_id: int):
-        from .ids_container import IdsContainer          
-        from .dataset import get_dataset_by_id 
+        from app.models.ids_container import IdsContainer          
+        from app.models.dataset import get_dataset_by_id 
         LOGGER.debug(f"{dataset_id}")
         dataset = await get_dataset_by_id(db, dataset_id)
         containers: list[IdsContainer] = await self.get_assigned_containers(db)
@@ -110,7 +109,7 @@ class Ensemble(Base):
 
 
     async def start_network_analysis(self, db: AsyncSession, network_analysis_data):
-        from .ids_container import IdsContainer
+        from app.models.ids_container import IdsContainer
         containers: list[IdsContainer] = await self.get_assigned_containers(db)
         responses = []
         for container in containers:

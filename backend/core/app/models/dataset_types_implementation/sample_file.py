@@ -5,7 +5,7 @@ This file is supposed to show how to add a new dataset type to the framework
 3. implement the following methods and be aware of the naming convetion!!
 """
 
-from ...bicep_utils.models.ids_base import Alert
+from app.bicep_utils.models.ids_base import Alert
 
 def your_prefix_get_benign_and_malicious_counts_of_labels_file(labels_file_text_stream):
     """

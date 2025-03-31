@@ -37,9 +37,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # # -- Options for HTML output -------------------------------------------------
 # # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_book_theme"
+html_theme = "furo"
 html_theme_options = {
     "use_repository_button": True,
-    "repository_url": "https://github.com/stefanDeveloper/heiDGAF",
+    "repository_url": "https://github.com/maldwg/BICEP",
 }
 html_logo = "../assets/Biceps_logo.png"

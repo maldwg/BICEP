@@ -4,8 +4,8 @@ import json
 import time
 from datetime import datetime, timedelta,timezone
 import httpx
-from .bicep_utils.models.ids_base import Alert
-from .logger import LOGGER
+from app.bicep_utils.models.ids_base import Alert
+from app.logger import LOGGER
 import asyncio
 from fastapi.responses import JSONResponse
 

@@ -1,16 +1,16 @@
 import asyncio
 import json
 import docker
-from .utils import get_core_host
+from app.utils import get_core_host
 import time
 import httpx
 
 from requests.models import Response
-from .prometheus import push_metrics_to_prometheus
+from app.prometheus import push_metrics_to_prometheus
 
-from .utils import STATUS
+from app.utils import STATUS
 
-from .logger import LOGGER
+from app.logger import LOGGER
 
 def get_docker_client(host_system):
     if "Core" in host_system.name or host_system.host == "localhost":

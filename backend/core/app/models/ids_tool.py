@@ -1,7 +1,6 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Session
-from ..database import Base
+from app.database import Base
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

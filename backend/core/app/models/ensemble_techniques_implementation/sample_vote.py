@@ -4,8 +4,8 @@ The purpose of this smaple file is to give developers a directive howto implemen
 2. create a new python file in this directory here, named exactly as the function_name property you selcted for the database entry
 3. implement an async method called the same as the function_name property you selected
 """
-from ...bicep_utils.models.ids_base import Alert
-from ...logger import LOGGER
+from app.bicep_utils.models.ids_base import Alert
+from app.logger import LOGGER
 
 async def sample(alerts_dict: dict, ensemble) -> list[Alert]:
     """

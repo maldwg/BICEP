@@ -1,6 +1,6 @@
-from ...bicep_utils.models.ids_base import Alert
-from ...logger import LOGGER
-from ...utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
+from app.bicep_utils.models.ids_base import Alert
+from app.logger import LOGGER
+from app.utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
 
 async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
     common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
