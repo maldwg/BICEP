@@ -43,4 +43,4 @@ The project can be started by running running ```docker compose --env-file envir
 
 ## Documentation
 
-Documentation for setup, configuration, usage and contribution is available under ![BICEP-read-the-docs](https://bicep.readthedocs.io/en/latest/)
+Documentation for setup, configuration, usage and contribution is available under [BICEP-read-the-docs](https://bicep.readthedocs.io/en/latest/)
