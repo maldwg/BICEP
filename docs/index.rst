@@ -16,11 +16,11 @@ You did not find your desired IDS to deploy and test ? Feel free to add it to th
 
 Relevant Repositories
 ---------------------
-https://github.com/maldwg/BICEP
-https://github.com/maldwg/BICEP_Utils
-https://github.com/maldwg/BICEP-snort-image
-https://github.com/maldwg/BICEP-slips-image
-https://github.com/maldwg/BICEP-suricata-image
+- `BICEP <https://github.com/maldwg/BICEP>`_
+- `BICEP Utils <https://github.com/maldwg/BICEP_Utils>`_
+- `Snort Image Repository <https://github.com/maldwg/BICEP-snort-image>`_
+- `Slips Image Repository <https://github.com/maldwg/BICEP-slips-image>`_
+- `Suricata Image Repository <https://github.com/maldwg/BICEP-suricata-image>`_
 
 Content
 -------
