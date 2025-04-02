@@ -1,6 +1,6 @@
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 import os
-from .bicep_utils.models.ids_base import Alert
+from app.bicep_utils.models.ids_base import Alert
 import logging
 
 logging.basicConfig(level=logging.INFO)

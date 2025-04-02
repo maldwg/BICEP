@@ -3,15 +3,15 @@ from http.client import HTTPResponse
 import json
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, func, distinct
 from sqlalchemy.orm import relationship, selectinload
-from .ids_tool import get_ids_by_id
+from app.models.ids_tool import get_ids_by_id
 # important, otherwise error when getting all ensemble
-from .ensemble_ids import *
-from ..docker import *
-from ..utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis
-from ..validation.models import IdsContainerUpdate, NetworkAnalysisData
+from app.models.ensemble_ids import *
+from app.docker import *
+from app.utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis
+from app.validation.models import IdsContainerUpdate, NetworkAnalysisData
 import uuid
-from ..database import Base
-from ..logger import LOGGER
+from app.database import Base
+from app.logger import LOGGER
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,7 +35,7 @@ class IdsContainer(Base):
 
 
     async def setup(self, db: AsyncSession):
-        from .configuration import get_config_by_id
+        from app.models.configuration import get_config_by_id
         ids_tool = await get_ids_by_id(db, self.ids_tool_id)
         self.name = f"{ids_tool.name}-{self.port}"
         config = await get_config_by_id(db, self.configuration_id)
@@ -68,12 +68,12 @@ class IdsContainer(Base):
         await db.commit()
 
     async def update_config(self, db: AsyncSession, config_id):
-        from .configuration import Configuration
+        from app.models.configuration import Configuration
         config_file: Configuration = db.query(Configuration).filter(Configuration.id == config_id).first()
         await inject_config(self, config_file)
 
     async def update_ruleset(self, db: AsyncSession, ruleset_id):
-        from  .configuration import Configuration
+        from  app.models.configuration import Configuration
         ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
         await inject_ruleset(self, ruleset_file)
 

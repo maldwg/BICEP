@@ -1,5 +1,5 @@
-from .logger import LOGGER
-from .models.dataset import get_dataset_by_id
+from app.logger import LOGGER
+from app.models.dataset import get_dataset_by_id
 
 async def calculate_evaluation_metrics(db, dataset_id, alerts):
     LOGGER.debug("start calculation of evaluation metrics")

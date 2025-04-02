@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import crud, ids, ensemble
+from app.routers import crud, ids, ensemble
 from contextlib import asynccontextmanager
 
 @asynccontextmanager

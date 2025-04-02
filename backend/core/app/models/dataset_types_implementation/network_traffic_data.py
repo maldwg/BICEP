@@ -1,14 +1,25 @@
-from ...logger import LOGGER
+from app.logger import LOGGER
 import csv
-from ...utils import normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict
-from ...bicep_utils.models.ids_base import Alert
+from app.utils import normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict
+from app.bicep_utils.models.ids_base import Alert
 
 #################################################
 ### Methods for Network traffic dataset types ###
 ### which use pcaps and csv label files       ###
 #################################################
 
-def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_file_text_stream):
+def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_file_text_stream) -> tuple[int, int]:
+    """
+    Method to calculate how many entries of the dataset contain benign and malicious data
+
+    Args:
+        labels_file_text_stream: The text stream of the labels file containing the classes
+    
+    Returns:
+        benign_count (int): Amount of benign data points
+        malicious_count (int): Amount of malicious data points
+
+    """
     benign_count = 0
     malicious_count = 0
     header = True
@@ -26,16 +37,42 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
     return benign_count, malicious_count
 
 
-def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alerts: list[Alert]):
+def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alerts: list[Alert]) -> tuple[int, int, int, int, int, int]:
+    """
+    Method that receives an alert list as input and compares it to the dataset. 
+
+    Args:
+        dataset (Dataset): A Dataset object to access the labels and data files
+        alerts (list[Alert]): The alert list yielded by an IDS or Ensemble
+
+    Returns: 
+        TP (int): Amount of True Positives found
+        FP (int):  Amount of False Positives found
+        TN (int):  Amount of True Negatives found
+        FN (int):   Amount of False Negatives found
+        UNASSIGNED_ALERTS (int): Amount of alerts that could not be assigned to one of the rows in the labels file. If 2 Alerts point to the same row in the labels file, 1 of them will remain unassigned
+        TOTAL_ALERTS (int): How many alerts were yielded ?
+    """
+
     #####################################################
     ###  helper methods to make code more expressive ####
     #####################################################
-    def is_request_benign(cell):
+    def is_request_benign(cell: str) -> bool:
         if "benign" == str(cell).lower().strip():
             return True
         return False
     
-    def get_index(lst: list, search_list: list[str]):
+    def get_index(lst: list, search_list: list[str]) -> int:
+        """
+        Method to lookup a list index based on a search list
+
+        Args: 
+            lst (list): The list to search 
+            search_list (list[str]): Contains keywords or phrases to look for in lst
+        
+        Returns: 
+            index (int): The first index in the list that contains any of the search_list entries
+        """
         for index, element in enumerate(lst):
                 # Compare the lowercase versions of the strings
                 element = str(element).strip().casefold()
@@ -44,7 +81,20 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                         return index
         return None
     
-    def get_column_ids(header: list):
+    def get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
+        """
+        Looks in the header row of a labels file for the necessary column indexes to construct Alerts
+
+        Args: 
+            header (list): A list containing all column names
+        Returns: 
+            label_col_id (int): The index containing the label for an entry
+            timestamp_col_id (int): The index containing the timestamp
+            src_ip_col_id (int): The index containing the source ip
+            src_port_col_id (int): Index containing the source port
+            dst_ip_col_id (int): Index containing th destination ip
+            dst_port_col_id (int): Index containing the destination port
+        """
         label_col_id = get_index(header, ["Label", "Class"])
         timestamp_col_id = get_index(header, ["Time", "Timestamp"])
         src_ip_col_id = get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP"])

@@ -1,10 +1,10 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.types import BLOB
 from sqlalchemy.orm import relationship, Session
-from .ids_container import IdsContainer
+from app.models.ids_container import IdsContainer
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..database import Base
+from app.database import Base
 
 class Configuration(Base):
     __tablename__ = "configuration"

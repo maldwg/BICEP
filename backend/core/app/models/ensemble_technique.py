@@ -1,12 +1,11 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, Session
-from ..database import Base
-from ..logger import LOGGER
-from .ensemble_techniques_implementation import *
+from app.database import Base
+from app.logger import LOGGER
+from app.models.ensemble_techniques_implementation import *
 import importlib
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import os 
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 

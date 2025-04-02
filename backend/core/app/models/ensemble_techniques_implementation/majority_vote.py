@@ -1,8 +1,18 @@
-from ...bicep_utils.models.ids_base import Alert
-from ...logger import LOGGER
-from ...utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
+from app.bicep_utils.models.ids_base import Alert
+from app.logger import LOGGER
+from app.utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
 
 async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
+    """
+    Method to calculate which alerts of an ensemble are majority voted ones
+
+    Args:
+        alerts_dict (dict): Dict that holds for each IDS in the ensemble a list of alerts
+        ensemble: (Ensemble): Ensemble Object according to the ORM
+
+    Returns:
+        majority_voted_alerts (list[Alert]): List of alerts the ensemble voted for 
+    """
     common_alerts = await combine_alerts_for_ids_in_alert_dict(alerts_dict)
     ids_container_count = len(ensemble.ensemble_ids)
     majority_threshold = ids_container_count / 2
@@ -28,8 +38,27 @@ async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
 
 async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
     """
-        Gets a dict of this shape: {"ids": list[Alert], "ids2": list[Alert], ...}
-        returns a dict like : {ts-src_ip-src_port-dst_ip-dst_port: {"ids1": list[Alert], "ids2": list[Alert]}}
+    Transforms a dictionary that holds alerts for each IDS in the ensemble into a structured format.
+
+    The returned dictionary maps a key composed of `timestamp`, `source_ip`, `source_port`, 
+    `destination_ip`, and `destination_port` to another dictionary. This inner dictionary 
+    contains IDS names as keys and lists of `Alert` objects as values.
+
+    Example output format:
+    
+        {
+            "<timestamp>-<source_ip>-<source_port>-<destination_ip>-<destination_port>": {
+                "ids1": [Alert, Alert, ...],
+                "ids2": [Alert, Alert, ...]
+            }
+        }
+
+    Parameters:
+        alerts_dict (dict): A dictionary where each key is an IDS name and 
+                            the value is a list of `Alert` objects.
+
+    Returns:
+        dict: A dictionary grouping alerts by their common attributes.
     """
     common_alerts = {}
     for container_name, alerts in alerts_dict.items():

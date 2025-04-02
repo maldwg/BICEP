@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from ..bicep_utils.models.ids_base import Alert
+from app.bicep_utils.models.ids_base import Alert
 
 class IdsContainerCreate(BaseModel):
     """

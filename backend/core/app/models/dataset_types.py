@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, Session
-from ..database import Base
-from .dataset_types_implementation import *
+from app.database import Base
+from app.models.dataset_types_implementation import *
 import asyncio
-from ..bicep_utils.models.ids_base import Alert
-from ..logger import LOGGER
+from app.bicep_utils.models.ids_base import Alert
+from app.logger import LOGGER
 import importlib
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession

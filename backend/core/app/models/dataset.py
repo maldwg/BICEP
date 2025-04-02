@@ -1,9 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import Session, relationship, selectinload
-from ..database import Base
+from app.database import Base
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import aiofiles
 
 class Dataset(Base):
     __tablename__ = "dataset"

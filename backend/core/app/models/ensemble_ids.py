@@ -1,10 +1,10 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 
-from ..database import Base
-from ..utils import ANALYSIS_STATUS
+from app.database import Base
+from app.utils import ANALYSIS_STATUS
 from sqlalchemy.future import select
-from ..logger import LOGGER
+from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
