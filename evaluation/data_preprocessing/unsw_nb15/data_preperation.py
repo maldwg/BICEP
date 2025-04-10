@@ -152,7 +152,7 @@ class UNSBW(Dataset):
                     header = next(reader)
                     writer.writerow(header)
                     for row in reader:
-                        key = self.get_key_from_csv_row(row=row, sip_row=0, sport_row=1, dip_row=2, dport_row=3, ts_row=28)
+                        key = self.get_key_from_csv_row(row=row)
                         if key in matches:
                             writer.writerow(row)
                             matching_rows += 1
@@ -208,6 +208,5 @@ if __name__ == "__main__":
         sample_size=10000
      )
 
-    # works
     # nsbw.base_dir = "./data_preprocessing/unsw_nb15/"
     # unsbw.test_pcap_against_csv(["sample_1000.pcap"], "sample_1000.csv")
