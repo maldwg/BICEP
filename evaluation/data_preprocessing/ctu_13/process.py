@@ -1,12 +1,8 @@
 import os
-import glob
 from scapy.all import PcapReader, PcapWriter
-import random 
 import os.path
 import csv
 from scapy.all import PcapReader
-import pandas as pd
-from datetime import datetime
 from tqdm import tqdm
 from dateutil import parser 
 from data_preprocessing.utils import Dataset

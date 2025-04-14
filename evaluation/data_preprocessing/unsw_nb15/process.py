@@ -5,10 +5,8 @@ import random
 import os.path
 import csv
 from scapy.all import PcapReader
-import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-from dateutil import parser
 from data_preprocessing.utils import Dataset
 
 
@@ -161,10 +159,13 @@ class UNSBW(Dataset):
 
     def correct_csv_row(self, row):
         corrected_row = row
-        if row[self.labels_row] == 0:
+        try:
+            if int(row[self.labels_row]) == 0:
+                corrected_row[self.labels_row] = "Benign"
+            else:
+                corrected_row[self.labels_row] = "Malicious"
+        except Exception as e:
             corrected_row[self.labels_row] = "Benign"
-        else:
-            corrected_row[self.labels_row] = "Malicious"
         start_time_human_readable = datetime.fromtimestamp(int(row[28])).strftime("%Y-%m-%d %H:%M:%S")
         corrected_row[self.ts_row] = start_time_human_readable 
         return corrected_row
@@ -186,17 +187,17 @@ if __name__ == "__main__":
             "labels/UNSW-NB15_4.csv" 
         ],
         pcap_path_glob=["pcaps/1/*.pcap", "pcaps/2/*.pcap" ],
-        combined_csv="./data_preprocessing/unsw_nb15/combined.csv",
+        combined_csv="./data_preprocessing/unsw_nb15/test.csv",
         combined_pcap="./data_preprocessing/unsw_nb15/combined.pcap"
     )
 
     unsbw.combine_csvs()
-    unsbw.combine_pcaps()
-    unsbw.sample_subset_of_combined_files(
-        output_csv_file="./data_preprocessing/unsw_nb15/sampled-ratio-1-percent.csv", 
-        output_pcap_file="./data_preprocessing/unsw_nb15/sampled-ratio-1-percent.pcap",
-        ratio=0.01
-    )
+    # unsbw.combine_pcaps()
+    # unsbw.sample_subset_of_combined_files(
+    #     output_csv_file="./data_preprocessing/unsw_nb15/sampled-ratio-1-percent.csv", 
+    #     output_pcap_file="./data_preprocessing/unsw_nb15/sampled-ratio-1-percent.pcap",
+    #     ratio=0.01
+    # )
 
     # nsbw.base_dir = "./data_preprocessing/unsw_nb15/"
     # unsbw.test_pcap_against_csv(["sample_1000.pcap"], "sample_1000.csv")
