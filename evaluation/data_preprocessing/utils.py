@@ -4,6 +4,8 @@ from datetime import datetime
 from dateutil import parser 
 import os
 import os.path
+import glob
+import time
 
 class Dataset():
     def __init__(self, sip_row, sport_row, dip_row, dport_row, labels_row, ts_row, base_dir_path, labels_path_glob, pcap_path_glob, combined_csv, combined_pcap ):
@@ -15,11 +17,22 @@ class Dataset():
         self.ts_row = ts_row
         self.base_dir = base_dir_path
         self.labels_path = labels_path_glob
-        self.pcap_path_pattern = pcap_path_glob
+        
         # Output paths
         self.combined_csv = combined_csv
         self.combined_pcap = combined_pcap
-        self.labels_files = [ os.path.join(self.base_dir, file) for file in self.labels_path]
+
+        labels_files = []
+        for pattern in self.labels_path:
+            full_pattern = os.path.join(self.base_dir, pattern)
+            labels_files.extend(glob.glob(full_pattern))
+        self.labels_files = labels_files
+
+        pcap_files = []
+        for pattern in pcap_path_glob:
+            full_pattern = os.path.join(self.base_dir, pattern)
+            pcap_files.extend(glob.glob(full_pattern))
+        self.pcap_files = pcap_files            
 
     def get_key_from_csv_row(self, row):
         """
@@ -116,3 +129,95 @@ class Dataset():
             return None
         
 
+    def get_benign_malicious_counts(self, csv_file):
+        benign = 0
+        malicious = 0
+        with open(csv_file, 'r') as input_csv:
+                reader = csv.reader(input_csv)
+                header = next(reader)  # Save the header row           
+                for row in reader:
+                    label = row[-1]
+                    if "benign" in label.casefold():
+                        benign += 1
+                    else:
+                        malicious += 1
+        return benign, malicious
+
+
+    def sample_from_csv_with_target_values(self, csv_file, target_benign, target_malicious):
+        """
+            sample a subset of requests from a csv file. The target values ofr benign and malicious requests
+            determine how many requests are sampled.
+        """
+        csv_records = {}
+        csv_entries_list =[]
+        benign = malicious = 0
+        with open(csv_file, 'r') as input_csv:
+            reader = csv.reader(input_csv)
+            header = next(reader)  # Save the header row   
+            csv_entries_list.append(header)
+            for row in reader:
+                src_ip = row[self.sip_row]
+                src_port = str(row[self.sport_row])
+                dest_ip = row[self.dip_row]
+                dest_port = str(row[self.dport_row])
+                timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M')
+                key = (timestamp, src_ip, src_port, dest_ip, dest_port)
+                label = row[self.labels_row]
+                if "benign" in label.casefold():
+                    if target_benign >= benign:
+                        csv_records[key] = True
+                        csv_entries_list.append(row)
+                        benign += 1
+                else:
+                    if target_malicious >= malicious:
+                        csv_records[key] = True
+                        csv_entries_list.append(row)
+                        malicious += 1
+                if target_malicious == malicious and target_benign == benign:
+                    break
+        return csv_records, csv_entries_list
+
+    def sample_subset_of_combined_files(self, output_pcap_file, output_csv_file, ratio=0.01):
+        """
+            Method to generate one pcap and csv file from all the dataset files. 
+            A ratio can be given to reduce the amount of requests. 
+            This was used to sample a given percentage from files in the dataset for slips.
+        """
+        print(f"filenames {output_pcap_file}")
+        print(f"filenames {output_csv_file}")
+        start = time.time()
+        csv_entries = 0
+        with open(output_csv_file, 'w') as output_csv:
+            writer = csv.writer(output_csv)
+            with open(self.combined_csv, 'r') as input_csv:
+                benign, malicious = self.get_benign_malicious_counts(self.combined_csv)
+                target_benign = int(benign*ratio)
+                target_malicious = int(malicious*ratio)
+                print(f"overall values: benign {benign}, malicious {malicious}")
+                print(f"Target values: benign {target_benign}, malicious {target_malicious}")
+                csv_records, csv_rows = self.sample_from_csv_with_target_values(self.combined_csv, target_benign, target_malicious)
+                for row in csv_rows:
+                    writer.writerow(row)
+                    csv_entries += 1
+        print(f"finished iteration and writing over CSV's after {time.time() - start} seconds")
+        print("Now sampling from the pcap")
+
+        filtered_packets = 0
+        counter = 0
+        with PcapWriter(output_pcap_file, append=False) as pcap_writer:
+            with PcapReader(self.combined_pcap) as pcap_reader:
+                for packet in pcap_reader:
+                    if counter % 1000000 == 0 and counter != 0:
+                        print(f"processed another 1000000 lines")
+                        print(f"currently filtered {filtered_packets} packets")
+                        print(f"took {time.time() - start} seconds until now")
+                    if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records):
+                        pcap_writer.write(packet)
+                        filtered_packets += 1
+                        if filtered_packets % 10000 == 0 and filtered_packets != 0:
+                            print(f"Wrote {filtered_packets} to the file already")
+                    counter += 1
+        print(f"csv length: {csv_entries}, pcap length: {filtered_packets}, overall {counter} pcap requests")
+        end = time.time()
+        print(f"took {end-start} seconds to finish")
