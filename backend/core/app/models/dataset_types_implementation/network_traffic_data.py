@@ -1,3 +1,13 @@
+
+"""
+This implementation enables a user to use the following structure as datasets for the IDS:
+    1. A pcap file with all the requests. May include background traffic, noise, etc.
+    2. A CSV file with:
+        a) information on the Source and Destintation (IP and Port), 
+        b) timestamp in human readable form
+        c) a label which contains the keyword "benign" or "malicious"
+"""
+
 from app.logger import LOGGER
 import csv
 from app.utils import normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict
@@ -8,14 +18,6 @@ from app.bicep_utils.models.ids_base import Alert
 ### which use pcaps and csv label files       ###
 #################################################
 
-"""
-This implementation enables a user to use the following structure as datasets for the IDS
-1. A pcap file with all the requests. May include background traffic, noise, etc.
-2. A CSV file with:
-    a) information on the Source and Destintation (IP and Port), 
-    b) timestamp in human readable form
-    c) a label which contains the keyword "benign" or "malicious"
-"""
 
 def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_file_text_stream) -> tuple[int, int]:
     """
