@@ -21,7 +21,7 @@ class CICIDS(Dataset):
                         writer.writerow(header)
                         header_included = True
                     for row in reader:
-                        corrected_row = self.correct_csv_row(row)
+                        corrected_row = row # self.correct_csv_row(row)
                         writer.writerow(corrected_row)
         print("Sucessfully finished combining the csvs")
 
@@ -34,7 +34,7 @@ class CICIDS(Dataset):
                 print(f"Now adding {pcap}")
                 with PcapReader(pcap) as reader:
                     for pkt in tqdm(reader, desc=f"Processing of {pcap}"):
-                        corrected_pkt = self.correct_pcap_pkt(pkt)
+                        corrected_pkt = pkt # self.correct_pcap_pkt(pkt)
                         writer.write(corrected_pkt)
 
 
@@ -79,19 +79,17 @@ if __name__ == "__main__":
         dport_row=4,
         labels_row=-1,
         ts_row=6,
-        base_dir_path="/home/sftpuser/uploads/master/CIC-IDS-2017/",
-        labels_path_glob=["Tuesday-WorkingHours.pcap_ISCX.csv"],
-        pcap_path_glob=["Tuesday-WorkingHours.pcap"],
-        #labels_path_glob=["*corrected.csv"],
-        #pcap_path_glob=["*corrected.pcap"],
-        combined_csv="./data_preprocessing/cic_ids_2017/Tuesday_corrected.csv",
-        combined_pcap="./data_preprocessing/cic_ids_2017/Tuesday_corrected.pcap"
+        base_dir_path="/mnt/hdd/Datasets/CIC-IDS-2017/",
+        labels_path_glob=["*corrected.csv"],
+        pcap_path_glob=["*corrected.pcap"],
+        combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined.csv",
+        combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined.pcap"
     )
 
-    cicids.combine_csv()
-    cicids.combine_pcaps()
+    # cicids.combine_csv()
+    # cicids.combine_pcaps()
     cicids.sample_subset_of_combined_files(
-        output_csv_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
-        output_pcap_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
+        output_csv_file="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-1pc.csv",
+        output_pcap_file="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-1pc.csv",
         ratio=0.01
     )

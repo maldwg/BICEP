@@ -145,16 +145,17 @@ if __name__ == "__main__":
         dport_row=7,
         labels_row=-1,
         ts_row=0,
-        base_dir_path="/home/sftpuser/uploads/master/CTU-13/CTU-13-Dataset/",
+        base_dir_path="/mnt/hdd/Datasets/CTU-13/",
         labels_path_glob= ["*/*.binetflow"],
         pcap_path_glob=["*/*.pcap" ],
-        combined_csv="./data_preprocessing/ctu_13/combined.csv",
-        combined_pcap="./data_preprocessing/ctu_13/combined.pcap"        
+        combined_csv="/mnt/hdd/Datasets/CTU-13/combined.csv",
+        combined_pcap="/mnt/hdd/Datasets/CTU-13/combined.pcap"        
     )
+
     ctu.convert_binetflow_to_csv_and_combine()
     ctu.combine_pcaps()
-    ctu.sample_subset_of_combined_files(
-        output_csv_file="./data_preprocessing/ctu_13/sampled-ratio-1pc.csv",
-        output_pcap_file="./data_preprocessing/ctu_13/sampled-ratio-1pc.pcap",
-        ratio=0.01
-        )
+    #ctu.sample_subset_of_combined_files(
+    #    output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-1pc.csv",
+    #    output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-1pc.pcap",
+    #    ratio=0.01
+    #    )
