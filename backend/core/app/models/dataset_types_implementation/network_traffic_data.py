@@ -91,10 +91,12 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
     alerts_dict = {}
     for alert in alerts:
         timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert, precision)
-        key = f"{timestamp}-{source_ip}-{source_port}-{destination_ip}-{destination_port}"
+        key = (timestamp,source_ip,source_port,destination_ip,destination_port)
         # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
         alerts_dict[key] = alerts_dict.get(key, []) + [alert]
-            
+
+    print(key)
+    print("-----------")
 
     TOTAL_ALERTS = get_item_counts_of_dict(alerts_dict)
     
@@ -111,7 +113,7 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
             row_source_port = row[src_port_col_id].strip()
             row_destination_ip = row[dst_ip_col_id].strip()
             row_destination_port = row[dst_port_col_id].strip()
-            base_key = f"{row_timestamp}-{row_source_ip}-{row_source_port}-{row_destination_ip}-{row_destination_port}"
+            base_key = (row_timestamp,row_source_ip,row_source_port,row_destination_ip,row_destination_port)
             keys_with_tolerance = _get_keys_with_tolerance(key=base_key, precision = precision)
             key_found = False
             for key in keys_with_tolerance:
@@ -131,6 +133,8 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                     TN += 1
                 else:
                     FN += 1
+        print(keys_with_tolerance)
+        print("##############")
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = get_item_counts_of_dict(alerts_dict)
     LOGGER.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")

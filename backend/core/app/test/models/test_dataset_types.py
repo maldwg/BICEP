@@ -54,7 +54,6 @@ async def test_calculate_malicious_benign_counts_from_text_stream(mock_network_t
     benign_count, malicious_count = await mock_network_traffic_data_dataset_type.get_benign_and_malicious_counts(labels_file_path)
     assert (benign_count, malicious_count) == (899,100)
 
-
 @pytest.mark.asyncio
 async def test_get_positives_and_negatives_from_dataset(mock_network_traffic_data_dataset_type, sample_dataset, sample_alerts):
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await mock_network_traffic_data_dataset_type.get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts)
