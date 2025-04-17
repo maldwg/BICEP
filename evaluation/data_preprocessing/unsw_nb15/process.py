@@ -5,10 +5,8 @@ import random
 import os.path
 import csv
 from scapy.all import PcapReader
-import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-from dateutil import parser
 from data_preprocessing.utils import Dataset
 
 
@@ -45,46 +43,6 @@ class UNSBW(Dataset):
                             corrected_row = self.correct_csv_row(row)
                             writer.writerow(corrected_row)
         print(f"Combined CSV written to {self.combined_csv}")
-
-
-    def test_pcap_against_csv(self, pcap_glob_patterns, csv_path ):
-        """
-        Tests a randomly selected PCAP file to see if its packets correlate with entries in a CSV.
-
-        Args:
-            pcap_glob_patterns (List[str]): List of glob patterns to locate PCAP files.
-            csv_path (str): Path to the CSV file for correlation.
-
-        Returns:
-            None
-        """
-        test_files = []
-        for pattern in pcap_glob_patterns:
-            full_pattern = os.path.join(self.base_dir, pattern)
-            test_files.extend(glob.glob(full_pattern))
-        if not test_files:
-            print("No pcap files found for testing.")
-            return
-
-        test_file = random.choice(test_files)
-        print(f"Testing pcap file: {test_file}")
-
-        csv_records = self.transform_csv_to_dict( os.path.join(self.base_dir, csv_path))
-        assignable = 0
-        unassignable = 0
-        print("Iterating over the pcap...")
-        with PcapReader(test_file) as reader:
-            number_of_packets = 0
-            for pkt in tqdm(reader, desc="Processing packets"):
-                number_of_packets += 1
-                if self.get_packet_matches_of_csv(pkt, csv_records):
-                    assignable += 1
-                else:
-                    unassignable += 1
-                
-        print("Done testing pcap vs CSV")
-        print(f"PCAP got {number_of_packets} packets")
-        print(f"Got {assignable} assignable, {unassignable} unassignable packets. Ratio: {assignable/unassignable}")
 
     def combine_pcaps(self):
         """
@@ -168,7 +126,7 @@ class UNSBW(Dataset):
                 corrected_row[self.labels_row] = "Malicious"
         except Exception as e:
             corrected_row[self.labels_row] = "Benign"
-        start_time_human_readable = datetime.fromtimestamp(int(row[28])).strftime("%Y-%m-%d %H:%M:%S")
+        start_time_human_readable = datetime.fromtimestamp(int(row[28])).strftime(self.human_readable_timestamp_format)
         corrected_row[self.ts_row] = start_time_human_readable 
         return corrected_row
 

@@ -1,12 +1,8 @@
 import os
-import glob
 from scapy.all import PcapReader, PcapWriter
-import random 
 import os.path
 import csv
 from scapy.all import PcapReader
-import pandas as pd
-from datetime import datetime
 from tqdm import tqdm
 from dateutil import parser 
 from data_preprocessing.utils import Dataset
@@ -56,7 +52,7 @@ class CTU(Dataset):
             corrected_row[self.labels_row] = "Benign"
         else:
             corrected_row[self.labels_row] = "Malicious"
-        start_time = parser.parse(row[0], dayfirst=False).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+        start_time = parser.parse(row[0], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
         corrected_row[self.ts_row] = start_time 
         return corrected_row
 

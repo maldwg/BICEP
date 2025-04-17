@@ -112,10 +112,12 @@ async def db_session_fixture():
     mock_dataset.ammount_benign=899
     mock_dataset.ammount_malicious=100
     mock_dataset.dataset_type_id = 1
+    mock_dataset.timestamp_precision="minute"
     
     second_mock_dataset = MagicMock(spec=Dataset)
     second_mock_dataset.id=2
     second_mock_dataset.name="Test Dataset 2"
+    second_mock_dataset.timestamp_precision="second"
 
 
     mock_configuration = MagicMock(spec=Configuration)
