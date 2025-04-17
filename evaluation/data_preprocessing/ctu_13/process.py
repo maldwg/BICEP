@@ -52,7 +52,7 @@ class CTU(Dataset):
             corrected_row[self.labels_row] = "Benign"
         else:
             corrected_row[self.labels_row] = "Malicious"
-        start_time = parser.parse(row[0], dayfirst=False).replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+        start_time = parser.parse(row[0], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
         corrected_row[self.ts_row] = start_time 
         return corrected_row
 
@@ -144,11 +144,11 @@ if __name__ == "__main__":
         base_dir_path="/home/sftpuser/uploads/master/CTU-13/CTU-13-Dataset/",
         labels_path_glob= ["*/*.binetflow"],
         pcap_path_glob=["*/*.pcap" ],
-        combined_csv="./data_preprocessing/ctu_13/combined.csv",
-        combined_pcap="./data_preprocessing/ctu_13/combined.pcap"        
+        combined_csv="/home/sftpuser/uploads/master/CTU-13/CTU-13-Dataset/10/combined.csv",
+        combined_pcap="/home/sftpuser/uploads/master/CTU-13/CTU-13-Dataset/10/combined.pcap"        
     )
-    ctu.convert_binetflow_to_csv_and_combine()
-    ctu.combine_pcaps()
+    # ctu.convert_binetflow_to_csv_and_combine()
+    # ctu.combine_pcaps()
     ctu.sample_subset_of_combined_files(
         output_csv_file="./data_preprocessing/ctu_13/sampled-ratio-1pc.csv",
         output_pcap_file="./data_preprocessing/ctu_13/sampled-ratio-1pc.pcap",

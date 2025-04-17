@@ -7,6 +7,7 @@ export interface Dataset{
     ammount_benign: number,
     ammount_malicious: number,
     dataset_type_id: number,
+    timestamp_precision: string
 }
 
 export interface DatasetSetupData{

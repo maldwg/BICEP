@@ -2,7 +2,8 @@ import pytest
 from app.test.fixtures import *
 from app.models.dataset_types_implementation.network_traffic_data import *
 from app.models.dataset_types import *
-
+from app.utils import Precision, SecondPrecision, MilisecondPrecision, MinutePrecision, HourPrecision
+import io
 
 @pytest.fixture
 def sample_dataset():
@@ -14,6 +15,7 @@ def sample_dataset():
         ammount_benign=899,
         ammount_malicious=100,
         dataset_type_id = 1,
+        timestamp_precision="minute"
     )
 
 @pytest.fixture
@@ -47,8 +49,8 @@ def mock_network_traffic_data_dataset_type():
     )
 
 @pytest.mark.asyncio
-async def test_calculate_malicious_benign_counts_from_text_stream(mock_network_traffic_data_dataset_type):
-    labels_file_path = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'r')
+async def test_calculate_malicious_benign_counts_from_text_stream(mock_network_traffic_data_dataset_type, sample_dataset):
+    labels_file_path = open(sample_dataset.labels_file_path, 'r')
     benign_count, malicious_count = await mock_network_traffic_data_dataset_type.get_benign_and_malicious_counts(labels_file_path)
     assert (benign_count, malicious_count) == (899,100)
 
@@ -57,3 +59,12 @@ async def test_calculate_malicious_benign_counts_from_text_stream(mock_network_t
 async def test_get_positives_and_negatives_from_dataset(mock_network_traffic_data_dataset_type, sample_dataset, sample_alerts):
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await mock_network_traffic_data_dataset_type.get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts)
     assert (TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS) == (9,6,893,91,0,15)
+
+
+@pytest.mark.asyncio
+async def test_get_precision(mock_network_traffic_data_dataset_type, sample_dataset):
+    labels_file_path = open(sample_dataset.labels_file_path, 'r')
+    precision = await mock_network_traffic_data_dataset_type.calculate_precision(labels_file_path)
+    print(type(precision))
+    assert isinstance(precision, MinutePrecision)
+

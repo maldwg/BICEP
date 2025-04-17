@@ -56,8 +56,6 @@ class CICIDS(Dataset):
 
 
     def correct_pcap_pkt(self, pkt):
-
-        format ="%d/%m/%Y %H:%M:%S"
         time_offset = timedelta(hours=-3)
         def adjust_time_offset(pkt_time):
             adjusted_time = pkt_time + time_offset
@@ -66,7 +64,7 @@ class CICIDS(Dataset):
         corrected_pkt = pkt
         pkt_time = datetime.fromtimestamp(float(pkt.time))
         adjusted_time_str = adjust_time_offset(pkt_time)
-        parsed_datetime = datetime.strptime(adjusted_time_str, format)
+        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format)
         unix_timestamp = parsed_datetime.timestamp()
         corrected_pkt.time = unix_timestamp
         return corrected_pkt
@@ -84,14 +82,16 @@ if __name__ == "__main__":
         pcap_path_glob=["Tuesday-WorkingHours.pcap"],
         #labels_path_glob=["*corrected.csv"],
         #pcap_path_glob=["*corrected.pcap"],
-        combined_csv="./data_preprocessing/cic_ids_2017/Tuesday_corrected.csv",
+        combined_csv="/home/sftpuser/uploads/master/CIC-IDS-2017/Tuesday-WorkingHours_corrected.csv",
         combined_pcap="./data_preprocessing/cic_ids_2017/Tuesday_corrected.pcap"
     )
 
-    cicids.combine_csv()
-    cicids.combine_pcaps()
-    cicids.sample_subset_of_combined_files(
-        output_csv_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
-        output_pcap_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
-        ratio=0.01
-    )
+    # cicids.combine_csv()
+    # cicids.combine_pcaps()
+    # cicids.sample_subset_of_combined_files(
+    #     output_csv_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
+    #     output_pcap_file="./data_preprocessing/cic_ids_2017/sampled-ratio-1pc.csv",
+    #     ratio=0.01
+    # )
+    cicids.test_pcap_against_csv("/home/max/Masterarbeit/BICEP/evaluation/data_preprocessing/output_sample.pcap", "/home/max/Masterarbeit/BICEP/evaluation/data_preprocessing/output_sample.csv")
+    # print(cicids.get_ts_precision())
