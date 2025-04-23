@@ -159,7 +159,7 @@ async def update_container(db, container: IdsContainerUpdate):
     old_config_id = container_db.configuration_id
     new_config_id = container.configuration_id
     if old_config_id != new_config_id:
-        await container_db.update_config(new_config_id)
+        await container_db.update_config(db, new_config_id)
     old_ruleset_id = container_db.ruleset_id
     new_ruleset_id = container.ruleset_id
     if old_ruleset_id != new_config_id and new_ruleset_id is not None:
