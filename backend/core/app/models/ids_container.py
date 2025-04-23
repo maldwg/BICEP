@@ -69,12 +69,16 @@ class IdsContainer(Base):
 
     async def update_config(self, db: AsyncSession, config_id):
         from app.models.configuration import Configuration
-        config_file: Configuration = db.query(Configuration).filter(Configuration.id == config_id).first()
+        stmt = select(Configuration).where(Configuration.id == config_id)
+        result = await db.execute(stmt)
+        config_file =  result.scalar_one_or_none() 
         await inject_config(self, config_file)
 
     async def update_ruleset(self, db: AsyncSession, ruleset_id):
         from  app.models.configuration import Configuration
-        ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
+        stmt = select(Configuration).where(Configuration.id == ruleset_id)
+        result = await db.execute(stmt)
+        ruleset_file = result.scalar_one_or_none()
         await inject_ruleset(self, ruleset_file)
 
     async def start_static_analysis(self, form_data, dataset):
@@ -163,7 +167,7 @@ async def update_container(db, container: IdsContainerUpdate):
     old_ruleset_id = container_db.ruleset_id
     new_ruleset_id = container.ruleset_id
     if old_ruleset_id != new_config_id and new_ruleset_id is not None:
-        await container_db.update_ruleset(new_ruleset_id)
+        await container_db.update_ruleset(db, new_ruleset_id)
     # Update container attributes
     for key, value in container.dict().items():
         setattr(container_db, key, value)
