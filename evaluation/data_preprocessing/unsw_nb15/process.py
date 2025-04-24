@@ -5,9 +5,9 @@ import random
 import os.path
 import csv
 from scapy.all import PcapReader
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from tqdm import tqdm
-from data_preprocessing.utils import Dataset
+from data_preprocessing.utils import Dataset, Precision
 
 
 class UNSBW(Dataset):
@@ -60,8 +60,30 @@ class UNSBW(Dataset):
                     print(f"Reading from {pcap_file}")
                     with PcapReader(pcap_file) as reader:
                         for packet in tqdm(reader, desc=f"Packets of file {pcap_file}"):                        
-                            writer.write(packet)
+                            corrected_pkt = self.correct_pcap_pkt(packet)
+                            writer.write(corrected_pkt)
         print(f"Combined pcap written to {self.combined_pcap}")
+
+
+
+    def correct_pcap_pkt(self, pkt):
+        
+        def adjust_time_offset(pkt_time):
+            time_offset = timedelta(hours=1)
+            adjusted_time = pkt_time + time_offset
+            return adjusted_time.strftime(self.human_readable_timestamp_format)
+
+        corrected_pkt = pkt
+        pkt_time = datetime.fromtimestamp(float(pkt.time))
+        adjusted_time_str = adjust_time_offset(pkt_time)
+        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=None)
+        
+        unix_timestamp = parsed_datetime.timestamp()
+        test = datetime.fromtimestamp(unix_timestamp , timezone.utc).replace(tzinfo=None).isoformat()
+        corrected_pkt.time = unix_timestamp
+        print(f"original: {pkt_time} - updated: {parsed_datetime} - updated from ts: {test}")
+        return corrected_pkt
+
 
             
     # def sample_pcap_and_filter_csv(self, pcap_path, pcap_output_path, csv_path, output_csv, sample_size=10000):
@@ -126,7 +148,9 @@ class UNSBW(Dataset):
                 corrected_row[self.labels_row] = "Malicious"
         except Exception as e:
             corrected_row[self.labels_row] = "Benign"
-        start_time_human_readable = datetime.fromtimestamp(int(row[28])).strftime(self.human_readable_timestamp_format)
+        start_time = datetime.fromtimestamp(int(row[28])) + timedelta(hours=-1)
+        start_time_human_readable = start_time.strftime("%Y-%m-%d %H:%M:%S")
+
         corrected_row[self.ts_row] = start_time_human_readable 
         return corrected_row
 
@@ -148,15 +172,14 @@ if __name__ == "__main__":
         ],
         pcap_path_glob=["pcaps/1/*.pcap", "pcaps/2/*.pcap" ],
         combined_csv="/mnt/hdd/Datasets/unsw-nb15/combined.csv",
-        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined.pcap"
+        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined.pcap",
+        precision=Precision.MILISECOND.value
     )
 
-    unsbw.combine_csvs()
-    unsbw.combine_pcaps()
-    # unsbw.sample_subset_of_combined_files(
-    #     output_csv_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-1-percent.csv", 
-    #     output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-1-percent.pcap",
-    #     ratio=0.01
-    # )
-
-    # 63950M
+    # unsbw.combine_csvs()
+    # unsbw.combine_pcaps()
+    unsbw.sample_subset_of_combined_files(
+         output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
+         output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.pcap",
+         ratio=0.005
+     )

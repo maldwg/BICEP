@@ -16,7 +16,7 @@ class Precision(Enum):
     SECOND = "second"
     MILISECOND = "milisecond" 
 class Dataset():
-    def __init__(self, sip_row, sport_row, dip_row, dport_row, labels_row, ts_row, base_dir_path, labels_path_glob, pcap_path_glob, combined_csv, combined_pcap ):
+    def __init__(self, sip_row, sport_row, dip_row, dport_row, labels_row, ts_row, base_dir_path, labels_path_glob, pcap_path_glob, combined_csv, combined_pcap, precision ):
         self.sip_row = sip_row
         self.sport_row= sport_row
         self.dip_row = dip_row
@@ -25,7 +25,6 @@ class Dataset():
         self.ts_row = ts_row
         self.base_dir = base_dir_path
         self.labels_path = labels_path_glob
-        
         # Output paths
         self.combined_csv = combined_csv
         self.combined_pcap = combined_pcap
@@ -44,6 +43,9 @@ class Dataset():
 
         self.human_readable_timestamp_format = "%Y-%m-%d %H:%M:%S.%f"
 
+
+        self.precision = precision
+
     def get_key_from_csv_row(self, row):
         """
         Extracts a unique key from a CSV row based on timestamp, IPs, and ports.
@@ -54,14 +56,14 @@ class Dataset():
         Returns:
             tuple: Key in the format (timestamp, src_ip, src_port, dst_ip, dst_port).
         """
-        src_ip = str(row[self.sip_row])
-        src_port = str(row[self.sport_row])
-        dest_ip = str(row[self.dip_row])
-        dest_port = str(row[self.dport_row])
+        src_ip = str(row[self.sip_row]).strip()
+        src_port = str(row[self.sport_row]).strip()
+        dest_ip = str(row[self.dip_row]).strip()
+        dest_port = str(row[self.dport_row]).strip()
         try:
-            timestamp = datetime.fromtimestamp(row[self.ts_row]).strftime(self.human_readable_timestamp_format) 
+            timestamp = datetime.fromtimestamp(row[self.ts_row]).strftime(self.human_readable_timestamp_format).strip()     
         except Exception as e:
-            timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
+            timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format).strip()
         key = (timestamp, src_ip, src_port, dest_ip, dest_port)
         return key
 
@@ -101,17 +103,20 @@ class Dataset():
                 ip_layer = pkt["IP"] if pkt.haslayer("IP") else pkt["IPv6"]
                 transport = pkt.getlayer("TCP") or pkt.getlayer("UDP")
                 if transport:
-                    timestamp = datetime.fromtimestamp(float(pkt.time), timezone.utc).replace(tzinfo=None).strftime(self.human_readable_timestamp_format) 
-                    srcip = str(ip_layer.src)
-                    sport = str(transport.sport)
-                    dstip = str(ip_layer.dst)
-                    dsport = str(transport.dport)
+                    # timestamp = datetime.fromtimestamp(float(pkt.time)).replace(tzinfo=None)  
+                    # trim accordingly!              
+                    timestamp = datetime.fromtimestamp(float(pkt.time), timezone.utc).replace(tzinfo=None) # .strftime(self.human_readable_timestamp_format) 
+                    timestamp = normalize_timestamp(timestamp, self.precision)    
+                    srcip = str(ip_layer.src).strip()
+                    sport = str(transport.sport).strip()
+                    dstip = str(ip_layer.dst).strip()
+                    dsport = str(transport.dport).strip()
                     return (timestamp, srcip, sport, dstip, dsport)
         except Exception as e:
             pass
         return None
 
-    def get_keys_with_tolerance(self, key, precision, tolerance = 1):
+    def get_keys_with_tolerance(self, key, precision, tolerance = 10):
         timestamp = parser.parse(key[0], dayfirst=False).replace(tzinfo=None)
         # for ms and s get a 1 sec tolerance
         if precision == Precision.MILISECOND.value or precision == Precision.SECOND.value:
@@ -124,7 +129,7 @@ class Dataset():
         keys = []
         for ts in timestamps_with_tolerance:
             new_key = list(key)  
-            new_key[0] = ts.replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
+            new_key[0] = normalize_timestamp(ts, precision)
             keys.append(tuple(new_key))
         return keys
 
@@ -142,7 +147,7 @@ class Dataset():
         """
         key = self.extract_key_from_pcap_packet(pkt)
         if key is not None:
-            keys = self.get_keys_with_tolerance(key, precision, tolerance=1)
+            keys = self.get_keys_with_tolerance(key, precision, tolerance=10)
             for k in keys:
                 if k in csv_records:
                     return key
@@ -176,11 +181,13 @@ class Dataset():
             header = next(reader)  # Save the header row   
             csv_entries_list.append(header)
             for row in reader:
-                src_ip = row[self.sip_row]
-                src_port = str(row[self.sport_row])
-                dest_ip = row[self.dip_row]
-                dest_port = str(row[self.dport_row])
-                timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
+                src_ip = str(row[self.sip_row]).strip()
+                src_port = str(row[self.sport_row]).strip()
+                dest_ip = str(row[self.dip_row]).strip()
+                dest_port = str(row[self.dport_row]).strip()
+                # trim timestamp accordingly!
+                timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None) # .strftime(self.human_readable_timestamp_format)
+                timestamp = normalize_timestamp(timestamp, self.precision).strip()
                 key = (timestamp, src_ip, src_port, dest_ip, dest_port)
                 label = row[self.labels_row]
                 if "benign" in label.casefold():
@@ -195,6 +202,8 @@ class Dataset():
                         malicious += 1
                 if target_malicious == malicious and target_benign == benign:
                     break
+        print("last timestamp: ")
+        print(timestamp)
         return csv_records, csv_entries_list
 
     def sample_subset_of_combined_files(self, output_pcap_file, output_csv_file, ratio=0.01):
@@ -205,8 +214,6 @@ class Dataset():
         """
         print(f"filenames {output_pcap_file}")
         print(f"filenames {output_csv_file}")
-        precision = self.get_ts_precision()
-        print(precision)
         start = time.time()
         csv_entries = 0
         with open(output_csv_file, 'w') as output_csv:
@@ -229,11 +236,11 @@ class Dataset():
         with PcapWriter(output_pcap_file, append=False) as pcap_writer:
             with PcapReader(self.combined_pcap) as pcap_reader:
                 for packet in pcap_reader:
-                    if counter % 1000000 == 0 and counter != 0:
-                        print(f"processed another 1000000 lines")
+                    if counter % 100000 == 0 and counter != 0:
+                        print(f"processed another 100000 lines")
                         print(f"currently filtered {filtered_packets} packets")
                         print(f"took {time.time() - start} seconds until now")
-                    if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=precision):
+                    if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) != None:
                         pcap_writer.write(packet)
                         filtered_packets += 1
                         if filtered_packets % 10000 == 0 and filtered_packets != 0:
@@ -268,59 +275,74 @@ class Dataset():
 
 
 
-    def test_pcap_against_csv(self, pcap_path, csv_path ):
-        """
-        Tests a randomly selected PCAP file to see if its packets correlate with entries in a CSV.
+    # def test_pcap_against_csv(self, pcap_path, csv_path ):
+    #     """
+    #         dO NOT USE OR RELY ON THIS METHOD!! That is a bogous double implementation
+    #     """
 
-        Args:
-            pcap_glob_patterns (List[str]): List of glob patterns to locate PCAP files.
-            csv_path (str): Path to the CSV file for correlation.
-
-        Returns:
-            None
-        """
-
-        csv_records = self.transform_csv_to_dict(csv_path)
-        assignable = 0
-        unassignable = 0
-        print("Iterating over the pcap...")
-        with PcapReader(pcap_path) as reader:
-            number_of_packets = 0
-            for pkt in tqdm(reader, desc="Processing packets"):
-                number_of_packets += 1
-                if self.get_packet_matches_of_csv(pkt, csv_records):
-                    assignable += 1
-                else:
-                    unassignable += 1
+    #     csv_records = self.transform_csv_to_dict(csv_path)
+    #     assignable = 0
+    #     unassignable = 0
+    #     precision = self.get_ts_precision()
+    #     print(precision)
+    #     print("Iterating over the pcap...")
+    #     with PcapReader(pcap_path) as reader:
+    #         number_of_packets = 0
+    #         for pkt in tqdm(reader, desc="Processing packets"):
+    #             number_of_packets += 1
+    #             if self.get_packet_matches_of_csv(pkt, csv_records, precision):
+    #                 assignable += 1
+    #             else:
+    #                 unassignable += 1
                 
-        print("Done testing pcap vs CSV")
-        print(f"PCAP got {number_of_packets} packets")
-        print(f"Got {assignable} assignable, {unassignable} unassignable packets. Ratio: {assignable/unassignable}")
-        return assignable, unassignable
+    #     print("Done testing pcap vs CSV")
+    #     print(f"PCAP got {number_of_packets} packets")
+    #     print(f"Got {assignable} assignable, {unassignable} unassignable packets. Ratio: {assignable/unassignable}")
+    #     return assignable, unassignable
 
 def ts_have_different_values(timestamps, precision: str):
     
     parsed = [parse_timestamp(ts) for ts in timestamps]
     if precision == Precision.MILISECOND.value:
+        print("different ms values")
         values = [ts.microsecond for ts in parsed]
     elif precision == Precision.SECOND.value:
+        print("different s values")
+
         values = [ts.second for ts in parsed]
     elif precision == Precision.MINUTE.value:
+        print("different m values")
         values = [ts.minute for ts in parsed]
     else:  # hour
         values = [ts.hour for ts in parsed]
+    print(values)
     return len(set(values)) > 1
 
 def all_ts_contain(timestamps, precision: str):
     parsed = [parse_timestamp(ts) for ts in timestamps]
     if precision == Precision.MILISECOND.value:
+        print("containing ms")
         return all(ts.microsecond > 0 for ts in parsed)
     elif precision == Precision.SECOND.value:
+        print("containing s")
+        print(timestamps)
         return all(ts.second >= 0 for ts in parsed)
     elif precision == Precision.MINUTE.value:
+        print("containing m")
         return all(ts.minute >= 0 for ts in parsed)
     else:  # hour
+        print("containing h")
         return all(ts.hour >= 0 for ts in parsed)
 
 def parse_timestamp(timestamp):
     return parser.parse(timestamp, dayfirst=False).replace(tzinfo=None)
+
+def normalize_timestamp(timestamp, precision):
+    if precision == Precision.MILISECOND.value or precision == Precision.SECOND.value:  
+        replaced_timestamp = timestamp.replace(microsecond=0)
+        timestamp_format = "%Y-%m-%d %H:%M:%S"
+    else:
+        replaced_timestamp = timestamp.replace(second=0, microsecond=0)
+        timestamp_format = "%Y-%m-%d %H:%M"
+    return replaced_timestamp.strftime(timestamp_format)
+    

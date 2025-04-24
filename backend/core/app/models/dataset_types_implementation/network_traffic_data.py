@@ -94,10 +94,6 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
         key = (timestamp,source_ip,source_port,destination_ip,destination_port)
         # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
         alerts_dict[key] = alerts_dict.get(key, []) + [alert]
-
-    print(key)
-    print("-----------")
-
     TOTAL_ALERTS = get_item_counts_of_dict(alerts_dict)
     
     # iterate over ground truth csv and compare each entry to the alerts
@@ -133,8 +129,6 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                     TN += 1
                 else:
                     FN += 1
-        print(keys_with_tolerance)
-        print("##############")
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = get_item_counts_of_dict(alerts_dict)
     LOGGER.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
@@ -182,11 +176,11 @@ def _get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
         dst_port_col_id (int): Index containing the destination port
     """
     label_col_id = _get_index(header, ["Label", "Class"])
-    timestamp_col_id = _get_index(header, ["Time", "Timestamp"])
-    src_ip_col_id = _get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP"])
-    src_port_col_id = _get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port"])
-    dst_ip_col_id = _get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP"])
-    dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port"])
+    timestamp_col_id = _get_index(header, ["Time", "Timestamp", "StartTime"])
+    src_ip_col_id = _get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP", "SrcAddr"])
+    src_port_col_id = _get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port", "Sport"])
+    dst_ip_col_id = _get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP", "DstAddr"])
+    dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port", "Dport"])
     return label_col_id,timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id
 
 def _get_keys_with_tolerance(key, precision: Precision, tolerance_unit = 1):

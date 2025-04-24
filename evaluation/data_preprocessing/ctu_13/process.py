@@ -5,8 +5,8 @@ import csv
 from scapy.all import PcapReader
 from tqdm import tqdm
 from dateutil import parser 
-from data_preprocessing.utils import Dataset
-
+from data_preprocessing.utils import Dataset, Precision
+from datetime import timedelta, timezone, datetime
 
 class CTU(Dataset):
 
@@ -52,8 +52,11 @@ class CTU(Dataset):
             corrected_row[self.labels_row] = "Benign"
         else:
             corrected_row[self.labels_row] = "Malicious"
+        
         start_time = parser.parse(row[0], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
+
         corrected_row[self.ts_row] = start_time 
+               
         return corrected_row
 
 
@@ -73,8 +76,31 @@ class CTU(Dataset):
                 print(f"Reading: {file}")
                 with PcapReader(file) as reader:
                     for pkt in tqdm(reader, desc=f"Processing {os.path.basename(file)}"):
-                        writer.write(pkt)
+                        corrected_pkt = self.correct_pcap_pkt(pkt)
+                        writer.write(corrected_pkt)
         print(f"Combined PCAP written to {self.combined_pcap}")
+
+
+
+    def correct_pcap_pkt(self, pkt):
+        
+        def adjust_time_offset(pkt_time):
+            time_offset = timedelta(hours=2)
+            adjusted_time = pkt_time + time_offset
+            return adjusted_time.strftime(self.human_readable_timestamp_format)
+
+        corrected_pkt = pkt
+        pkt_time = datetime.fromtimestamp(float(pkt.time))
+        adjusted_time_str = adjust_time_offset(pkt_time)
+        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=None)
+        
+        unix_timestamp = parsed_datetime.timestamp()
+        corrected_pkt.time = unix_timestamp
+        # print(f"original: {pkt_time} - updated: {parsed_datetime} - updated from ts: {test}")
+        return corrected_pkt
+
+
+
 
     # def sample(self, pcap_path, pcap_output_path, csv_output_path, csv_path, sample_size=5000):
     #     """
@@ -143,15 +169,16 @@ if __name__ == "__main__":
         ts_row=0,
         base_dir_path="/mnt/hdd/Datasets/CTU-13/",
         labels_path_glob= ["*/*.binetflow"],
-        pcap_path_glob=["*/*.pcap" ],
+        pcap_path_glob=["*/*.pcap"],
         combined_csv="/mnt/hdd/Datasets/CTU-13/combined.csv",
-        combined_pcap="/mnt/hdd/Datasets/CTU-13/combined.pcap"        
+        combined_pcap="/mnt/hdd/Datasets/CTU-13/combined.pcap" ,
+        precision=Precision.MILISECOND.value
     )
 
-    ctu.convert_binetflow_to_csv_and_combine()
-    ctu.combine_pcaps()
-    #ctu.sample_subset_of_combined_files(
-    #    output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-1pc.csv",
-    #    output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-1pc.pcap",
-    #    ratio=0.01
-    #    )
+    #ctu.convert_binetflow_to_csv_and_combine()
+    #ctu.combine_pcaps()
+    ctu.sample_subset_of_combined_files(
+        output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.csv",
+        output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.pcap",
+        ratio=0.005
+    )
