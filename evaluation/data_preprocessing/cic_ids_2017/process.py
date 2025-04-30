@@ -1,6 +1,6 @@
 import csv
 from scapy.all import *
-from data_preprocessing.utils import Dataset, Precision
+from data_preprocessing.utils import Dataset, Precision, csv_row_is_empty
 from tqdm import tqdm
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
@@ -21,6 +21,8 @@ class CICIDS(Dataset):
                         writer.writerow(header)
                         header_included = True
                     for row in reader:
+                        if csv_row_is_empty(row):
+                            continue
                         try:
                             corrected_row = self.correct_csv_row(row)
                             writer.writerow(corrected_row)
@@ -88,20 +90,26 @@ if __name__ == "__main__":
         labels_row=-1,
         ts_row=6,
         base_dir_path="/mnt/hdd/Datasets/CIC-IDS-2017/",
-        labels_path_glob= ["*.csv"], # ["*corrected.csv"],
-        pcap_path_glob=["*.pcap"],
+        labels_path_glob= ["*corrected.csv"], # ["*corrected.csv"],
+        pcap_path_glob=["*corrected.pcap"],
         combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined.csv",
         combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined.pcap",
         precision=Precision.MINUTE.value
     )
 
     # cicids.combine_csv()
+
     #cicids.combine_pcaps()
-    cicids.sample_subset_of_combined_files(
-        output_csv_file= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.csv",
-        output_pcap_file="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.pcap",
-        ratio=0.005
-    )
+    # cicids.sample_subset_of_combined_files(
+    #     output_csv_file= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.csv",
+    #     output_pcap_file="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.pcap",
+    #     ratio=0.005
+    # )
+    # cicids.sample_pcap_and_filter_csv_from_combined(
+    #     output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-module.csv",
+    #     output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo.pcap",
+    #     sample_ratio=0.05,
+    # )
 
-
-#
+    # cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
+    cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")

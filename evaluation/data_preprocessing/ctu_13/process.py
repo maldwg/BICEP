@@ -5,7 +5,7 @@ import csv
 from scapy.all import PcapReader
 from tqdm import tqdm
 from dateutil import parser 
-from data_preprocessing.utils import Dataset, Precision
+from data_preprocessing.utils import Dataset, Precision, csv_row_is_empty
 from datetime import timedelta, timezone, datetime
 
 class CTU(Dataset):
@@ -32,6 +32,8 @@ class CTU(Dataset):
                         header_written = True
 
                     for row in reader:
+                        if csv_row_is_empty(row):
+                            continue
                         corrected_row = self.correct_csv_row(row)
                         writer.writerow(corrected_row)
         print(f"Combined binetflow CSV written to {self.combined_csv}")
@@ -175,10 +177,20 @@ if __name__ == "__main__":
         precision=Precision.MILISECOND.value
     )
 
-    #ctu.convert_binetflow_to_csv_and_combine()
+    # ctu.convert_binetflow_to_csv_and_combine()
+
+
     #ctu.combine_pcaps()
-    ctu.sample_subset_of_combined_files(
-        output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.csv",
-        output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.pcap",
-        ratio=0.005
-    )
+    # ctu.sample_subset_of_combined_files(
+    #     output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.csv",
+    #     output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.pcap",
+    #     ratio=0.005
+    # )
+    # ctu.sample_pcap_and_filter_csv_from_combined(
+    #     output_csv="/mnt/hdd/Datasets/CTU-13/sampled-reverse.csv",
+    #     output_pcap= "/mnt/hdd/Datasets/CTU-13/sampled-reverse.pcap",
+    #     sample_ratio=0.001,
+    # )
+    
+    # ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio.txt")
+    ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")

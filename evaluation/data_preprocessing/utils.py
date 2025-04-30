@@ -61,12 +61,12 @@ class Dataset():
         dest_ip = str(row[self.dip_row]).strip()
         dest_port = str(row[self.dport_row]).strip()
         try:
-            timestamp = datetime.fromtimestamp(row[self.ts_row]).strftime(self.human_readable_timestamp_format).strip()     
-        except Exception as e:
-            timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None).strftime(self.human_readable_timestamp_format).strip()
+            timestamp = datetime.fromtimestamp(row[self.ts_row])
+        except:
+            timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None)
+        timestamp = normalize_timestamp(timestamp, self.precision).strip()
         key = (timestamp, src_ip, src_port, dest_ip, dest_port)
         return key
-
 
     def transform_csv_to_dict(self, csv_path):
         """
@@ -105,7 +105,7 @@ class Dataset():
                 if transport:
                     # timestamp = datetime.fromtimestamp(float(pkt.time)).replace(tzinfo=None)  
                     # trim accordingly!              
-                    timestamp = datetime.fromtimestamp(float(pkt.time), timezone.utc).replace(tzinfo=None) # .strftime(self.human_readable_timestamp_format) 
+                    timestamp = datetime.fromtimestamp(float(pkt.time), timezone.utc).replace(tzinfo=None)
                     timestamp = normalize_timestamp(timestamp, self.precision)    
                     srcip = str(ip_layer.src).strip()
                     sport = str(transport.sport).strip()
@@ -181,14 +181,7 @@ class Dataset():
             header = next(reader)  # Save the header row   
             csv_entries_list.append(header)
             for row in reader:
-                src_ip = str(row[self.sip_row]).strip()
-                src_port = str(row[self.sport_row]).strip()
-                dest_ip = str(row[self.dip_row]).strip()
-                dest_port = str(row[self.dport_row]).strip()
-                # trim timestamp accordingly!
-                timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None) # .strftime(self.human_readable_timestamp_format)
-                timestamp = normalize_timestamp(timestamp, self.precision).strip()
-                key = (timestamp, src_ip, src_port, dest_ip, dest_port)
+                key = self.get_key_from_csv_row(row=row)             
                 label = row[self.labels_row]
                 if "benign" in label.casefold():
                     if target_benign >= benign:
@@ -203,8 +196,71 @@ class Dataset():
                 if target_malicious == malicious and target_benign == benign:
                     break
         print("last timestamp: ")
-        print(timestamp)
+        print(key[0])
         return csv_records, csv_entries_list
+
+
+
+
+    def sample_pcap_and_filter_csv_from_combined(self, output_pcap, output_csv, sample_ratio=0.05):
+        """
+        Samples packets from a PCAP file and filters corresponding rows in the CSV.
+
+        Args:
+            pcap_path (str): Path to the input PCAP file.
+            pcap_output_path (str): Path to the output sampled PCAP file.
+            csv_path (str): Path to the full CSV file.
+            output_csv (str): Path to the output filtered CSV file.
+            sample_size (int, optional): Number of packets to sample. Defaults to 10000.
+
+        Returns:
+            None
+        """
+        pcap_length = get_length_of_pcap(self.combined_pcap)
+        sample_size = int(sample_ratio * pcap_length)
+        sample_steps = round(1 / sample_ratio)
+        print(f"Pcap got {pcap_length} packets")
+        print(f"Sampling {sample_size} from {self.combined_pcap}...")
+        samples = []
+        with PcapWriter(output_pcap, append=False) as pcap_writer:
+            with PcapReader(self.combined_pcap) as reader:
+                for i, pkt in enumerate(reader):
+                    # to not only sample only the beginngin of the file but rather all parts use the modulo
+                    if i % sample_steps == 0:
+                        samples.append(pkt)
+                        pcap_writer.write(pkt)
+        print(f"Extracted {len(samples)} packets.")
+
+        print(f"Loading CSV {self.combined_csv}...")
+        csv_records = self.transform_csv_to_dict(self.combined_csv)
+
+        print("Filtering CSV...")
+        matches = {}
+        for pkt in tqdm(samples, total=len(samples), desc="Sampling process"):
+            match = self.get_packet_matches_of_csv(pkt, csv_records, self.precision)
+            if match:
+                matches[match] = True
+
+        if matches:
+            matching_rows = 0
+            with open(output_csv, "w") as sampled_csv:
+                writer = csv.writer(sampled_csv)
+                with open(self.combined_csv, "r") as input_csv:
+                    reader = csv.reader(input_csv)
+                    header = next(reader)
+                    writer.writerow(header)
+                    for row in reader:
+                        key = self.get_key_from_csv_row(row=row)
+                        if key in matches:
+                            writer.writerow(row)
+                            matching_rows += 1
+            print(f"Found {matching_rows} matching rows.")
+            print(f"Filtered CSV written to: {output_csv}")
+        else:
+            print("No matches found.")
+
+
+
 
     def sample_subset_of_combined_files(self, output_pcap_file, output_csv_file, ratio=0.01):
         """
@@ -273,7 +329,37 @@ class Dataset():
             all_rows = list(reader)
         return random.sample(all_rows, 5)
 
+    def caluclate_noise_and_total_packets(self):
+        noise_packets = 0
+        total_packets = 0
 
+        print("Calculating CSV records...")
+        csv_records = self.transform_csv_to_dict(csv_path=self.combined_csv)
+        
+        print("Calculating noise packets")
+        with PcapReader(self.combined_pcap) as pcap_reader:
+            for packet in pcap_reader:
+                if total_packets % 100000 == 0 and total_packets > 0:
+                    print(f"iterated over {total_packets} packets")
+                total_packets += 1
+                # if there is no match count up noise
+                if not self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) != None:
+                    noise_packets += 1      
+        return noise_packets, total_packets
+
+
+    def write_noise_ratios_from_combined_pcap_to_file(self, path):
+        noise, total = self.caluclate_noise_and_total_packets()
+        with open(path, "w") as f:
+            f.write(f"Total requests: {total} \n")
+            f.write(f"Noise requests: {noise} - Ratio: {round(noise/total,2)}\n")
+
+    def write_class_ratios_from_combined_csv_to_file(self, path):
+        benign, malicious = self.get_benign_malicious_counts(self.combined_csv)
+        with open(path, "w") as f:
+            f.write(f"Total lines: {benign+malicious} \n")
+            f.write(f"Benign requests: {benign} - Ratio: {round(benign/(benign+malicious),2)}\n")
+            f.write(f"Malicious requests: {malicious} - Ratio: {round(malicious/(benign+malicious),2)}")
 
     # def test_pcap_against_csv(self, pcap_path, csv_path ):
     #     """
@@ -330,7 +416,7 @@ def all_ts_contain(timestamps, precision: str):
     elif precision == Precision.MINUTE.value:
         print("containing m")
         return all(ts.minute >= 0 for ts in parsed)
-    else:  # hour
+    else: 
         print("containing h")
         return all(ts.hour >= 0 for ts in parsed)
 
@@ -346,3 +432,15 @@ def normalize_timestamp(timestamp, precision):
         timestamp_format = "%Y-%m-%d %H:%M"
     return replaced_timestamp.strftime(timestamp_format)
     
+def get_length_of_pcap(pcap):
+    with PcapReader(pcap) as reader:
+        counter = 0
+        for pkt in reader:
+            counter += 1
+    return counter
+
+def csv_row_is_empty(row):
+    # as long as there is one value, return that the row is not empty
+    if any(row):
+        return False
+    return True

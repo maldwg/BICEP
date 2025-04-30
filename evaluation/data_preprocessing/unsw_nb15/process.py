@@ -7,7 +7,7 @@ import csv
 from scapy.all import PcapReader
 from datetime import datetime, timedelta, timezone
 from tqdm import tqdm
-from data_preprocessing.utils import Dataset, Precision
+from data_preprocessing.utils import Dataset, Precision, csv_row_is_empty
 
 
 class UNSBW(Dataset):
@@ -22,6 +22,7 @@ class UNSBW(Dataset):
         """
         # ensure that header get processed too
         header_values = []
+        # always insert at position 0 to vbe able to include the headers reliably
         self.labels_files.insert(0, os.path.join(self.base_dir, self.feature_names_file))
 
         with open(self.combined_csv, "w", newline="", encoding="utf-8") as output_csv:
@@ -32,7 +33,6 @@ class UNSBW(Dataset):
                     reader = csv.reader(input_csv)
                     if not header_values:
                         print("Discovered header not included yet...")
-                        # skip header
                         _header = next(reader)
                         for row in reader:
                             feature_name = row[1]
@@ -40,6 +40,8 @@ class UNSBW(Dataset):
                         writer.writerow(header_values)
                     else:
                         for row in reader:
+                            if csv_row_is_empty(row):
+                                continue
                             corrected_row = self.correct_csv_row(row)
                             writer.writerow(corrected_row)
         print(f"Combined CSV written to {self.combined_csv}")
@@ -177,9 +179,18 @@ if __name__ == "__main__":
     )
 
     # unsbw.combine_csvs()
+
     # unsbw.combine_pcaps()
-    unsbw.sample_subset_of_combined_files(
-         output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
-         output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.pcap",
-         ratio=0.005
-     )
+    # unsbw.sample_subset_of_combined_files(
+    #      output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
+    #      output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.pcap",
+    #      ratio=0.005
+    #  )
+    # unsbw.sample_pcap_and_filter_csv_from_combined(
+    #     output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled-modulo.csv",
+    #     output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled-modulo.pcap",
+    #     sample_ratio=0.005,
+    # )
+
+    # unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
+    unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
