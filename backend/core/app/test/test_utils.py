@@ -55,15 +55,15 @@ async def test_start_static_analysis():
 async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     dataset_type = await db_session_fixture.get_dataset_type_model()
-    labels_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'rb').read()
-    data_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
+    labels_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.csv'
+    data_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap'
 
     name = "sample_data"
     description = "Test dataset"
     dataset_storage_location = f"{TEST_DIR}/{name}"
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
     try:
-        await calculate_and_add_dataset(data_file_in_bytes, "pcap", labels_file_in_bytes, "csv", name, description, dataset_type, db_session )
+        await calculate_and_add_dataset(data_file_path=data_file_path, labels_file_path=labels_file_path, name=name, description=description, dataset_type=dataset_type, db=db_session )
     finally:
         shutil.rmtree(dataset_storage_location)
 

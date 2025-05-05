@@ -219,24 +219,11 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_and_add_dataset(data_file, data_file_ending, labels_file, labels_file_ending, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file_path, labels_file_path, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
-    labels_file_text_stream = io.StringIO(labels_file.decode("utf-8"))
-    second_labels_file_text_stream = io.StringIO(labels_file.decode("utf-8"))
-
-    benign, malicious = await dataset_type.get_benign_and_malicious_counts(labels_file_text_stream)
-    # TODO 1: add method here to calculate precision type of labels DS
-    precision = await dataset_type.calculate_precision(second_labels_file_text_stream)
-    uid = str(uuid.uuid4())
-    base_path = os.getenv("DATASET_BASE_PATH")
-    dataset_storage_location = f"{base_path}/{name}/{uid}" 
     
-    data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
-    labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"
-
-    await create_directory(dataset_storage_location)
-    await save_file_to_disk(data_file, data_file_path)
-    await save_file_to_disk(labels_file, labels_file_path)
+    benign, malicious = await dataset_type.get_benign_and_malicious_counts(labels_file_path)
+    precision = await dataset_type.calculate_precision(labels_file_path)
 
     dataset = Dataset(
         name=name,

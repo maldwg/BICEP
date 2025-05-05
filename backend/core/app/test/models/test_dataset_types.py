@@ -49,8 +49,8 @@ def mock_network_traffic_data_dataset_type():
     )
 
 @pytest.mark.asyncio
-async def test_calculate_malicious_benign_counts_from_text_stream(mock_network_traffic_data_dataset_type, sample_dataset):
-    labels_file_path = open(sample_dataset.labels_file_path, 'r')
+async def test_calculate_malicious_benign_counts(mock_network_traffic_data_dataset_type, sample_dataset):
+    labels_file_path = sample_dataset.labels_file_path
     benign_count, malicious_count = await mock_network_traffic_data_dataset_type.get_benign_and_malicious_counts(labels_file_path)
     assert (benign_count, malicious_count) == (899,100)
 
@@ -62,7 +62,7 @@ async def test_get_positives_and_negatives_from_dataset(mock_network_traffic_dat
 
 @pytest.mark.asyncio
 async def test_get_precision(mock_network_traffic_data_dataset_type, sample_dataset):
-    labels_file_path = open(sample_dataset.labels_file_path, 'r')
+    labels_file_path = sample_dataset.labels_file_path
     precision = await mock_network_traffic_data_dataset_type.calculate_precision(labels_file_path)
     print(type(precision))
     assert isinstance(precision, MinutePrecision)

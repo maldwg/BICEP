@@ -9,13 +9,15 @@ from app.models.ids_container import get_all_container, update_container
 from app.models.ensemble import get_all_ensembles, update_ensemble
 from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
-from app.utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, file_type_is_accepted
+from app.utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, file_type_is_accepted, create_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
 from app.logger import LOGGER
 from app.database import get_db
-
+import uuid
+import shutil
+import os
 router = APIRouter(
     prefix="/crud"
 )
@@ -77,10 +79,22 @@ async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadF
         return JSONResponse({"error": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
     # For rulesets and general configurations
     dataset_type = await get_dataset_type_by_id(db, int(dataset_type_id))
-    data_file = await data_file.read()
-    labels_file = await labels_file.read()    
     
-    background_tasks.add_task(calculate_and_add_dataset, data_file=data_file, data_file_ending=data_file_ending, labels_file=labels_file, labels_file_ending=labels_file_ending, name=name, description=description, dataset_type=dataset_type, db=db)
+    uid = str(uuid.uuid4())
+    base_path = os.getenv("DATASET_BASE_PATH")
+    dataset_storage_location = f"{base_path}/{name}/{uid}" 
+    data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
+    labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"    
+    await create_directory(dataset_storage_location)
+    # Move the files to not write them again to file
+
+    with open(data_file_path, "wb") as f_out:
+        shutil.copyfileobj(data_file.file, f_out)
+
+    with open(labels_file_path, "wb") as f_out:
+        shutil.copyfileobj(labels_file.file, f_out)
+    
+    background_tasks.add_task(calculate_and_add_dataset, data_file_path=data_file_path, labels_file_path=labels_file_path, name=name, description=description, dataset_type=dataset_type, db=db)
     return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 

@@ -14,10 +14,10 @@ from datetime import timedelta
 from dateutil import parser
 import random
 
-def network_traffic_data_calculate_precision(labels_file_text_stream):
+def network_traffic_data_calculate_precision(labels_file_path):
 
-    def get_header_and_sample_rows_from_csv(labels_file_text_stream):
-        with labels_file_text_stream as input:
+    def get_header_and_sample_rows_from_csv(labels_file_path):
+        with open(labels_file_path, "r", encoding="utf-8") as input:
             reader = csv.reader(input)
             header = next(reader)
             all_rows = list(reader)
@@ -27,7 +27,7 @@ def network_traffic_data_calculate_precision(labels_file_text_stream):
         return parser.parse(timestamp, dayfirst=False).replace(tzinfo=None)
 
     # TODO 1: maybe enough to look for 0 values ? unliekly that everywhere there will be the same sec, ms, min, etc. 
-    header, random_rows = get_header_and_sample_rows_from_csv(labels_file_text_stream)
+    header, random_rows = get_header_and_sample_rows_from_csv(labels_file_path)
     _, timestamp_col_id, _, _, _, _ = _get_column_ids(header)
     timestamps = [ parse_timestamp(row[timestamp_col_id]) for row in random_rows]
     if not all(ts.microsecond == 0 for ts in timestamps):
@@ -39,7 +39,7 @@ def network_traffic_data_calculate_precision(labels_file_text_stream):
     else:
         return HourPrecision()
 
-def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_file_text_stream) -> tuple[int, int]:
+def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_file_path) -> tuple[int, int]:
     """
     Method to calculate how many entries of the dataset contain benign and malicious data
 
@@ -54,7 +54,7 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
     benign_count = 0
     malicious_count = 0
     header = True
-    with labels_file_text_stream as input_csv:
+    with open(labels_file_path, "r", encoding="utf-8") as input_csv:
         reader = csv.reader(input_csv)
         for row in reader:
             if header:

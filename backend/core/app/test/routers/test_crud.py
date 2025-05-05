@@ -23,18 +23,20 @@ async def test_get_all_ds_types(db_session_fixture: DatabaseSessionFixture):
     returned_types = await get_all_ds_types(db_session)
     assert returned_types[0].name == awaited_dataset_types[0].name
 
-
+@patch("shutil.copyfileobj")
 @pytest.mark.asyncio
-async def test_add_new_dataset(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_new_dataset(copy_mock, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
     db_session = await db_session_fixture.get_db_session()
     pcap_mock_file = MagicMock(spec=UploadFile)
     pcap_mock_file.filename = "data.pcap"
     pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
-
+    pcap_mock_file.file = None
+    
     labels_mock_file = MagicMock(spec=UploadFile)
     labels_mock_file.filename = "labels.csv"
     labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
-
+    labels_mock_file.file = None
+    
     response = await add_new_dataset(
         data_file=pcap_mock_file,
         labels_file=labels_mock_file,
