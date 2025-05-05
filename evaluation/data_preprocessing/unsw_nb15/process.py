@@ -78,12 +78,12 @@ class UNSBW(Dataset):
         corrected_pkt = pkt
         pkt_time = datetime.fromtimestamp(float(pkt.time))
         adjusted_time_str = adjust_time_offset(pkt_time)
-        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=None)
+        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=timezone.utc)
         
         unix_timestamp = parsed_datetime.timestamp()
         test = datetime.fromtimestamp(unix_timestamp , timezone.utc).replace(tzinfo=None).isoformat()
         corrected_pkt.time = unix_timestamp
-        print(f"original: {pkt_time} - updated: {parsed_datetime} - updated from ts: {test}")
+        # print(f"original: {pkt_time} - updated: {parsed_datetime} - updated from ts: {test}")
         return corrected_pkt
 
 
@@ -180,17 +180,17 @@ if __name__ == "__main__":
 
     # unsbw.combine_csvs()
 
-    # unsbw.combine_pcaps()
+    unsbw.combine_pcaps()
     # unsbw.sample_subset_of_combined_files(
     #      output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
     #      output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.pcap",
     #      ratio=0.005
     #  )
     # unsbw.sample_pcap_and_filter_csv_from_combined(
-    #     output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled-modulo.csv",
-    #     output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled-modulo.pcap",
-    #     sample_ratio=0.005,
-    # )
+    #   output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled.csv",
+    #   output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled.pcap",
+    #   sample_ratio=0.001,
+    #)
 
-    # unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
-    unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
+    #unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
+    #unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
