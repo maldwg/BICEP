@@ -308,4 +308,7 @@ async def read_data_file(file_path):
     
 
 def directory_is_empty(path):
-    return True if len(os.listdir(path)) == 0 else False
+    if os.path.isdir(path):
+        return True if len(os.listdir(path)) == 0 else False
+    else:
+        return True
