@@ -160,7 +160,7 @@ def _get_index(lst: list, search_list: list[str]) -> int:
             for search in search_list:
                 if str(element).casefold() == search.casefold():
                     return index
-    return None
+    raise KeyError(f"list {lst} does not contain any of these keywords: {search_list}")
 
 def _get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
     """
@@ -176,11 +176,11 @@ def _get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
         dst_port_col_id (int): Index containing the destination port
     """
     label_col_id = _get_index(header, ["Label", "Class"])
-    timestamp_col_id = _get_index(header, ["Time", "Timestamp", "StartTime"])
-    src_ip_col_id = _get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP", "SrcAddr"])
+    timestamp_col_id = _get_index(header, ["Time", "Timestamp", "StartTime", "Stime"])
+    src_ip_col_id = _get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP", "SrcAddr", "SrcIP"])
     src_port_col_id = _get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port", "Sport"])
-    dst_ip_col_id = _get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP", "DstAddr"])
-    dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port", "Dport"])
+    dst_ip_col_id = _get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP", "DstAddr", "DstIP"])
+    dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port", "Dport", "Dsport"])
     return label_col_id,timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id
 
 def _get_keys_with_tolerance(key, precision: Precision, tolerance_unit = 1):
