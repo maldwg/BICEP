@@ -150,7 +150,7 @@ class Dataset():
             keys = self.get_keys_with_tolerance(key, precision, tolerance=10)
             for k in keys:
                 if k in csv_records:
-                    return key
+                    return k
         return None        
 
     def get_benign_malicious_counts(self, csv_file):
@@ -202,7 +202,7 @@ class Dataset():
 
 
 
-    def sample_pcap_and_filter_csv_from_combined(self, output_pcap, output_csv, sample_ratio=0.05):
+    def sample_pcap_and_filter_csv_from_combined(self, output_pcap, output_csv, sample_ratio=0.05, packet_buffer=5):
         """
         Samples packets from a PCAP file and filters corresponding rows in the CSV.
 
@@ -218,17 +218,28 @@ class Dataset():
         """
         pcap_length = get_length_of_pcap(self.combined_pcap)
         sample_size = int(sample_ratio * pcap_length)
-        sample_steps = round(1 / sample_ratio)
+        # divide 1 by the ratio to get the absolute number of steps to take until a new sample is taken
+        # * buffer + 1 is to sample around this modulo seleceted packet for bg traffic and special attack types which need more sample sizes
+        # therefore we need to reduce the ammount of total modulo steps which is why sample steps needs to be bigger
+        sample_steps = round((1 / sample_ratio) * (packet_buffer + 1))
         print(f"Pcap got {pcap_length} packets")
         print(f"Sampling {sample_size} from {self.combined_pcap}...")
         samples = []
         with PcapWriter(output_pcap, append=False) as pcap_writer:
             with PcapReader(self.combined_pcap) as reader:
+                counter = 0
                 for i, pkt in enumerate(reader):
                     # to not only sample only the beginngin of the file but rather all parts use the modulo
                     if i % sample_steps == 0:
+                        counter = packet_buffer
+                    # if modulo step is reached, sample the fllowing packets specified using the buffer
+                    if counter > 0:
                         samples.append(pkt)
                         pcap_writer.write(pkt)
+                        counter -= 1
+                    # reset the counter again
+                    else:
+                        counter = 0
         print(f"Extracted {len(samples)} packets.")
 
         print(f"Loading CSV {self.combined_csv}...")
@@ -341,9 +352,10 @@ class Dataset():
             for packet in pcap_reader:
                 if total_packets % 100000 == 0 and total_packets > 0:
                     print(f"iterated over {total_packets} packets")
+                    print(f"had a ratio of {round(noise_packets/total_packets, 2)}")
                 total_packets += 1
                 # if there is no match count up noise
-                if not self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) != None:
+                if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) == None:
                     noise_packets += 1      
         return noise_packets, total_packets
 
@@ -360,6 +372,24 @@ class Dataset():
             f.write(f"Total lines: {benign+malicious} \n")
             f.write(f"Benign requests: {benign} - Ratio: {round(benign/(benign+malicious),2)}\n")
             f.write(f"Malicious requests: {malicious} - Ratio: {round(malicious/(benign+malicious),2)}")
+
+    def correct_pcap_pkt(self, pkt, time_offset: timedelta):
+        def adjust_time_offset(pkt_time, time_offset=0):
+            adjusted_time = pkt_time + time_offset
+            return adjusted_time.strftime(self.human_readable_timestamp_format)
+
+        corrected_pkt = pkt
+        pkt_time = datetime.fromtimestamp(float(pkt.time), tz=timezone.utc)
+        adjusted_time_str = adjust_time_offset(pkt_time, time_offset)
+        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=timezone.utc)
+        
+        unix_timestamp = parsed_datetime.timestamp()
+        test = datetime.fromtimestamp(unix_timestamp , timezone.utc).replace(tzinfo=None).isoformat()
+        corrected_pkt.time = unix_timestamp
+        print(f"original: {pkt_time} tz: {pkt_time.tzinfo} - updated: {parsed_datetime} tz:  {parsed_datetime.tzinfo} - updated from ts: {test}")
+        return corrected_pkt
+
+
 
     # def test_pcap_against_csv(self, pcap_path, csv_path ):
     #     """

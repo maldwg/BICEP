@@ -62,84 +62,10 @@ class UNSBW(Dataset):
                     print(f"Reading from {pcap_file}")
                     with PcapReader(pcap_file) as reader:
                         for packet in tqdm(reader, desc=f"Packets of file {pcap_file}"):                        
-                            corrected_pkt = self.correct_pcap_pkt(packet)
-                            writer.write(corrected_pkt)
+                            # corrected_pkt = self.correct_pcap_pkt(packet, timedelta(hours=2))
+                            writer.write(packet)
         print(f"Combined pcap written to {self.combined_pcap}")
 
-
-
-    def correct_pcap_pkt(self, pkt):
-        
-        def adjust_time_offset(pkt_time):
-            time_offset = timedelta(hours=1)
-            adjusted_time = pkt_time + time_offset
-            return adjusted_time.strftime(self.human_readable_timestamp_format)
-
-        corrected_pkt = pkt
-        pkt_time = datetime.fromtimestamp(float(pkt.time))
-        adjusted_time_str = adjust_time_offset(pkt_time)
-        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format).replace(tzinfo=timezone.utc)
-        
-        unix_timestamp = parsed_datetime.timestamp()
-        test = datetime.fromtimestamp(unix_timestamp , timezone.utc).replace(tzinfo=None).isoformat()
-        corrected_pkt.time = unix_timestamp
-        # print(f"original: {pkt_time} - updated: {parsed_datetime} - updated from ts: {test}")
-        return corrected_pkt
-
-
-            
-    # def sample_pcap_and_filter_csv(self, pcap_path, pcap_output_path, csv_path, output_csv, sample_size=10000):
-    #     """
-    #     Samples packets from a PCAP file and filters corresponding rows in the CSV.
-
-    #     Args:
-    #         pcap_path (str): Path to the input PCAP file.
-    #         pcap_output_path (str): Path to the output sampled PCAP file.
-    #         csv_path (str): Path to the full CSV file.
-    #         output_csv (str): Path to the output filtered CSV file.
-    #         sample_size (int, optional): Number of packets to sample. Defaults to 10000.
-
-    #     Returns:
-    #         None
-    #     """
-    #     print(f"Sampling {sample_size} from {pcap_path}...")
-    #     samples = []
-    #     with PcapWriter(pcap_output_path, append=False) as pcap_writer:
-    #         with PcapReader(pcap_path) as reader:
-    #             for i, pkt in enumerate(reader):
-    #                 samples.append(pkt)
-    #                 pcap_writer.write(pkt)
-    #                 if len(samples) >= sample_size:
-    #                     break
-    #     print(f"Extracted {len(samples)} packets.")
-
-    #     print(f"Loading CSV {csv_path}...")
-    #     csv_records = self.transform_csv_to_dict(csv_path)
-
-    #     print("Filtering CSV...")
-    #     matches = {}
-    #     for pkt in tqdm(samples, total=sample_size, desc="Sampling process"):
-    #         match = self.get_packet_matches_of_csv(pkt, csv_records)
-    #         if match:
-    #             matches[match] = True
-
-    #     if matches:
-    #         matching_rows = 0
-    #         with open(output_csv, "w") as sampled_csv:
-    #             writer = csv.writer(sampled_csv)
-    #             with open(csv_path, "r") as input_csv:
-    #                 reader = csv.reader(input_csv)
-    #                 header = next(reader)
-    #                 writer.writerow(header)
-    #                 for row in reader:
-    #                     key = self.get_key_from_csv_row(row=row)
-    #                     if key in matches:
-    #                         writer.writerow(row)
-    #                         matching_rows += 1
-    #         print(f"Found {matching_rows} matching rows.")
-    #         print(f"Filtered CSV written to: {output_csv}")
-    #     else:
-    #         print("No matches found.")
 
     def correct_csv_row(self, row):
         corrected_row = row
@@ -152,6 +78,7 @@ class UNSBW(Dataset):
             corrected_row[self.labels_row] = "Benign"
         start_time = datetime.fromtimestamp(int(row[28])) + timedelta(hours=-1)
         start_time_human_readable = start_time.strftime("%Y-%m-%d %H:%M:%S")
+        # print(f"orig time: {datetime.fromtimestamp(int(row[28]))} - corrected time {start_time_human_readable}")
 
         corrected_row[self.ts_row] = start_time_human_readable 
         return corrected_row
@@ -174,23 +101,24 @@ if __name__ == "__main__":
         ],
         pcap_path_glob=["pcaps/1/*.pcap", "pcaps/2/*.pcap" ],
         combined_csv="/mnt/hdd/Datasets/unsw-nb15/combined.csv",
-        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined.pcap",
+        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined_uncorrected.pcap",
         precision=Precision.MILISECOND.value
     )
 
     # unsbw.combine_csvs()
-
-    unsbw.combine_pcaps()
+    # unsbw.combine_pcaps()
     # unsbw.sample_subset_of_combined_files(
     #      output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
     #      output_pcap_file="/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.pcap",
     #      ratio=0.005
     #  )
-    # unsbw.sample_pcap_and_filter_csv_from_combined(
-    #   output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled.csv",
-    #   output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled.pcap",
-    #   sample_ratio=0.001,
-    #)
-
+    
     #unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
-    #unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
+    # unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
+    
+    unsbw.sample_pcap_and_filter_csv_from_combined(
+      output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled.csv",
+      output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled.pcap",
+      sample_ratio=0.002,
+    )
+

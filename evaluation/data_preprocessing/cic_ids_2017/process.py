@@ -41,14 +41,16 @@ class CICIDS(Dataset):
                 with PcapReader(pcap) as reader:
                     for pkt in tqdm(reader, desc=f"Processing of {pcap}"):
                         # correct packets only when using the raw files from the dataset. Mine were already preprocessed
-                        corrected_pkt = pkt # self.correct_pcap_pkt(pkt)
-                        writer.write(corrected_pkt)
+                        # adjust to -3 offfset for non processed files
+                        # corrected_pkt = self.correct_pcap_pkt(pkt, time_offset=timedelta(hours=0))
+                        writer.write(pkt)
                         # counter += 1
                         # if counter >0 and counter % 100 == 0:
                         #     break
 
 
 
+    # theoretically better to only correct the csv but 
     def correct_csv_row(self, row):
         def adjust_time_to_24_hour_format(csv_time):
             hour = csv_time.hour
@@ -60,26 +62,10 @@ class CICIDS(Dataset):
         csv_time_cell = row[6]  
         csv_time = parser.parse(csv_time_cell,dayfirst=True).replace(tzinfo=None)
         csv_time = adjust_time_to_24_hour_format(csv_time)
+        csv_time = csv_time + timedelta(hours=3)
         # use strftime and the timeformat here, otherwise second values can remain in some files!
         corrected_row[6] = csv_time.strftime("%Y-%m-%d %H:%M")             
         return corrected_row
-
-
-    def correct_pcap_pkt(self, pkt):
-        time_offset = timedelta(hours=-3)
-        def adjust_time_offset(pkt_time):
-            adjusted_time = pkt_time + time_offset
-            return adjusted_time.strftime(self.human_readable_timestamp_format)
-
-        corrected_pkt = pkt
-        # corrected pcaps are alreday corrected in timeshift and timezone! use this instead 
-        # adjusted_time_str = datetime.fromtimestamp(float(pkt.time), tz=timezone.utc).replace(tzinfo=None).strftime(self.human_readable_timestamp_format)
-        pkt_time = datetime.fromtimestamp(float(pkt.time), tz=timezone.utc).replace(tzinfo=None)
-        adjusted_time_str = adjust_time_offset(pkt_time)
-        parsed_datetime = datetime.strptime(adjusted_time_str, self.human_readable_timestamp_format)
-        unix_timestamp = parsed_datetime.timestamp()
-        corrected_pkt.time = unix_timestamp
-        return corrected_pkt
 
 if __name__ == "__main__":
     cicids = CICIDS(
@@ -90,26 +76,26 @@ if __name__ == "__main__":
         labels_row=-1,
         ts_row=6,
         base_dir_path="/mnt/hdd/Datasets/CIC-IDS-2017/",
-        labels_path_glob= ["*corrected.csv"], # ["*corrected.csv"],
-        pcap_path_glob=["*corrected.pcap"],
+        labels_path_glob= ["default-labels-files/*.csv"],
+        pcap_path_glob=["default_pcaps/*.pcap"],
         combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined.csv",
-        combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined.pcap",
+        combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined_uncorrected.pcap",
         precision=Precision.MINUTE.value
     )
 
     # cicids.combine_csv()
-
-    #cicids.combine_pcaps()
+    # cicids.combine_pcaps()
     # cicids.sample_subset_of_combined_files(
     #     output_csv_file= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.csv",
     #     output_pcap_file="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.pcap",
     #     ratio=0.005
     # )
-    # cicids.sample_pcap_and_filter_csv_from_combined(
-    #     output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-module.csv",
-    #     output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo.pcap",
-    #     sample_ratio=0.05,
-    # )
+    
+    cicids.sample_pcap_and_filter_csv_from_combined(
+        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-all-files.csv",
+        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-all-files.pcap",
+        sample_ratio=0.002,
+    )
 
-    # cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
-    cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")
+    #cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
+    #cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")
