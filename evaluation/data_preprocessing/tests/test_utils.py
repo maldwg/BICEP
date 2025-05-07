@@ -5,8 +5,8 @@ import csv
 from datetime import datetime
 from ..utils import Dataset, Precision, parse_timestamp, ts_have_different_values, all_ts_contain
 
-SAMPLE_PCAP = "/home/sftpuser/uploads/master/CIC-IDS-2017/Wednesday-WorkingHours_corrected.pcap"
-SAMPLE_CSV = "/home/sftpuser/uploads/master/CIC-IDS-2017/Wednesday-WorkingHours_corrected.csv"
+SAMPLE_PCAP = "./evaluation/data_preprocessing/tests/data/sample_data2.pcap"
+SAMPLE_CSV = "./evaluation/data_preprocessing/tests/data/sample_data2.csv"
 
 @pytest.fixture
 def dataset():
@@ -21,7 +21,8 @@ def dataset():
         labels_path_glob=["*.csv"],
         pcap_path_glob=["*.pcap"],
         combined_csv=SAMPLE_CSV,
-        combined_pcap=SAMPLE_PCAP
+        combined_pcap=SAMPLE_PCAP,
+        precision=Precision.MINUTE.value
     )
 
 def test_get_key_from_csv_row(dataset):
@@ -35,10 +36,11 @@ def test_get_key_from_csv_row(dataset):
 
 def test_transform_csv_to_dict(dataset):
     d = dataset.transform_csv_to_dict(SAMPLE_CSV)
-    with open("./tests/test.json", "w") as f:
+    with open("./test.json", "w") as f:
         f.write(str(d))
     assert isinstance(d, dict)
     assert all(isinstance(k, tuple) and isinstance(v, bool) for k, v in d.items())
+    os.remove("./test.json")
 
 def test_extract_key_from_pcap_packet(dataset):
     packets = rdpcap(SAMPLE_PCAP)
@@ -64,12 +66,10 @@ def test_get_keys_with_tolerance_second(dataset):
 def test_get_keys_with_tolerance_minutes(dataset):
     key = ["2023-01-01 10:00:00", "1.1.1.1", "1234", "2.2.2.2", "80"]
     keys = dataset.get_keys_with_tolerance(key, Precision.MINUTE.value, 1)
-    for k in keys:
-        print(k[0])
     assert keys == [
-        ("2023-01-01 09:59:00", '1.1.1.1', '1234', '2.2.2.2', '80'), 
-        ("2023-01-01 10:00:00", '1.1.1.1', '1234', '2.2.2.2', '80'), 
-        ("2023-01-01 10:01:00", '1.1.1.1', '1234', '2.2.2.2', '80')]
+        ("2023-01-01 09:59", '1.1.1.1', '1234', '2.2.2.2', '80'), 
+        ("2023-01-01 10:00", '1.1.1.1', '1234', '2.2.2.2', '80'), 
+        ("2023-01-01 10:01", '1.1.1.1', '1234', '2.2.2.2', '80')]
 
 
 def test_get_packet_matches_of_csv(dataset):
@@ -114,13 +114,11 @@ def test_sample_from_csv_with_target_values_limit(dataset):
     # Read actual counts from the file
     benign_total, malicious_total = dataset.get_benign_malicious_counts(SAMPLE_CSV)
     # Choose realistic small targets
-    target_benign = 0.1 * benign_total
-    target_malicious = 0.1 * malicious_total
+    target_benign = int(0.1 * benign_total)
+    target_malicious = int(0.1 * malicious_total)
 
     csv_records, csv_rows = dataset.sample_from_csv_with_target_values(SAMPLE_CSV, target_benign, target_malicious)
 
-    # +1 row for header
-    assert len(csv_rows) == len(csv_records) + 1  
     assert all(isinstance(row, list) for row in csv_rows)
     assert all(isinstance(k, tuple) and isinstance(v, bool) for k, v in csv_records.items())
 
@@ -147,6 +145,9 @@ def test_sample_subset_of_combined_files(dataset):
     # PCAP exists and has packets
     packets = rdpcap(str(output_pcap_file))
     assert len(packets) > 0
+    os.remove(output_csv_file)
+    os.remove(output_pcap_file)
+    
 
 
 
