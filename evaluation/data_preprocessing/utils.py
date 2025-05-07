@@ -182,7 +182,7 @@ class Dataset():
             csv_entries_list.append(header)
             for row in reader:
                 key = self.get_key_from_csv_row(row=row)             
-                label = row[self.labels_row]
+                label = str(row[self.labels_row]).strip()
                 if "benign" in label.casefold():
                     if target_benign >= benign:
                         csv_records[key] = True
@@ -194,9 +194,10 @@ class Dataset():
                         csv_entries_list.append(row)
                         malicious += 1
                 if target_malicious == malicious and target_benign == benign:
+                    print("breaking cause we reached the targets")
+                    print(f"Sampled {benign} benign - {malicious} malicious - wanted: {target_benign} benign abd {target_malicious} malicious")
                     break
-        print("last timestamp: ")
-        print(key[0])
+        print(f"Sampled {benign} benign - {malicious} malicious - wanted: {target_benign} benign abd {target_malicious} malicious")
         return csv_records, csv_entries_list
 
 

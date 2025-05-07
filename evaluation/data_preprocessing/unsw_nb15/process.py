@@ -80,7 +80,8 @@ class UNSBW(Dataset):
         start_time_human_readable = start_time.strftime("%Y-%m-%d %H:%M:%S")
         # print(f"orig time: {datetime.fromtimestamp(int(row[28]))} - corrected time {start_time_human_readable}")
 
-        corrected_row[self.ts_row] = start_time_human_readable 
+        corrected_row[self.ts_row] = start_time_human_readable       
+        
         return corrected_row
 
 if __name__ == "__main__":

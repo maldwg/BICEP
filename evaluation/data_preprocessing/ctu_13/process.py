@@ -60,7 +60,8 @@ class CTU(Dataset):
         start_time = orig_time + timedelta(hours=-2)
         start_time_human_readable = start_time.strftime(self.human_readable_timestamp_format)
         corrected_row[self.ts_row] = start_time_human_readable 
-        # print(f"orig time: {orig_time} - start_time = {start_time} corrected time {start_time_human_readable}")
+        # print(f"orig time: {orig_time} - start_time = {start_time} corrected time {start_time_human_readable}")      
+        
         return corrected_row
 
 
@@ -212,6 +213,6 @@ if __name__ == "__main__":
     #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
     
     ctu.sample_ctu_special_from_combined_csv_first(
-       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-default.csv",
-       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-default.pcap"  
+       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose.csv",
+       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose.pcap"  
     )

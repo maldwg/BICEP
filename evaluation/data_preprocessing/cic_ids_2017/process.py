@@ -65,6 +65,12 @@ class CICIDS(Dataset):
         csv_time = csv_time + timedelta(hours=3)
         # use strftime and the timeformat here, otherwise second values can remain in some files!
         corrected_row[6] = csv_time.strftime("%Y-%m-%d %H:%M")             
+        label = str(row[self.labels_row]).casefold()
+        if label == "benign":
+            corrected_row[self.labels_row] = label
+        else:
+            corrected_row[self.labels_row] = "malicious"
+        
         return corrected_row
 
 if __name__ == "__main__":
@@ -92,8 +98,8 @@ if __name__ == "__main__":
     # )
     
     cicids.sample_pcap_and_filter_csv_from_combined(
-        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-all-files.csv",
-        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-all-files.pcap",
+        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-reworked-labels.csv",
+        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-reworked-labels.pcap",
         sample_ratio=0.002,
     )
 
