@@ -19,12 +19,17 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 1,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "loki",
         "uid": "cduw0pfoxqi9sa"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -43,7 +48,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -139,6 +144,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -239,10 +245,11 @@
           "mode": "single",
           "sort": "none"
         },
+        "xField": "display_name",
         "xTickLabelRotation": 0,
         "xTickLabelSpacing": 100
       },
-      "pluginVersion": "11.1.4",
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -251,11 +258,10 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(PRECISION{metric=\"alert-metrics\"}[5h])",
-          "format": "time_series",
+          "expr": "FDR and on(exported_job) push_time_seconds >= time() - $__range",
+          "hide": false,
           "instant": true,
-          "interval": "1",
-          "legendFormat": "PREC: {{container}}",
+          "legendFormat": "__auto",
           "range": false,
           "refId": "A"
         },
@@ -266,11 +272,10 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(FNR{metric=\"alert-metrics\"}[5h])",
+          "expr": "FPR and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
-          "interval": "1",
-          "legendFormat": "FNR: {{container}}",
+          "legendFormat": "__auto",
           "range": false,
           "refId": "B"
         },
@@ -281,7 +286,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(FPR{metric=\"alert-metrics\"}[5h])",
+          "expr": "FNR and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -295,7 +300,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(ACCURACY{metric=\"alert-metrics\"}[5h])",
+          "expr": "DR and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -309,7 +314,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(F_SCORE{metric=\"alert-metrics\"}[5h])",
+          "expr": "ACCURACY and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -323,7 +328,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(UNASSIGNED_ALERTS_RATIO{metric=\"alert-metrics\"}[5h])",
+          "expr": "PRECISION and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -337,7 +342,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(DR{metric=\"alert-metrics\"}[5h])",
+          "expr": "F_SCORE and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -351,7 +356,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "last_over_time(FDR{metric=\"alert-metrics\"}[5h])",
+          "expr": "UNASSIGNED_REQUESTS_RATIO and on(exported_job) push_time_seconds >= time() - $__range",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -365,10 +370,7 @@
           "id": "joinByLabels",
           "options": {
             "join": [
-              "display_name",
-              "container",
-              "ensemble",
-              "dataset"
+              "display_name"
             ],
             "value": "__name__"
           }
@@ -456,6 +458,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.4.0",
       "targets": [
         {
           "datasource": {
@@ -478,7 +481,8 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 39,
+  "preload": false,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": []
