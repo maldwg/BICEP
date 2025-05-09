@@ -15,7 +15,7 @@ from app.models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from app.database import get_db
-
+from datetime import datetime
 router = APIRouter(
     prefix="/ids"
 )
@@ -73,6 +73,8 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Started static analysis for container{container.name} at {timestamp}")
     response = await parse_response_for_triggered_analysis(response, container, "static")
     # set container status to IDLE if request failed
     if response.status_code != 200: 
@@ -95,6 +97,8 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
     data = json.dumps(network_analysis_data.__dict__)
     await update_container_status(db, STATUS.ACTIVE.value, container)
     response: HTTPResponse = await container.start_network_analysis(data)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Started network analysis for container{container.name} at {timestamp}")
     response = await parse_response_for_triggered_analysis(response, container, "network")
     # set container status to IDLE if request failed
     if response.status_code != 200:
@@ -126,6 +130,8 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container = await get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(db, STATUS.IDLE.value, container)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Stopped analysis for container {container.name} at {timestamp}")
     return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 

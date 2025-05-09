@@ -22,7 +22,7 @@ from app.prometheus import push_evaluation_metrics_to_prometheus
 from app.loki import push_alerts_to_loki, get_all_alerts_for_ensemble_from_analysis_id, clean_up_alerts_in_loki
 from app.logger import LOGGER
 from app.database import get_db
-
+from datetime import datetime
 router = APIRouter(
     prefix="/ensemble"
 )
@@ -83,6 +83,8 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
         await update_sendig_logs_status(db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.PROCESSING.value )
     await ensemble.generate_new_analysis_id(db)
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(db=db, dataset_id=static_analysis_data.dataset_id)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Started static analysis for ensemble {ensemble.name} at {timestamp}")
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
@@ -141,6 +143,8 @@ async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData,
     if await ensemble.container_is_last_one_running(db=db, container=container):
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)     
         await ensemble.unset_analysis_id(db)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Stopped analysis for ensemble {ensemble.name} and container {container.name} at {timestamp}")
     return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
 @router.post("/publish/alerts")
