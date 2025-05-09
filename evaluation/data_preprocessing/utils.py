@@ -64,7 +64,7 @@ class Dataset():
             timestamp = datetime.fromtimestamp(row[self.ts_row])
         except:
             timestamp = parser.parse(row[self.ts_row], dayfirst=False).replace(tzinfo=None)
-        timestamp = normalize_timestamp(timestamp, self.precision).strip()
+        timestamp = normalize_timestamp(timestamp, self.precision)
         key = (timestamp, src_ip, src_port, dest_ip, dest_port)
         return key
 
@@ -118,11 +118,9 @@ class Dataset():
 
     def get_keys_with_tolerance(self, key, precision, tolerance = 10):
         timestamp = parser.parse(key[0], dayfirst=False).replace(tzinfo=None)
-        # for ms and s get a 1 sec tolerance
         if precision == Precision.MILISECOND.value or precision == Precision.SECOND.value:
             timestamp = timestamp.replace(microsecond=0)
             timestamps_with_tolerance = [timestamp + timedelta(seconds=offset) for offset in range(-tolerance, tolerance+1)]
-        # otherwise get a 1 min. tolerance
         else:
             timestamp = timestamp.replace(second=0, microsecond=0)
             timestamps_with_tolerance = [timestamp + timedelta(minutes=offset) for offset in range(-tolerance, tolerance+1)]
@@ -461,7 +459,7 @@ def normalize_timestamp(timestamp, precision):
     else:
         replaced_timestamp = timestamp.replace(second=0, microsecond=0)
         timestamp_format = "%Y-%m-%d %H:%M"
-    return replaced_timestamp.strftime(timestamp_format)
+    return replaced_timestamp.strftime(timestamp_format).strip()
     
 def get_length_of_pcap(pcap):
     with PcapReader(pcap) as reader:

@@ -157,6 +157,10 @@ class CTU(Dataset):
         # therefor check and write here not at the beginning
             
         print(f"Match-counter is {match_counter}")
+        match_counter_unique = 0
+        for k,v in matches.items():
+            match_counter_unique +=1 
+        print(f"ammount of unique matches: {match_counter_unique}")
         if matches:
             matching_rows = 0
             with open(output_csv_file, "w") as sampled_csv:
@@ -213,6 +217,6 @@ if __name__ == "__main__":
     #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
     
     ctu.sample_ctu_special_from_combined_csv_first(
-       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose.csv",
-       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose.pcap"  
+       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose-logged2.csv",
+       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose-logged2.pcap"  
     )

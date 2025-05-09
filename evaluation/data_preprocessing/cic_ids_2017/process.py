@@ -98,9 +98,9 @@ if __name__ == "__main__":
     # )
     
     cicids.sample_pcap_and_filter_csv_from_combined(
-        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-reworked-labels.csv",
-        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-modulo-buffer-reworked-labels.pcap",
-        sample_ratio=0.002,
+        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-01percent.csv",
+        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-01percent.pcap",
+        sample_ratio=0.001,
     )
 
     #cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
