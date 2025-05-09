@@ -5,7 +5,7 @@ from app.validation.models import AlertData, IdsContainerCreate, EnsembleCreate,
 from app.models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
 from app.models.configuration import Configuration, get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
-from app.utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from app.utils import create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 @router.post("/setup")
-async def setup_ids(data: IdsContainerCreate, stream_metric_tasks=Depends(get_stream_metric_tasks), db=Depends(get_db)):
+async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     host = await get_host_by_id(db, data.host_system_id)
 
     free_port=find_free_port()
@@ -39,15 +39,13 @@ async def setup_ids(data: IdsContainerCreate, stream_metric_tasks=Depends(get_st
         ruleset_id=ruleset_id
         )
     await ids_container.setup(db)
-    await ids_container.start_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
     return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 
 @router.delete("/remove/{container_id}")
-async def remove_container(container_id: int, stream_metric_tasks=Depends(get_stream_metric_tasks), db=Depends(get_db)):
+async def remove_container(container_id: int, db=Depends(get_db)):
     container: IdsContainer = await get_container_by_id(db, container_id)
     try:
-        await container.stop_metric_collection(db=db ,stream_metric_tasks=stream_metric_tasks)
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
         LOGGER.debug("stopped container analysis")

@@ -8,19 +8,6 @@ import uuid
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
-
-
-# TODO 10 : refactor metrics to be not started or stopped by container setup/removal but have a permanent endpoint or background task ha ndle the job
-async def push_metrics_to_prometheus(data, container_name: str):
-    prometheusUrl = os.environ.get('PROMETHEUS_URL')
-    registry = CollectorRegistry()
-    cpu_gauge = Gauge('container_cpu_usage', 'CPU usage of the container', ['display_name','container'], registry=registry)
-    memory_gauge = Gauge('container_memory_usage', 'Memory usage of the container', ['display_name','container'], registry=registry)
-    cpu_gauge.labels(display_name=container_name,container=container_name).set(data["cpu_usage"])
-    memory_gauge.labels(display_name=container_name, container=container_name).set(data["memory_usage"])
-    job_name=f"{container_name}_metrics"
-    response = push_to_gateway(prometheusUrl, job=job_name, registry=registry)
-
 async def push_evaluation_metrics_to_prometheus(metrics: dict, container_name: str=None, ensemble_name: str=None, dataset_name: str = None):
     timestamp = datetime.now().isoformat()
     prometheusUrl = os.environ.get('PROMETHEUS_URL')

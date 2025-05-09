@@ -3,16 +3,14 @@ from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.main import app 
 from app.database import get_db
-from app.utils import get_stream_metric_tasks
 from app.routers.ids import *
 from app.validation.models import *
 from app.models.docker_host_system import DockerHostSystem
 from http.client import HTTPResponse
 from app.test.fixtures import *
 
-@patch("app.models.ids_container.IdsContainer.start_metric_collection")
 @pytest.mark.asyncio
-async def test_setup_ids(start_metric_collection_mock,db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
+async def test_setup_ids(db_session_fixture: DatabaseSessionFixture):
     request_data: IdsContainerCreate = IdsContainerCreate(   
         host_system_id=1,
         description= "Test IDS Container",
@@ -21,7 +19,7 @@ async def test_setup_ids(start_metric_collection_mock,db_session_fixture: Databa
     )
 
     db_session = await db_session_fixture.get_db_session()
-    response = await setup_ids(request_data, db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
+    response = await setup_ids(request_data, db=db_session)
     response_json = json.loads(response.body.decode())
 
     assert response.status_code == 200
@@ -29,10 +27,10 @@ async def test_setup_ids(start_metric_collection_mock,db_session_fixture: Databa
 
 
 @pytest.mark.asyncio
-async def test_remove_container(db_session_fixture: DatabaseSessionFixture, mock_stream_metric_tasks):
+async def test_remove_container(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     container_id = 1
-    response = await remove_container(container_id=container_id,db=db_session, stream_metric_tasks=mock_stream_metric_tasks)
+    response = await remove_container(container_id=container_id,db=db_session)
     assert response.status_code == 204
 
 @pytest.mark.asyncio

@@ -21,8 +21,6 @@ from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from abc import ABC, abstractmethod
-def get_stream_metric_tasks(request: Request):
-    return request.app.state.stream_metric_tasks
 
 dataset_addition_tasks = set()
 

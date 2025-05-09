@@ -78,6 +78,19 @@ services:
     environment:
       - LOG_LEVEL=debug
       - TZ=UTC
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "9092:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - bicep
+      
 networks:
   bicep:
     driver: bridge

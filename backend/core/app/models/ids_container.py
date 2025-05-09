@@ -23,6 +23,7 @@ class IdsContainer(Base):
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
+    # TODO 0: remove the stream_metric_task_id as soon as possible from the database after benchmarking
     stream_metric_task_id = Column(String(64))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
@@ -92,35 +93,6 @@ class IdsContainer(Base):
     async def stop_analysis(self):
         result = await stop_analysis(self)
         return result
-
-    async def start_metric_collection(self, db: AsyncSession, stream_metric_tasks):
-        task_id = str(uuid.uuid4())
-        self.stream_metric_task_id = task_id
-        task = asyncio.create_task(start_metric_stream(container=self))
-        stream_metric_tasks[task_id] = task
-        await db.commit()
-        await db.refresh(self)
-        return f"started metric collection for container {self.id}"
-    
-    async def stop_metric_collection(self, db: AsyncSession, stream_metric_tasks):
-        if not self.stream_metric_task_id:
-            # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been startedd
-            return f"Could not stop metric collection for container {self.id}; No stream started"
-        try:
-            await stop_metric_stream(stream_metric_tasks=stream_metric_tasks, task_id=self.stream_metric_task_id, container=self)
-            del stream_metric_tasks[self.stream_metric_task_id]
-        except KeyError as e:
-            # set to none, because this indicates that the metric task has either been canceled or the server reloaded, 
-            # #either way the ID is lost in the dict, hence remove it also from the object
-            self.stream_metric_task_id = None
-            await db.commit()
-            await db.refresh(self)
-            print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
-            return f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task"
-        self.stream_metric_task_id = None
-        await db.commit()
-        # await db.refresh(self)
-        return f"stopped metric collection for container {self.id}"
     
     async def is_busy(self):
         if self.status == STATUS.ACTIVE.value:
