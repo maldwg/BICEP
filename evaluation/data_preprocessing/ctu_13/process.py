@@ -105,7 +105,67 @@ class CTU(Dataset):
         return corrected_pkt
 
 
-    def sample_ctu_special_from_combined_csv_first(self, output_csv_file, output_pcap_file, malicious_ratio=0.02, benign_factor = 3, packet_buffer=3):
+
+# problem: not enough unique values 
+# solutoin: sample malicoius and then benign using modulo!
+
+
+
+
+    def sample_from_csv_with_target_malicious_and_random_benign(self, csv_file, target_benign, target_malicious, packet_buffer):
+        """
+            sample a subset of requests from a csv file. The target values ofr benign and malicious requests
+            determine how many requests are sampled.
+        """
+        csv_records = {}
+        csv_entries_list =[]
+        total_rows_in_csv = 0
+        benign = malicious = 0
+        with open(csv_file, 'r') as input_csv:
+            reader = csv.reader(input_csv)
+            header = next(reader)  # Save the header row   
+            csv_entries_list.append(header)
+            # get malicious requests
+            for row in reader:
+                total_rows_in_csv += 1
+                key = self.get_key_from_csv_row(row=row)             
+                label = str(row[self.labels_row]).strip()
+                if "benign" not in label.casefold():
+                    if target_malicious >= malicious:
+                        csv_records[key] = True
+                        csv_entries_list.append(row)
+                        malicious += 1
+                    else: 
+                        print(f"sampled enough malicious - {malicious} rows")
+                        break
+            # then iterate over benign and get the using modulo
+            sample_steps = int(total_rows_in_csv / (target_benign * packet_buffer))
+        
+            for i, row in enumerate(reader):
+                key = self.get_key_from_csv_row(row=row)             
+                label = str(row[self.labels_row]).strip()
+                if i % sample_steps == 0:
+                    counter = packet_buffer
+                # if modulo step is reached, sample the fllowing packets specified using the buffer
+                if counter > 0:
+                    if "benign" in label.casefold():              
+                        if target_benign >= benign:
+                            csv_records[key] = True
+                            csv_entries_list.append(row)
+                            benign += 1
+                            counter -= 1
+                        else: 
+                            print(f"sampled enough benign - {benign} rows")   
+                            break  
+                else:
+                    counter = 0                
+        print(f"Sampled {benign} benign - {malicious} malicious - wanted: {target_benign} benign abd {target_malicious} malicious")
+        return csv_records, csv_entries_list
+
+
+
+
+    def sample_ctu_special_from_combined_csv_first(self, output_csv_file, output_pcap_file, malicious_ratio=0.02, benign_factor = 5, packet_buffer=3):
         """
         CTU dataset has only a small size of malicious requests, therefore it is not guaranteed that using modulo any malicious request is selected.
         Therefore, the csv needs to be sampled first and then the pcap which again will need to sample around each request using a buffer in order to 
@@ -122,64 +182,28 @@ class CTU(Dataset):
         target_benign = target_malicious * benign_factor
         print(f"overall values: benign {benign}, malicious {malicious}")
         print(f"Target values: benign {target_benign}, malicious {target_malicious}")
-        csv_records, csv_rows = self.sample_from_csv_with_target_values(self.combined_csv, target_benign, target_malicious)
+        csv_records, csv_rows = self.sample_from_csv_with_target_malicious_and_random_benign(self.combined_csv, target_benign, target_malicious, packet_buffer )
         print(f"finished iteration and writing over CSV's after {time.time() - start} seconds")
         print("Now sampling from the pcap")
-
+        with open(output_csv_file, "w") as f:
+            writer = csv.writer(f)
+            for row in csv_rows:
+                writer.writerow(row)
         filtered_packets = 0
         counter = 0
-        samples = []
-        matches = {}
-        match_counter = 0
         with PcapWriter(output_pcap_file, append=False) as pcap_writer:
             with PcapReader(self.combined_pcap) as pcap_reader:
-                buffer_counter = 0
                 for packet in pcap_reader:
                     if counter % 1000000 == 0 and counter != 0:
                         print(f"processed {counter} lines")
                         print(f"currently filtered {filtered_packets} packets")
                         print(f"took {time.time() - start} seconds until now")
-                    
-                    match = self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) 
-                    if match != None:
-                        buffer_counter = packet_buffer
-                        matches[match] = True
-                        match_counter += 1
-                        
-                    if buffer_counter > 0:    
+                    if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision):
                         pcap_writer.write(packet)
-                        samples.append(packet)
                         filtered_packets += 1
-                        buffer_counter -= 1
-                    counter += 1
-        
-        # at last use the pcap file and reiterate if the packet is in tbhe csv or not. buffered packets could be in the labels file
-        # therefor check and write here not at the beginning
-            
-        print(f"Match-counter is {match_counter}")
-        match_counter_unique = 0
-        for k,v in matches.items():
-            match_counter_unique +=1 
-        print(f"ammount of unique matches: {match_counter_unique}")
-        if matches:
-            matching_rows = 0
-            with open(output_csv_file, "w") as sampled_csv:
-                writer = csv.writer(sampled_csv)
-                with open(self.combined_csv, "r") as input_csv:
-                    reader = csv.reader(input_csv)
-                    header = next(reader)
-                    writer.writerow(header)
-                    for row in reader:
-                        key = self.get_key_from_csv_row(row=row)
-                        if key in matches:
-                            writer.writerow(row)
-                            matching_rows += 1
-            print(f"Found {matching_rows} matching rows.")
-            print(f"The noise ratio is: {(len(samples)-matching_rows) / len(samples)}")
-        else:
-            print("No matches found.")
-        
-        
+                    counter += 1     
+        print(f"currently filtered {filtered_packets} packets")
+
         
         
 if __name__ == "__main__":
@@ -217,6 +241,6 @@ if __name__ == "__main__":
     #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
     
     ctu.sample_ctu_special_from_combined_csv_first(
-       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose-logged2.csv",
-       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-verbose-logged2.pcap"  
+       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.csv",
+       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.pcap"  
     )

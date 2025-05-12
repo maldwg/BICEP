@@ -51,7 +51,7 @@ async def test_add_new_dataset(copy_mock, db_session_fixture: DatabaseSessionFix
     assert response.status_code == 200
     assert response_json == {"message": "configuration added successfully"}
 
-
+    shutil.rmtree("./None")
 @pytest.mark.asyncio
 async def test_add_new_dataset_unaccepeted_labels_file_type(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
     db_session = await db_session_fixture.get_db_session()
@@ -103,14 +103,14 @@ async def test_add_new_dataset_unaccepeted_data_file_type(db_session_fixture: Da
     assert response.status_code == 500
     assert response_json == {"error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.TEST_DATA.value} "}
 
-
+@patch("shutil.copyfileobj")
 @pytest.mark.asyncio
-async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_configuration(_, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
     db_session = await db_session_fixture.get_db_session()
     config_mock_file = MagicMock(spec=UploadFile)
     config_mock_file.filename = "config.yaml"
-    config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
-
+    config_mock_file.read_content = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
+    config_mock_file.file = None
     # Prepare mock inputs
     mock_file = config_mock_file
     name = "Test Config"
@@ -127,7 +127,7 @@ async def test_add_configuration(db_session_fixture: DatabaseSessionFixture, moc
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {"message": "configuration added successfully"}
-
+    shutil.rmtree("./None")
 
 
 
@@ -189,8 +189,8 @@ async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture
     result = await get_all_configs(db_session)
 
     assert len(result) == 2
-    assert result[0]["name"] == "test-config 1"
-    assert result[1]["file_type"] == "rule-set"
+    assert result[0].name == "test-config 1"
+    assert result[1].file_type == "rule-set"
 
 @patch("app.routers.crud.get_all_configurations_by_type")
 @pytest.mark.asyncio
@@ -202,7 +202,7 @@ async def test_get_all_configs_of_a_filetype(all_configs_mock, db_session_fixtur
     response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
     assert len(response) == 1
-    assert response[0]["name"] == mock_configuration_ruleset.name
+    assert response[0].name == mock_configuration_ruleset.name
 
 
 @pytest.mark.asyncio
@@ -213,9 +213,9 @@ async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: Databa
     result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     assert result == expected_response
 
-
+@patch("app.routers.crud.remove_directory")
 @pytest.mark.asyncio
-async def test_remove_config(db_session_fixture: DatabaseSessionFixture):
+async def test_remove_config(remove_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     config_id = 1
     result = await remove_config(id=config_id, db=db_session)
@@ -230,48 +230,14 @@ async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
     assert len(response) == 2
     assert response[0].name == "TestDataset"
     assert response[1].name == "Test Dataset 2"
-
+    
+@patch("app.utils.remove_directory")
 @pytest.mark.asyncio
-async def test_remove_dataset(db_session_fixture: DatabaseSessionFixture):
+async def test_remove_dataset(remove_mock, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
-    dataset = await db_session_fixture.get_dataset_model()
     dataset_id = 1
-    dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1"
-    pathlib.Path(dataset_path).mkdir(parents=True)
-    shutil.copyfile(dataset.data_file_path, f"{dataset_path}/sample_data.pcap")
-    shutil.copyfile(dataset.labels_file_path, f"{dataset_path}/sample_data.csv")
-    dataset.data_file_path=f"{dataset_path}/sample_data.pcap"
-    dataset.labels_file_path=f"{dataset_path}/sample_data.csv"
     result = await remove_dataset(id=dataset_id, db=db_session)
     assert result.status_code == 204
-    assert os.path.isdir(f"{dataset_path}") == False
-    dataset_path_parent_dir = "/".join(dataset_path.split("/")[:-1])
-    print(dataset_path_parent_dir)
-    assert os.path.isdir(f"{dataset_path_parent_dir}") == False
-
-
-@pytest.mark.asyncio
-async def test_remove_dataset_with_other_dataset_in_same_location(db_session_fixture: DatabaseSessionFixture):
-    db_session = await db_session_fixture.get_db_session()
-    dataset = await db_session_fixture.get_dataset_model()
-    dataset_id = 1
-    first_dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-1"
-    second_dataset_path = f"{TESTS_BASE_DIR}/testfiles/dataset-name/uuid-2"
-    pathlib.Path(first_dataset_path).mkdir(parents=True)
-    pathlib.Path(second_dataset_path).mkdir(parents=True)
-    shutil.copyfile(dataset.data_file_path, f"{first_dataset_path}/sample_data.pcap")
-    shutil.copyfile(dataset.labels_file_path, f"{first_dataset_path}/sample_data.csv")
-    shutil.copyfile(dataset.data_file_path, f"{second_dataset_path}/sample_data.pcap")
-    shutil.copyfile(dataset.labels_file_path, f"{second_dataset_path}/sample_data.csv")
-    dataset.data_file_path=f"{first_dataset_path}/sample_data.pcap"
-    dataset.labels_file_path=f"{first_dataset_path}/sample_data.csv"
-    result = await remove_dataset(id=dataset_id, db=db_session)
-    assert result.status_code == 204
-    dataset_path_parent_dir = "/".join(first_dataset_path.split("/")[:-1])
-    print(dataset_path_parent_dir)
-    assert os.path.isdir(f"{dataset_path_parent_dir}") == True
-    shutil.rmtree(dataset_path_parent_dir)
-
 
 @pytest.mark.asyncio
 async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):

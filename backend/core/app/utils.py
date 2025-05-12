@@ -141,20 +141,6 @@ def find_free_port():
 
 def get_core_host():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
-   
-
-def get_serialized_confgigurations(configurations):
-    serialized_configs = []
-    for config in configurations:
-        serialized_config = {
-            "id": config.id,
-            "name": config.name,
-            "configuration": base64.b64encode(config.configuration).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
-            "file_type": config.file_type,
-            "description": config.description
-        }
-        serialized_configs.append(serialized_config)
-    return serialized_configs
 
 async def deregister_container_from_ensemble(container):
     container_url = container.get_container_http_url()
@@ -239,7 +225,7 @@ async def save_file_to_disk(file, path):
     with open(path, "wb") as f:
         f.write(file)
     
-def remove_directory(path):
+async def remove_directory(path):
     try:
         shutil.rmtree(path)
     except Exception as e:

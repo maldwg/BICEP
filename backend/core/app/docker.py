@@ -63,23 +63,25 @@ async def image_exists(client, image_name):
     return any(image_name in img.tags for img in client.images.list())
 
 
-async def inject_config(ids_container, config):
+async def inject_config(ids_container, configuration):
     container_url = ids_container.get_container_http_url()
     endpoint = "/configuration"
+    configuration_content = await configuration.read_content()
     async with httpx.AsyncClient(timeout=10) as client:
         form_data={
-            "file": (config.name, config.configuration, "application/octet-stream"),
+            "file": (configuration.name, configuration_content, "application/octet-stream"),
             "container_id": (None, str(ids_container.id), "application/json"),
             }
         
         response = await client.post(container_url+endpoint,files=form_data)
         
     return response
-async def inject_ruleset(ids_container, config):
+async def inject_ruleset(ids_container, ruleset):
     container_url = ids_container.get_container_http_url()
     endpoint = "/ruleset"
+    ruleset_content = await ruleset.read_content()
     async with httpx.AsyncClient(timeout=10) as client:
-        file={"file": (config.name, config.configuration)}
+        file={"file": (ruleset.name, ruleset_content)}
         response = await client.post(container_url+endpoint,files=file)
     return response
 

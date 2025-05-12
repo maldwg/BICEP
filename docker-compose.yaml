@@ -50,6 +50,8 @@ services:
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
       - DATASET_BASE_PATH=/opt
+      - CONFIGURATION_STORE_BASE_PATH=/opt/configuration_data
+      - RULESET_STORE_BASE_PATH=/opt/rulesets
       - PROMETHEUS_URL=prometheus-push-gateway:9091
       - LOKI_URL=http://loki:3100
       - TZ=UTC

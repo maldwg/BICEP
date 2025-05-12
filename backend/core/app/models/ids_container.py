@@ -23,8 +23,6 @@ class IdsContainer(Base):
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
-    # TODO 0: remove the stream_metric_task_id as soon as possible from the database after benchmarking
-    stream_metric_task_id = Column(String(64))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))

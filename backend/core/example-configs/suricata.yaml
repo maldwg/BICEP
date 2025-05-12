@@ -225,6 +225,39 @@ outputs:
         - frame:
             # disabled by default as this is very verbose.
             enabled: no
+        - smb
+        - tftp
+        - ike
+        - dcerpc
+        - krb5
+        - bittorrent-dht
+        - ssh
+        - arp:
+            enabled: no
+        - snmp
+        - rfb
+        - sip
+        - quic
+        - dhcp:
+           enabled: yes
+        - http2
+        - flow
+        - http:
+            extended: yes
+        - dns:
+            enabled: yes
+        - tls:
+            extended: yes
+        - files:
+          force-magic: no
+        - smtp:
+          extended: yes
+        - ftp
+        - rdp
+        - nfs
+
+
+
         - anomaly:
             # Anomaly log records describe unexpected conditions such
             # as truncated packets, packets with invalid IP/UDP/TCP

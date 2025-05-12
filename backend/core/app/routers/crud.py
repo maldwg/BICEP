@@ -2,14 +2,14 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
-from app.models.configuration import get_all_configurations, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
+from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
 from app.models.dataset import Dataset, get_all_datasets, remove_dataset_by_id
 from app.models.ids_tool import get_all_tools
 from app.models.ids_container import get_all_container, update_container
 from app.models.ensemble import get_all_ensembles, update_ensemble
 from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
-from app.utils import FILE_TYPES, get_serialized_confgigurations, calculate_and_add_dataset, file_type_is_accepted, create_directory
+from app.utils import FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
@@ -27,8 +27,7 @@ router = APIRouter(
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):
     configurations = await get_all_configurations(db)
-    serialized_configurations = get_serialized_confgigurations(configurations)
-    return serialized_configurations
+    return configurations
 
 @router.get("/configuration/file-types")
 async def get_all_config_filetypes():
@@ -41,30 +40,50 @@ async def get_all_configs_of_a_filetype(file_type: str, db=Depends(get_db)):
     valid_file_types = [t.value for t in FILE_TYPES]
     if file_type in valid_file_types:
         configurations = await get_all_configurations_by_type(db, file_type)
-        serialized_configurations = get_serialized_confgigurations(configurations)
-        return serialized_configurations
+        return configurations
     else:
         return {"error": "wrong file type"}
 
 @router.delete("/configuration/{id}")
 async def remove_config( id: int, db=Depends(get_db)):
+    configuration = await get_config_by_id(db, id)
+    configuration_directoy = "/".join(configuration.file_path.split("/")[:-1])
+    await remove_directory(configuration_directoy)
     await remove_configuration_by_id(db, id)
     return Response(status_code=204)
 
-# TODO 10: rtechnical debt --> asnych would be very nice, however, i am at the end of my knowledge why this behaves so badly....
+
+@router.get("/configuration/{id}/serialized")
+async def get_config_content( id: int, db=Depends(get_db)):
+    configuration = await get_config_by_id(db, id)
+    serialized_configurations = get_serialized_configuration(configuration)
+    return Response(status_code=204)
+
 @router.post("/configuration/add")
 async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
-    file_ending = configuration.filename.split(".")[-1]
-    if not file_type_is_accepted(file_type=file_type, file_ending=file_ending):
-        return JSONResponse({"error": f"file in {file_ending} format is not accepted as {file_type}"}, status_code=500)
-    # For rulesets and general configurations
-    content = await configuration.read()  
+    file_name = configuration.filename
+    if not file_type_is_accepted(file_type=file_type, file_ending=file_name.split(".")[-1]):
+        return JSONResponse({"error": f"file in {file_name.split(".")[-1]} format is not accepted as {file_type}"}, status_code=500)
+    if file_type == FILE_TYPES.CONFIG.value:
+        base_path = os.getenv("CONFIGURATION_STORE_BASE_PATH")
+    elif file_type == FILE_TYPES.RULE_SET.value:
+        base_path = os.getenv("RULESET_STORE_BASE_PATH")
+    else:
+        return JSONResponse({"error": f"filetype {file_type} not found "}, status_code=500)
+    uid = str(uuid.uuid4())
+    configuration_storage_location = f"{base_path}/{uid}" 
+    configuration_file_path = f"{configuration_storage_location}/{file_name}"
+    await create_directory(configuration_storage_location)
+    with open(configuration_file_path, "wb") as f_out:
+        shutil.copyfileobj(configuration.file, f_out)
+        
     db_configuration = Configuration(
         name=name,
         description=description,
-        configuration=content,
+        file_path=configuration_file_path,
         file_type=file_type,
     )
+    
     await add_config(db, db_configuration)
     return JSONResponse({"message": "configuration added successfully"}, status_code=200)
 

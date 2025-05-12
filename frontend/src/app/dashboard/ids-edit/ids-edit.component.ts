@@ -33,7 +33,7 @@ export class IdsEditComponent implements OnInit{
   
   selectedRuleset: Configuration = {
     id: 0,
-    configuration: "",
+    file_path: "",
     description: "",
     file_type: "",
     name: ""

@@ -1,8 +1,7 @@
 export interface Configuration{
     id: number,
     name: string,
-    configuration: string,
-    // neds to be with underscore otherwise backend error
+    file_path: string,
     file_type: string,
     description: string
 }
@@ -14,10 +13,23 @@ export interface ConfigurationSetupData{
     file_type: string
 }
 
+export interface DeserializedConfiguration {
+  id: number;
+  name: string;
+  file_type: string;
+  file_content: string;
+  file_path: string;
+  description: string;
+}
+
+
 export interface SerializedConfiguration {
-    id: number;
-    name: string;
-    configuration: string; // Base64 encoded string
-    file_type: string;
-    description: string;
-  }
+  id: number;
+  name: string;
+  file_type: string;
+  file_content: string;
+  file_path: string;
+  description: string;
+}
+
+  

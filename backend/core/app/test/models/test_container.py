@@ -19,7 +19,6 @@ def mock_ids_container():
         port = 8080,
         status = STATUS.IDLE.value,
         description = "Test Description",
-        stream_metric_task_id = None,
         configuration_id = 1,
         ids_tool_id = 1,
         ruleset_id = 1,

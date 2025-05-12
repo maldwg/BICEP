@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Configuration, ConfigurationSetupData, SerializedConfiguration } from '../../models/configuration';
+import { Configuration, ConfigurationSetupData, SerializedConfiguration, DeserializedConfiguration } from '../../models/configuration';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable, finalize, map } from 'rxjs';
@@ -17,20 +17,29 @@ export class ConfigService {
 
   
 
-
+// rewrite both to not use deserialized configuration 
+// thenj use these methods to 
   getAllConfigurations(): Observable<Configuration[]> {
     let path = "/crud/configuration/all";
-    return this.http.get<SerializedConfiguration[]>(environment.backendUrl + path).pipe(
-      map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
-    );
+    return this.http.get<Configuration[]>(environment.backendUrl + path);
   }
 
   getAllConfigurationsByType(fileType: string): Observable<Configuration[]> {
     let path = "/crud/configuration/all/" + fileType;
-    return this.http.get<SerializedConfiguration[]>(environment.backendUrl + path).pipe(
-      map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
+    return this.http.get<Configuration[]>(environment.backendUrl + path);
+    //.pipe(
+      //map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
+    //);
+  }
+
+  getDeserializedConfiguration(id: number): Observable<DeserializedConfiguration> {
+    const path = `/crud/configuartion/${id}/serialized`;
+    return this.http.get<SerializedConfiguration>(environment.backendUrl + path).pipe(
+      map(serialized => this.deserializeConfiguration(serialized))
     );
   }
+
+// TODO add service point for deserialized get for each config
 
   getAllFileTypes(): Observable<string[]>{
     let path = "/crud/configuration/file-types";
@@ -57,11 +66,12 @@ export class ConfigService {
 
 
 
-  deserializeConfiguration(serializedConfig: SerializedConfiguration): Configuration {
+  deserializeConfiguration(serializedConfig: SerializedConfiguration): DeserializedConfiguration {
     return {
       id: serializedConfig.id,
       name: serializedConfig.name,
-      configuration: atob(serializedConfig.configuration), // Decode Base64 to binary
+      file_content: atob(serializedConfig.file_content), // Decode Base64 to binary
+      file_path: serializedConfig.file_path,
       file_type: serializedConfig.file_type,
       description: serializedConfig.description
     };

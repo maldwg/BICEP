@@ -1,5 +1,6 @@
 import pytest
 from docker import DockerClient
+from app.test.fixtures import *
 from unittest.mock import patch, MagicMock, AsyncMock
 from ..docker import (
     get_docker_client,
@@ -79,7 +80,8 @@ async def test_start_docker_container(
 
 @pytest.mark.asyncio
 @patch("app.docker.httpx.AsyncClient")
-async def test_inject_config(mock_httpx_client, mock_ids_container, mock_config):
+async def test_inject_config(mock_httpx_client, mock_ids_container, db_session_fixture: DatabaseSessionFixture):
+    mock_config = await db_session_fixture.get_configuration_model()
     mock_response = AsyncMock()
     mock_httpx_client.return_value.__aenter__.return_value.post.return_value = mock_response
     mock_response.status_code = 200
