@@ -84,7 +84,12 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
     await ensemble.generate_new_analysis_id(db)
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(db=db, dataset_id=static_analysis_data.dataset_id)
     timestamp = datetime.now().isoformat()
-    LOGGER.info(f"Started static analysis for ensemble {ensemble.name} at {timestamp}")
+    LOGGER.info(
+        50* "###" +
+        "\n" + 
+        f"Started static analysis for ensemble {ensemble.name} at {timestamp} \n" + 
+        50 * "###"
+    )
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
@@ -144,7 +149,13 @@ async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData,
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)     
         await ensemble.unset_analysis_id(db)
     timestamp = datetime.now().isoformat()
-    LOGGER.info(f"Stopped analysis for ensemble {ensemble.name} and container {container.name} at {timestamp}")
+    LOGGER.info(
+        50* "###" +
+        "\n" +
+        f"Stopped analysis for ensemble {ensemble.name} and container {container.name} at {timestamp} \n" + 
+        50 * "###"
+    )
+    
     return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
 @router.post("/publish/alerts")

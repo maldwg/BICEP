@@ -118,8 +118,8 @@ if __name__ == "__main__":
     # unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
     
     unsbw.sample_pcap_and_filter_csv_from_combined(
-      output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled-01percent.csv",
-      output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled-01percent.pcap",
-      sample_ratio=0.001,
+      output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled-0025percent.csv",
+      output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled-0025percent.pcap",
+      sample_ratio=0.00025,
     )
 

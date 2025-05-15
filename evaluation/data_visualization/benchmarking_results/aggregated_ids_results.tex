@@ -1,15 +1,14 @@
 \begin{table*}[t]
-\centering
-\caption{Performance of IDS configurations aggregated over multiple datasets}
-\label{tab:ids_performance_summary}
-\renewcommand{\arraystretch}{1.5}
-\begin{tabular}{lccccccccc}
-\toprule
-\textbf{IDS Configuration} & \textbf{FPR} & \textbf{FNR} & \textbf{DR} & \textbf{FDR} & \textbf{Accuracy} & \textbf{Precision} & \textbf{F1-score} & \textbf{Unassigned Ratio} & \textbf{Runtime (s)} \\
-\midrule
-Suricata - et-open & 0.05 ± 0.01 & 0.10 ± 0.01 & 0.90 ± 0.01 & 0.08 ± 0.01 & 0.92 ± 0.01 & 0.91 ± 0.01 & 0.91 ± 0.01 & 0.02 ± 0.01 & 18.00 ± 15.72 \\
-Zeek - community & 0.06 ± 0.01 & 0.08 ± 0.01 & 0.92 ± 0.01 & 0.10 ± 0.01 & 0.90 ± 0.01 & 0.88 ± 0.01 & 0.89 ± 0.01 & 0.03 ± 0.01 & 22.67 ± 17.50 \\
-Snort - registered & 0.04 ± 0.01 & 0.12 ± 0.01 & 0.88 ± 0.01 & 0.06 ± 0.01 & 0.90 ± 0.01 & 0.89 ± 0.01 & 0.90 ± 0.01 & 0.01 ± 0.01 & 2.33 ± 16.04 \\
-\bottomrule
-\end{tabular}
+    \centering
+    \caption{Aggregated performance over CTU-13, CICIDS2017, and UNSW-NB15 datasets}
+    \label{tab:ids_performance_aggregated}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{lccccccccc}
+        \toprule
+        \textbf{IDS} & \textbf{Fpr} & \textbf{Fnr} & \textbf{Dr} & \textbf{Fdr} & \textbf{Accuracy} & \textbf{Precision} & \textbf{F Score} & \textbf{Unassigned Alerts Ratio} & \textbf{Runtime Seconds} \\
+        \midrule
+        Suricata - et-open & 0.05 $\pm$ 0.01 & 0.10 $\pm$ 0.01 & 0.90 $\pm$ 0.01 & 0.08 $\pm$ 0.01 & 0.92 $\pm$ 0.01 & 0.91 $\pm$ 0.01 & 0.91 $\pm$ 0.01 & 0.02 $\pm$ 0.01 & 4.45 $\pm$ 0.51 \\
+        Snort - Community & 0.04 $\pm$ 0.01 & 0.07 $\pm$ 0.01 & 0.93 $\pm$ 0.01 & 0.05 $\pm$ 0.01 & 0.94 $\pm$ 0.01 & 0.94 $\pm$ 0.01 & 0.94 $\pm$ 0.01 & 0.01 $\pm$ 0.00 & 4.67 $\pm$ 1.15 \\
+        \bottomrule
+    \end{tabular}
 \end{table*}

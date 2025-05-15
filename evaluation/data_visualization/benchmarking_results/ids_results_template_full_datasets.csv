@@ -1,4 +1,4 @@
-IDS,Dataset,FPR,FNR,DR,FDR,Accuracy,Precision,F1-score,Unassigned Ratio,Runtime (seconds)
+IDS,Dataset,Metrics,Start,End,Comment
 Suricata - et-open,CTU-13,,,,,,,,,,
 Suricata - et-open,UNSW-NB15,,,,,,,,,,
 Suricata - et-open,CIC-IDS2017,,,,,,,,,,

@@ -1,31 +1,31 @@
-IDS,Dataset,FPR,FNR,DR,FDR,Accuracy,Precision,F1-score,Unassigned Ratio,Runtime (seconds)
-Suricata - et-open,CTU-13,,,,,,,,,,
-Suricata - et-open,UNSW-NB15,,,,,,,,,,
-Suricata - et-open,CIC-IDS2017,,,,,,,,,,
-Suricata - abuse.ch B,CTU-13,,,,,,,,,,
-Suricata - abuse.ch B,UNSW-NB15,,,,,,,,,,
-Suricata - abuse.ch B,CIC-IDS2017,,,,,,,,,,
-Suricata - Miscellaneous,CTU-13,,,,,,,,,,
-Suricata - Miscellaneous,UNSW-NB15,,,,,,,,,,
-Suricata - Miscellaneous,CIC-IDS2017,,,,,,,,,,
-Suricata - All rules,CTU-13,,,,,,,,,,
+IDS,Dataset,Metrics,Start,End,Comment
+Suricata - et-open,CTU-13,{'FPR': 0.0, 'FNR': 0.99, 'DR': 0.01, 'FDR': 0.0, 'ACCURACY': 0.83, 'PRECISION': 1.0, 'F_SCORE': 0.02, 'UNASSIGNED_ALERTS_RATIO': 0.99},2025-05-15T12:42:17.690471,2025-05-15T12:42:22.026442, TP 61, FP 0, TN 44466, FN 8833, Unassigned: 4128 of 4189
+Suricata - et-open,UNSW-NB15,{'FPR': 0.04, 'FNR': 0.92, 'DR': 0.08, 'FDR': 0.95, 'ACCURACY': 0.93, 'PRECISION': 0.05, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.72},2025-05-15T12:55:56.541742,2025-05-15T12:56:00.832954,TP 16, FP 275, TN 6518, FN 185, Unassigned: 734 of 1025
+Suricata - et-open,CIC-IDS2017,{'FPR': 0.08, 'FNR': 0.95, 'DR': 0.05, 'FDR': 0.91, 'ACCURACY': 0.8, 'PRECISION': 0.09, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.85},2025-05-15T12:58:28.371153,2025-05-15T12:58:32.633068,TP 30, FP 308, TN 3552, FN 613, Unassigned: 1892 of 2230
+Suricata - abuse.ch B,CTU-13,{'FPR': 0.0, 'FNR': 0.99, 'DR': 0.01, 'FDR': 0.0, 'ACCURACY': 0.83, 'PRECISION': 1.0, 'F_SCORE': 0.02, 'UNASSIGNED_ALERTS_RATIO': 0.99},2025-05-15T14:14:02.869302,2025-05-15T14:14:09.238026,TP 61, FP 0, TN 44466, FN 8833, Unassigned: 4128 of 4189
+Suricata - abuse.ch B,UNSW-NB15,{'FPR': 0.04, 'FNR': 0.92, 'DR': 0.08, 'FDR': 0.95, 'ACCURACY': 0.93, 'PRECISION': 0.05, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.72},2025-05-15T14:15:25.046862,2025-05-15T14:15:31.779881,TP 16, FP 275, TN 6518, FN 185, Unassigned: 734 of 1025 
+Suricata - abuse.ch B,CIC-IDS2017,{'FPR': 0.08, 'FNR': 0.95, 'DR': 0.05, 'FDR': 0.91, 'ACCURACY': 0.8, 'PRECISION': 0.09, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.85},2025-05-15T14:16:07.581237,2025-05-15T14:16:13.897650,TP 30, FP 308, TN 3552, FN 613, Unassigned: 1891 of 2229
+Suricata - Miscellaneous,CTU-13,{'FPR': 0.0, 'FNR': 0.98, 'DR': 0.02, 'FDR': 0.0, 'ACCURACY': 0.84, 'PRECISION': 1.0, 'F_SCORE': 0.04, 'UNASSIGNED_ALERTS_RATIO': 0.96},2025-05-15T14:27:07.842461,2025-05-15T14:27:09.159121,TP 158, FP 0, TN 44466, FN 8736, Unassigned: 4278 of 4436
+Suricata - Miscellaneous,UNSW-NB15,{'FPR': 0.04, 'FNR': 0.92, 'DR': 0.08, 'FDR': 0.95, 'ACCURACY': 0.93, 'PRECISION': 0.05, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.72},2025-05-15T14:27:53.610449,2025-05-15T14:27:55.175818,TP 16, FP 275, TN 6518, FN 185, Unassigned: 735 of 1026
+Suricata - Miscellaneous,CIC-IDS2017,{'FPR': 0.08, 'FNR': 0.95, 'DR': 0.05, 'FDR': 0.91, 'ACCURACY': 0.79, 'PRECISION': 0.09, 'F_SCORE': 0.06, 'UNASSIGNED_ALERTS_RATIO': 0.85},2025-05-15T14:29:20.980926,2025-05-15T14:29:22.306504,TP 31, FP 314, TN 3546, FN 612, Unassigned: 1895 of 2240
+Suricata - All rules,CTU-13,
 Suricata - All rules,UNSW-NB15,,,,,,,,,,
 Suricata - All rules,CIC-IDS2017,,,,,,,,,,
-Snort - Community,CTU-13,,,,,,,,,,
-Snort - Community,UNSW-NB15,,,,,,,,,,
-Snort - Community,CIC-IDS2017,,,,,,,,,,
-Snort - LightSPD Connectivity,CTU-13,,,,,,,,,,
-Snort - LightSPD Connectivity,UNSW-NB15,,,,,,,,,,
-Snort - LightSPD Connectivity,CIC-IDS2017,,,,,,,,,,
-Snort - LightSPD Balanced,CTU-13,,,,,,,,,,
-Snort - LightSPD Balanced,UNSW-NB15,,,,,,,,,,
-Snort - LightSPD Balanced,CIC-IDS2017,,,,,,,,,,
-Snort - LightSPD Security,CTU-13,,,,,,,,,,
-Snort - LightSPD Security,UNSW-NB15,,,,,,,,,,
-Snort - LightSPD Security,CIC-IDS2017,,,,,,,,,,
-Snort - LightSPD Max-Detect,CTU-13,,,,,,,,,,
-Snort - LightSPD Max-Detect,UNSW-NB15,,,,,,,,,,
-Snort - LightSPD Max-Detect,CIC-IDS2017,,,,,,,,,,
+Snort - Community,CTU-13,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.83, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 1.0},2025-05-15T14:43:21.323010,2025-05-15T14:43:24.631699,TP 0, FP 0, TN 44466, FN 8894, Unassigned: 8 of 8
+Snort - Community,UNSW-NB15,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.97, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:44:32.645277,2025-05-15T14:44:35.308924,TP 0, FP 0, TN 6793, FN 201, Unassigned: 0 of 0
+Snort - Community,CIC-IDS2017,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.86, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 1.0},2025-05-15T14:46:18.749025,2025-05-15T14:46:21.184084,TP 0, FP 0, TN 3860, FN 643, Unassigned: 15 of 15
+Snort - LightSPD Connectivity,CTU-13,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.83, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:49:54.636208,2025-05-15T14:49:55.858742,TP 0, FP 0, TN 44466, FN 8894, Unassigned: 0 of 0
+Snort - LightSPD Connectivity,UNSW-NB15,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.97, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:50:50.742492,2025-05-15T14:50:52.395070,TP 0, FP 0, TN 6793, FN 201, Unassigned: 0 of 0
+Snort - LightSPD Connectivity,CIC-IDS2017,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.86, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:51:48.860116,2025-05-15T14:51:50.175243,TP 0, FP 0, TN 3860, FN 643, Unassigned: 0 of 0
+Snort - LightSPD Balanced,CTU-13,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.83, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:58:35.551154,2025-05-15T14:58:37.761281,TP 0, FP 0, TN 44466, FN 8894, Unassigned: 0 of 0
+Snort - LightSPD Balanced,UNSW-NB15,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.97, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T14:59:38.378262,2025-05-15T14:59:41.020392,TP 0, FP 0, TN 6793, FN 201, Unassigned: 0 of 0
+Snort - LightSPD Balanced,CIC-IDS2017,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.86, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T15:00:57.847323,2025-05-15T15:01:00.282274,TP 0, FP 0, TN 3860, FN 643, Unassigned: 0 of 0
+Snort - LightSPD Security,CTU-13,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.83, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T15:06:10.891876,2025-05-15T15:06:14.099462,TP 0, FP 0, TN 44466, FN 8894, Unassigned: 0 of 0
+Snort - LightSPD Security,UNSW-NB15,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.97, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T15:07:06.426884,2025-05-15T15:07:10.076061,TP 0, FP 0, TN 6793, FN 201, Unassigned: 0 of 0 
+Snort - LightSPD Security,CIC-IDS2017,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.86, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T15:08:18.666419,2025-05-15T15:08:21.826241,TP 0, FP 0, TN 3860, FN 643, Unassigned: 0 of 0
+Snort - LightSPD Max-Detect,CTU-13,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0.0, 'ACCURACY': 0.83, 'PRECISION': 1.0, 'F_SCORE': 0.0, 'UNASSIGNED_ALERTS_RATIO': 0.95},2025-05-15T15:11:31.604972,2025-05-15T15:11:37.809111,TP 4, FP 0, TN 44466, FN 8890, Unassigned: 78 of 82
+Snort - LightSPD Max-Detect,UNSW-NB15,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 0, 'ACCURACY': 0.97, 'PRECISION': 0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0},2025-05-15T15:12:17.675941,2025-05-15T15:12:23.337351,TP 0, FP 0, TN 6793, FN 201, Unassigned: 0 of 0
+Snort - LightSPD Max-Detect,CIC-IDS2017,{'FPR': 0.0, 'FNR': 1.0, 'DR': 0.0, 'FDR': 1.0, 'ACCURACY': 0.85, 'PRECISION': 0.0, 'F_SCORE': 0, 'UNASSIGNED_ALERTS_RATIO': 0.57},2025-05-15T15:13:11.593978,2025-05-15T15:13:18.023187,TP 0, FP 17, TN 3843, FN 643, Unassigned: 23 of 40
 Snort - Max-Detect + Community,CTU-13,,,,,,,,,,
 Snort - Max-Detect + Community,UNSW-NB15,,,,,,,,,,
 Snort - Max-Detect + Community,CIC-IDS2017,,,,,,,,,,
