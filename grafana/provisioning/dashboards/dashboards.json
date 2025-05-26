@@ -89,7 +89,7 @@
         "y": 0
       },
       "id": 6,
-      "interval": "2",
+      "interval": "2s",
       "options": {
         "legend": {
           "calcs": [],
@@ -189,7 +189,7 @@
         "y": 0
       },
       "id": 5,
-      "interval": "2",
+      "interval": "2s",
       "options": {
         "legend": {
           "calcs": [],

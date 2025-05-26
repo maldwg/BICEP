@@ -252,6 +252,7 @@ async def calculate_evaluation_metrics_and_push(db, dataset_id: int, alerts: lis
     # and an error will be thrown
     dataset = await get_dataset_by_id(db, dataset_id)
     metrics = await calculate_evaluation_metrics(db, dataset_id, alerts)
+    LOGGER.info(f"container {container_name} for enesemble {ensemble_name} got metrics {metrics}")
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
     await db.close()
 

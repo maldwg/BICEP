@@ -73,13 +73,6 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
-    timestamp = datetime.now().isoformat()
-    LOGGER.info(
-        50* "###" +
-        "\n" + 
-        f"Started static analysis for container{container.name} at {timestamp} \n" +
-        50 * "###"
-    )
     response = await parse_response_for_triggered_analysis(response, container, "static")
     # set container status to IDLE if request failed
     if response.status_code != 200: 
@@ -136,12 +129,6 @@ async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depen
     container = await get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(db, STATUS.IDLE.value, container)
     timestamp = datetime.now().isoformat()
-    LOGGER.info(
-        50* "###" +
-        "\n" + 
-        f"Stopped static analysis for container{container.name} at {timestamp} \n" +
-        50 * "###"
-    )
     return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 

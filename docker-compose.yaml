@@ -21,6 +21,9 @@ services:
       - bicep
     environment:
       - GF_PATHS_PROVISIONING=/usr/share/grafana/conf/provisioning
+      - TZ=UTC
+
+
   prometheus:
     build:
       context: ./prometheus
