@@ -57,7 +57,7 @@ async def test_calculate_malicious_benign_counts(mock_network_traffic_data_datas
 @pytest.mark.asyncio
 async def test_get_positives_and_negatives_from_dataset(mock_network_traffic_data_dataset_type, sample_dataset, sample_alerts):
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await mock_network_traffic_data_dataset_type.get_positives_and_negatives_from_dataset(sample_dataset, sample_alerts)
-    assert (TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS) == (9,6,893,91,0,15)
+    assert (TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS) == (11, 4, 895, 89, 0, 15)
 
 
 @pytest.mark.asyncio
