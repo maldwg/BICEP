@@ -107,6 +107,8 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
         reverse_tolerance_counter = 0
         else_counter = 0
         reverse_direct_counter = 0
+        fp = 0
+        tp = 0
         for row in reader:
             row_timestamp = normalize_and_parse_alert_timestamp(row[timestamp_col_id], precision)
             row_source_ip = row[src_ip_col_id].strip()
@@ -142,7 +144,9 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                         _remove_key_from_dict(key, alerts_dict)
                         if _is_request_benign(row[label_col_id]):
                             FP += 1
+                            fp += 1
                         else:
+                            tp += 1
                             TP += 1
                         key_found = True
                         tolerance_counter += 1
@@ -154,8 +158,10 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                         if r_key in alerts_dict:
                             _remove_key_from_dict(r_key, alerts_dict)
                             if _is_request_benign(row[label_col_id]):
+                                fp += 1
                                 FP += 1
                             else:
+                                tp += 1
                                 TP += 1
                             key_found = True
                             reverse_tolerance_counter += 1
@@ -167,6 +173,7 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                         TN += 1
                     else:
                         FN += 1
+    print(f"tp {tp}, fp {fp}")
     total_matches = direct_counter + tolerance_counter + reverse_tolerance_counter + else_counter
     print(f"Direct matches: {direct_counter}, reverse direct matches {reverse_direct_counter},tolerance matches: {tolerance_counter}, reverse_matches {reverse_tolerance_counter}, else matches: {else_counter}")
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
@@ -231,7 +238,10 @@ def _get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
     dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port", "Dport", "Dsport"])
     return label_col_id,timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id
 
-def _get_keys_with_tolerance(key, precision: Precision, tolerance_unit = 10):
+def _get_keys_with_tolerance(key, precision: Precision):
+    # if the precision is second or milisecond than discrepancies are likely between pcap and csv 
+    # therefor adjust the tolerance depending on the precision type of the dataset
+    tolerance_unit = 1 if type(precision) in [MinutePrecision, HourPrecision] else 10
     timestamp = parser.parse(key[0], dayfirst=False).replace(tzinfo=None)
     timestamps_with_tolerance = precision.calculate_timestamps_with_tolerance(timestamp, tolerance_unit=tolerance_unit)
     keys = []
