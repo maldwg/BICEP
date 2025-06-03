@@ -1,14 +1,16 @@
 import os
 import glob
-from scapy.all import PcapReader, PcapWriter
 import random 
 import os.path
 import csv
-from scapy.all import PcapReader
 from datetime import datetime, timedelta, timezone
 from tqdm import tqdm
 from data_preprocessing.utils import Dataset, Precision, csv_row_is_empty
-
+from scapy.all import *
+from scapy.layers.l2 import CookedLinux, Ether, ARP
+from scapy.layers.inet import IP
+from scapy.packet import Raw
+from scapy.layers.inet6 import IPv6 
 
 class UNSBW(Dataset):
 
@@ -63,7 +65,7 @@ class UNSBW(Dataset):
                     with PcapReader(pcap_file) as reader:
                         for packet in tqdm(reader, desc=f"Packets of file {pcap_file}"):                        
                             # corrected_pkt = self.correct_pcap_pkt(packet, timedelta(hours=2))
-                            writer.write(packet)
+                            writer.write(self.sll_to_ether(packet))
         print(f"Combined pcap written to {self.combined_pcap}")
 
 
@@ -84,6 +86,35 @@ class UNSBW(Dataset):
         
         return corrected_row
 
+
+
+    def sll_to_ether(self,pkt):
+        if not pkt.haslayer(CookedLinux):
+            return pkt
+
+        payload = pkt[CookedLinux].payload
+        ether_type = 0x0000
+
+        if payload.haslayer(IP):
+            ether_type = 0x0800
+        elif payload.haslayer(IPv6):
+            ether_type = 0x86DD
+        elif payload.haslayer(ARP):
+            ether_type = 0x0806
+        else:
+            return Ether(
+                src="12:34:56:78:90:ab", 
+                dst="ab:cd:ef:12:34:56", 
+                type=0x0000
+            ) / Raw(load=bytes(payload))
+
+        return Ether(
+            src="12:34:56:78:90:ab", 
+            dst="ab:cd:ef:12:34:56", 
+            type=ether_type
+    ) / payload
+
+
 if __name__ == "__main__":
 
     unsbw = UNSBW(
@@ -102,7 +133,7 @@ if __name__ == "__main__":
         ],
         pcap_path_glob=["pcaps/1/*.pcap", "pcaps/2/*.pcap" ],
         combined_csv="/mnt/hdd/Datasets/unsw-nb15/combined.csv",
-        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined_uncorrected.pcap",
+        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined_no_sll.pcap",
         precision=Precision.MILISECOND.value
     )
 
@@ -117,9 +148,10 @@ if __name__ == "__main__":
     #unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
     # unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
     
-    unsbw.sample_pcap_and_filter_csv_from_combined(
-      output_csv="/mnt/hdd/Datasets/unsw-nb15/sampled-0025percent.csv",
-      output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampled-0025percent.pcap",
-      sample_ratio=0.00025,
+    unsbw.sample_from_csv_and_include_pcap_flow_based(
+      output_csv="/mnt/hdd/Datasets/unsw-nb15/sampling_retry.csv",
+      output_pcap= "/mnt/hdd/Datasets/unsw-nb15/sampling_retry.pcap",
+        sample_ratio_benign    = 0.00225,
+        sample_ratio_malicious = 0.0125
     )
 

@@ -240,7 +240,11 @@ if __name__ == "__main__":
     # ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio.txt")
     #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
     
-    ctu.sample_ctu_special_from_combined_csv_first(
-       output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.csv",
-       output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.pcap"  
-    )
+    ctu.sample_from_csv_and_include_pcap_flow_based(
+       output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try.csv",
+       output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try.pcap",
+        sample_ratio_benign    = 0.000325,
+        sample_ratio_malicious = 0.015
+)
+
+## zeiten nochmal nachschauen ob das a drinnen ist oder wie groß abewichung ist 

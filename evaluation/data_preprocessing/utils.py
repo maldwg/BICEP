@@ -9,7 +9,8 @@ import glob
 import time
 from enum import Enum
 from tqdm import tqdm
-    
+import random
+
 class Precision(Enum):
     HOUR = "hour"
     MINUTE = "minute"
@@ -116,6 +117,35 @@ class Dataset():
             pass
         return None
 
+    def extract_key_from_reverse_pcap_packet(self, pkt):
+        """
+        Extracts a unique ID as key from each packet if possible
+
+        Args:
+            pkt (Packet): Scapy packet.
+
+        Returns:
+            tuple or None: Key if extraction is successful, otherwise None.
+        """
+        try:
+            if pkt.haslayer("IP") or pkt.haslayer("IPv6"):
+                ip_layer = pkt["IP"] if pkt.haslayer("IP") else pkt["IPv6"]
+                transport = pkt.getlayer("TCP") or pkt.getlayer("UDP")
+                if transport:
+                    # timestamp = datetime.fromtimestamp(float(pkt.time)).replace(tzinfo=None)  
+                    # trim accordingly!              
+                    timestamp = datetime.fromtimestamp(float(pkt.time), timezone.utc).replace(tzinfo=None)
+                    timestamp = normalize_timestamp(timestamp, self.precision)    
+                    dstip = str(ip_layer.src).strip()
+                    dsport = str(transport.sport).strip()
+                    srcip = str(ip_layer.dst).strip()
+                    sport = str(transport.dport).strip()
+                    return (timestamp, srcip, sport, dstip, dsport)
+        except Exception as e:
+            pass
+        return None
+
+
     def get_keys_with_tolerance(self, key, precision, tolerance = 10):
         timestamp = parser.parse(key[0], dayfirst=False).replace(tzinfo=None)
         if precision == Precision.MILISECOND.value or precision == Precision.SECOND.value:
@@ -150,6 +180,32 @@ class Dataset():
                 if k in csv_records:
                     return k
         return None        
+
+    def get_packet_matches_of_csv_reverse_packets_included(self, pkt, csv_records, precision=Precision.SECOND.value):
+        """
+        Checks whether a given packet matches any record in the CSV records.
+
+        Args:
+            pkt (Packet): Scapy packet to match.
+            csv_records (dict): Dictionary of CSV keys.
+
+        Returns:
+            tuple or None: Matching key if found, otherwise None.
+        """
+        key = self.extract_key_from_pcap_packet(pkt)
+        reverse_key = self.extract_key_from_reverse_pcap_packet(pkt)
+        if key is not None:
+            keys = self.get_keys_with_tolerance(key, precision, tolerance=10)
+            for k in keys:
+                if k in csv_records:
+                    return k
+        if reverse_key is not None:
+            keys = self.get_keys_with_tolerance(reverse_key, precision, tolerance=10)
+            for k in keys:
+                if k in csv_records:
+                    return k               
+        return None     
+
 
     def get_benign_malicious_counts(self, csv_file):
         benign = 0
@@ -197,9 +253,83 @@ class Dataset():
                     break
         print(f"Sampled {benign} benign - {malicious} malicious - wanted: {target_benign} benign abd {target_malicious} malicious")
         return csv_records, csv_entries_list
+    
+    
+    def sample_random_csv_lines(self, sample_ratio_benign, sample_ratio_malicious, output_csv):
+
+        print(f"Loading CSV {self.combined_csv}...")
+        malicious = []
+        benign = []
+        with open(self.combined_csv, "r") as f:
+            reader = csv.reader(f)
+            header = next(reader)
+            for row in reader:
+                if row[self.labels_row].lower() != "benign":
+                    malicious.append(row)
+                else:
+                    benign.append(row)
+        benign_count = int(len(benign) * sample_ratio_benign)
+        malicious_count = int(len(malicious) * sample_ratio_malicious)
+
+        sampled_benign = random.sample(benign, benign_count)
 
 
+        # Cluster malicious rows by row index proximity#
+        cluster_window = 5
+        clusters = []
+        current_cluster = []
+        for idx, row in enumerate(malicious):
+            current_cluster.append(row)
+            if idx % cluster_window == 0 and idx > 0:
+                clusters.append(current_cluster)
+                current_cluster = []
+        clusters.append(current_cluster)
 
+        # Sample malicious clusters
+        sample_cluster_count = int(len(clusters) * sample_ratio_malicious)
+        sampled_clusters = random.sample(clusters, min(sample_cluster_count, len(clusters)))
+        sampled_malicious = [row for cluster in sampled_clusters for row in cluster]
+
+        sampled_rows = sampled_benign + sampled_malicious
+        
+        print(f"Sampled {len(sampled_rows)} CSV rows (benign: {benign_count}, malicious: {malicious_count})")
+        with open(output_csv, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(sampled_rows)
+        print(f"Wrote the sampled rows to {output_csv}")
+        return sampled_rows
+
+
+    def sample_from_csv_and_include_pcap_flow_based(self, output_pcap, output_csv, sample_ratio_benign,sample_ratio_malicious):
+        sampled_rows = self.sample_random_csv_lines(sample_ratio_benign=sample_ratio_benign,sample_ratio_malicious=sample_ratio_malicious, output_csv=output_csv)
+        csv_records = self.transform_csv_to_dict(csv_path=output_csv)
+        
+        # Build flow match dictionary
+        def extract_flow_key(row):
+            return (
+                row[self.sip_row], row[self.dip_row],
+                row[self.sport_row], row[self.dport_row],
+            )
+
+        flow_keys = set(extract_flow_key(row) for row in sampled_rows)
+        print(f"Extracting {len(flow_keys)} flows from PCAP...")
+
+        # Now read PCAP and write matching packets to new PCAP
+        matched_packet_count = 0
+        counter = 0
+        with PcapWriter(output_pcap, append=False) as writer:
+            with PcapReader(self.combined_pcap) as reader:
+                for pkt in reader:
+                    counter += 1
+                    if self.get_packet_matches_of_csv_reverse_packets_included(pkt=pkt, csv_records=csv_records, precision=self.precision) != None:
+                        writer.write(pkt)
+                        matched_packet_count += 1
+                    if counter % 100000 == 0 and counter > 0:
+                        print(f"Iterated over {counter} packets so far, found {matched_packet_count} packet matches")
+
+        print(f"Written {matched_packet_count} matching packets to {output_pcap}")
+        print(f"Found {matched_packet_count} matches and wrote the to file")
 
     def sample_pcap_and_filter_csv_from_combined(self, output_pcap, output_csv, sample_ratio=0.05, packet_buffer=5):
         """
@@ -354,7 +484,7 @@ class Dataset():
                     print(f"had a ratio of {round(noise_packets/total_packets, 2)}")
                 total_packets += 1
                 # if there is no match count up noise
-                if self.get_packet_matches_of_csv(pkt=packet, csv_records=csv_records, precision=self.precision) == None:
+                if self.get_packet_matches_of_csv_reverse_packets_included(pkt=packet, csv_records=csv_records, precision=self.precision) == None:
                     noise_packets += 1      
         return noise_packets, total_packets
 

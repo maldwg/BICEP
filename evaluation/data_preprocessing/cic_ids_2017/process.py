@@ -97,11 +97,12 @@ if __name__ == "__main__":
     #     ratio=0.005
     # )
     
-    cicids.sample_pcap_and_filter_csv_from_combined(
-        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/sampled-0025percent.csv",
-        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-0025percent.pcap",
-        sample_ratio=0.00025,
-    )
+    cicids.sample_from_csv_and_include_pcap_flow_based(
+        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.csv",
+        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.pcap",
+        sample_ratio_benign    = 0.002,
+        sample_ratio_malicious = 0.01
+)
 
     #cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
     #cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")

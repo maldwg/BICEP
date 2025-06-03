@@ -2,39 +2,37 @@ import csv
 from datetime import datetime, timedelta
 import os
 import tempfile
-
-# === USER CONFIGURATION SECTION ===
+from dateutil import parser
 
 # CSV input file paths (these will be overwritten)
-CPU_CSV = "./snort/CPU Consumption-data-2025-05-15 17_14_22.csv"
-MEM_CSV = "./snort/Memory Consumption-data-2025-05-15 17_14_16.csv"
+CPU_CSV = "./snort/CPU Consumption-balanced-red.csv"
+MEM_CSV = "./snort/Memory Consumption-balanced-red.csv"
 
 # List of (start_time, end_time) tuples in ISO 8601 format
 TIMEFRAMES = [
-    ("2025-05-15T17:11:31.604972","2025-05-15T17:11:37.809111"),
-    ("2025-05-15T17:12:17.675941","2025-05-15T17:12:23.337351"),
-    ("2025-05-15T17:13:11.593978","2025-05-15T17:13:18.023187")
+    ("2025-05-21 12:34:10","2025-05-21 12:34:18"),
+    ("2025-05-21 12:37:43","2025-05-21 12:37:44"),
+    ("2025-05-21 12:39:33","2025-05-21 12:39:35")
+
 ]
 
 # Margin in seconds to extend the timeframes
 MARGIN_SECONDS = 4
 
-# === END USER CONFIGURATION ===
-
 
 def parse_timeframe_list(timeframe_list, margin_seconds):
-    """Parse timeframes into datetime tuples with margin applied."""
+    """Parse timeframes using dateutil parser with margin and return datetime tuples."""
     parsed = []
     for start_str, end_str in timeframe_list:
-        start = datetime.fromisoformat(start_str) - timedelta(seconds=margin_seconds)
-        end = datetime.fromisoformat(end_str) + timedelta(seconds=margin_seconds)
+        start = parser.parse(start_str) - timedelta(seconds=margin_seconds) + timedelta(hours=2)
+        end = parser.parse(end_str) + timedelta(seconds=margin_seconds) + timedelta(hours=2)
         parsed.append((start, end))
     return parsed
 
-
-def is_in_timeframes(timestamp: datetime, timeframes: list) -> bool:
-    """Check if timestamp is within any of the timeframes."""
-    return any(start <= timestamp <= end for start, end in timeframes)
+def is_in_timeframes(timestamp: str, timeframes: list) -> bool:
+    """Check if a timestamp string is within any of the parsed timeframes."""
+    ts = parser.parse(timestamp)
+    return any(start <= ts <= end for start, end in timeframes)
 
 
 def filter_csv_in_place(file_path: str, timeframes: list):
@@ -50,13 +48,11 @@ def filter_csv_in_place(file_path: str, timeframes: list):
 
         for row in reader:
             try:
-                timestamp = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                continue  # Skip malformed rows
-
-            if is_in_timeframes(timestamp, timeframes):
-                writer.writerow(row)
-
+                timestamp = row[0]
+                if is_in_timeframes(timestamp, timeframes):
+                    writer.writerow(row)
+            except:
+                continue
     os.close(temp_fd)
     os.replace(temp_path, file_path)
 

@@ -93,8 +93,8 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
         timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert, precision)
         key = (timestamp,source_ip,source_port,destination_ip,destination_port)
         # for each key, save all alerts from the ids that fall into that key (multiple possible, e.g. if ids says 1 request violates 2 rules)
-        alerts_dict[key] = alerts_dict.get(key, []) + [alert]
-    TOTAL_ALERTS = get_item_counts_of_dict(alerts_dict)
+        alerts_dict[key] = False
+    TOTAL_ALERTS = len(alerts_dict.keys())# get_item_counts_of_dict(alerts_dict)
     
     # iterate over ground truth csv and compare each entry to the alerts
     with open(dataset.labels_file_path, 'r') as csv_file:
@@ -126,15 +126,6 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                     TP += 1
                 direct_counter += 1
                 continue
-            # find plain reverse key == 1st level match
-            elif reverse_key in alerts_dict:
-                _remove_key_from_dict(reverse_key, alerts_dict)
-                if _is_request_benign(row[label_col_id]):
-                    FP += 1
-                else:
-                    TP += 1
-                reverse_direct_counter += 1                 
-                continue                
             else:
                 key_found = False
                 keys_with_tolerance = _get_keys_with_tolerance(key=base_key, precision = precision)
@@ -144,40 +135,87 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
                         _remove_key_from_dict(key, alerts_dict)
                         if _is_request_benign(row[label_col_id]):
                             FP += 1
-                            fp += 1
                         else:
-                            tp += 1
                             TP += 1
                         key_found = True
                         tolerance_counter += 1
-                        break
-                if not key_found:
-                    # try to find csv row reverse key with tolerance == 3. level match
-                    reverse_keys_with_tolerance = _get_keys_with_tolerance(key=reverse_key, precision = precision)
-                    for r_key in reverse_keys_with_tolerance:
-                        if r_key in alerts_dict:
-                            _remove_key_from_dict(r_key, alerts_dict)
-                            if _is_request_benign(row[label_col_id]):
-                                fp += 1
-                                FP += 1
-                            else:
-                                tp += 1
-                                TP += 1
-                            key_found = True
-                            reverse_tolerance_counter += 1
-                            break    
+                        break        
+                if key_found:
+                    continue    
+            # find plain reverse key == 1st level match
+            if reverse_key in alerts_dict:
+                _remove_key_from_dict(reverse_key, alerts_dict)
+                if _is_request_benign(row[label_col_id]):
+                    FP += 1
+                    fp += 1
+                else:
+                    TP += 1
+                    tp += 1
+                reverse_direct_counter += 1                 
+                continue 
+
+            else:
+                key_found = False
+                # try to find csv row reverse key with tolerance == 3. level match
+                reverse_keys_with_tolerance = _get_keys_with_tolerance(key=reverse_key, precision = precision)
+                for r_key in reverse_keys_with_tolerance:
+                    if r_key in alerts_dict:
+                        _remove_key_from_dict(r_key, alerts_dict)
+                        if _is_request_benign(row[label_col_id]):
+                            FP += 1
+                        else:
+                            TP += 1
+                        key_found = True
+                        reverse_tolerance_counter += 1
+                        break    
+                if key_found:
+                    continue
+                
+            else_counter += 1
+            if _is_request_benign(row[label_col_id]):
+                TN += 1
+            else:
+                FN += 1            
+               
+            # else:
+            #     key_found = False
+            #     keys_with_tolerance = _get_keys_with_tolerance(key=base_key, precision = precision)
+            #     # try to find key for csv row + time buffer in alerts == 2. level match
+            #     for key in keys_with_tolerance:
+            #         if key in alerts_dict:
+            #             _remove_key_from_dict(key, alerts_dict)
+            #             if _is_request_benign(row[label_col_id]):
+            #                 FP += 1
+            #             else:
+            #                 TP += 1
+            #             key_found = True
+            #             tolerance_counter += 1
+            #             break
+                # if not key_found:
+                #     # try to find csv row reverse key with tolerance == 3. level match
+                #     reverse_keys_with_tolerance = _get_keys_with_tolerance(key=reverse_key, precision = precision)
+                #     for r_key in reverse_keys_with_tolerance:
+                #         if r_key in alerts_dict:
+                #             _remove_key_from_dict(r_key, alerts_dict)
+                #             if _is_request_benign(row[label_col_id]):
+                #                 FP += 1
+                #             else:
+                #                 TP += 1
+                #             key_found = True
+                #             reverse_tolerance_counter += 1
+                #             break    
                 # if no reversekey and normal key even with tolerance found == 4th level match                        
-                if not key_found:
-                    else_counter += 1
-                    if _is_request_benign(row[label_col_id]):
-                        TN += 1
-                    else:
-                        FN += 1
+                # if not key_found:
+                #     else_counter += 1
+                #     if _is_request_benign(row[label_col_id]):
+                #         TN += 1
+                #     else:
+                #         FN += 1
     print(f"tp {tp}, fp {fp}")
     total_matches = direct_counter + tolerance_counter + reverse_tolerance_counter + else_counter
     print(f"Direct matches: {direct_counter}, reverse direct matches {reverse_direct_counter},tolerance matches: {tolerance_counter}, reverse_matches {reverse_tolerance_counter}, else matches: {else_counter}")
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
-    UNASSIGNED_ALERTS = get_item_counts_of_dict(alerts_dict)
+    UNASSIGNED_ALERTS = _count_value_occurences_in_dict(alerts_dict, False)# get_item_counts_of_dict(alerts_dict)
     LOGGER.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
 
     return TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS
@@ -185,10 +223,14 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
 
 
 ## helper methods
+def _count_value_occurences_in_dict(dictionary, value):
+    return sum(v == value for v in dictionary.values())
+
 def _remove_key_from_dict(key, dict):
-    dict[key].pop(0)
-    if dict[key] == []: 
-        del dict[key]    
+    dict[key] = True
+    # dict[key].pop(0)
+    #if dict[key] == []: 
+    #    del dict[key]    
 
 def _get_reverse_key(key):
     ts, src_ip, src_port, dst_ip, dst_port = key

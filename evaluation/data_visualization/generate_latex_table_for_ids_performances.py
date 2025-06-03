@@ -27,7 +27,7 @@ def read_data(file_path: str, extra_metric: str = 'RUNTIME_SECONDS') -> Dict[str
         for row in reader:
             ids = row['IDS'].strip()
             metrics = parse_metrics(row['Metrics'])
-            runtime = compute_runtime(row['Start'], row['End'])
+            runtime = float(row['Runtime']) # compute_runtime(row['Start'], row['End'])
             metrics[extra_metric] = runtime
 
             for key, value in metrics.items():
@@ -68,7 +68,7 @@ def write_latex_table(data: Dict[str, Dict[str, List[float]]], metric_keys: List
 
 
 def main():
-    input_csv = "./benchmarking_results/sample_ids_results.csv"
+    input_csv = "./benchmarking_results/ids_results_full_datasets.csv"
     output_tex = "./benchmarking_results/aggregated_ids_results.tex"
     metric_keys = [
         'FPR', 'FNR', 'DR', 'FDR', 'ACCURACY', 'PRECISION',
