@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from app.database import get_db
 from datetime import datetime
+from app.models.ensemble import get_ensemble_by_id
 router = APIRouter(
     prefix="/ids"
 )
@@ -109,7 +110,8 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = await get_container_by_id(db, stop_data.container_id)
     if container.ensemble_ids != []:
         for ensemble_ids_of_container in container.ensemble_ids:
-            ensemble = ensemble_ids_of_container.ensemble
+            ensemble_id = ensemble_ids_of_container.ensemble_id
+            ensemble = await get_ensemble_by_id(db, ensemble_id)
             if ensemble.status == STATUS.ACTIVE.value:
                 message = f"Container is part of a running ensemble. It is not possible to stop a container analysis individually"
                 return create_response_error(message, 500)
