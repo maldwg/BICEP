@@ -10,6 +10,8 @@ import time
 from enum import Enum
 from tqdm import tqdm
 import random
+import ipaddress
+
 
 class Precision(Enum):
     HOUR = "hour"
@@ -518,7 +520,41 @@ class Dataset():
         print(f"original: {pkt_time} tz: {pkt_time.tzinfo} - updated: {parsed_datetime} tz:  {parsed_datetime.tzinfo} - updated from ts: {test}")
         return corrected_pkt
 
+    def csv_row_contains_invalid_information(self, row):
+        key = self.get_key_from_csv_row(row=row)
+        # Check for missing/empty values
+        if "" in key or None in key:
+            return True
+        _, src_ip, src_port, d_ip, d_port = key
+        # Validate IP addresses
+        try:
+            ipaddress.ip_address(src_ip)
+            ipaddress.ip_address(d_ip)
+        except ValueError:
+            return True  # Invalid IP
+        # Validate ports
+        try:
+            port1_int = int(src_port)
+            port2_int = int(d_port)
+            if not (0 <= port1_int <= 65535 and 0 <= port2_int <= 65535):
+                return True
+        except ValueError:
+            return True  # Non-integer port
+        return False  # Everything is valid
 
+    def get_nan_keys_from_csv(self, csv_path):
+        with open(csv_path) as input:
+            reader = csv.reader(input)
+            header = next(reader)
+            none_rows = []
+            keys = []
+            for row in reader:
+                key = self.get_key_from_csv_row(row=row)
+                if "" in key or None in key:
+                    none_rows.append(row)
+                    keys.append(key)
+        print(f"found {len(none_rows)} rows containing None data")
+        return none_rows, keys
 
     # def test_pcap_against_csv(self, pcap_path, csv_path ):
     #     """

@@ -21,7 +21,7 @@ class CICIDS(Dataset):
                         writer.writerow(header)
                         header_included = True
                     for row in reader:
-                        if csv_row_is_empty(row):
+                        if csv_row_is_empty(row) or self.csv_row_contains_invalid_information(row):
                             continue
                         try:
                             corrected_row = self.correct_csv_row(row)
@@ -84,12 +84,12 @@ if __name__ == "__main__":
         base_dir_path="/mnt/hdd/Datasets/CIC-IDS-2017/",
         labels_path_glob= ["default-labels-files/*.csv"],
         pcap_path_glob=["default_pcaps/*.pcap"],
-        combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined.csv",
+        combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined_filtered.csv",
         combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined_uncorrected.pcap",
         precision=Precision.MINUTE.value
     )
 
-    # cicids.combine_csv()
+    cicids.combine_csv()
     # cicids.combine_pcaps()
     # cicids.sample_subset_of_combined_files(
     #     output_csv_file= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.csv",
@@ -97,12 +97,12 @@ if __name__ == "__main__":
     #     ratio=0.005
     # )
     
-    cicids.sample_from_csv_and_include_pcap_flow_based(
-        output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.csv",
-        output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.pcap",
-        sample_ratio_benign    = 0.002,
-        sample_ratio_malicious = 0.01
-)
+#     cicids.sample_from_csv_and_include_pcap_flow_based(
+#         output_csv="/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.csv",
+#         output_pcap= "/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.pcap",
+#         sample_ratio_benign    = 0.002,
+#         sample_ratio_malicious = 0.01
+# )
 
     #cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
     #cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")

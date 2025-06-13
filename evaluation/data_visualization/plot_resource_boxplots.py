@@ -24,14 +24,18 @@ def read_values_by_type(folder_path, type):
 
 suricata_ram = read_values_by_type("suricata", "Memory")
 snort_ram = read_values_by_type("snort", "Memory")
-slips_ram = read_values_by_type("slips", "Memory")
+suricata_reduced_ram = read_values_by_type("suricata-reduced", "Memory")
+snort_reduced_ram = read_values_by_type("snort-reduced", "Memory")
+slips_ram = read_values_by_type("slips-reduced", "Memory")
 
 suricata_cpu = read_values_by_type("suricata", "CPU")
 snort_cpu = read_values_by_type("snort", "CPU")
-slips_cpu = read_values_by_type("slips", "CPU")
+suricata_reduced_cpu = read_values_by_type("suricata-reduced", "CPU")
+snort_reduced_cpu = read_values_by_type("snort-reduced", "CPU")
+slips_cpu = read_values_by_type("slips-reduced", "CPU")
 
-all_ram_data = [suricata_ram, snort_ram, slips_ram]
-all_cpu_data = [suricata_cpu, snort_cpu, slips_cpu]
+all_ram_data = [suricata_ram, snort_ram, suricata_reduced_ram, snort_reduced_ram, slips_ram]
+all_cpu_data = [suricata_cpu, snort_cpu, suricata_reduced_cpu, snort_reduced_cpu, slips_cpu]
 
 
 # Plotting boxplots for aggregated data

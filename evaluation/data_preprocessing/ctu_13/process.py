@@ -33,7 +33,7 @@ class CTU(Dataset):
                         header_written = True
 
                     for row in reader:
-                        if csv_row_is_empty(row):
+                        if csv_row_is_empty(row) or self.csv_row_contains_invalid_information(row):
                             continue
                         corrected_row = self.correct_csv_row(row)
                         writer.writerow(corrected_row)
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         base_dir_path="/mnt/hdd/Datasets/CTU-13/",
         labels_path_glob= ["*/*.binetflow"],
         pcap_path_glob=["*/*.pcap"],
-        combined_csv="/mnt/hdd/Datasets/CTU-13/combined.csv",
+        combined_csv="/mnt/hdd/Datasets/CTU-13/combined_filtered.csv",
         combined_pcap="/mnt/hdd/Datasets/CTU-13/combined_uncorrected.pcap" ,
         precision=Precision.MILISECOND.value
     )
@@ -241,10 +241,8 @@ if __name__ == "__main__":
     #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
     
     ctu.sample_from_csv_and_include_pcap_flow_based(
-       output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try.csv",
-       output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try.pcap",
-        sample_ratio_benign    = 0.000325,
-        sample_ratio_malicious = 0.015
+       output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
+       output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap",
+        sample_ratio_benign    = 0.00065,
+        sample_ratio_malicious = 0.03
 )
-
-## zeiten nochmal nachschauen ob das a drinnen ist oder wie groß abewichung ist 
