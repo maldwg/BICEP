@@ -1,0 +1,20 @@
+\begin{table*}[t]
+    \centering
+    \caption{Aggregated performance over CTU-13, CICIDS2017, and UNSW-NB15 datasets}
+    \label{tab:ids_performance_aggregated}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{lccccccccc}
+        \toprule
+        \textbf{IDS} & \textbf{Fpr} & \textbf{Fnr} & \textbf{Dr} & \textbf{Fdr} & \textbf{Accuracy} & \textbf{Precision} & \textbf{F Score} & \textbf{Unassigned Alerts Ratio} & \textbf{Runtime Seconds} \\
+        \midrule
+        Suricata - et-open & 0.10 $\pm$ 0.15 & 0.76 $\pm$ 0.37 & 0.24 $\pm$ 0.37 & 0.53 $\pm$ 0.47 & 0.85 $\pm$ 0.13 & 0.47 $\pm$ 0.47 & 0.19 $\pm$ 0.25 & 0.55 $\pm$ 0.27 & 913.21 $\pm$ 255.15 \\
+        Suricata - abuse.ch B & 0.10 $\pm$ 0.14 & 0.76 $\pm$ 0.38 & 0.24 $\pm$ 0.38 & 0.53 $\pm$ 0.47 & 0.85 $\pm$ 0.13 & 0.47 $\pm$ 0.47 & 0.19 $\pm$ 0.25 & 0.56 $\pm$ 0.23 & 3238.29 $\pm$ 3042.57 \\
+        Suricata - All rules & 0.13 $\pm$ 0.19 & 0.72 $\pm$ 0.37 & 0.28 $\pm$ 0.37 & 0.56 $\pm$ 0.46 & 0.83 $\pm$ 0.16 & 0.44 $\pm$ 0.46 & 0.23 $\pm$ 0.21 & 0.50 $\pm$ 0.23 & 3462.40 $\pm$ 3806.86 \\
+        Snort - Community & 0.12 $\pm$ 0.15 & 0.76 $\pm$ 0.30 & 0.24 $\pm$ 0.30 & 0.48 $\pm$ 0.41 & 0.83 $\pm$ 0.17 & 0.52 $\pm$ 0.41 & 0.25 $\pm$ 0.32 & 0.28 $\pm$ 0.36 & 896.70 $\pm$ 369.35 \\
+        Snort - LightSPD Balanced & 0.03 $\pm$ 0.02 & 0.83 $\pm$ 0.23 & 0.17 $\pm$ 0.23 & 0.38 $\pm$ 0.43 & 0.89 $\pm$ 0.08 & 0.62 $\pm$ 0.43 & 0.22 $\pm$ 0.29 & 0.14 $\pm$ 0.07 & 1282.11 $\pm$ 268.53 \\
+        Snort - LightSPD Max-Detect & 0.06 $\pm$ 0.05 & 0.57 $\pm$ 0.33 & 0.43 $\pm$ 0.33 & 0.28 $\pm$ 0.25 & 0.91 $\pm$ 0.06 & 0.72 $\pm$ 0.25 & 0.44 $\pm$ 0.30 & 0.30 $\pm$ 0.36 & 2092.74 $\pm$ 1294.21 \\
+        Snort - All Rules & 0.13 $\pm$ 0.15 & 0.56 $\pm$ 0.34 & 0.44 $\pm$ 0.34 & 0.42 $\pm$ 0.32 & 0.85 $\pm$ 0.14 & 0.58 $\pm$ 0.32 & 0.35 $\pm$ 0.26 & 0.33 $\pm$ 0.44 & 1963.34 $\pm$ 88.80 \\
+        Snort - Max-Detect + Community & 0.05 $\pm$ 0.05 & 0.77 $\pm$ 0.30 & 0.23 $\pm$ 0.30 & 0.38 $\pm$ 0.47 & 0.89 $\pm$ 0.09 & 0.62 $\pm$ 0.47 & 0.27 $\pm$ 0.34 & 0.32 $\pm$ 0.40 & 3197.64 $\pm$ 1079.56 \\
+        \bottomrule
+    \end{tabular}
+\end{table*}

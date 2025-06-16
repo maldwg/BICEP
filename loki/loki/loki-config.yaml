@@ -39,9 +39,9 @@ common:
 
 compactor:
   retention_enabled: true
-  retention_delete_delay: 1m
+  retention_delete_delay: 1h
   # make this smaller --> are logs then still present !?
-  compaction_interval: 1m
+  compaction_interval: 1h
   delete_request_store: filesystem
 
 query_range:
@@ -89,7 +89,7 @@ limits_config:
 
   max_line_size: 9MB
   deletion_mode: filter-and-delete
-  retention_period: 1m
+  retention_period: 168h  # 7 days
   cardinality_limit: 10000000000
   ingestion_rate_mb: 999999
   max_entries_limit_per_query: 10000000000

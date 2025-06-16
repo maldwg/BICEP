@@ -8,18 +8,6 @@ from .fixtures import *
 TESTS_BASE_DIR = "./backend/core/app/test"
 
 
-# @pytest.fixture
-# def sample_dataset():
-#     return Dataset(
-#         name="TestDataset",
-#         description="Test dataset for IDS evaluation",
-#         data_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap",
-#         labels_file_path=f"{TESTS_BASE_DIR}/testfiles/sample_data.csv",
-#         ammount_benign=899,
-#         ammount_malicious=100,
-#         dataset_type_id = 1,
-#         dataset_type=
-#     )
 
 @pytest.fixture
 def sample_alerts():

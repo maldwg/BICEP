@@ -1,0 +1,2 @@
+Total requests: 210474 
+Noise requests: 1 - Ratio: 0.0

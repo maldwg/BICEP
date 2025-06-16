@@ -14,6 +14,7 @@ class Dataset(Base):
     description = Column(String(2048), nullable=False)
     ammount_benign = Column(Integer, nullable=False)
     ammount_malicious = Column(Integer, nullable=False)
+    timestamp_precision = Column(String(64), nullable=False)
     dataset_type_id = Column(Integer, ForeignKey("dataset_type.id"), nullable=False)
 
     dataset_type = relationship('DatasetType', back_populates="dataset", lazy="selectin")
@@ -35,14 +36,14 @@ async def remove_dataset_by_id(db: AsyncSession, id: int):
     if dataset:
         dataset_directory = "/".join(dataset.labels_file_path.split("/")[:-1])
         print(dataset_directory)
-        remove_directory(dataset_directory)
+        await remove_directory(dataset_directory)
         # dataset_parent_directory: 
         # datasets are saved like so: dataset-name/uuid/files.fileending
         dataset_parent_directory = "/".join(dataset.labels_file_path.split("/")[:-2])
         print(dataset_parent_directory)
         if directory_is_empty(dataset_parent_directory):
              print("remove")
-             remove_directory(dataset_parent_directory)
+             await remove_directory(dataset_parent_directory)
         await db.delete(dataset)
         await db.commit()
 

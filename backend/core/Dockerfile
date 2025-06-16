@@ -13,4 +13,21 @@ RUN mkdir -p /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/
 COPY ./example-configs/sample-data.csv /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.csv
 COPY ./example-configs/sample-data.pcap /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.pcap
 
+RUN mkdir -p /opt/configuration_data/uuid1
+RUN mkdir -p /opt/configuration_data/uuid2
+RUN mkdir -p /opt/configuration_data/uuid3
+RUN mkdir -p /opt/rulesets/uuid1
+RUN mkdir -p /opt/rulesets/uuid2
+RUN mkdir -p /opt/rulesets/uuid3
+RUN mkdir -p /opt/rulesets/uuid4
+
+COPY ./example-configs/snort.lua /opt/configuration_data/uuid1/snort.lua
+COPY ./example-configs/suricata.yaml /opt/configuration_data/uuid2/suricata.yaml
+COPY ./example-configs/slips.yaml /opt/configuration_data/uuid3/slips.yaml
+
+COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
+COPY ./example-configs/snort-all.rules /opt/rulesets/uuid2/snort-all.rules
+COPY ./example-configs/suricata-all.rules /opt/rulesets/uuid3/suricata-all.rules
+COPY ./example-configs/suricata-et-open.rules /opt/rulesets/uuid4/suricata-et-open.rules
+
 WORKDIR /opt/app

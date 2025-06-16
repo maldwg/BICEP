@@ -23,7 +23,6 @@ class IdsContainer(Base):
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
     description = Column(String(2048))
-    stream_metric_task_id = Column(String(64))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))
@@ -69,12 +68,16 @@ class IdsContainer(Base):
 
     async def update_config(self, db: AsyncSession, config_id):
         from app.models.configuration import Configuration
-        config_file: Configuration = db.query(Configuration).filter(Configuration.id == config_id).first()
+        stmt = select(Configuration).where(Configuration.id == config_id)
+        result = await db.execute(stmt)
+        config_file =  result.scalar_one_or_none() 
         await inject_config(self, config_file)
 
     async def update_ruleset(self, db: AsyncSession, ruleset_id):
         from  app.models.configuration import Configuration
-        ruleset_file: Configuration = db.query(Configuration).filter(Configuration.id == ruleset_id).first()
+        stmt = select(Configuration).where(Configuration.id == ruleset_id)
+        result = await db.execute(stmt)
+        ruleset_file = result.scalar_one_or_none()
         await inject_ruleset(self, ruleset_file)
 
     async def start_static_analysis(self, form_data, dataset):
@@ -88,35 +91,6 @@ class IdsContainer(Base):
     async def stop_analysis(self):
         result = await stop_analysis(self)
         return result
-
-    async def start_metric_collection(self, db: AsyncSession, stream_metric_tasks):
-        task_id = str(uuid.uuid4())
-        self.stream_metric_task_id = task_id
-        task = asyncio.create_task(start_metric_stream(container=self))
-        stream_metric_tasks[task_id] = task
-        await db.commit()
-        await db.refresh(self)
-        return f"started metric collection for container {self.id}"
-    
-    async def stop_metric_collection(self, db: AsyncSession, stream_metric_tasks):
-        if not self.stream_metric_task_id:
-            # skip the container if there is no streaming task happening for it, e.g. an analysis hasn't been startedd
-            return f"Could not stop metric collection for container {self.id}; No stream started"
-        try:
-            await stop_metric_stream(stream_metric_tasks=stream_metric_tasks, task_id=self.stream_metric_task_id, container=self)
-            del stream_metric_tasks[self.stream_metric_task_id]
-        except KeyError as e:
-            # set to none, because this indicates that the metric task has either been canceled or the server reloaded, 
-            # #either way the ID is lost in the dict, hence remove it also from the object
-            self.stream_metric_task_id = None
-            await db.commit()
-            await db.refresh(self)
-            print(f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task")
-            return f"Could not stop task id {self.stream_metric_task_id} in container {self.id}, skipping cancellation of the task"
-        self.stream_metric_task_id = None
-        await db.commit()
-        # await db.refresh(self)
-        return f"stopped metric collection for container {self.id}"
     
     async def is_busy(self):
         if self.status == STATUS.ACTIVE.value:
@@ -159,11 +133,11 @@ async def update_container(db, container: IdsContainerUpdate):
     old_config_id = container_db.configuration_id
     new_config_id = container.configuration_id
     if old_config_id != new_config_id:
-        await container_db.update_config(new_config_id)
+        await container_db.update_config(db, new_config_id)
     old_ruleset_id = container_db.ruleset_id
     new_ruleset_id = container.ruleset_id
     if old_ruleset_id != new_config_id and new_ruleset_id is not None:
-        await container_db.update_ruleset(new_ruleset_id)
+        await container_db.update_ruleset(db, new_ruleset_id)
     # Update container attributes
     for key, value in container.dict().items():
         setattr(container_db, key, value)

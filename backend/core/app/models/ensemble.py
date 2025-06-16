@@ -47,7 +47,7 @@ class Ensemble(Base):
         from app.models.ids_container import IdsContainer, get_container_by_id
         ensemble_ids = await get_ensemble_ids_by_ids(db, self.id, container_id)
         container: IdsContainer = await get_container_by_id(db, container_id)
-        response = await deregister_container_from_ensemble(db, container)
+        response = await deregister_container_from_ensemble(container)
         if response.status_code == 200:
             await db.delete(ensemble_ids)
             await db.commit()

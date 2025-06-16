@@ -13,7 +13,13 @@ Alternatively you can start the framework in production mode by running:
 
     docker compose --env-file environments/prod up
 
-The framework can then be accessed via ``http://localhost:8080``
+The framework can then be accessed via ``http://localhost:8080`` on development mode or ``http://<your-ip-ord-dns>:8080``
+
+.. warning::
+    If you plan to switch between the modes, make sure to build the angular container from scratch using the respective env file
+    For instance run: 
+    ``docker compose --env-file environments/prod build angular``
+
 
 Differences Between Production and Development Mode
 ---------------------------------------------------

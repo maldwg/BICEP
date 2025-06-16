@@ -130,7 +130,7 @@ export class SetupComponent implements OnInit {
     this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
         this.idsConfigs = data.map(config => ({
-          id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
+          id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type
         })); 
       });
   }
@@ -140,7 +140,7 @@ export class SetupComponent implements OnInit {
     this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
         this.ruleSets = data.map(config => ({
-          id: config.id, name: config.name, configuration: config.configuration, description: config.description, file_type: config.file_type
+          id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type
         })); 
       });
   }

@@ -1,0 +1,4 @@
+filenames /mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.pcap
+filenames /mnt/hdd/Datasets/CTU-13/sampled-ctu-special-new-design-verbose.csv
+overall values: benign 19532001, malicious 444699
+Target values: benign 26679, malicious 8893

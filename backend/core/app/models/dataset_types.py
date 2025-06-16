@@ -32,6 +32,12 @@ class DatasetType(Base):
         func = getattr(module, function_name)
         return await asyncio.to_thread(func, dataset, alerts)
 
+    async def calculate_precision(self, labels_file_text_stream):
+        function_name = f"{self.function_prefix.lower()}_calculate_precision"
+        module = self._import_dataset_module()
+        func = getattr(module, function_name)
+        return await asyncio.to_thread(func, labels_file_text_stream)       
+
     def _import_dataset_module(self):
         """
         Dynamically imports the correct module based on function_prefix.

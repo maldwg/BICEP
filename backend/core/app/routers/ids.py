@@ -5,7 +5,7 @@ from app.validation.models import AlertData, IdsContainerCreate, EnsembleCreate,
 from app.models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
 from app.models.configuration import Configuration, get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
-from app.utils import get_stream_metric_tasks ,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from app.utils import create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -15,13 +15,18 @@ from app.models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from app.database import get_db
-
+from datetime import datetime
+import time
+from app.models.ensemble import get_ensemble_by_id
 router = APIRouter(
     prefix="/ids"
 )
 
+START_TIME = None
+END_TIME = None
+
 @router.post("/setup")
-async def setup_ids(data: IdsContainerCreate, stream_metric_tasks=Depends(get_stream_metric_tasks), db=Depends(get_db)):
+async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     host = await get_host_by_id(db, data.host_system_id)
 
     free_port=find_free_port()
@@ -39,15 +44,13 @@ async def setup_ids(data: IdsContainerCreate, stream_metric_tasks=Depends(get_st
         ruleset_id=ruleset_id
         )
     await ids_container.setup(db)
-    await ids_container.start_metric_collection(db=db, stream_metric_tasks=stream_metric_tasks)
     return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 
 @router.delete("/remove/{container_id}")
-async def remove_container(container_id: int, stream_metric_tasks=Depends(get_stream_metric_tasks), db=Depends(get_db)):
+async def remove_container(container_id: int, db=Depends(get_db)):
     container: IdsContainer = await get_container_by_id(db, container_id)
     try:
-        await container.stop_metric_collection(db=db ,stream_metric_tasks=stream_metric_tasks)
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
         LOGGER.debug("stopped container analysis")
@@ -74,6 +77,8 @@ async def start_static_container_analysis(static_analysis_data: StaticAnalysisDa
             # "dataset": (dataset.name, data_file, "application/octet-stream"),
             "dataset_id": (None, str(dataset.id), "application/json")
         }    
+    global START_TIME 
+    START_TIME = time.time()
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
     response = await parse_response_for_triggered_analysis(response, container, "static")
     # set container status to IDLE if request failed
@@ -97,6 +102,8 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
     data = json.dumps(network_analysis_data.__dict__)
     await update_container_status(db, STATUS.ACTIVE.value, container)
     response: HTTPResponse = await container.start_network_analysis(data)
+    timestamp = datetime.now().isoformat()
+    LOGGER.info(f"Started network analysis for container{container.name} at {timestamp}")
     response = await parse_response_for_triggered_analysis(response, container, "network")
     # set container status to IDLE if request failed
     if response.status_code != 200:
@@ -107,9 +114,11 @@ async def start_network_container_analysis(network_analysis_data: NetworkAnalysi
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsContainer = await get_container_by_id(db, stop_data.container_id)
+    # check if container is part of an ensemble to prevent stopping an ensemble container individually
     if container.ensemble_ids != []:
         for ensemble_ids_of_container in container.ensemble_ids:
-            ensemble = ensemble_ids_of_container.ensemble
+            ensemble_id = ensemble_ids_of_container.ensemble_id
+            ensemble = await get_ensemble_by_id(db, ensemble_id)
             if ensemble.status == STATUS.ACTIVE.value:
                 message = f"Container is part of a running ensemble. It is not possible to stop a container analysis individually"
                 return create_response_error(message, 500)
@@ -128,6 +137,12 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
     container = await get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(db, STATUS.IDLE.value, container)
+    global END_TIME 
+    global START_TIME
+    END_TIME = time.time()
+    LOGGER.info(f"container {container.name} took {END_TIME - START_TIME:.2f} seconds to finish")
+    START_TIME = None
+    END_TIME = None
     return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
 
 

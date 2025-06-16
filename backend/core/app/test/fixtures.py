@@ -112,22 +112,28 @@ async def db_session_fixture():
     mock_dataset.ammount_benign=899
     mock_dataset.ammount_malicious=100
     mock_dataset.dataset_type_id = 1
+    mock_dataset.timestamp_precision="minute"
     
     second_mock_dataset = MagicMock(spec=Dataset)
     second_mock_dataset.id=2
     second_mock_dataset.name="Test Dataset 2"
+    second_mock_dataset.timestamp_precision="second"
 
 
     mock_configuration = MagicMock(spec=Configuration)
     mock_configuration.id=1,
     mock_configuration.name="test-config 1"
     mock_configuration.file_type="configuration"
-    mock_configuration.configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    mock_configuration.file_path=f"{TESTS_BASE_DIR}/testfiles/test-config.yaml"
+    file_content = open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    mock_configuration.read_content=AsyncMock(return_value=file_content)
     mock_configuration_ruleset = MagicMock(SPEC=Configuration)
     mock_configuration_ruleset.id=2
     mock_configuration_ruleset.name="test-config 2"
     mock_configuration_ruleset.file_type="rule-set"
-    mock_configuration_ruleset.configuration=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    mock_configuration_ruleset.file_path=f"{TESTS_BASE_DIR}/testfiles/test-config.yaml"
+    file_content = open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    mock_configuration_ruleset.read_content=AsyncMock(return_value=file_content)
 
     mock_ids_tool = MagicMock(spec=IdsTool)
     mock_ids_tool.id=1
@@ -217,10 +223,6 @@ async def db_session_fixture():
         mock_dataset_type=mock_dataset_type
     )
     yield db_fixture
-
-@pytest.fixture
-def mock_stream_metric_tasks():
-    return AsyncMock()
 
 @pytest.fixture
 def mock_background_tasks():

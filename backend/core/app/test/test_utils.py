@@ -55,15 +55,15 @@ async def test_start_static_analysis():
 async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     dataset_type = await db_session_fixture.get_dataset_type_model()
-    labels_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.csv', 'rb').read()
-    data_file_in_bytes = open(f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap', 'rb').read()
+    labels_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.csv'
+    data_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap'
 
     name = "sample_data"
     description = "Test dataset"
     dataset_storage_location = f"{TEST_DIR}/{name}"
     os.makedirs(dataset_storage_location, 777, exist_ok=True)
     try:
-        await calculate_and_add_dataset(data_file_in_bytes, "pcap", labels_file_in_bytes, "csv", name, description, dataset_type, db_session )
+        await calculate_and_add_dataset(data_file_path=data_file_path, labels_file_path=labels_file_path, name=name, description=description, dataset_type=dataset_type, db=db_session )
     finally:
         shutil.rmtree(dataset_storage_location)
 
@@ -110,7 +110,7 @@ async def test_extract_ts_srcip_srcport_dstip_dstport_from_alert():
 
     timestamp, source_ip, source_port, destination_ip, destination_port = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert)
 
-    assert timestamp == "2025-01-01T00:00"
+    assert timestamp == "2025-01-01T00:00:00"
     assert source_ip == "192.168.0.1"
     assert source_port == "1234"
     assert destination_ip == "192.168.0.2"
@@ -118,12 +118,28 @@ async def test_extract_ts_srcip_srcport_dstip_dstport_from_alert():
 
 
 @pytest.mark.asyncio
-async def test_normalize_and_parse_alert_timestamp():
-    timestamp = "2025-01-01T00:00:00Z"
-    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp)
-    assert normalized_timestamp == "2025-01-01T00:00" 
+async def test_normalize_and_parse_alert_timestamp_miliseconds():
+    timestamp = "2025-01-01T00:00:00.0000"
+    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp, precision=MilisecondPrecision())
+    assert normalized_timestamp == "2025-01-01T00:00:00" 
 
+@pytest.mark.asyncio
+async def test_normalize_and_parse_alert_timestamp_seconds():
+    timestamp = "2025-01-01T00:02:02Z"
+    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp, precision=SecondPrecision())
+    assert normalized_timestamp == "2025-01-01T00:02:02" 
 
+@pytest.mark.asyncio
+async def test_normalize_and_parse_alert_timestamp_minutes():
+    timestamp = "2025-01-01T11:00:00.123425Z"
+    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp, precision=MinutePrecision())
+    assert normalized_timestamp == "2025-01-01T11:00" 
+
+@pytest.mark.asyncio
+async def test_normalize_and_parse_alert_timestamp_hours():
+    timestamp = "2025-01-01T10:00:23Z"
+    normalized_timestamp = normalize_and_parse_alert_timestamp(timestamp, precision=HourPrecision())
+    assert normalized_timestamp == "2025-01-01T10:00" 
 
 @pytest.mark.asyncio
 async def test_get_item_counts_of_dict():

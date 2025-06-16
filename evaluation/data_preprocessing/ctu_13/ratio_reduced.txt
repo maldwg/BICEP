@@ -1,0 +1,3 @@
+Total lines: 22280 
+Benign requests: 12405 - Ratio: 0.56
+Malicious requests: 9875 - Ratio: 0.44

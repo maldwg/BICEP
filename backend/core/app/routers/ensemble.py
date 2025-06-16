@@ -22,7 +22,8 @@ from app.prometheus import push_evaluation_metrics_to_prometheus
 from app.loki import push_alerts_to_loki, get_all_alerts_for_ensemble_from_analysis_id, clean_up_alerts_in_loki
 from app.logger import LOGGER
 from app.database import get_db
-
+from datetime import datetime
+import time
 router = APIRouter(
     prefix="/ensemble"
 )
@@ -140,7 +141,7 @@ async def finished_ensemble_analysis(analysisFinishedData: AnalysisFinishedData,
     await update_container_status(db, STATUS.IDLE.value, container)
     if await ensemble.container_is_last_one_running(db=db, container=container):
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)     
-        await ensemble.unset_analysis_id(db)
+        await ensemble.unset_analysis_id(db)    
     return JSONResponse({"message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"}, status_code=200)
 
 @router.post("/publish/alerts")

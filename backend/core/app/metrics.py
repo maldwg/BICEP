@@ -59,5 +59,5 @@ async def calculate_evaluation_metrics(db, dataset_id, alerts):
         "F_SCORE": calculate_f_score(),
         "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ratio()
     }
-    LOGGER.debug(f"metrics: {metrics}")
+    # LOGGER.debug(f"metrics: {metrics}")
     return metrics

@@ -1,5 +1,6 @@
 import pytest
 from docker import DockerClient
+from app.test.fixtures import *
 from unittest.mock import patch, MagicMock, AsyncMock
 from ..docker import (
     get_docker_client,
@@ -7,9 +8,7 @@ from ..docker import (
     inject_config,
     inject_ruleset,
     remove_docker_container,
-    check_container_health,
-    calculate_memory_usage,
-    calculate_cpu_usage
+    check_container_health
 )
 
 @pytest.fixture
@@ -81,7 +80,8 @@ async def test_start_docker_container(
 
 @pytest.mark.asyncio
 @patch("app.docker.httpx.AsyncClient")
-async def test_inject_config(mock_httpx_client, mock_ids_container, mock_config):
+async def test_inject_config(mock_httpx_client, mock_ids_container, db_session_fixture: DatabaseSessionFixture):
+    mock_config = await db_session_fixture.get_configuration_model()
     mock_response = AsyncMock()
     mock_httpx_client.return_value.__aenter__.return_value.post.return_value = mock_response
     mock_response.status_code = 200
@@ -111,30 +111,3 @@ async def test_check_container_health(mock_httpx_client, mock_ids_container):
     result = await check_container_health(mock_ids_container)
 
     assert result is True
-
-@pytest.mark.asyncio
-async def test_calculate_memory_usage():
-    stats = {"memory_stats": {"usage": 10485760}}  # 10MB
-    memory_usage = await calculate_memory_usage(stats)
-    assert memory_usage == 10.0
-
-@pytest.mark.asyncio
-async def test_calculate_cpu_usage():
-    stats = {
-        "cpu_stats": {
-            "cpu_usage": {
-                "total_usage": 20000000,
-                "percpu_usage": [10000000, 10000000]
-            },
-            "system_cpu_usage": 100000000
-        },
-        "precpu_stats": {
-            "cpu_usage": {
-                "total_usage": 10000000,
-            },
-            "system_cpu_usage": 50000000,
-            "online_cpus": 2
-        }
-    }
-    cpu_usage = await calculate_cpu_usage(stats)
-    assert round(cpu_usage, 2) == 20.0

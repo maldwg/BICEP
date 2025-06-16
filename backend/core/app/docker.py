@@ -1,15 +1,9 @@
 import asyncio
-import json
 import docker
 from app.utils import get_core_host
 import time
 import httpx
-
 from requests.models import Response
-from app.prometheus import push_metrics_to_prometheus
-
-from app.utils import STATUS
-
 from app.logger import LOGGER
 
 def get_docker_client(host_system):
@@ -69,23 +63,25 @@ async def image_exists(client, image_name):
     return any(image_name in img.tags for img in client.images.list())
 
 
-async def inject_config(ids_container, config):
+async def inject_config(ids_container, configuration):
     container_url = ids_container.get_container_http_url()
     endpoint = "/configuration"
+    configuration_content = await configuration.read_content()
     async with httpx.AsyncClient(timeout=10) as client:
         form_data={
-            "file": (config.name, config.configuration, "application/octet-stream"),
+            "file": (configuration.name, configuration_content, "application/octet-stream"),
             "container_id": (None, str(ids_container.id), "application/json"),
             }
         
         response = await client.post(container_url+endpoint,files=form_data)
         
     return response
-async def inject_ruleset(ids_container, config):
+async def inject_ruleset(ids_container, ruleset):
     container_url = ids_container.get_container_http_url()
     endpoint = "/ruleset"
+    ruleset_content = await ruleset.read_content()
     async with httpx.AsyncClient(timeout=10) as client:
-        file={"file": (config.name, config.configuration)}
+        file={"file": (ruleset.name, ruleset_content)}
         response = await client.post(container_url+endpoint,files=file)
     return response
 
@@ -117,75 +113,3 @@ async def check_container_health(ids_container, timeout=30):
             await remove_docker_container(ids_container)
             return False
         await asyncio.sleep(2)
-
-async def start_metric_stream(container, interval=1.0):
-    try:
-        client = get_docker_client(container.host_system)
-        container = client.containers.get(container_id=container.name)
-        for stats_bytes in container.stats(stream=True):
-            stats_decoded = stats_bytes.decode("utf-8")
-            stats = json.loads(stats_decoded)
-            try:
-                cpu_usage = await calculate_cpu_usage(stats) 
-                memory_usage = await calculate_memory_usage(stats)
-            except KeyError as e:
-                # Keyerrors occur on every 1st iteration as tehre is not pre_cpu statistic yet
-                continue            
-
-            stat = {
-                "cpu_usage": cpu_usage,
-                "memory_usage": memory_usage,
-            }
-            await push_metrics_to_prometheus(stat, container.name)
-            await asyncio.sleep(interval)
-
-    except asyncio.CancelledError as e:
-        LOGGER.error(f"Task for sending metrics for container {container.name} was cancelled successfully")
-
-async def stop_metric_stream(task_id, stream_metric_tasks, container):
-    try:
-        task = stream_metric_tasks[task_id]
-        task.cancel()
-        # push a last time to pomtheus the values None, so that there is no continuous timeline for the metrics
-        stats = {
-            "cpu_usage": -1,
-            "memory_usage": -1
-        }
-        await push_metrics_to_prometheus(stats, container.name)
-    except Exception as e:
-        LOGGER.info(f"ID {task_id} for metric collection could not be found, skiping cancellation and proceeding")
-        LOGGER.error(e)
-
-
-async def calculate_memory_usage(stats) -> float:
-    memory_usage_bytes = stats['memory_stats']['usage']
-    memory_usage_mb = memory_usage_bytes / (1024 * 1024)
-    return round(memory_usage_mb, 2)
-
-async def calculate_cpu_usage(stats) -> float:
-    try:
-        return await calcualte_cpu_usage_unix(stats)
-    except:
-        try:
-            return await calculate_cpu_usage_wsl(stats)
-        except Exception as e:
-            LOGGER.error(e)
-            raise e
-
-
-async def calcualte_cpu_usage_unix(stats):
-    cpuDelta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - stats["precpu_stats"]["cpu_usage"]["total_usage"]
-    systemDelta = stats["cpu_stats"]["system_cpu_usage"] - stats["precpu_stats"]["system_cpu_usage"]
-    percentage_total = (cpuDelta / systemDelta) * (stats["cpu_stats"]["online_cpus"]) * 100
-    available_cpus = stats['precpu_stats']['online_cpus']
-    percentage = percentage_total / available_cpus    
-    return round(percentage, 2)
-
-async def calculate_cpu_usage_wsl(stats):
-    UsageDelta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
-    SystemDelta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
-    len_cpu = len(stats['cpu_stats']['cpu_usage']['percpu_usage'])
-    percentage_total = (UsageDelta / SystemDelta) * len_cpu * 100
-    available_cpus = stats['precpu_stats']['online_cpus']
-    percentage = percentage_total / available_cpus
-    return round(percentage, 2)

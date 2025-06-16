@@ -17,13 +17,93 @@ from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
 import uuid
 import shutil
+from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
-
-def get_stream_metric_tasks(request: Request):
-    return request.app.state.stream_metric_tasks
+from abc import ABC, abstractmethod
 
 dataset_addition_tasks = set()
+
+# TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+class Precision(ABC):
+    @property
+    @abstractmethod
+    def timestamp_format(self):
+        pass
+    
+    @property
+    @abstractmethod
+    def name(self):
+        pass
+
+    @abstractmethod
+    def replace_unnecessary_timestamp_values(self, timestamp: datetime) -> datetime:
+        pass
+
+    @abstractmethod
+    def calculate_timestamps_with_tolerance(self, timestamp: datetime, tolerance_unit: int = 1) -> list[datetime]:
+        pass
+
+    def trim_datetime_timestamp_to_str(self, timestamp: datetime) -> str:
+        replaced_timestamp = self.replace_unnecessary_timestamp_values(timestamp)
+        return replaced_timestamp.strftime(self.timestamp_format)
+    
+
+
+class HourPrecision(Precision):
+    # hour precision technically does not make sense and should be converted to minnutes anyway... 
+    timestamp_format = "%Y-%m-%dT%H:%M"
+    name = "hour"
+    def replace_unnecessary_timestamp_values(self, timestamp):
+        return timestamp.replace(second=0, microsecond=0)
+    
+    def calculate_timestamps_with_tolerance(self, timestamp, tolerance_unit = 1):
+        timestamp_replaced = self.replace_unnecessary_timestamp_values(timestamp)
+        return [timestamp_replaced + timedelta(minutes=offset) for offset in range(-tolerance_unit, tolerance_unit+1)]
+class MinutePrecision(Precision):
+    timestamp_format = "%Y-%m-%dT%H:%M"
+    name = "minute"
+    def replace_unnecessary_timestamp_values(self, timestamp):
+        return timestamp.replace(second=0, microsecond=0)
+    def calculate_timestamps_with_tolerance(self, timestamp, tolerance_unit = 1):
+        timestamp_replaced = self.replace_unnecessary_timestamp_values(timestamp)
+        return [timestamp_replaced + timedelta(minutes=offset) for offset in range(-tolerance_unit, tolerance_unit+1)]
+class SecondPrecision(Precision):
+    timestamp_format = "%Y-%m-%dT%H:%M:%S"
+    name = "second"
+    def replace_unnecessary_timestamp_values(self, timestamp):
+        return timestamp.replace(microsecond=0)
+    def calculate_timestamps_with_tolerance(self, timestamp, tolerance_unit = 1):
+        timestamp_replaced = self.replace_unnecessary_timestamp_values(timestamp)
+        return [timestamp_replaced + timedelta(seconds=offset) for offset in range(-tolerance_unit, tolerance_unit+1)]
+class MilisecondPrecision(Precision):
+    # miliseconds precision is too precise and deviations between labels file and traffic are likely, therefor downsample to seconds
+    timestamp_format = "%Y-%m-%dT%H:%M:%S"
+    name = "milisecond"
+    def replace_unnecessary_timestamp_values(self, timestamp):
+        return timestamp.replace(microsecond=0)
+    def calculate_timestamps_with_tolerance(self, timestamp, tolerance_unit = 1):
+        timestamp_replaced = self.replace_unnecessary_timestamp_values(timestamp)
+        return [timestamp_replaced + timedelta(seconds=offset) for offset in range(-tolerance_unit, tolerance_unit+1)]
+    
+def get_precision_by_name(name: str):
+    match name:
+        case "hour":
+            return HourPrecision()
+        case "minute":
+            return MinutePrecision()
+        case "second":
+            return SecondPrecision()
+        case "milisecond":
+            return MilisecondPrecision()
+        case _:
+            return None
+
+# class Precision(Enum):
+#     HOUR = "hour"
+#     MINUTE = "minute"
+#     SECOND = "second"
+#     MILISECOND = "milisecond" 
 
 class STATUS(Enum):
     ACTIVE = "active"
@@ -61,20 +141,6 @@ def find_free_port():
 
 def get_core_host():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
-   
-
-def get_serialized_confgigurations(configurations):
-    serialized_configs = []
-    for config in configurations:
-        serialized_config = {
-            "id": config.id,
-            "name": config.name,
-            "configuration": base64.b64encode(config.configuration).decode('utf-8'),  # Encode binary data to Base64, otherwise error when returning pcap files 
-            "file_type": config.file_type,
-            "description": config.description
-        }
-        serialized_configs.append(serialized_config)
-    return serialized_configs
 
 async def deregister_container_from_ensemble(container):
     container_url = container.get_container_http_url()
@@ -137,23 +203,11 @@ async def parse_response_for_triggered_analysis(response: HTTPResponse, containe
     return parsed_response
 
 
-async def calculate_and_add_dataset(data_file, data_file_ending, labels_file, labels_file_ending, name, description, dataset_type, db):
+async def calculate_and_add_dataset(data_file_path, labels_file_path, name, description, dataset_type, db):
     from .models.dataset import Dataset, add_dataset
-    byte_stream = io.BytesIO(labels_file)
-    text_stream = io.TextIOWrapper(byte_stream, encoding='utf-8')
     
-    benign, malicious = await dataset_type.get_benign_and_malicious_counts(text_stream)
-
-    uid = str(uuid.uuid4())
-    base_path = os.getenv("DATASET_BASE_PATH")
-    dataset_storage_location = f"{base_path}/{name}/{uid}" 
-    
-    data_file_path = f"{dataset_storage_location}/dataset.{data_file_ending}"
-    labels_file_path = f"{dataset_storage_location}/dataset.{labels_file_ending}"
-
-    await create_directory(dataset_storage_location)
-    await save_file_to_disk(data_file, data_file_path)
-    await save_file_to_disk(labels_file, labels_file_path)
+    benign, malicious = await dataset_type.get_benign_and_malicious_counts(labels_file_path)
+    precision = await dataset_type.calculate_precision(labels_file_path)
 
     dataset = Dataset(
         name=name,
@@ -162,7 +216,8 @@ async def calculate_and_add_dataset(data_file, data_file_ending, labels_file, la
         labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
-        dataset_type_id=dataset_type.id
+        dataset_type_id=dataset_type.id,
+        timestamp_precision = precision.name
     )
     await add_dataset(db, dataset)
 
@@ -170,7 +225,7 @@ async def save_file_to_disk(file, path):
     with open(path, "wb") as f:
         f.write(file)
     
-def remove_directory(path):
+async def remove_directory(path):
     try:
         shutil.rmtree(path)
     except Exception as e:
@@ -197,29 +252,29 @@ async def calculate_evaluation_metrics_and_push(db, dataset_id: int, alerts: lis
     # and an error will be thrown
     dataset = await get_dataset_by_id(db, dataset_id)
     metrics = await calculate_evaluation_metrics(db, dataset_id, alerts)
+    LOGGER.info(f"container {container_name} for enesemble {ensemble_name} got metrics {metrics}")
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
     await db.close()
 
-def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert):
+def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert, precision: Precision = MilisecondPrecision()):
     source_ip = alert.source_ip.strip()
     source_port = alert.source_port.strip()
     destination_ip = alert.destination_ip.strip()
     destination_port = alert.destination_port.strip()
-    timestamp = normalize_and_parse_alert_timestamp(alert.time)
+    timestamp = normalize_and_parse_alert_timestamp(alert.time, precision = precision)
     timestamp = timestamp.strip()
     return timestamp, source_ip, source_port, destination_ip, destination_port
 
 
-def normalize_and_parse_alert_timestamp(timestamp_str) -> str:
+def normalize_and_parse_alert_timestamp(timestamp_str, precision: Precision = MilisecondPrecision()) -> str:
     """
     Method to normalize timestamp formats, as these can differ from dataset to dataset
-    Returns a normalized timestamp in minutes format (isoformat)
-
-    IMPORTANT: The csv file and pcap file/alerts from the IDSs are expected to have timestamp in isoformat format
-                Otherwise the processsing here won't work correctly
+    Returns a normalized timestamp according to the ds precision
     """
-    parsed_timestamp = parser.parse(timestamp_str).replace(tzinfo=None).isoformat().rsplit(":",maxsplit=1)[0]
-    return parsed_timestamp
+   
+    timestamp = parser.parse(timestamp_str).replace(tzinfo=None) 
+    parsed_timestamp_string = precision.trim_datetime_timestamp_to_str(timestamp)
+    return parsed_timestamp_string
 
 
 
@@ -238,4 +293,7 @@ async def read_data_file(file_path):
     
 
 def directory_is_empty(path):
-    return True if len(os.listdir(path)) == 0 else False
+    if os.path.isdir(path):
+        return True if len(os.listdir(path)) == 0 else False
+    else:
+        return True
