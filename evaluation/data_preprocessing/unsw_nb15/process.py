@@ -134,12 +134,12 @@ if __name__ == "__main__":
             "labels/UNSW-NB15_4.csv" 
         ],
         pcap_path_glob=["pcaps/1/*.pcap", "pcaps/2/*.pcap" ],
-        combined_csv="/mnt/hdd/Datasets/unsw-nb15/combined_filtered.csv",
-        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/combined_no_sll.pcap",
+        combined_csv="/mnt/hdd/Datasets/unsw-nb15/sampled_no_sll.csv",
+        combined_pcap="/mnt/hdd/Datasets/unsw-nb15/sampled_no_sll.pcap",
         precision=Precision.MILISECOND.value
     )
 
-    unsbw.combine_csvs()
+    #unsbw.combine_csvs()
     # unsbw.combine_pcaps()
     # unsbw.sample_subset_of_combined_files(
     #      output_csv_file= "/mnt/hdd/Datasets/unsw-nb15/sampled-ratio-0point5-percent.csv", 
@@ -147,8 +147,8 @@ if __name__ == "__main__":
     #      ratio=0.005
     #  )
     
-    #unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio.txt")
-    # unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio.txt")
+    unsbw.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/unsw_nb15/ratio_reduced.txt")
+    unsbw.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/unsw_nb15/noise_ratio_reduced.txt")
     
     # unsbw.sample_from_csv_and_include_pcap_flow_based(
     #   output_csv="/mnt/hdd/Datasets/unsw-nb15/sampling_retry.csv",

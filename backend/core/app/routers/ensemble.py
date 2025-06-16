@@ -28,9 +28,6 @@ router = APIRouter(
     prefix="/ensemble"
 )
 
-START_TIME = None
-END_TIME = None
-
 @router.post("/setup")
 async def setup_ensembles(ensembleData: EnsembleCreate, db=Depends(get_db)):
     ensemble = Ensemble(
@@ -87,8 +84,6 @@ async def start_static_ensemble_analysis(static_analysis_data: StaticAnalysisDat
         await update_sendig_logs_status(db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.PROCESSING.value )
     await ensemble.generate_new_analysis_id(db)
     responses: list[HTTPResponse] = await ensemble.start_static_analysis(db=db, dataset_id=static_analysis_data.dataset_id)
-    global START_TIME 
-    START_TIME = time.time()    
     # Parse Response objects as otherwise there is an issue as Response objects are not serializable
     content = [ {"content": r.body.decode("utf-8"), "status_code": r.status_code} for r in responses]
     # set container status to active/idle afterwards before
@@ -194,15 +189,7 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             LOGGER.debug(f"{container.name} is not the last running container")
             return JSONResponse({"content": f"Successfully pushed alerts for container {container.name}"}, status_code=200) 
         else:
-            # global END_TIME 
-            # global START_TIME
-            # END_TIME = time.time()
-            # LOGGER.info(20*"###")
-            # LOGGER.info(f"ensemble {ensemble.name} took {END_TIME - START_TIME:.2f} seconds to finish")
-            # LOGGER.info(20*"###")
-            # START_TIME = None
-            # END_TIME = None
-            # LOGGER.debug(f"{container.name} is the last container running")
+            LOGGER.debug(f"{container.name} is the last container running")
             # get all alerts including the ones form the current container
             all_alerts: dict = await get_all_alerts_for_ensemble_from_analysis_id(ensemble.current_analysis_id)
             # calculate which alerts the ensemble now alerts according to its technique

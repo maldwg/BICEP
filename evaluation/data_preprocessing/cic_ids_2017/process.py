@@ -84,12 +84,12 @@ if __name__ == "__main__":
         base_dir_path="/mnt/hdd/Datasets/CIC-IDS-2017/",
         labels_path_glob= ["default-labels-files/*.csv"],
         pcap_path_glob=["default_pcaps/*.pcap"],
-        combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/combined_filtered.csv",
-        combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/combined_uncorrected.pcap",
+        combined_csv="/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.csv",
+        combined_pcap="/mnt/hdd/Datasets/CIC-IDS-2017/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger.pcap",
         precision=Precision.MINUTE.value
     )
 
-    cicids.combine_csv()
+    #cicids.combine_csv()
     # cicids.combine_pcaps()
     # cicids.sample_subset_of_combined_files(
     #     output_csv_file= "/mnt/hdd/Datasets/CIC-IDS-2017/sampled-ratio-0point5pc.csv",
@@ -104,5 +104,5 @@ if __name__ == "__main__":
 #         sample_ratio_malicious = 0.01
 # )
 
-    #cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio.txt")
-    #cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio.txt")
+    cicids.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/cic_ids_2017/ratio_reduced.txt")
+    cicids.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/cic_ids_2017/noise_ratio_reduced.txt")

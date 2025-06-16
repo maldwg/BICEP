@@ -218,8 +218,8 @@ if __name__ == "__main__":
         base_dir_path="/mnt/hdd/Datasets/CTU-13/",
         labels_path_glob= ["*/*.binetflow"],
         pcap_path_glob=["*/*.pcap"],
-        combined_csv="/mnt/hdd/Datasets/CTU-13/combined_filtered.csv",
-        combined_pcap="/mnt/hdd/Datasets/CTU-13/combined_uncorrected.pcap" ,
+        combined_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
+        combined_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap" ,
         precision=Precision.MILISECOND.value
     )
 
@@ -237,12 +237,12 @@ if __name__ == "__main__":
     #     output_pcap= "/mnt/hdd/Datasets/CTU-13/sampled-reverse.pcap",
     #     sample_ratio=0.001,
     # )
-    # ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio.txt")
-    #ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio.txt")
+    ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio_reduced.txt")
+    ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio_reduced.txt")
     
-    ctu.sample_from_csv_and_include_pcap_flow_based(
-       output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
-       output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap",
-        sample_ratio_benign    = 0.00065,
-        sample_ratio_malicious = 0.03
-)
+#     ctu.sample_from_csv_and_include_pcap_flow_based(
+#        output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
+#        output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap",
+#         sample_ratio_benign    = 0.00065,
+#         sample_ratio_malicious = 0.03
+# )
