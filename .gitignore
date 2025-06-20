@@ -2,6 +2,6 @@
 **/__pycache__
 **/_build
 **/*.csv
-!ids_results*.csv
-!CPU*.csv
-!Memory*.csv
+# !ids_results*.csv
+# !CPU*.csv
+# !Memory*.csv
