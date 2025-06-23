@@ -313,8 +313,6 @@ async def test_receive_alerts_from_ids_network(push_alerts_mock, db_session_fixt
     assert response_json == {'content': 'Successfully pushed alerts and metrics to Loki'}
 
 
-
-
 @patch("app.routers.ids.push_alerts_to_loki")
 @patch("app.routers.ids.calculate_evaluation_metrics_and_push")
 @pytest.mark.asyncio
@@ -341,3 +339,38 @@ async def test_receive_alerts_from_ids_static(calculate_and_push_mock, push_aler
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {'content': 'Successfully pushed alerts and metrics to Loki'}
+
+
+@pytest.mark.asyncio
+async def test_start_network_analysis_with_container_in_ensemble(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ensemble_ids = await db_session_fixture.get_ensemble_ids_model()
+    mock_ids_container.ensemble_ids = [mock_ensemble_ids]
+    network_analysis_mock_data: NetworkAnalysisData = NetworkAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+    )
+    response = await start_network_container_analysis(network_analysis_data=network_analysis_mock_data,db=db_session)
+    assert response.status_code == 500
+    response_json = json.loads(response.body.decode())
+    print(response_json)
+    assert response_json == {"error": f"container with id {mock_ids_container.id} is part of an ensemble. Hence, no individual analysis is possible"}
+    
+
+@pytest.mark.asyncio
+async def test_start_static_analysis_with_container_in_ensemble(db_session_fixture: DatabaseSessionFixture):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ensemble_ids = await db_session_fixture.get_ensemble_ids_model()
+    mock_ids_container.ensemble_ids = [mock_ensemble_ids]
+    static_analysis_mock_data: StaticAnalysisData = StaticAnalysisData(
+        container_id = 1,
+        ensemble_id = None,
+        dataset_id = 1
+    )
+    response = await start_network_container_analysis(network_analysis_data=static_analysis_mock_data,db=db_session)
+    assert response.status_code == 500
+    response_json = json.loads(response.body.decode())
+    print(response_json)
+    assert response_json == {"error": f"container with id {mock_ids_container.id} is part of an ensemble. Hence, no individual analysis is possible"}

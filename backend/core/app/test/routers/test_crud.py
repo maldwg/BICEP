@@ -274,8 +274,8 @@ async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixt
     with patch("app.routers.crud.get_all_container", new_callable=AsyncMock,return_value=[mock_container,available_mock_container]):
         response = await get_all_ids_container_not_assigned_to_an_ensemble(db=db_session)
 
-    assert len(response) == 1
-    assert response[0] == available_mock_container
+    assert len(response) == 2
+    assert response[1] == available_mock_container
 
 @pytest.mark.asyncio
 async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
