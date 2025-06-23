@@ -1,3 +1,4 @@
 [submodule "backend/core/app/bicep_utils"]
 	path = backend/core/app/bicep_utils
 	url = git@github.com:maldwg/BICEP_Utils.git
+	branch = main
