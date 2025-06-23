@@ -152,6 +152,8 @@ async def db_session_fixture():
     mock_ids_container.host_system = mock_docker_host_system
     mock_ids_container.is_available = AsyncMock(return_value=True)
     mock_ids_container.is_busy = AsyncMock(return_value=True)
+    mock_ids_container.ensemble_ids=[]
+
 
     mock_ensemble_technique = MagicMock(spec=EnsembleTechnique)
     mock_ensemble_technique.id=1
@@ -166,8 +168,22 @@ async def db_session_fixture():
     mock_ensemble_ids = MagicMock(spec=EnsembleIds)
     mock_ensemble_ids.id=1
     mock_ensemble_ids.ensemble_id=1
-    mock_ensemble_ids.ids_container_id=1
+    mock_ensemble_ids.ids_container_id=3
     mock_ensemble.technique_id = 1
+
+
+    mock_ids_container_in_ensemble = MagicMock(spec=IdsContainer)
+    mock_ids_container_in_ensemble.id= 3
+    mock_ids_container_in_ensemble.status=STATUS.IDLE.value
+    mock_ids_container_in_ensemble.name="container-3"
+    mock_ids_container_in_ensemble.configuration_id = 1
+    mock_ids_container_in_ensemble.ruleset_id = 2
+    mock_ids_container_in_ensemble.description="Test description"
+    mock_ids_container_in_ensemble.host_system = mock_docker_host_system
+    mock_ids_container_in_ensemble.is_available = AsyncMock(return_value=True)
+    mock_ids_container_in_ensemble.is_busy = AsyncMock(return_value=True)
+    mock_ids_container_in_ensemble.ensemble_ids=[mock_ensemble_ids]
+
 
     async def execute_side_effect(stmt):
         if isinstance(stmt, Select):
