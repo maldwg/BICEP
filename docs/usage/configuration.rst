@@ -29,3 +29,8 @@ At the moment, only datasets that fulfill the below requirements are supported. 
         - Destination IP: Destination IP of the request
         - Destination Port: Destination port of the request
 
+Host Configurations
+---------------------
+If you want to add an IDS you might need adaptations to the host for your system to work properly.
+As of now, we do not intend to support a feature where you can make adaptations to the host machines
+via BICEP. If you desire such a functionality, feel free to open an issiue!
