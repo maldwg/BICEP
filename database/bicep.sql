@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS docker_host_system(
     name  VARCHAR(128) NOT NULL,
     -- can be dns name or plain IP
     host VARCHAR(1024) NOT NULL,
-    docker_port INT NOT NULL
+    docker_port INT NOT NULL,
+    status VARCHAR(64)
 );
 
 

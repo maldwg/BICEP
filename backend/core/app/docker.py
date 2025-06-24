@@ -19,6 +19,7 @@ def get_docker_client(host_system):
         raise(Exception(f"Could not create a docker client for url {host_url} \n Try to use an IP instead of hostname"))
     return client
 
+
 async def start_docker_container(ids_container, ids_tool, config, ruleset):
     core_ip = get_core_host()
     core_url = f"http://{core_ip}:8000" 

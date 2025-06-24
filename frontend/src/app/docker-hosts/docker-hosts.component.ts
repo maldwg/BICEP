@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { MatButton, MatButtonModule } from '@angular/material/button';
 import { HttpResponse } from '@angular/common/http';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
-
+import { hostStatus } from '../models/status';
 @Component({
   selector: 'app-hosts',
   standalone: true,
@@ -44,7 +44,8 @@ export class DockerHostsComponent implements OnInit{
           id: hostSystem.id,
           name: hostSystem.name,
           host: hostSystem.host,
-          docker_port: hostSystem.docker_port
+          docker_port: hostSystem.docker_port,
+          status: hostSystem.status
         }))
       }
     )

@@ -120,6 +120,10 @@ class FILE_TYPES(Enum):
     CONFIG = "configuration"
     TEST_DATA = "test-data"
     RULE_SET = "rule-set"
+    
+class DOCKER_HOST_STATUS(Enum):
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
 
 
 def file_type_is_accepted(file_type: str, file_ending: str):
