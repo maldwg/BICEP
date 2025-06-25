@@ -22,6 +22,7 @@ import { HttpResponse } from '@angular/common/http';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
+import { hostStatus } from '../models/status';
 @Component({
   selector: 'app-setup',
   standalone: true,
@@ -30,6 +31,8 @@ import { AlertComponent } from '../components/alert-component/alert-component.co
   styleUrl: './setup.component.css'
 })
 export class SetupComponent implements OnInit {
+
+  hostStatus = hostStatus;
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   //  TODO 5: add name to IDS creation
   idsForm = new FormGroup({
@@ -214,7 +217,8 @@ getAllHostSystems(){
       id: hostSystem.id,
       name: hostSystem.name,
       host: hostSystem.host,
-      docker_port: hostSystem.docker_port
+      docker_port: hostSystem.docker_port,
+      status: hostSystem.status
     }));
   })
 }

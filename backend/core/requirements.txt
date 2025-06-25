@@ -12,3 +12,5 @@ aiofiles
 pytest
 pytest-cov
 pytest-asyncio
+fastapi-utils
+typing-inspect

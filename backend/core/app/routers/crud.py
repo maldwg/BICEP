@@ -11,13 +11,14 @@ from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
-from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
+from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem, get_host_by_id
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
 from app.logger import LOGGER
 from app.database import get_db
 import uuid
 import shutil
 import os
+
 
 router = APIRouter(
     prefix="/crud"
@@ -182,8 +183,6 @@ async def patch_ensemble(ensmeble: EnsembleUpdate, db=Depends(get_db)):
 @router.get("/host/all")
 async def return_all_hosts(db=Depends(get_db)):
     hosts = await get_all_hosts(db)
-    for host in hosts:
-        await host.update_availability(db)
     return hosts
 
 @router.post("/host/add")

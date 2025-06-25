@@ -1,3 +1,7 @@
+.unavailable-host{
+  color: gray;
+  font-style: italic;
+}
 :host {
     display: flex;
     flex-direction: column;

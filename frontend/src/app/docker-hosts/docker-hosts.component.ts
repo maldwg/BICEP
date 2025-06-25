@@ -9,6 +9,8 @@ import { MatButton, MatButtonModule } from '@angular/material/button';
 import { HttpResponse } from '@angular/common/http';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
 import { hostStatus } from '../models/status';
+import { MatIconModule } from '@angular/material/icon';
+
 @Component({
   selector: 'app-hosts',
   standalone: true,
@@ -16,7 +18,8 @@ import { hostStatus } from '../models/status';
     MatCardModule,
     MatButtonModule,
     CommonModule,
-    AlertComponent
+    AlertComponent,
+    MatIconModule
   ],
   templateUrl: './docker-hosts.component.html',
   styleUrl: './docker-hosts.component.css'
@@ -30,7 +33,7 @@ export class DockerHostsComponent implements OnInit{
 
 
   hostSystemList: DockerHostSystem[] = []
-
+  hostStatus = hostStatus
   ngOnInit(): void {
     this.getAllHostSystems()
 

@@ -61,6 +61,7 @@ services:
       - UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN=600
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
       - PRODUCTION=${PRODUCTION:-False}
+      - EXTERNAL_FASTAPI_PORT=8000
   database:
     build:
       context: ./database

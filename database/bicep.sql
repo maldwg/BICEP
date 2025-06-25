@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS docker_host_system(
     -- can be dns name or plain IP
     host VARCHAR(1024) NOT NULL,
     docker_port INT NOT NULL,
-    status VARCHAR(64)
+    status VARCHAR(64) NOT NULL
 );
 
 
@@ -114,7 +114,7 @@ INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_n
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 
 
-INSERT INTO docker_host_system (name, host, docker_port) VALUES ("Core-server", "localhost", 2375);
+INSERT INTO docker_host_system (name, host, docker_port, status) VALUES ("Core-server", "localhost", 2375, "unavailable");
 
 INSERT INTO dataset (name, data_file_path, labels_file_path, description, ammount_benign, ammount_malicious, dataset_type_id, timestamp_precision) VALUES ('sample-data','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.pcap','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.csv','Sample data including 0,5% of all requests from the CICIDS Dataset',11367,2791, 1, 'minute');
 

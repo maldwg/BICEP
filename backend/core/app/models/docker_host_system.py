@@ -3,9 +3,10 @@ from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.utils import DOCKER_HOST_STATUS
+from app.utils import DOCKER_HOST_STATUS, get_core_host_ip
 from app.docker import get_docker_client
 from app.logger import LOGGER
+import asyncio
 class DockerHostSystem(Base):
     __tablename__ = "docker_host_system"
 
@@ -17,26 +18,53 @@ class DockerHostSystem(Base):
 
     container = relationship("IdsContainer", back_populates="host_system",lazy="selectin")
 
+    def get_host_and_docker_port(self) -> tuple:
+        if "Core" in self.name or self.host == "localhost":
+         core_host = get_core_host_ip()
+         return (core_host, self.docker_port)
+        else: 
+            return (self.host, self.docker_port)
+
     async def check_host_health(self):
-        client = get_docker_client(self)
         try:
-            version = client.version()
-            if version:
-                return DOCKER_HOST_STATUS.AVAILABLE.value
+            if await self.is_host_reachable():
+                LOGGER.debug(f"host {self.name} is reachable")
+                client = get_docker_client(self)
+                version = client.version()
+                if version:
+                    LOGGER.info(f"Docker Host {self.name} is reachable")
+                    return DOCKER_HOST_STATUS.AVAILABLE.value
+            else:
+                LOGGER.info(f"host {self.name} is not reachable")
         except Exception as e:
             LOGGER.error(e)
-            return DOCKER_HOST_STATUS.UNAVAILABLE.value
+        return DOCKER_HOST_STATUS.UNAVAILABLE.value
+
+    async def is_host_reachable(self, timeout: float = 2.0) -> bool:
+        host, port = self.get_host_and_docker_port()
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port),
+                timeout
+            )
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except Exception:
+            return False
 
     async def update_availability(self, db: AsyncSession):
         old_availability = self.status
-        new_availability = self.check_host_health()
+        new_availability = await self.check_host_health()
         if old_availability != new_availability:
-            set_host_status(db, self, new_availability)
+            LOGGER.debug(f"Host {self.name} changed its availability from {old_availability} to {new_availability}")
+            await set_host_status(db, self, new_availability)
+            LOGGER.debug(f"Changed status from host {self.name} to {new_availability}")
 
 async def set_host_status(db: AsyncSession, host: DockerHostSystem, status: DOCKER_HOST_STATUS):
     host.status = status
-    db.commit()
-    db.refresh(host)
+    await db.commit()
+    await db.refresh(host)
     
 async def get_host_by_id(db: AsyncSession, id: int):
     stmt = select(DockerHostSystem).where(DockerHostSystem.id == id)
