@@ -139,7 +139,7 @@ async def update_container(db, container: IdsContainerUpdate):
     if old_ruleset_id != new_config_id and new_ruleset_id is not None:
         await container_db.update_ruleset(db, new_ruleset_id)
     # Update container attributes
-    for key, value in container.dict().items():
+    for key, value in container.model_dump().items():
         setattr(container_db, key, value)
     await db.commit() 
     await db.refresh(container_db)  

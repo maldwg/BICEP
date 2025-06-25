@@ -3,7 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import crud, ids, ensemble
 from fastapi_utils.tasks import repeat_every
 from app.database import get_db
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await update_availability()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "*"
@@ -24,7 +32,6 @@ app.include_router(ids.router)
 app.include_router(crud.router)
 app.include_router(ensemble.router)
 
-@app.on_event("startup")
 @repeat_every(seconds=15)
 @crud.router.patch("/host/{id}/availability")
 async def update_availability():

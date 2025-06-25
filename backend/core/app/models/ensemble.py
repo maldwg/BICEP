@@ -186,7 +186,7 @@ async def update_ensemble(db: AsyncSession, ensemble: EnsembleUpdate):
     former_containers = [ensemble_container.ids_container_id for ensemble_container in await ensemble_db.get_ensemble_ids(db)]
     
     # Update ensemble attributes
-    for key, value in ensemble.dict().items():
+    for key, value in ensemble.model_dump().items():
         setattr(ensemble_db, key, value)
     
     await db.commit()
