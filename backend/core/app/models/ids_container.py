@@ -7,7 +7,7 @@ from app.models.ids_tool import get_ids_by_id
 # important, otherwise error when getting all ensemble
 from app.models.ensemble_ids import *
 from app.docker import *
-from app.utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis
+from app.utils import STATUS, start_network_analysis, start_static_analysis, stop_analysis, parse_response_for_triggered_analysis, get_core_host_ip
 from app.validation.models import IdsContainerUpdate, NetworkAnalysisData
 import uuid
 from app.database import Base
@@ -100,7 +100,7 @@ class IdsContainer(Base):
         
     def get_container_http_url(self):
         if "Core" in self.host_system.name or self.host_system.host == "localhost":
-            core_host = get_core_host()
+            core_host = get_core_host_ip()
             container_host_url = f"http://{core_host}:{self.port}"
         else:
             container_host_url = f"http://{self.host_system.host}:{self.port}"

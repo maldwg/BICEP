@@ -47,7 +47,7 @@ def mock_container():
     return MagicMock()
 
 @patch("docker.DockerClient")
-@patch("app.docker.get_core_host")
+@patch("app.utils.get_core_host_ip")
 def test_get_docker_client(mock_get_core_host, mock_docker_client, mock_client, mock_host_system):
     mock_get_core_host.return_value = "127.0.0.1"
     mock_docker_client.return_value = mock_client
@@ -55,6 +55,9 @@ def test_get_docker_client(mock_get_core_host, mock_docker_client, mock_client, 
     mock_host_system.name = "CoreHost"
     mock_host_system.host = "localhost"
     mock_host_system.docker_port = 2375
+    get_host_and_docker_port_mock = MagicMock()
+    get_host_and_docker_port_mock.return_value = (mock_host_system.host, mock_host_system.docker_port)
+    mock_host_system.get_host_and_docker_port = get_host_and_docker_port_mock
 
     client = get_docker_client(mock_host_system)
     assert client == mock_client
@@ -92,9 +95,15 @@ async def test_inject_config(mock_httpx_client, mock_ids_container, db_session_f
 
 @pytest.mark.asyncio
 @patch("docker.DockerClient")
-async def test_remove_docker_container(mock_docker_client, mock_client, mock_container, mock_ids_container):
+@patch("app.models.docker_host_system.DockerHostSystem.get_host_and_docker_port")
+async def test_remove_docker_container(mock_get_host_and_port,mock_docker_client, mock_client, mock_container, mock_ids_container):
     mock_docker_client.return_value = mock_client
     mock_client.containers.get.return_value = mock_container
+    
+    mock_get_host_and_port.return_value = ("localhost", 2375)
+    mock_host_system = MagicMock()
+    mock_host_system.get_host_and_docker_port = mock_get_host_and_port
+    mock_ids_container.host_system = mock_host_system
 
     await remove_docker_container(mock_ids_container)
 
