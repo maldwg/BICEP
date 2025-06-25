@@ -15,9 +15,17 @@
                     <mat-card >
                         <mat-card-header>
                             <mat-card-title >
-                                {{ensemble.name}}
-                                <mat-icon *ngIf="ensemble.status === 'active'" class='spinning' color="accent">settings</mat-icon>
-                                <mat-icon *ngIf="ensemble.status === 'idle'" color="primary">pause_circle</mat-icon>
+                                <div style="display: flex; align-items: center;">
+                                    <span>{{ensemble.name}}</span>
+                                    <ng-container *ngIf="ensemble.status === 'active'; else idle">
+                                        <mat-icon class='spinning' color="accent">settings</mat-icon>
+                                    </ng-container>
+                                    <ng-template #idle>
+                                        <ng-container *ngIf="ensemble.status === 'idle'">
+                                            <mat-icon  color="primary">pause_circle</mat-icon>
+                                        </ng-container>
+                                    </ng-template>
+                                </div>
                             </mat-card-title>
                         </mat-card-header>
                         <mat-card-content >

@@ -120,6 +120,10 @@ class FILE_TYPES(Enum):
     CONFIG = "configuration"
     TEST_DATA = "test-data"
     RULE_SET = "rule-set"
+    
+class DOCKER_HOST_STATUS(Enum):
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
 
 
 def file_type_is_accepted(file_type: str, file_ending: str):
@@ -138,9 +142,13 @@ def find_free_port():
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
     
-
-def get_core_host():
+def get_core_host_ip():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
+
+def get_core_url():
+    core_ip = get_core_host_ip() 
+    port = os.getenv("EXTERNAL_FASTAPI_PORT")
+    return f"http://{core_ip}:{port}"
 
 async def deregister_container_from_ensemble(container):
     container_url = container.get_container_http_url()

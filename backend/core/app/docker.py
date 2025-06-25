@@ -1,27 +1,24 @@
 import asyncio
 import docker
-from app.utils import get_core_host
 import time
 import httpx
 from requests.models import Response
 from app.logger import LOGGER
+from app.utils import get_core_url
 
 def get_docker_client(host_system):
-    if "Core" in host_system.name or host_system.host == "localhost":
-         core_host = get_core_host()
-         host_url = f"tcp://{core_host}:{host_system.docker_port}"
-    else: 
-        host_url = f"tcp://{host_system.host}:{host_system.docker_port}"
+    host, docker_port = host_system.get_host_and_docker_port()
+    host_url = f"tcp://{host}:{docker_port}"
     try:
-        client = docker.DockerClient(base_url=host_url)
+        client = docker.DockerClient(base_url=host_url, timeout=3)
     except Exception as e:
         LOGGER.error(e)
         raise(Exception(f"Could not create a docker client for url {host_url} \n Try to use an IP instead of hostname"))
     return client
 
+
 async def start_docker_container(ids_container, ids_tool, config, ruleset):
-    core_ip = get_core_host()
-    core_url = f"http://{core_ip}:8000" 
+    core_url = get_core_url()
     client = get_docker_client(ids_container.host_system)
 
     # ensure image is present 

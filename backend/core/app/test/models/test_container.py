@@ -3,7 +3,7 @@ from docker import DockerClient
 from unittest.mock import patch, MagicMock, AsyncMock
 from app.test.fixtures import *
 from app.models.ids_container import *
-from app.utils import STATUS, get_core_host
+from app.utils import STATUS, get_core_host_ip
 
 @pytest.fixture
 def mock_ids_container():
@@ -40,13 +40,13 @@ async def test_is_not_busy(mock_ids_container: IdsContainer):
 
 def test_get_container_http_url_localhost(mock_ids_container: IdsContainer):
     docker_host = mock_ids_container.get_container_http_url()
-    core_host = get_core_host()
+    core_host = get_core_host_ip()
     docker_host = mock_ids_container.get_container_http_url()
     assert docker_host == f"http://{core_host}:{mock_ids_container.port}"
 
 def test_get_container_http_url_core(mock_ids_container: IdsContainer):
     mock_ids_container.host_system.name = "Core"
-    core_host = get_core_host()
+    core_host = get_core_host_ip()
     docker_host = mock_ids_container.get_container_http_url()
     assert docker_host == f"http://{core_host}:{mock_ids_container.port}"
 

@@ -10,13 +10,24 @@
                 <mat-card class="mat-card">
                     <mat-card-header>
                         <mat-card-title>
-                            {{hostSystem.name}}
+                            <div style="display: flex; align-items: center;">
+                                <span>{{hostSystem.name}}</span>
+                                <ng-container *ngIf="hostSystem.status === hostStatus.available; else notAvailable">
+                                    <mat-icon style="color: green;">circle</mat-icon>
+                                </ng-container>
+                                <ng-template #notAvailable>
+                                <ng-container *ngIf="hostSystem.status === hostStatus.unavailable">
+                                    <mat-icon style="color: red;">circle</mat-icon>
+                                </ng-container>
+                                </ng-template>
+                            </div>
                         </mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
                         <div>ID: {{hostSystem.id}} </div>
                         <div>Host: {{hostSystem.host}} </div>
                         <div>Docker Port: {{hostSystem.docker_port}} </div>
+                        <div>Status: {{hostSystem.status}} </div>
                     </mat-card-content>
                     <mat-card-actions>
                         <button class="action-button" color="accent"  mat-flat-button>Details</button>

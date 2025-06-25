@@ -71,7 +71,16 @@
                         <mat-form-field>
                             <mat-label >Host System</mat-label>
                             <mat-select [formControl]="idsForm.controls.host" required>
-                                <mat-option *ngFor="let host of hostSystems" value={{host.id}}>{{host.name}}</mat-option>
+                                <mat-option
+                                    *ngFor="let host of hostSystems"
+                                    [disabled]="host.status === hostStatus.unavailable"
+                                    [ngClass]="{'unavailable-host': host.status === hostStatus.unavailable}"
+                                    [value]="host.id"
+                                >
+                                <span>
+                                      {{ host.name }} <ng-container *ngIf="host.status === hostStatus.unavailable"> - unavailable</ng-container>
+                                </span>
+                                </mat-option>                            
                             </mat-select>
                         </mat-form-field>
                     </div>

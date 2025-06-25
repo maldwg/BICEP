@@ -3,3 +3,8 @@ export const statusTypes = {
     active: "active",
     setting_up: "setting-up"
 }
+
+export const hostStatus = {
+    available: "available",
+    unavailable: "unavailable"
+}

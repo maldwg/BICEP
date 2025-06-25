@@ -5,7 +5,7 @@ from app.validation.models import AlertData, IdsContainerCreate, EnsembleCreate,
 from app.models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
 from app.models.configuration import Configuration, get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
-from app.utils import create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
+from app.utils import DOCKER_HOST_STATUS,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
 import httpx 
 import json 
 from fastapi.encoders import jsonable_encoder
@@ -28,6 +28,8 @@ router = APIRouter(
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     host = await get_host_by_id(db, data.host_system_id)
+    if host.status == DOCKER_HOST_STATUS.UNAVAILABLE.value:
+        return JSONResponse({"message": "The specified host is unavailable, try another!"}, status_code=500)
 
     free_port=find_free_port()
     if data.ruleset_id:
