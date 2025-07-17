@@ -27,6 +27,11 @@ Currently only Suricata and Slips modules are implemented and supported in terms
 
 The project is still under development and breaking changes are likely to occur. 
 
+## Supported Systems 
+
+Currently we are supporting Linux based systems, but we are actively trying to support MacOS as well.
+For The setup process for Macs' differ, consult the documentation at (https://bicep.readthedocs.io/en/latest/usage/start.html#mac-support)
+
 ## Initialize The Project
 In order to be able to start the project you will need to initialize it first. Do this by running:
 
@@ -37,6 +42,9 @@ This fetches the newest version of the submodule for the backend code and is nec
 
 
 ## Start The Project
+
+> [!IMPORTANT]
+> In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#distributed-setup)
 
 The project can be started by running running ```docker compose --env-file environments/env up```. This will spin up all containers in development mode. To run the stack in production mode, simply use the production env file like so: ```docker compose --env-file environments/prod up```
 
