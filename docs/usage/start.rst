@@ -58,21 +58,22 @@ This refreshs the daemon for docker. You can now use the web GUI to add the new 
 per default, the localhost (the machine where the framework is running), is already added and can be used. Any other node needs to be added via the GUI or DB.
 
 .. _mac_support:
-MAC Support
+Mac Support
 -----------
 If you are using an apple device, you might want to configure the docker deamon in the toolbox, by adding 
-.. code-block:: bash
+
+.. code-block:: 
 
     {
-    "hosts": [
-        "tcp://0.0.0.0:2375",
-        "unix:///var/run/docker.sock"
+        "hosts": [
+            "tcp://0.0.0.0:2375"
+            "unix:///var/run/docker.sock"
         ]
     }
 
 In your engine configuration or docker.json
 
-Deactivacting Containerd
+Deactivating Containerd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Containerd needs to be deactivated, otherwise cadvisor will be running into issues later on. 
 To do so, go into the docker desktop ``settings > general`` and deactivate ``Use containerd for pulling and storing images``.
