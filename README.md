@@ -29,8 +29,8 @@ The project is still under development and breaking changes are likely to occur.
 
 ## Supported Systems 
 
-Currently we are supporting Linux based systems, but we are actively trying to support MacOS as well.
-For The setup process for Macs' differ, consult the documentation at (https://bicep.readthedocs.io/en/latest/usage/start.html#mac-support)
+Currently, we are supporting Linux based systems, but we are actively trying to support MacOS as well.
+For The setup process for Macs' differ, consult the documentation at [mac-support](https://bicep.readthedocs.io/en/latest/usage/start.html#mac-support)
 
 ## Initialize The Project
 In order to be able to start the project you will need to initialize it first. Do this by running:
