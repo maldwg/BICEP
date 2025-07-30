@@ -46,7 +46,7 @@ This fetches the newest version of the submodule for the backend code and is nec
 > [!IMPORTANT]
 > In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#distributed-setup)
 
-The project can be started by running running ```docker compose --env-file environments/env up```. This will spin up all containers in development mode. To run the stack in production mode, simply use the production env file like so: ```docker compose --env-file environments/prod up```
+The project can be started by running running ```docker compose --env-file environments/dev up```. This will spin up all containers in development mode. To run the stack in production mode, simply use the production env file like so: ```docker compose --env-file environments/prod up```
 
 
 ## Use The Framework
@@ -55,5 +55,3 @@ The project can be started by running running ```docker compose --env-file envir
 ## Documentation
 
 Documentation for setup, configuration, usage and contribution is available under [BICEP-read-the-docs](https://bicep.readthedocs.io/en/latest/)
-
-
