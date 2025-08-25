@@ -1,0 +1,36 @@
+# CICIDS
+
+{'total': 2830743, 'millisecond': 0, 'second': 529918, 'minute': 2300825, 'hour': 0}
+Precision           Count     Percent
+-------------------------------------
+Hour                    0       0.00%
+Minute            2300825      81.28%
+Second             529918      18.72%
+Millisecond             0       0.00%
+-------------------------------------
+Total             2830743     100.00%
+
+# UNSW-NB15
+
+{'total': 2540043, 'millisecond': 0, 'second': 2540043, 'minute': 0, 'hour': 0}
+Precision           Count     Percent
+-------------------------------------
+Hour                    0       0.00%
+Minute                  0       0.00%
+Second            2540043     100.00%
+Millisecond             0       0.00%
+-------------------------------------
+Total             2540043     100.00%
+
+# CTU13
+
+2824636it [00:19, 146349.99it/s]
+{'total': 19976700, 'millisecond': 19976700, 'second': 0, 'minute': 0, 'hour': 0}
+Precision           Count     Percent
+-------------------------------------
+Hour                    0       0.00%
+Minute                  0       0.00%
+Second                  0       0.00%
+Millisecond      19976700     100.00%
+-------------------------------------
+Total            19976700     100.00%
