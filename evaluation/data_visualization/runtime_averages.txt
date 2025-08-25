@@ -1,0 +1,36 @@
+# partial dataset
+Average analysis times:
+  suricata     9.13s ( 9 runs)
+  suricata_ensemble   9.62s ( 3 runs)
+  snort        5.96s (12 runs)
+  snort_ensemble   9.05s ( 3 runs)
+  slips      6672.29s ( 9 runs)
+  slips_ensemble 6778.00s ( 3 runs)
+
+Relative speed (row vs column, <1 = faster, >1 = slower):
+
+                              suricata  suricata_ensemble              snort     snort_ensemble              slips     slips_ensemble
+suricata                          1.00               0.95               1.53               1.01               0.00               0.00
+suricata_ensemble                 1.05               1.00               1.61               1.06               0.00               0.00
+snort                             0.65               0.62               1.00               0.66               0.00               0.00
+snort_ensemble                    0.99               0.94               1.52               1.00               0.00               0.00
+slips                           731.17             693.34            1119.51             737.00               1.00               0.98
+slips_ensemble                  742.75             704.33            1137.25             748.67               1.02               1.00
+
+# full datasets 
+
+Average analysis times:
+
+  suricata   2537.96s ( 9 runs)
+  suricata_ensemble 9639.45s ( 3 runs)
+  snort      1558.72s (12 runs)
+  snort_ensemble 3197.64s ( 3 runs)
+
+Relative speed (row vs column, <1 = faster, >1 = slower):
+
+                              suricata  suricata_ensemble              snort     snort_ensemble
+suricata                          1.00               0.26               1.63               0.79
+suricata_ensemble                 3.80               1.00               6.18               3.01
+snort                             0.61               0.16               1.00               0.49
+snort_ensemble                    1.26               0.33               2.05               1.00
+
