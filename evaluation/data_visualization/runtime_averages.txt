@@ -1,4 +1,4 @@
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ python3 calculate_runtime_averages.py ../../../results/ids_results_partial_datasets.csv 
+# partial dataset
 Average analysis times:
   suricata     9.13s ( 9 runs)
   suricata_ensemble   9.62s ( 3 runs)
@@ -16,11 +16,11 @@ snort                             0.65               0.62               1.00    
 snort_ensemble                    0.99               0.94               1.52               1.00               0.00               0.00
 slips                           731.17             693.34            1119.51             737.00               1.00               0.98
 slips_ensemble                  742.75             704.33            1137.25             748.67               1.02               1.00
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ 
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ 
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ 
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ python3 calculate_runtime_averages.py ../../../results/ids_results_full_datasets.csv 
+
+# full datasets 
+
 Average analysis times:
+
   suricata   2537.96s ( 9 runs)
   suricata_ensemble 9639.45s ( 3 runs)
   snort      1558.72s (12 runs)
@@ -33,5 +33,4 @@ suricata                          1.00               0.26               1.63    
 suricata_ensemble                 3.80               1.00               6.18               3.01
 snort                             0.61               0.16               1.00               0.49
 snort_ensemble                    1.26               0.33               2.05               1.00
-(Masterarbeit) max@workstation:~/Masterarbeit/BICEP/evaluation/data_visualization$ 
 
