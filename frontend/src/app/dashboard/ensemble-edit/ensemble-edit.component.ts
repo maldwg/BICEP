@@ -4,13 +4,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Container } from '../../models/container';
 
 @Component({
     selector: 'app-ensemble-edit',
-    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
     templateUrl: './ensemble-edit.component.html',
     styleUrl: './ensemble-edit.component.css'
 })

@@ -4,7 +4,7 @@ import { DockerHostSystem } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
 import { HostCreationComponent } from './host-creation/host-creation.component';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardModule, MatCardTitle } from '@angular/material/card';
-import { CommonModule } from '@angular/common';
+
 import { MatButton, MatButtonModule } from '@angular/material/button';
 import { HttpResponse } from '@angular/common/http';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
@@ -14,12 +14,11 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
     selector: 'app-hosts',
     imports: [
-        MatCardModule,
-        MatButtonModule,
-        CommonModule,
-        AlertComponent,
-        MatIconModule
-    ],
+    MatCardModule,
+    MatButtonModule,
+    AlertComponent,
+    MatIconModule
+],
     templateUrl: './docker-hosts.component.html',
     styleUrl: './docker-hosts.component.css'
 })

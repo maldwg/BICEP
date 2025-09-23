@@ -1,31 +1,37 @@
 <div class="flexbox-container">
-    <h2 mat-dialog-title>Start Analysis / Benchmarking</h2>
-    <form [formGroup]="analysisForm" (ngSubmit)="startAnalysis()">
-        <mat-dialog-content>
-            <div class="flexbox-item">
-                <mat-form-field>
-                    <mat-label>Analysis Type</mat-label>
-                    <mat-select [formControl]="analysisForm.controls.type" required>
-                        <mat-option *ngFor="let t of analysisTypes" value="{{t}}">{{t}}</mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-            <div class="flexbox-item" *ngIf="analysisForm.controls.type.value == testDataType">
-                <mat-form-field>
-                    <mat-label>Dataset</mat-label>
-                    <mat-select [formControl]="analysisForm.controls.dataset">
-                        <mat-option *ngFor="let t of data.datasets" value="{{t.id}}">ID: {{t.id}} - Name: {{t.name}}</mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-        </mat-dialog-content>
-        <mat-dialog-actions>
-            <div class="flexbox-item action-button-div">
-                <button type="submit" class="custom-button mat-elevation-z8" mat-flat-button
-                    color="success">Start Analysis</button>
-                <button type="button" (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
-                    color="warn">Cancel</button>
-            </div>
-        </mat-dialog-actions>
-    </form>
+  <h2 mat-dialog-title>Start Analysis / Benchmarking</h2>
+  <form [formGroup]="analysisForm" (ngSubmit)="startAnalysis()">
+    <mat-dialog-content>
+      <div class="flexbox-item">
+        <mat-form-field>
+          <mat-label>Analysis Type</mat-label>
+          <mat-select [formControl]="analysisForm.controls.type" required>
+            @for (t of analysisTypes; track t) {
+              <mat-option value="{{t}}">{{t}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (analysisForm.controls.type.value == testDataType) {
+        <div class="flexbox-item">
+          <mat-form-field>
+            <mat-label>Dataset</mat-label>
+            <mat-select [formControl]="analysisForm.controls.dataset">
+              @for (t of data.datasets; track t) {
+                <mat-option value="{{t.id}}">ID: {{t.id}} - Name: {{t.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+    </mat-dialog-content>
+    <mat-dialog-actions>
+      <div class="flexbox-item action-button-div">
+        <button type="submit" class="custom-button mat-elevation-z8" mat-flat-button
+        color="success">Start Analysis</button>
+        <button type="button" (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
+        color="warn">Cancel</button>
+      </div>
+    </mat-dialog-actions>
+  </form>
 </div>

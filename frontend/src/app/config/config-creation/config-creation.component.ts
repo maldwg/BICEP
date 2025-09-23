@@ -11,7 +11,7 @@ import { fileTypes, getAcceptedFileTypesForConfigurationType } from '../../model
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
+
 import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { DatasetSetupData } from '../../models/dataset';
@@ -22,22 +22,21 @@ import { DatasetType } from '../../models/datasetType';
 @Component({
     selector: 'app-config-creation',
     imports: [
-        MatProgressBarModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        MatInputModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatDialogTitle,
-        MatDialogContent,
-        MatDialogActions,
-        MatDialogClose,
-        MatDialogModule,
-        MatIconModule,
-        CommonModule,
-        AlertComponent
-    ], templateUrl: './config-creation.component.html',
+    MatProgressBarModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogModule,
+    MatIconModule,
+    AlertComponent
+], templateUrl: './config-creation.component.html',
     styleUrl: './config-creation.component.css'
 })
 export class ConfigCreationComponent implements OnInit{

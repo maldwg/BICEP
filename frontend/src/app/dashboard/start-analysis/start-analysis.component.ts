@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
@@ -11,7 +11,7 @@ import { Dataset } from '../../models/dataset';
 
 @Component({
     selector: 'app-start-analysis',
-    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
     templateUrl: './start-analysis.component.html',
     styleUrl: './start-analysis.component.css'
 })

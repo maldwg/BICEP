@@ -1,45 +1,49 @@
 
 <div class="flexbox-container">
-    <h2 mat-dialog-title>Update Ensemble</h2>
-            <mat-dialog-content>
-                <form [formGroup]="ensembleEdit">
-                    <div class="flexbox-item">
-                        <mat-form-field>
-                            <mat-label>Name</mat-label>
-                            <input [formControl]="ensembleEdit.controls.name" matInput value={{data.ensemble.name}} required>
-                        </mat-form-field>
-                    </div>
-                    <div class="flexbox-item">
-                        <mat-form-field>
-                            <mat-label>Container</mat-label>
-                            <mat-select [formControl]="ensembleEdit.controls.idsContainer" required multiple>
-                                <mat-option *ngFor="let c of data.containerList" value={{c.id}}>{{c.name}}</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
-                    <div class="flexbox-item">
-                        <mat-form-field>
-                            <mat-label>Ensemble Technique</mat-label>
-                            <mat-select [formControl]="ensembleEdit.controls.ensembleTechnique" required>
-                                <mat-option *ngFor="let t of data.ensembleTechniqueList" value={{t.id}}>{{t.name}}</mat-option>
-                            </mat-select>
-                        </mat-form-field>
-                    </div>
-                    <div class="flexbox-item">
-                        <mat-form-field>
-                            <mat-label>Description</mat-label>
-                            <textarea matInput [formControl]="ensembleEdit.controls.description" required></textarea>
-                        </mat-form-field>
-                    </div>
-                </form>
-            </mat-dialog-content>
-            <mat-dialog-actions>
-                <div class="flexbox-item action-button-div">
-                    <button (click)="save()" class="custom-button mat-elevation-z8" mat-flat-button
-                        color="success">Save</button>
-                    <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
-                        color="warn">Exit</button>
-                </div>
+  <h2 mat-dialog-title>Update Ensemble</h2>
+  <mat-dialog-content>
+    <form [formGroup]="ensembleEdit">
+      <div class="flexbox-item">
+        <mat-form-field>
+          <mat-label>Name</mat-label>
+          <input [formControl]="ensembleEdit.controls.name" matInput value={{data.ensemble.name}} required>
+        </mat-form-field>
+      </div>
+      <div class="flexbox-item">
+        <mat-form-field>
+          <mat-label>Container</mat-label>
+          <mat-select [formControl]="ensembleEdit.controls.idsContainer" required multiple>
+            @for (c of data.containerList; track c) {
+              <mat-option value={{c.id}}>{{c.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="flexbox-item">
+        <mat-form-field>
+          <mat-label>Ensemble Technique</mat-label>
+          <mat-select [formControl]="ensembleEdit.controls.ensembleTechnique" required>
+            @for (t of data.ensembleTechniqueList; track t) {
+              <mat-option value={{t.id}}>{{t.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="flexbox-item">
+        <mat-form-field>
+          <mat-label>Description</mat-label>
+          <textarea matInput [formControl]="ensembleEdit.controls.description" required></textarea>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <div class="flexbox-item action-button-div">
+      <button (click)="save()" class="custom-button mat-elevation-z8" mat-flat-button
+      color="success">Save</button>
+      <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
+      color="warn">Exit</button>
+    </div>
 
-            </mat-dialog-actions>
+  </mat-dialog-actions>
 </div>

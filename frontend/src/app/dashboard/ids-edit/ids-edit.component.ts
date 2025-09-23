@@ -2,7 +2,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { ControlContainer, FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Container } from '../../models/container';
-import { CommonModule } from '@angular/common';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +13,7 @@ import { IdsTool } from '../../models/ids';
 
 @Component({
     selector: 'app-ids-edit',
-    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
     templateUrl: './ids-edit.component.html',
     styleUrl: './ids-edit.component.css'
 })
