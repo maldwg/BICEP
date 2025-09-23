@@ -12,11 +12,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { IdsTool } from '../../models/ids';
 
 @Component({
-  selector: 'app-ids-edit',
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
-  templateUrl: './ids-edit.component.html',
-  styleUrl: './ids-edit.component.css'
+    selector: 'app-ids-edit',
+    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    templateUrl: './ids-edit.component.html',
+    styleUrl: './ids-edit.component.css'
 })
 export class IdsEditComponent implements OnInit{
 

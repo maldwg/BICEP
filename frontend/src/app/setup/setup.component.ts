@@ -24,11 +24,10 @@ import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
 import { hostStatus } from '../models/status';
 @Component({
-  selector: 'app-setup',
-  standalone: true,
-  imports: [AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule ],
-  templateUrl: './setup.component.html',
-  styleUrl: './setup.component.css'
+    selector: 'app-setup',
+    imports: [AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
+    templateUrl: './setup.component.html',
+    styleUrl: './setup.component.css'
 })
 export class SetupComponent implements OnInit {
 

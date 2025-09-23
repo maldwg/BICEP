@@ -9,11 +9,10 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { Container } from '../../models/container';
 
 @Component({
-  selector: 'app-ensemble-edit',
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
-  templateUrl: './ensemble-edit.component.html',
-  styleUrl: './ensemble-edit.component.css'
+    selector: 'app-ensemble-edit',
+    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
+    templateUrl: './ensemble-edit.component.html',
+    styleUrl: './ensemble-edit.component.css'
 })
 export class EnsembleEditComponent {
 

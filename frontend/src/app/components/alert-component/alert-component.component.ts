@@ -4,11 +4,10 @@ import {MatIconModule} from '@angular/material/icon';
 import {v4 as uuidv4} from 'uuid';
 
 @Component({
-  selector: 'app-alert-component',
-  standalone: true,
-  imports: [CommonModule, MatIconModule],
-  templateUrl: './alert-component.component.html',
-  styleUrl: './alert-component.component.css'
+    selector: 'app-alert-component',
+    imports: [CommonModule, MatIconModule],
+    templateUrl: './alert-component.component.html',
+    styleUrl: './alert-component.component.css'
 })
 export class AlertComponent {
   errors: { id: string, message: string, statusCode: number }[] = [];

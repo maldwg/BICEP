@@ -20,26 +20,25 @@ import { AlertComponent } from '../../components/alert-component/alert-component
 import { DatasetTypesService } from '../../services/dataset-type/dataset-type.service';
 import { DatasetType } from '../../models/datasetType';
 @Component({
-  selector: 'app-config-creation',
-  standalone: true,
-  imports: [
-    MatProgressBarModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogActions,
-    MatDialogClose,
-    MatDialogModule,
-    MatIconModule,
-    CommonModule,
-    AlertComponent
-  ],  templateUrl: './config-creation.component.html',
-  styleUrl: './config-creation.component.css'
+    selector: 'app-config-creation',
+    imports: [
+        MatProgressBarModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        MatInputModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatDialogTitle,
+        MatDialogContent,
+        MatDialogActions,
+        MatDialogClose,
+        MatDialogModule,
+        MatIconModule,
+        CommonModule,
+        AlertComponent
+    ], templateUrl: './config-creation.component.html',
+    styleUrl: './config-creation.component.css'
 })
 export class ConfigCreationComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

@@ -27,11 +27,10 @@ import { DatasetTypesService } from '../services/dataset-type/dataset-type.servi
 
 
 @Component({
-  selector: 'app-config',
-  standalone: true,
-  imports: [ MatCardModule, MatButtonModule, CommonModule, MatExpansionModule, AlertComponent],
-  templateUrl: './config.component.html',
-  styleUrl: './config.component.css'
+    selector: 'app-config',
+    imports: [MatCardModule, MatButtonModule, CommonModule, MatExpansionModule, AlertComponent],
+    templateUrl: './config.component.html',
+    styleUrl: './config.component.css'
 })
 export class ConfigComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

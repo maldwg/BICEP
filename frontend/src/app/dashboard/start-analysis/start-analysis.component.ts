@@ -10,11 +10,10 @@ import { analysisTypes } from '../../models/analysis';
 import { Dataset } from '../../models/dataset';
 
 @Component({
-  selector: 'app-start-analysis',
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
-  templateUrl: './start-analysis.component.html',
-  styleUrl: './start-analysis.component.css'
+    selector: 'app-start-analysis',
+    imports: [ReactiveFormsModule, CommonModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    templateUrl: './start-analysis.component.html',
+    styleUrl: './start-analysis.component.css'
 })
 export class StartAnalysisComponent implements OnInit{
 

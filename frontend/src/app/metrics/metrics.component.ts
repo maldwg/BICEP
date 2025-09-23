@@ -3,11 +3,10 @@ import { environment } from '../../environments/environment';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-metrics',
-  standalone: true,
-  imports: [],
-  templateUrl: './metrics.component.html',
-  styleUrl: './metrics.component.css'
+    selector: 'app-metrics',
+    imports: [],
+    templateUrl: './metrics.component.html',
+    styleUrl: './metrics.component.css'
 })
 export class MetricsComponent implements OnInit {
 

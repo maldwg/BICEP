@@ -36,11 +36,10 @@ import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+    selector: 'app-dashboard',
+    imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

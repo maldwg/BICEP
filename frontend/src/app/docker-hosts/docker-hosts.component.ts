@@ -12,17 +12,16 @@ import { hostStatus } from '../models/status';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-hosts',
-  standalone: true,
-  imports: [
-    MatCardModule,
-    MatButtonModule,
-    CommonModule,
-    AlertComponent,
-    MatIconModule
-  ],
-  templateUrl: './docker-hosts.component.html',
-  styleUrl: './docker-hosts.component.css'
+    selector: 'app-hosts',
+    imports: [
+        MatCardModule,
+        MatButtonModule,
+        CommonModule,
+        AlertComponent,
+        MatIconModule
+    ],
+    templateUrl: './docker-hosts.component.html',
+    styleUrl: './docker-hosts.component.css'
 })
 export class DockerHostsComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
