@@ -1,6 +1,5 @@
 import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
 import { Container, ContainerUpdateData } from '../models/container';
 import { MatCardModule } from '@angular/material/card';
@@ -37,7 +36,7 @@ import { AlertComponent } from "../components/alert-component/alert-component.co
 
 @Component({
     selector: 'app-dashboard',
-    imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
+    imports: [MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.css'
 })
