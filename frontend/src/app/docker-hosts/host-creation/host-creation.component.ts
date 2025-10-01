@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule
 ],
     templateUrl: './host-creation.component.html',
-    styleUrl: './host-creation.component.css'
+    styleUrl: './host-creation.component.scss'
 })
 export class HostCreationComponent {
 

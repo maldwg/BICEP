@@ -15,7 +15,7 @@ import { IdsTool } from '../../models/ids';
     selector: 'app-ids-edit',
     imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
     templateUrl: './ids-edit.component.html',
-    styleUrl: './ids-edit.component.css'
+    styleUrl: './ids-edit.component.scss'
 })
 export class IdsEditComponent implements OnInit{
 

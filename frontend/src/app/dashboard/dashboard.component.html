@@ -12,17 +12,17 @@
       </mat-expansion-panel-header>
       <div class="flexbox-container">
         @for (ensemble of ensembleList; track ensemble) {
-          <div class="flexbox-item" class="mat-elevation-z8">
+          <div class="flexbox-item" class="elevation1">
             <mat-card >
               <mat-card-header>
                 <mat-card-title >
                   <div style="display: flex; align-items: center;">
                     <span>{{ensemble.name}}</span>
                     @if (ensemble.status === 'active') {
-                      <mat-icon class='spinning' color="accent">settings</mat-icon>
+                      <mat-icon class='spinning' >settings</mat-icon>
                     } @else {
                       @if (ensemble.status === 'idle') {
-                        <mat-icon  color="primary">pause_circle</mat-icon>
+                        <mat-icon  >pause_circle</mat-icon>
                       }
                     }
                   </div>
@@ -44,13 +44,13 @@
                 }
               </mat-card-content>
               <mat-card-actions>
-                <button (click)="editEnsemble(ensemble)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>
-                <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>
+                <button (click)="editEnsemble(ensemble)"  class="action-button options-button" mat-flat-button>Edit</button>
+                <button (click)="removeEnsemble(ensemble)" color="warn" class="action-button danger-button" mat-flat-button>Remove</button>
                 @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
-                  <button (click)="startEnsembleAnalysis(ensemble)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>
+                  <button (click)="startEnsembleAnalysis(ensemble)"  class="action-button success-button" mat-flat-button>Start Analysis</button>
                 }
                 @if (!ensembleIsIdle(ensemble)) {
-                  <button (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>
+                  <button (click)="stopEnsembleAnalysis(ensemble)" color="warn" class="action-button danger-button" mat-flat-button>Stop Analysis</button>
                 }
               </mat-card-actions>
             </mat-card>
@@ -72,16 +72,16 @@
       </mat-expansion-panel-header>
       <div class="flexbox-container">
         @for (container of containerList; track container) {
-          <div class="flexbox-item" class="mat-elevation-z8"  [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
-            <mat-card >
+          <div class="flexbox-item" class="elevation1"  [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
+            <mat-card>
               <mat-card-header>
                 <mat-card-title>
                   {{container.name}}
                   @if (container.status === 'active') {
-                    <mat-icon class='spinning mat-icon-class' color="accent">settings</mat-icon>
+                    <mat-icon class='spinning' style="color: orange" >settings</mat-icon>
                   }
                   @if (container.status === 'idle') {
-                    <mat-icon class="mat-icon-class" color="primary">pause_circle</mat-icon>
+                    <mat-icon style="color: orangered" >pause_circle</mat-icon>
                   }
                 </mat-card-title>
               </mat-card-header>
@@ -104,13 +104,16 @@
                   }
                 </mat-card-content>
                 <mat-card-actions>
-                  <button (click)="edit(container)" color="primary" class="action-button mat-elevation-z8" mat-flat-button>Edit</button>
-                  <button (click)="remove(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Remove</button>
+                  <button (click)="edit(container)"  class="action-button options-button" mat-flat-button>Edit</button>
+                  <button (click)="remove(container)" class="action-button danger-button" mat-flat-button>Remove</button>
                   @if (containerIsIdle(container)) {
-                    <button (click)="startAnalysis(container)" color="accent" class="action-button mat-elevation-z8" mat-flat-button>Start Analysis</button>
+                    <button matFab extended (click)="startAnalysis(container)"  class="action-button success-button" mat-flat-button>
+                      <mat-icon>play_arrow</mat-icon>
+                      Start Analysis
+                    </button>
                   }
                   @if (containerIsActive(container)) {
-                    <button (click)="stop_analysis(container)" color="warn" class="action-button mat-elevation-z8" mat-flat-button>Stop Analysis</button>
+                    <button (click)="stop_analysis(container)" class="action-button danger-button" mat-flat-button>Stop Analysis</button>
                   }
                 </mat-card-actions>
               </mat-card>

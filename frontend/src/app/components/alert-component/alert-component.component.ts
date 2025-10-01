@@ -7,7 +7,7 @@ import {v4 as uuidv4} from 'uuid';
     selector: 'app-alert-component',
     imports: [MatIconModule],
     templateUrl: './alert-component.component.html',
-    styleUrl: './alert-component.component.css'
+    styleUrl: './alert-component.component.scss'
 })
 export class AlertComponent {
   errors: { id: string, message: string, statusCode: number }[] = [];

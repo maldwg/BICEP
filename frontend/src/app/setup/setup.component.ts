@@ -27,7 +27,7 @@ import { hostStatus } from '../models/status';
     selector: 'app-setup',
     imports: [AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
     templateUrl: './setup.component.html',
-    styleUrl: './setup.component.css'
+    styleUrl: './setup.component.scss'
 })
 export class SetupComponent implements OnInit {
 

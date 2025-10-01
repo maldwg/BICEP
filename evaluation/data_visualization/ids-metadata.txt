@@ -1,0 +1,118 @@
+== Median Runtime per IDS config ===
+IDS
+Slips - All + Snort All                   6489.60
+Slips - All + Suricata All                6518.40
+Slips - All + Suricata All + Snort All    6405.60
+Slips - All Modules                       9726.00
+Slips - ML-based                          3079.80
+Slips - Signature + Slips ML              6380.00
+Slips - Signature-based                   6669.00
+Snort - All                                  9.21
+Snort - Community                            3.10
+Snort - LightSPD Balanced                    3.20
+Snort - LightSPD Max-Detect                  8.85
+Snort - Max-Detect + Community              10.04
+Snort All + Suricata All                    15.06
+Suricata - All                              13.56
+Suricata - abuse.ch B                        7.99
+Suricata - et-open                           5.06
+Suricata et-open+ Suricata abuse.ch         10.20
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by IDS config ===
+                                             Runtime       FPR       FNR        DR       FDR  ACCURACY  PRECISION   F_SCORE  UNASSIGNED_ALERTS_RATIO
+IDS                                                                                                                                                 
+Slips - All + Snort All                  7257.600000  0.013333  0.960000  0.040000  0.246667  0.530000   0.753333  0.073333                 0.233333
+Slips - All + Suricata All               7960.200000  0.006667  0.973333  0.026667  0.150000  0.526667   0.850000  0.050000                 0.336667
+Slips - All + Suricata All + Snort All   7253.600000  0.023333  0.933333  0.066667  0.276667  0.540000   0.723333  0.116667                 0.270000
+Slips - All Modules                     10354.200000  0.196667  0.796667  0.203333  0.396667  0.530000   0.603333  0.240000                 0.490000
+Slips - ML-based                         2375.066667  0.000000  1.000000  0.000000  0.463333  0.516667   0.536667  0.000000                 0.090000
+Slips - Signature + Slips ML             6778.000000  0.000000  0.990000  0.020000  0.456667  0.526667   0.540000  0.006667                 0.096667
+Slips - Signature-based                  7287.600000  0.196667  0.796667  0.203333  0.400000  0.530000   0.600000  0.240000                 0.510000
+Snort - All                                 8.886667  0.070000  0.773333  0.226667  0.160000  0.590000   0.840000  0.323333                 0.476667
+Snort - Community                           3.063333  0.066667  0.903333  0.096667  0.313333  0.533333   0.686667  0.156667                 0.280000
+Snort - LightSPD Balanced                   3.356667  0.016667  0.913333  0.086667  0.170000  0.550000   0.830000  0.146667                 0.313333
+Snort - LightSPD Max-Detect                 8.533333  0.030000  0.780000  0.220000  0.083333  0.610000   0.916667  0.330000                 0.523333
+Snort - Max-Detect + Community              9.053333  0.026667  0.906667  0.093333  0.216667  0.546667   0.783333  0.156667                 0.303333
+Snort All + Suricata All                   15.200000  0.003333  0.963333  0.036667  0.186667  0.530000   0.813333  0.070000                 0.290000
+Suricata - All                             13.776667  0.086667  0.853333  0.146667  0.260000  0.553333   0.740000  0.223333                 0.526667
+Suricata - abuse.ch B                       8.200000  0.063333  0.903333  0.096667  0.183333  0.540000   0.816667  0.146667                 0.563333
+Suricata - et-open                          5.400000  0.063333  0.903333  0.096667  0.183333  0.540000   0.816667  0.146667                 0.563333
+Suricata et-open+ Suricata abuse.ch         9.623333  0.063333  0.903333  0.096667  0.183333  0.540000   0.816667  0.146667                 0.540000 
+
+=== Median Runtime per IDS ===
+IDS_Group
+Slips                                3636.000
+Slips Ensemble                       6380.000
+Snort                                   6.085
+Snort + Slips Ensemble               6489.600
+Snort + Suricata Ensemble              15.060
+Snort Ensemble                         10.040
+Suricata                                7.990
+Suricata + Slips + Snort Ensemble    6405.600
+Suricata + Slips Ensemble            6518.400
+Suricata Ensemble                      10.200
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by IDS ===
+                                       Runtime       FPR       FNR        DR       FDR  ACCURACY  PRECISION   F_SCORE  UNASSIGNED_ALERTS_RATIO
+IDS_Group                                                                                                                                     
+Slips                              6672.288889  0.131111  0.864444  0.135556  0.420000  0.525556   0.580000  0.160000                 0.363333
+Slips Ensemble                     6778.000000  0.000000  0.990000  0.020000  0.456667  0.526667   0.540000  0.006667                 0.096667
+Snort                                 5.960000  0.045833  0.842500  0.157500  0.181667  0.570833   0.818333  0.239167                 0.398333
+Snort + Slips Ensemble             7257.600000  0.013333  0.960000  0.040000  0.246667  0.530000   0.753333  0.073333                 0.233333
+Snort + Suricata Ensemble            15.200000  0.003333  0.963333  0.036667  0.186667  0.530000   0.813333  0.070000                 0.290000
+Snort Ensemble                        9.053333  0.026667  0.906667  0.093333  0.216667  0.546667   0.783333  0.156667                 0.303333
+Suricata                              9.125556  0.071111  0.886667  0.113333  0.208889  0.544444   0.791111  0.172222                 0.551111
+Suricata + Slips + Snort Ensemble  7253.600000  0.023333  0.933333  0.066667  0.276667  0.540000   0.723333  0.116667                 0.270000
+Suricata + Slips Ensemble          7960.200000  0.006667  0.973333  0.026667  0.150000  0.526667   0.850000  0.050000                 0.336667
+Suricata Ensemble                     9.623333  0.063333  0.903333  0.096667  0.183333  0.540000   0.816667  0.146667                 0.540000 
+
+-----------------------------
+full
+
+=== Median Runtime per IDS config ===
+IDS
+Snort - All                            1946.272792
+Snort - Community                       748.210976
+Snort - LightSPD Balanced              1406.842724
+Snort - LightSPD Max-Detect            1838.696965
+Snort - Max-Detect + Community         3334.393435
+Snort All + Suricata All               7502.358129
+Suricata - All                         1941.416000
+Suricata - abuse.ch                    1893.418000
+Suricata - et-open                      852.611000
+Suricata et-open+ Suricata abuse.ch    9771.756000
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by IDS config ===
+                                         Runtime       FPR       FNR        DR       FDR  ACCURACY  PRECISION   F_SCORE  UNASSIGNED_ALERTS_RATIO
+IDS                                                                                                                                             
+Snort - All                          1963.341536  0.130000  0.550000  0.450000  0.416667  0.846667   0.583333  0.366667                 0.270000
+Snort - Community                     896.703726  0.120000  0.760000  0.240000  0.483333  0.826667   0.516667  0.256667                 0.280000
+Snort - LightSPD Balanced            1282.114320  0.026667  0.826667  0.173333  0.376667  0.893333   0.623333  0.226667                 0.136667
+Snort - LightSPD Max-Detect          2092.737444  0.056667  0.560000  0.440000  0.280000  0.906667   0.720000  0.446667                 0.300000
+Snort - Max-Detect + Community       3197.643887  0.046667  0.773333  0.226667  0.376667  0.886667   0.623333  0.270000                 0.316667
+Snort All + Suricata All             6958.583000  0.010000  0.930000  0.070000  0.440000  0.890000   0.560000  0.116667                 0.080000
+Suricata - All                       3462.396000  0.133333  0.720000  0.280000  0.556667  0.826667   0.443333  0.230000                 0.496667
+Suricata - abuse.ch                  3238.287000  0.096667  0.763333  0.236667  0.533333  0.850000   0.466667  0.186667                 0.556667
+Suricata - et-open                    913.211667  0.103333  0.753333  0.246667  0.533333  0.846667   0.466667  0.203333                 0.546667
+Suricata et-open+ Suricata abuse.ch  9639.446333  0.090000  0.763333  0.236667  0.530000  0.856667   0.470000  0.190000                 0.516667 
+
+=== Median Runtime per IDS ===
+IDS_Group
+Snort                        1436.220103
+Snort + Suricata Ensemble    7502.358129
+Snort Ensemble               3334.393435
+Suricata                     1193.208000
+Suricata Ensemble            9771.756000
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by IDS ===
+                               Runtime       FPR       FNR        DR       FDR  ACCURACY  PRECISION   F_SCORE  UNASSIGNED_ALERTS_RATIO
+IDS_Group                                                                                                                             
+Snort                      1558.724256  0.083333  0.674167  0.325833  0.389167  0.868333   0.610833  0.324167                 0.246667
+Snort + Suricata Ensemble  6958.583000  0.010000  0.930000  0.070000  0.440000  0.890000   0.560000  0.116667                 0.080000
+Snort Ensemble             3197.643887  0.046667  0.773333  0.226667  0.376667  0.886667   0.623333  0.270000                 0.316667
+Suricata                   2537.964889  0.111111  0.745556  0.254444  0.541111  0.841111   0.458889  0.206667                 0.533333
+Suricata Ensemble          9639.446333  0.090000  0.763333  0.236667  0.530000  0.856667   0.470000  0.190000                 0.516667 

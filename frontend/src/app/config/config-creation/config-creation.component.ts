@@ -36,7 +36,7 @@ import { DatasetType } from '../../models/datasetType';
     MatIconModule,
     AlertComponent
 ], templateUrl: './config-creation.component.html',
-    styleUrl: './config-creation.component.css'
+    styleUrl: './config-creation.component.scss'
 })
 export class ConfigCreationComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

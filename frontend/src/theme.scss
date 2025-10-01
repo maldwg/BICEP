@@ -1,0 +1,116 @@
+@use '@angular/material' as mat;
+
+
+:root {
+
+  @include mat.dialog-overrides((
+    container-color:  rgba(255, 255, 255, 0.1),
+    subhead-weight: 500,
+  ));
+
+  @include mat.theme((
+    color: (
+      primary: mat.$red-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+    ), $overrides: (
+      // primary: orange,
+      // on-primary: 
+      // primary-container: 
+      // on-primary-container: 
+      // inverse-primary: 
+      // primary-fixed:
+      // primary-fixed-dim: 
+      // on-primary-fixed: 
+      // on-primary-fixed-variant: 
+
+      secondary: blue,
+      // on-secondary: 
+      // secondary-container: 
+      // on-secondary-container: 
+      // secondary-fixed: 
+      // secondary-fixed-dim:
+      // on-secondary-fixed:
+      // on-secondary-fixed-variant: 
+
+      tertiary: blue,
+      // on-tertiary:
+      // tertiary-container:
+      // on-tertiary-container:
+      // tertiary-fixed:
+      // tertiary-fixed-dim:
+      // on-tertiary-fixed:
+      // on-tertiary-fixed-variant:
+      background: black,
+      // on-background:
+
+      error: darkred,
+      warn: red,
+
+      surface: rgba(255, 255, 255, 0.3),
+      // surface-dim: white,
+      // surface-bright: white,
+      surface-container-low: rgba(255, 255, 255, 0.5),
+      // surface-container-lowest: white,
+      // surface-container: white,
+      // surface-container-high: white, 
+      // surface-container-highest: white,
+      // on-surface:
+      // shadow:
+      // scrim:
+      // surface-tint:
+      // inverse-surface:
+      // inverse-on-surface:
+      // outline:
+      // outline-variant
+      // on-error:
+      // error-container:
+      // on-error-container:
+      // surface-variant:
+      // on-surface-variant:
+    )
+  );
+}
+
+body {
+  //background: linear-gradient(0deg, #4571cf8c,  #ebf0f3);
+  //background: linear-gradient(0deg, #f1333313,  #faf8f8);          
+}
+
+body {
+  position: relative;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+
+  /* background image: fixed, bottom center */
+  background: url("./assets/Biceps_logo.svg") no-repeat center bottom;
+  background-size: 500px auto;  /* adjust width as needed */
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse 100% 100% at 50% 30%, #ffd5d3 60%, #b610109f 80%);
+  background-size: 100% 100%;
+  animation: pulseBg 6s ease-in-out infinite alternate;
+  mix-blend-mode: multiply; /* lets the image show through */
+}
+
+
+@keyframes pulseBg {
+  0% {
+    background-size: 100% 100%;
+  }
+  // repeat value to fake a pause when edges are colored
+  30% {
+    background-size: 100% 100%;
+  }
+  100% {
+    background-size: 130% 130%;
+  }
+}

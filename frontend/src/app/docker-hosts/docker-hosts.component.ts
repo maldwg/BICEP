@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule
 ],
     templateUrl: './docker-hosts.component.html',
-    styleUrl: './docker-hosts.component.css'
+    styleUrl: './docker-hosts.component.scss'
 })
 export class DockerHostsComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -67,6 +67,9 @@ export class DockerHostsComponent implements OnInit{
     const dialogRef = this.dialog.open(HostCreationComponent, {
       width: "50%",
       height: "50%",
+      panelClass: "matdialog-panel",
+      backdropClass: "matdialog-backdrop"
+
     });
 
     dialogRef.afterClosed().subscribe(hostData =>{

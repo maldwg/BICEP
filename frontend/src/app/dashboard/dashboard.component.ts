@@ -38,7 +38,7 @@ import { AlertComponent } from "../components/alert-component/alert-component.co
     selector: 'app-dashboard',
     imports: [MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
     templateUrl: './dashboard.component.html',
-    styleUrl: './dashboard.component.css'
+    styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

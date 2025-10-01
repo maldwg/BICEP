@@ -1,0 +1,91 @@
+@use './theme' as *;
+@use '@angular/material' as mat;
+
+$success: green;
+$danger: red;
+$options: orange;
+$submit: blue;
+
+h1 {
+    text-shadow: 3px 5px 10px grey;
+}
+
+.elevation1 {
+    box-shadow: var(--mat-sys-level1);
+}
+.elevation2 {
+    box-shadow: var(--mat-sys-level2);
+}
+.elevation3 {
+    box-shadow: var(--mat-sys-level3);
+}
+
+.success-button{
+    @include mat.button-overrides((
+        filled-container-color: $success,
+    ));
+}
+
+.danger-button{
+    @include mat.button-overrides((
+        filled-container-color: $danger,
+    ));
+}
+
+.options-button{
+    @include mat.button-overrides((
+        filled-container-color: $options,
+    ));
+}
+
+.submit-button{
+    @include mat.button-overrides((
+        filled-container-color: $submit,
+    ));}
+
+button:hover {
+  transition: filter 0.5s ease; /* smooth hover */   
+  filter: brightness(70%);  /* darker by 15% */
+}
+
+button {
+    box-shadow: var(--mat-sys-level3)
+}
+
+html, body { height: 100%; }
+
+.component-header-div {
+    margin: auto;
+}
+
+.custom-button {
+    border-radius: 20px;
+}
+
+.mat-success {
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+
+.matdialog-glass-optic {
+  box-shadow: var(--mat-sys-level2);
+  z-index: 1000;
+  backdrop-filter: blur(3px);               /* optional frosted effect */
+  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+}
+
+.matdialog-panel {
+  box-shadow: var(--mat-sys-level2);
+  z-index: 1000;
+  box-shadow: var(--mat-sys-level3);
+  border-radius: 30px; /* Rounded corners for a softer look */
+  backdrop-filter: blur(8px);               /* optional frosted effect */
+  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+}
+
+.matdialog-backdrop {
+  /* Apply a blur effect and transparency to the backdrop */
+  backdrop-filter: blur(10px); /* Apply the blur effect */
+  -webkit-backdrop-filter: blur(10px); /* For Safari support */
+}

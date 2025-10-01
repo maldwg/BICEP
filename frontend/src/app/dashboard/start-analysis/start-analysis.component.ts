@@ -13,7 +13,7 @@ import { Dataset } from '../../models/dataset';
     selector: 'app-start-analysis',
     imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
     templateUrl: './start-analysis.component.html',
-    styleUrl: './start-analysis.component.css'
+    styleUrl: './start-analysis.component.scss'
 })
 export class StartAnalysisComponent implements OnInit{
 

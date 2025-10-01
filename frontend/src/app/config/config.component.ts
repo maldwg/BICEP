@@ -30,7 +30,7 @@ import { DatasetTypesService } from '../services/dataset-type/dataset-type.servi
     selector: 'app-config',
     imports: [MatCardModule, MatButtonModule, MatExpansionModule, AlertComponent],
     templateUrl: './config.component.html',
-    styleUrl: './config.component.css'
+    styleUrl: './config.component.scss'
 })
 export class ConfigComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -99,6 +99,7 @@ export class ConfigComponent implements OnInit{
     const dialogRef = this.dialog.open(ConfigCreationComponent, {
       height: '50%',
       width: '40%',
+      panelClass: "matdialog-panel",
     });
  
     dialogRef.afterClosed().subscribe(res => {

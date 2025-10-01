@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
     selector: 'app-ids',
     imports: [],
     templateUrl: './ids.component.html',
-    styleUrl: './ids.component.css'
+    styleUrl: './ids.component.scss'
 })
 export class IdsComponent {
 

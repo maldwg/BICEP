@@ -6,7 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
     selector: 'app-metrics',
     imports: [],
     templateUrl: './metrics.component.html',
-    styleUrl: './metrics.component.css'
+    styleUrl: './metrics.component.scss'
 })
 export class MetricsComponent implements OnInit {
 

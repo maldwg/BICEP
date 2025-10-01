@@ -12,7 +12,7 @@ import { Container } from '../../models/container';
     selector: 'app-ensemble-edit',
     imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
     templateUrl: './ensemble-edit.component.html',
-    styleUrl: './ensemble-edit.component.css'
+    styleUrl: './ensemble-edit.component.scss'
 })
 export class EnsembleEditComponent {
 

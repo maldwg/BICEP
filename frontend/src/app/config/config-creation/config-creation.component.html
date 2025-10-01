@@ -31,7 +31,7 @@
           <mat-form-field appearance="outline">
             <mat-label>Configuration or Ruleset </mat-label>
             <input matInput [value]="selectedConfigurationFileName" readonly>
-            <button matSuffix mat-mini-fab color="primary" class="upload-btn" (click)="configurationFileInput.click()">
+            <button matSuffix mat-mini-fab  class="upload-btn" (click)="configurationFileInput.click()">
               <mat-icon>attach_file</mat-icon>
             </button>
             <input type="file" hidden (change)="onFileSelected($event, 'configuration')" #configurationFileInput [accept]="getAcceptType()">
@@ -62,7 +62,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Dataset File</mat-label>
               <input matInput [value]="selectedDatasetFileName" readonly>
-              <button mat-mini-fab color="primary" class="upload-btn" (click)="datasetFileInput.click()">
+              <button mat-mini-fab  class="upload-btn" (click)="datasetFileInput.click()">
                 <mat-icon>attach_file</mat-icon>
               </button>
             </mat-form-field>
@@ -72,7 +72,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Labels File</mat-label>
               <input matInput [value]="selectedLabelsFileName" readonly>
-              <button mat-mini-fab color="primary" class="upload-btn" (click)="labelsFileInput.click()">
+              <button mat-mini-fab  class="upload-btn" (click)="labelsFileInput.click()">
                 <mat-icon>attach_file</mat-icon>
               </button>
             </mat-form-field>
@@ -88,8 +88,8 @@
     </form>
   </mat-dialog-content>
   <mat-dialog-actions class="flexbox-item">
-    <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
-    <button class="action-button" mat-flat-button (click)="save()" color="success" cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
+    <button class="action-button" mat-flat-button (click)="exit()" >Close</button>
+    <button class="action-button" mat-flat-button (click)="save()"  cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
   </mat-dialog-actions>
 </div>
 
