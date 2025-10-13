@@ -11,13 +11,13 @@ h1 {
 }
 
 .elevation1 {
-    box-shadow: var(--mat-sys-level1);
+    box-shadow: var(--mat-sys-level1) !important;
 }
 .elevation2 {
-    box-shadow: var(--mat-sys-level2);
+    box-shadow: var(--mat-sys-level2) !important;
 }
 .elevation3 {
-    box-shadow: var(--mat-sys-level3);
+    box-shadow: var(--mat-sys-level3) !important;
 }
 
 .success-button{
@@ -52,7 +52,12 @@ button {
     box-shadow: var(--mat-sys-level3)
 }
 
-html, body { height: 100%; }
+html, body { 
+    height: 100%; 
+    width: 100%;
+    overflow-x: auto; 
+    overflow-y: auto; 
+}
 
 .component-header-div {
     margin: auto;
@@ -71,21 +76,97 @@ html, body { height: 100%; }
 .matdialog-glass-optic {
   box-shadow: var(--mat-sys-level2);
   z-index: 1000;
-  backdrop-filter: blur(3px);               /* optional frosted effect */
-  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+  backdrop-filter: blur(3px);               
+  -webkit-backdrop-filter: blur(12px);      
 }
 
 .matdialog-panel {
   box-shadow: var(--mat-sys-level2);
   z-index: 1000;
   box-shadow: var(--mat-sys-level3);
-  border-radius: 30px; /* Rounded corners for a softer look */
-  backdrop-filter: blur(8px);               /* optional frosted effect */
-  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+  border-radius: 30px; 
+  backdrop-filter: blur(8px);              
+  -webkit-backdrop-filter: blur(12px);      
 }
 
 .matdialog-backdrop {
-  /* Apply a blur effect and transparency to the backdrop */
-  backdrop-filter: blur(10px); /* Apply the blur effect */
-  -webkit-backdrop-filter: blur(10px); /* For Safari support */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); 
+}
+
+
+.expansion-panel {
+  margin-top: 2%;
+  margin-bottom: 2%;
+  margin-left: auto;
+  margin-right: auto;
+  width: 85%;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+
+.expansion-panel-flexbox-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 2%;
+    width: 100%;
+    padding-left: 1rem;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 1px;
+ 
+}
+
+.flexbox-item {
+    padding-left: 1rem;
+  }
+
+mat-card {
+  max-width: 300px;       
+  max-height: 400px;
+  height: 100%;
+  width: 100%;             
+  margin: 0.5rem;          
+  overflow-wrap: anywhere; 
+  white-space: normal;    
+  min-height: 300px;
+  min-width: 400px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); 
+    box-shadow: var(--mat-sys-level3) !important;
+
+}
+
+mat-card-content{
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem; 
+  margin-top: 1.5rem;
+}
+
+mat-card-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0px;
+  margin-bottom: 1%;
+}
+
+.info-row strong {
+  min-width: 180px; 
+  text-align: left;
+}
+
+.mat-card-title-text{
+  font-weight: bold; 
+  text-transform: uppercase;
 }

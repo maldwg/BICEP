@@ -4,31 +4,12 @@
     align-items: center;
   }
 
-
-.flexbox-container{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    row-gap: 25px;
-    column-gap: 25px;
-    justify-content: center;
-    margin: 2%;
-    align-content: center;
-}
-
-.flexbox-item {
-  justify-content: center;     
-  }
-
-
 .action-button{
   margin: 1%;
   border-radius: 20px;
 }
 
-.flexbox-item-first-row{
-  padding-bottom: 5%;
-}
+
 
 .config-button-div{
   margin: auto;

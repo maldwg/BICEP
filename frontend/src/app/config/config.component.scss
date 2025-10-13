@@ -5,43 +5,17 @@
   }
 
 
-.flexbox-container{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    row-gap: 25px;
-    column-gap: 25px;
-    justify-content: center;
-    margin: 2%;
-    align-content: center;
-}
-
-.flexbox-item {
-  justify-content: center;     
-  }
-
-
 .action-button{
   margin: 1%;
   border-radius: 20px;
 }
 
-.flexbox-item-first-row{
-  padding-bottom: 5%;
-}
 
 .panel-flexbox-div{
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   margin: auto;
   padding: 0;
   width: 80%;
-}
-
-.panel-flexbox-item{
-  margin-top: 2%;
-  margin-bottom: 2%;
-  margin-left: auto;
-  margin-right: auto;
 }

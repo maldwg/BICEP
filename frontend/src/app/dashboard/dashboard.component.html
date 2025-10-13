@@ -1,6 +1,6 @@
 <app-alert-component></app-alert-component>
 <div class="panel-flexbox-div">
-  <div class="panel-flexbox-item">
+  <div class="expansion-panel">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
@@ -10,32 +10,39 @@
           Overview on current Ensembles
         </mat-panel-description>
       </mat-expansion-panel-header>
-      <div class="flexbox-container">
+      <div class="expansion-panel-flexbox-container">
         @for (ensemble of ensembleList; track ensemble) {
-          <div class="flexbox-item" class="elevation1">
+          <div class="flexbox-item">
             <mat-card >
               <mat-card-header>
                 <mat-card-title >
                   <div style="display: flex; align-items: center;">
-                    <span>{{ensemble.name}}</span>
+                    <span class="mat-card-title-text">{{ensemble.name}}</span>
                     @if (ensemble.status === 'active') {
-                      <mat-icon class='spinning' >settings</mat-icon>
+                      <span ><mat-icon class='spinning' style="padding-left: 50%; color: orange" >settings</mat-icon></span>
                     } @else {
                       @if (ensemble.status === 'idle') {
-                        <mat-icon  >pause_circle</mat-icon>
+                        <span><mat-icon style="padding-left: 50%; color: orangered" >pause_circle</mat-icon></span>
                       }
                     }
                   </div>
                 </mat-card-title>
               </mat-card-header>
               <mat-card-content >
-                <div>Id: {{ensemble.id}} </div>
-                <div>Ensemble technique: {{getEnsembleTechniqueName(ensemble.technique_id)}}</div>
-                <div>Description: {{ensemble.description}}</div>
-                <div>Status: {{ensemble.status}} </div>
-                <div>
-                  Containers:
-                  {{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }}
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{ensemble.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Ensemble Technique:</strong> <span>{{getEnsembleTechniqueName(ensemble.technique_id)}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{ensemble.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Status:</strong> <span>{{ensemble.status}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Containers:</strong> <span>{{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }}</span>
                 </div>
                 @if (!checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
                   <div class="info-message">
@@ -60,8 +67,8 @@
 
     </mat-expansion-panel>
   </div>
-  <div class="panel-flexbox-item">
-    <mat-expansion-panel class="panel-flexbox-item">
+  <div class="expansion-panel">
+    <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>
           Containers
@@ -70,32 +77,51 @@
           Overview on current Containers
         </mat-panel-description>
       </mat-expansion-panel-header>
-      <div class="flexbox-container">
+      <div class="expansion-panel-flexbox-container">
         @for (container of containerList; track container) {
-          <div class="flexbox-item" class="elevation1"  [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
+          <div class="flexbox-item"  [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
             <mat-card>
               <mat-card-header>
                 <mat-card-title>
-                  {{container.name}}
-                  @if (container.status === 'active') {
-                    <mat-icon class='spinning' style="color: orange" >settings</mat-icon>
-                  }
-                  @if (container.status === 'idle') {
-                    <mat-icon style="color: orangered" >pause_circle</mat-icon>
-                  }
+                  <div style="display: flex; align-items: center;">
+                    <span class="mat-card-title-text">{{container.name}}</span>
+                    @if (container.status === 'active') {
+                      <span ><mat-icon class='spinning' style="padding-left: 50%; color: orange" >settings</mat-icon></span>
+                    }
+                    @if (container.status === 'idle') {
+                      <span><mat-icon style="padding-left: 50%; color: orangered" >pause_circle</mat-icon></span>
+                    }
+                  </div>
                 </mat-card-title>
               </mat-card-header>
               <mat-card-content >
-                <div>ID: {{container.id}}</div>
-                <div>Host: {{getHostName(container.host_system_id)}}</div>
-                <div>Port: {{container.port}}</div>
-                <div>IDS Tool: {{getIdsToolName(container.ids_tool_id)}}</div>
-                <div>Configuration: {{getConfigName(container.configuration_id)}}</div>
+
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{container.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Host:</strong> <span>{{getHostName(container.host_system_id)}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Port:</strong> <span>{{container.port}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>IDS Tool:</strong> <span>{{getIdsToolName(container.ids_tool_id)}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Configuration:</strong> <span>{{getConfigName(container.configuration_id)}}</span>
+                </div>
                 @if (container.ruleset_id) {
-                  <div>Ruleset: {{getConfigName(container.ruleset_id)}}</div>
+                  <div class="info-row">
+                    <strong>Ruleset:</strong> <span>{{getConfigName(container.ruleset_id)}}</span>
+                  </div>
                 }
-                <div>Description: {{container.description}}</div>
-                <div>Status: {{container.status}}</div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{container.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Status:</strong> <span>{{container.status}}</span>
+                </div>
                 @if (!container.ruleset_id) {
                   <div></div>
                   }<br>
@@ -107,7 +133,7 @@
                   <button (click)="edit(container)"  class="action-button options-button" mat-flat-button>Edit</button>
                   <button (click)="remove(container)" class="action-button danger-button" mat-flat-button>Remove</button>
                   @if (containerIsIdle(container)) {
-                    <button matFab extended (click)="startAnalysis(container)"  class="action-button success-button" mat-flat-button>
+                    <button extended (click)="startAnalysis(container)"  class="action-button success-button" mat-flat-button>
                       <mat-icon>play_arrow</mat-icon>
                       Start Analysis
                     </button>

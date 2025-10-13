@@ -3,12 +3,12 @@
   <h1>Configure new IDS or Ensemble</h1>
 </div>
 @if (userChoice !== '') {
-  <div class="flexbox-container-setup-choice">
+  <div class="expansion-panel-flexbox-container-setup-choice">
     <button  mat-flat-button (click)="setUserChoice('')">back</button>
   </div>
 }
 @if (userChoice === '') {
-  <div class="flexbox-container-setup-choice">
+  <div class="expansion-panel-flexbox-container-setup-choice">
     <div class="flexbox-setup-choice-div">
       <button class="mat-elevation-z8 flexbox-setup-choice-button" (click)="setUserChoice('ensemble')" mat-button>
         Ensemble
@@ -24,7 +24,7 @@
 
 
 @if (userChoice === 'ensemble') {
-  <div class="flexbox-container">
+  <div class="expansion-panel-flexbox-container">
     <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()">
       <mat-card>
         <mat-card-content class="mat-elevation-z8">
@@ -71,7 +71,7 @@
 }
 
 @if (userChoice === 'ids') {
-  <div class="flexbox-container">
+  <div class="expansion-panel-flexbox-container">
     <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
       <mat-card>
         <mat-card-content class="mat-elevation-z8">

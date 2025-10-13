@@ -3,31 +3,39 @@
   <h1> Overview on configured hosts </h1>
 </div>
 <div class="config-button-div">
-  <button class="mat-elevation-z8 flexbox-item-first-row"  mat-flat-button (click)="newHost()">Add new host</button>
+  <button class="mat-elevation-z8" style="padding-bottom: 5%;"  mat-flat-button (click)="newHost()">Add new host</button>
 </div>
-<div class="flexbox-container" >
+<div class="expansion-panel-flexbox-container" style="justify-content: center;" >
   @for (hostSystem of hostSystemList; track hostSystem) {
     <div class="flexbox-item" class="mat-elevation-z8">
       <mat-card class="mat-card">
         <mat-card-header>
           <mat-card-title>
             <div style="display: flex; align-items: center;">
-              <span>{{hostSystem.name}}</span>
+              <span class="mat-card-title-text">{{hostSystem.name}} </span>
               @if (hostSystem.status === hostStatus.available) {
-                <mat-icon style="color: green;">circle</mat-icon>
+                <span><mat-icon style="padding-left: 50%; color: green;">circle</mat-icon></span>
               } @else {
                 @if (hostSystem.status === hostStatus.unavailable) {
-                  <mat-icon style="color: red;">circle</mat-icon>
+                 <span><mat-icon style="padding-left: 50%; color: red;">circle</mat-icon></span>
                 }
               }
             </div>
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div>ID: {{hostSystem.id}} </div>
-          <div>Host: {{hostSystem.host}} </div>
-          <div>Docker Port: {{hostSystem.docker_port}} </div>
-          <div>Status: {{hostSystem.status}} </div>
+          <div class="info-row">
+            <strong>ID:</strong> <span>{{ hostSystem.id }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Host:</strong> <span>{{ hostSystem.host }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Docker Port:</strong> <span>{{ hostSystem.docker_port }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Status:</strong> <span>{{ hostSystem.status }}</span>
+          </div>
         </mat-card-content>
         <mat-card-actions>
           <button class="action-button"   mat-flat-button>Details</button>

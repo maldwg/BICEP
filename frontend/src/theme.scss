@@ -12,7 +12,7 @@
     color: (
       primary: mat.$red-palette,
     ),
-    typography: Roboto,
+    typography: 'Roboto, sans-serif',
     density: 0,
     ), $overrides: (
       // primary: orange,
@@ -48,13 +48,13 @@
       error: darkred,
       warn: red,
 
-      surface: rgba(255, 255, 255, 0.3),
+      surface: rgba(255, 255, 255, 0.25),
       // surface-dim: white,
       // surface-bright: white,
-      surface-container-low: rgba(255, 255, 255, 0.5),
+      surface-container-low: rgba(255, 255, 255, 0.3),
       // surface-container-lowest: white,
       // surface-container: white,
-      // surface-container-high: white, 
+      //surface-container-high: rgba(255, 255, 255, 0.1), 
       // surface-container-highest: white,
       // on-surface:
       // shadow:
@@ -74,25 +74,19 @@
 }
 
 body {
-  //background: linear-gradient(0deg, #4571cf8c,  #ebf0f3);
-  //background: linear-gradient(0deg, #f1333313,  #faf8f8);          
-}
-
-body {
   position: relative;
   margin: 0;
   height: 100vh;
-  overflow: hidden;
-
-  /* background image: fixed, bottom center */
+  overflow-x: hidden;      /* hide horizontal scroll, vertical scroll allowed */
+  overflow-y: auto;
   background: url("./assets/Biceps_logo.svg") no-repeat center bottom;
-  background-size: 500px auto;  /* adjust width as needed */
-  background-attachment: fixed;
+  background-size: 500px auto;  
+  background-attachment: scroll;
 }
 
 body::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -1;
   background: radial-gradient(ellipse 100% 100% at 50% 30%, #ffd5d3 60%, #b610109f 80%);

@@ -3,24 +3,6 @@
   opacity: 0.7;
 }
 
-.flexbox-container{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    row-gap: 25px;
-    column-gap: 25px;
-    justify-content: center;
-    margin: auto;
-    padding: 2%;
-}
-
-.flexbox-item {
-    margin-top: 5%;
-    margin-bottom: 5%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
 .action-button{
   margin: 1%;
   border-radius: 20px;
@@ -37,16 +19,9 @@
   flex-direction: column;
   row-gap: 5%;
   column-gap: 5%;
-  justify-content: center;
+  justify-content: flex-start;
   margin: auto;
   width: 80%;
-}
-
-.panel-flexbox-item{
-  margin-top: 2%;
-  margin-bottom: 2%;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 @keyframes spin {
