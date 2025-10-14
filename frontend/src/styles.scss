@@ -5,9 +5,11 @@ $success: green;
 $danger: red;
 $options: orange;
 $submit: blue;
+$action: purple;
 
 h1 {
     text-shadow: 3px 5px 10px grey;
+    padding-bottom: 5%;
 }
 
 .elevation1 {
@@ -43,8 +45,30 @@ h1 {
         filled-container-color: $submit,
     ));}
 
+
+.action-button{
+    @include mat.button-overrides((
+        filled-container-color: $action,
+    ));
+  width: 150px;
+  height: 50px;
+  border-radius: 16px;
+  box-shadow: var(--mat-sys-level3) !important;
+  text-transform: uppercase;
+  border: none;
+}
+
+.moving-hover-button{
+  &:hover {
+    transform: translateY(-8px) scale(1.05);
+    transition: all 0.3s ease; /* smooth hover */   
+    filter: brightness(70%);  /* darker by 15% */
+  }
+}
+
 button:hover {
-  transition: filter 0.5s ease; /* smooth hover */   
+  transform: translateY(-2px) scale(1.02);
+  transition: all 0.3s ease; /* smooth hover */   
   filter: brightness(70%);  /* darker by 15% */
 }
 
@@ -61,6 +85,7 @@ html, body {
 
 .component-header-div {
     margin: auto;
+    margin-top: 2%;
 }
 
 .custom-button {
@@ -103,6 +128,33 @@ html, body {
   width: 85%;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+.form-dialog-container{
+    display: flex;
+    flex-wrap: wrap;
+    margin: auto;
+    width: 100%;
+    justify-content: center;
+    align-items: center;  
+    padding-top: 2%;
+}
+
+.form-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-field{
+  width: 70%;
+}
+
+.form-mat-card {      
+  white-space: normal;    
+  min-height: 500px;
+  min-width: 400px;
+  max-height: 700px;;
 }
 
 
@@ -169,4 +221,21 @@ mat-card-actions {
 .mat-card-title-text{
   font-weight: bold; 
   text-transform: uppercase;
+}
+
+.bDrop {
+   backdrop-filter: blur(2px);
+}
+
+mat-dialog-container {
+      backdrop-filter: blur(4px);
+}
+
+.mat-mdc-form-field .mdc-text-field--disabled {
+  background-color: lightgrey !important; /* lighter/darker grey */
+}
+
+.dialog-actions-div {
+  margin: auto; 
+  padding-bottom: 2%;
 }

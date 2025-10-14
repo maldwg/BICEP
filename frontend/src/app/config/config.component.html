@@ -1,6 +1,6 @@
 <app-alert-component></app-alert-component>
 <div class="component-header-div">
-  <button class="mat-elevation-z8" style="padding-bottom: 5%;" mat-flat-button (click)="newConfig()">New Config</button>
+  <button matButton class="new-config-button moving-hover-button" (click)="newConfig()">New Config</button>
 </div>
 <div class="panel-flexbox-div">
   <div class ="expansion-panel">
@@ -15,7 +15,7 @@
     </mat-expansion-panel-header>
     <div class="expansion-panel-flexbox-container" >
       @for (configuration of configurationList; track configuration) {
-        <div class="flexbox-item" class="mat-elevation-z8">
+        <div class="flexbox-item">
           @if (configuration.file_type === fileTypeDict.configuration) {
             <mat-card class="mat-card">
               <mat-card-header>
@@ -35,8 +35,8 @@
                 </div>
               </mat-card-content>
               <mat-card-actions>
-                <button class="action-button"   mat-flat-button>Details</button>
-                <button class="action-button"  (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
+                <button class="options-button" matButton="filled">Details</button>
+                <button class="danger-button"  (click)="removeConfiguration(configuration)"  matButton="filled">Remove</button>
               </mat-card-actions>
             </mat-card>
           }
@@ -77,8 +77,8 @@
                 </div>
               </mat-card-content>
               <mat-card-actions>
-                <button class="action-button"   mat-flat-button>Details</button>
-                <button class="action-button"  (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
+                <button class="options-button" matButton="filled">Details</button>
+                <button class="danger-button"  (click)="removeConfiguration(configuration)"  matButton="filled">Remove</button>
               </mat-card-actions>
             </mat-card>
           }
@@ -127,8 +127,8 @@
                 </div>
             </mat-card-content>
             <mat-card-actions>
-              <button class="action-button"   mat-flat-button>Details</button>
-              <button class="action-button"  (click)="removeDataset(dataset)"  mat-flat-button>Remove</button>
+                <button class="options-button" matButton="filled">Details</button>
+                <button class="danger-button"  (click)="removeDataset(dataset)"  matButton="filled">Remove</button>
             </mat-card-actions>
           </mat-card>
         </div>

@@ -4,8 +4,10 @@
 :root {
 
   @include mat.dialog-overrides((
-    container-color:  rgba(255, 255, 255, 0.1),
+    container-color:  rgba(255, 255, 255, 0.7),
     subhead-weight: 500,
+    container-elevation-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.8)
+
   ));
 
   @include mat.theme((
@@ -42,7 +44,7 @@
       // tertiary-fixed-dim:
       // on-tertiary-fixed:
       // on-tertiary-fixed-variant:
-      background: black,
+      //background: black,
       // on-background:
 
       error: darkred,
@@ -54,7 +56,7 @@
       surface-container-low: rgba(255, 255, 255, 0.3),
       // surface-container-lowest: white,
       // surface-container: white,
-      //surface-container-high: rgba(255, 255, 255, 0.1), 
+      surface-container: rgba(255, 255, 255, 0.9), 
       // surface-container-highest: white,
       // on-surface:
       // shadow:

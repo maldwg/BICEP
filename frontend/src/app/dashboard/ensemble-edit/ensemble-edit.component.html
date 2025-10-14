@@ -1,15 +1,14 @@
 
-<div class="expansion-panel-flexbox-container">
-  <h2 mat-dialog-title>Update Ensemble</h2>
+<div>
   <mat-dialog-content>
     <form [formGroup]="ensembleEdit">
-      <div class="flexbox-item">
+      <div class="form-item">
         <mat-form-field>
           <mat-label>Name</mat-label>
           <input [formControl]="ensembleEdit.controls.name" matInput value={{data.ensemble.name}} required>
         </mat-form-field>
       </div>
-      <div class="flexbox-item">
+      <div class="form-item">
         <mat-form-field>
           <mat-label>Container</mat-label>
           <mat-select [formControl]="ensembleEdit.controls.idsContainer" required multiple>
@@ -19,7 +18,7 @@
           </mat-select>
         </mat-form-field>
       </div>
-      <div class="flexbox-item">
+      <div class="form-item">
         <mat-form-field>
           <mat-label>Ensemble Technique</mat-label>
           <mat-select [formControl]="ensembleEdit.controls.ensembleTechnique" required>
@@ -29,7 +28,7 @@
           </mat-select>
         </mat-form-field>
       </div>
-      <div class="flexbox-item">
+      <div class="form-item">
         <mat-form-field>
           <mat-label>Description</mat-label>
           <textarea matInput [formControl]="ensembleEdit.controls.description" required></textarea>
@@ -38,10 +37,10 @@
     </form>
   </mat-dialog-content>
   <mat-dialog-actions>
-    <div class="flexbox-item action-button-div">
-      <button (click)="save()" class="custom-button mat-elevation-z8" mat-flat-button
+    <div class="dialog-actions-div">
+      <button (click)="save()" class="success-button" matButton="filled"
       >Save</button>
-      <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
+      <button (click)="exit()" class="danger-button" matButton="filled"
       >Exit</button>
     </div>
 

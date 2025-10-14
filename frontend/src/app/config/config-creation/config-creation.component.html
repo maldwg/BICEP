@@ -88,8 +88,8 @@
     </form>
   </mat-dialog-content>
   <mat-dialog-actions class="flexbox-item">
-    <button class="action-button" mat-flat-button (click)="exit()" >Close</button>
-    <button class="action-button" mat-flat-button (click)="save()"  cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
+    <button class="danger-button" mat-flat-button (click)="exit()" >Close</button>
+    <button class="submit-button" mat-flat-button (click)="save()"  cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">Save</button>
   </mat-dialog-actions>
 </div>
 

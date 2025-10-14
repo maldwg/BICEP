@@ -135,8 +135,8 @@ export class DashboardComponent implements OnInit {
   // TODO 10: if not status code 200 then popup with error code 
   startAnalysis(container: Container){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "50%",
-      width: "50%",
+      height: "35%",
+      width: "20%",
       data: {
         datasets: this.datasetList
       }
@@ -209,12 +209,12 @@ export class DashboardComponent implements OnInit {
 
   startEnsembleAnalysis(ensemble: Ensemble){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "50%",
-      width: "50%",
+      height: "35%",
+      width: "20%",
       data: {
         datasets: this.datasetList
       }
-    })
+    });
     dialogRef.afterClosed().subscribe(res => {
       if(res != null){
         if(res.type === analysisTypes.static){
@@ -273,7 +273,9 @@ export class DashboardComponent implements OnInit {
         containerList: this.containerList,
         ensembleTechniqueList: this.ensembleTechniqueList,
         ensembleContainerList: this.ensembleContainerList
-      }
+      },
+      backdropClass: "bDrop"
+
     });
     dialogRef.afterClosed().subscribe(res => {
       // Ensure there is a reason to update
@@ -312,7 +314,8 @@ export class DashboardComponent implements OnInit {
         container: container,
         configList: this.configList,
         idsToolList: this.idsToolList
-      }
+      },
+      backdropClass: "bDrop",
     });
 
     dialogRef.afterClosed().subscribe(res => {

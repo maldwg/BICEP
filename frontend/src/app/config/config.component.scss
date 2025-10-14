@@ -19,3 +19,17 @@
   padding: 0;
   width: 80%;
 }
+
+.new-config-button{
+  width: 180px;
+  height: 75px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  border-radius: 16px;
+  text-transform: capitalize;
+  transition: all 0.3s ease;
+  box-shadow: var(--mat-sys-level3) !important;
+  background-color: rgb(255, 255, 255, 0.25);
+  border: none;
+
+}

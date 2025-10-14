@@ -3,7 +3,7 @@ import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
 import { HostCreationComponent } from './host-creation/host-creation.component';
-import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardModule, MatCardTitle } from '@angular/material/card';
+import {  MatCardModule } from '@angular/material/card';
 
 import { MatButton, MatButtonModule } from '@angular/material/button';
 import { HttpResponse } from '@angular/common/http';

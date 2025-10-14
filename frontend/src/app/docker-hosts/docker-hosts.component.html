@@ -1,13 +1,11 @@
 <app-alert-component></app-alert-component>
 <div class="component-header-div">
-  <h1> Overview on configured hosts </h1>
+  <button matButton class="new-config-button moving-hover-button" (click)="newHost()">Add New Host</button>
 </div>
-<div class="config-button-div">
-  <button class="mat-elevation-z8" style="padding-bottom: 5%;"  mat-flat-button (click)="newHost()">Add new host</button>
-</div>
+
 <div class="expansion-panel-flexbox-container" style="justify-content: center;" >
   @for (hostSystem of hostSystemList; track hostSystem) {
-    <div class="flexbox-item" class="mat-elevation-z8">
+    <div class="flexbox-item">
       <mat-card class="mat-card">
         <mat-card-header>
           <mat-card-title>
@@ -38,8 +36,8 @@
           </div>
         </mat-card-content>
         <mat-card-actions>
-          <button class="action-button"   mat-flat-button>Details</button>
-          <button class="action-button"  (click)="removeHost(hostSystem)"  mat-flat-button>Remove</button>
+          <button class="options-button"   mat-flat-button>Details</button>
+          <button class="danger-button"  (click)="removeHost(hostSystem)"  mat-flat-button>Remove</button>
         </mat-card-actions>
       </mat-card>
     </div>
