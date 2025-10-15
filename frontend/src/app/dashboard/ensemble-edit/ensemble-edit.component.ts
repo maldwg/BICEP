@@ -7,10 +7,11 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Container } from '../../models/container';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-ensemble-edit',
-    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule,MatIconModule],
     templateUrl: './ensemble-edit.component.html',
     styleUrl: './ensemble-edit.component.scss'
 })

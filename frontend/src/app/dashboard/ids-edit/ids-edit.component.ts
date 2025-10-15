@@ -10,10 +10,11 @@ import { Configuration } from '../../models/configuration';
 import { fileTypes } from '../../models/acceptedFileTypes';
 import { MatButtonModule } from '@angular/material/button';
 import { IdsTool } from '../../models/ids';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-ids-edit',
-    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule,MatIconModule],
     templateUrl: './ids-edit.component.html',
     styleUrl: './ids-edit.component.scss'
 })

@@ -47,13 +47,13 @@ h2 {
 
 .cancel-button{
     @include mat.fab-overrides((
-        container-color: red,
+        container-color: rgba(255, 100, 100, 0.8),
         foreground-color: white,
     ));
 }
 .submit-button{
     @include mat.fab-overrides((
-        container-color: $submit,
+        container-color: rgba(76, 175, 80, 0.9),
         foreground-color: white,
     ));
 }
@@ -61,34 +61,34 @@ h2 {
 
 .delete-button {
   @include mat.fab-overrides((
-    container-color: red,
+    container-color: rgba(244, 67, 54, 0.9),
     foreground-color: white,
   ));
 }
 
 .start-button {
   @include mat.fab-overrides((
-    container-color: $success,
+    container-color: rgba(76, 175, 80, 0.9),
     foreground-color: white,
   ));
 }
 
 .stop-button {
   @include mat.fab-overrides((
-    container-color: red,
+    container-color: rgba(211, 47, 47, 0.9),
     foreground-color: white,
   ));
 }
 .edit-button {
   @include mat.fab-overrides((
-    container-color: orange,
+    container-color: rgba(255, 193, 7, 0.9),
     foreground-color: white,
   ));
 }
 
 .back-button {
   @include mat.fab-overrides((
-    container-color: orange,
+    container-color: rgba(96, 125, 139, 0.9),
     foreground-color: white,
   ));
 }

@@ -38,10 +38,12 @@
   </mat-dialog-content>
   <mat-dialog-actions>
     <div class="dialog-actions-div">
-      <button (click)="save()" class="success-button" matButton="filled"
-      >Save</button>
-      <button (click)="exit()" class="danger-button" matButton="filled"
-      >Cancel</button>
+      <button (click)="save()" class="start-button" matFab>
+        <mat-icon>save</mat-icon>  
+      </button>
+      <button (click)="exit()" class="cancel-button" matFab>
+        <mat-icon>cancel</mat-icon>
+      </button>
     </div>
 
   </mat-dialog-actions>
