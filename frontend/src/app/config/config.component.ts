@@ -4,6 +4,7 @@ import { Configuration, ConfigurationSetupData } from '../models/configuration';
 import { fileTypes } from '../models/acceptedFileTypes';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
 
 import { ConfigCreationComponent } from './config-creation/config-creation.component';
 import {
@@ -28,7 +29,7 @@ import { DatasetTypesService } from '../services/dataset-type/dataset-type.servi
 
 @Component({
     selector: 'app-config',
-    imports: [MatCardModule, MatButtonModule, MatExpansionModule, AlertComponent],
+    imports: [MatCardModule, MatButtonModule, MatExpansionModule, AlertComponent, MatIconModule],
     templateUrl: './config.component.html',
     styleUrl: './config.component.scss'
 })

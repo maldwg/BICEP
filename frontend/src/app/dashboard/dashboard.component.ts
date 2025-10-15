@@ -136,7 +136,7 @@ export class DashboardComponent implements OnInit {
   startAnalysis(container: Container){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "35%",
-      width: "20%",
+      width: "80%",
       data: {
         datasets: this.datasetList
       }
@@ -210,7 +210,7 @@ export class DashboardComponent implements OnInit {
   startEnsembleAnalysis(ensemble: Ensemble){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "35%",
-      width: "20%",
+      width: "80%",
       data: {
         datasets: this.datasetList
       }

@@ -51,14 +51,29 @@
                 }
               </mat-card-content>
               <mat-card-actions>
-                <button (click)="editEnsemble(ensemble)"  class="options-button" matButton="filled">Edit</button>
-                <button (click)="removeEnsemble(ensemble)" class="danger-button" matButton="filled">Remove</button>
-                @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
-                  <button (click)="startEnsembleAnalysis(ensemble)"  class="success-button" matButton="filled">Start Analysis</button>
-                }
-                @if (!ensembleIsIdle(ensemble)) {
-                  <button (click)="stopEnsembleAnalysis(ensemble)" class="danger-button" matButton="filled">Stop Analysis</button>
-                }
+                  <div class="ids-action-button-container">
+                    <div>
+                      @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
+                        <button (click)="startEnsembleAnalysis(ensemble)" class="start-button" matFab>
+                          <mat-icon>play_arrow</mat-icon> 
+                        </button>
+                      }
+                      @if (!ensembleIsIdle(ensemble)) {
+                        <button (click)="stopEnsembleAnalysis(ensemble)" class="stop-button" matFab>
+                          <mat-icon>pause</mat-icon>
+                        </button>
+                      }
+
+                    </div>
+                    <div class="ids-edit-and-delete-spacer">
+                      <button (click)="editEnsemble(ensemble)"  class="edit-button" matFab>
+                        <mat-icon>edit_document</mat-icon>
+                      </button>
+                      <button (click)="removeEnsemble(ensemble)" class="delete-button" matFab>
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
               </mat-card-actions>
             </mat-card>
           </div>
@@ -130,17 +145,30 @@
                   }
                 </mat-card-content>
                 <mat-card-actions>
-                  <button (click)="edit(container)"  class="options-button" matButton="filled">Edit</button>
-                  <button (click)="remove(container)" class="danger-button" matButton="filled">Remove</button>
-                  @if (containerIsIdle(container)) {
-                    <button extended (click)="startAnalysis(container)"  class="success-button" matButton="filled">
-                      <mat-icon>play_arrow</mat-icon>
-                      Start Analysis
-                    </button>
-                  }
-                  @if (containerIsActive(container)) {
-                    <button (click)="stop_analysis(container)" class="danger-button" matButton="filled">Stop Analysis</button>
-                  }
+                  <div class="ids-action-button-container">
+                    <div>
+                      @if (containerIsIdle(container)) {
+                        <button (click)="startAnalysis(container)" class="start-button" matFab>
+                          <mat-icon>play_arrow</mat-icon> 
+                        </button>
+                      }
+                      @if (containerIsActive(container)) {
+                        <button (click)="stop_analysis(container)" class="stop-button" matFab>
+                          <mat-icon>pause</mat-icon>
+                        </button>
+                      }
+
+                    </div>
+                    <div class="ids-edit-and-delete-spacer">
+                      <button (click)="edit(container)"  class="edit-button" matFab>
+                        <mat-icon>edit_document</mat-icon>
+                      </button>
+                      <button (click)="remove(container)" class="delete-button" matFab>
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
                 </mat-card-actions>
               </mat-card>
             </div>

@@ -23,9 +23,10 @@ import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
 import { hostStatus } from '../models/status';
+import { MatIconModule } from '@angular/material/icon';
 @Component({
     selector: 'app-setup',
-    imports: [AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
+    imports: [MatIconModule,AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
     templateUrl: './setup.component.html',
     styleUrl: './setup.component.scss'
 })

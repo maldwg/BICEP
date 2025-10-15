@@ -35,8 +35,12 @@
                 </div>
               </mat-card-content>
               <mat-card-actions>
-                <button class="options-button" matButton="filled">Details</button>
-                <button class="danger-button"  (click)="removeConfiguration(configuration)"  matButton="filled">Remove</button>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeConfiguration(configuration)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>                
               </mat-card-actions>
             </mat-card>
           }
@@ -77,8 +81,12 @@
                 </div>
               </mat-card-content>
               <mat-card-actions>
-                <button class="options-button" matButton="filled">Details</button>
-                <button class="danger-button"  (click)="removeConfiguration(configuration)"  matButton="filled">Remove</button>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeConfiguration(configuration)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>      
               </mat-card-actions>
             </mat-card>
           }
@@ -127,8 +135,12 @@
                 </div>
             </mat-card-content>
             <mat-card-actions>
-                <button class="options-button" matButton="filled">Details</button>
-                <button class="danger-button"  (click)="removeDataset(dataset)"  matButton="filled">Remove</button>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeDataset(dataset)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>      
             </mat-card-actions>
           </mat-card>
         </div>

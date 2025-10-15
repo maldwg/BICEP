@@ -67,8 +67,7 @@ export class DockerHostsComponent implements OnInit{
     const dialogRef = this.dialog.open(HostCreationComponent, {
       width: "50%",
       height: "50%",
-      panelClass: "matdialog-panel",
-      backdropClass: "matdialog-backdrop"
+      backdropClass: "bDrop"
 
     });
 

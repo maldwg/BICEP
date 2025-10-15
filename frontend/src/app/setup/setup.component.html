@@ -2,7 +2,10 @@
 <div class="component-header-div">
   @if (userChoice !== '') {
     <div class="expansion-panel-flexbox-container-setup-choice">
-      <button matButton="filled" class="action-button" (click)="setUserChoice('')">Back</button>
+      <button matFab extended class="back-button" (click)="setUserChoice('')">
+        <mat-icon>arrow_back</mat-icon>
+        Back
+      </button>
     </div>
   }
   @if (userChoice === '') {
@@ -61,8 +64,10 @@
         </mat-card-content>
       </mat-card>
       <div class="submit-button-div">
-        <button type="submit" class="submit-button" mat-flat-button
-        >Submit</button>
+        <button matFab extended type="submit" class="submit-button" >
+          Submit
+          <mat-icon>send</mat-icon>
+        </button>
       </div>
     </form>
   </div>
@@ -134,9 +139,11 @@
       </mat-card-content>
     </mat-card>
     <div class="submit-button-div">
-      <button type="submit" class="submit-button" matButton="filled"
-      >Submit</button>
-    </div>
+        <button matFab extended type="submit" class="submit-button" >
+          Submit
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
   </form>
 </div>
 }

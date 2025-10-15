@@ -8,10 +8,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { analysisTypes } from '../../models/analysis';
 import { Dataset } from '../../models/dataset';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-start-analysis',
-    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule, MatIconModule],
     templateUrl: './start-analysis.component.html',
     styleUrl: './start-analysis.component.scss'
 })

@@ -27,10 +27,13 @@
     </mat-dialog-content>
     <mat-dialog-actions>
       <div class="dialog-actions-div">
-        <button type="submit" class="success-button" matButton="filled"
-        >Start Analysis</button>
-        <button type="button" (click)="exit()" class="danger-button" matButton="filled"
-        >Cancel</button>
+        <button type="submit" class="start-button" matFab extended>
+          <mat-icon>play_arrow</mat-icon>
+          Start Analysis
+        </button>
+        <button type="button" (click)="exit()" class="cancel-button" matFab>
+          <mat-icon>cancel</mat-icon>
+        </button>
       </div>
     </mat-dialog-actions>
   </form>
