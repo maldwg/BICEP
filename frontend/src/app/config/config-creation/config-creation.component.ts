@@ -1,7 +1,7 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ConfigComponent } from '../config.component';
@@ -11,7 +11,7 @@ import { fileTypes, getAcceptedFileTypesForConfigurationType } from '../../model
 import { MatIconModule } from '@angular/material/icon';
 import { ConfigService } from '../../services/config/config.service';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
+
 import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { DatasetSetupData } from '../../models/dataset';
@@ -20,9 +20,8 @@ import { AlertComponent } from '../../components/alert-component/alert-component
 import { DatasetTypesService } from '../../services/dataset-type/dataset-type.service';
 import { DatasetType } from '../../models/datasetType';
 @Component({
-  selector: 'app-config-creation',
-  standalone: true,
-  imports: [
+    selector: 'app-config-creation',
+    imports: [
     MatProgressBarModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -33,13 +32,11 @@ import { DatasetType } from '../../models/datasetType';
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDialogClose,
     MatDialogModule,
     MatIconModule,
-    CommonModule,
     AlertComponent
-  ],  templateUrl: './config-creation.component.html',
-  styleUrl: './config-creation.component.css'
+], templateUrl: './config-creation.component.html',
+    styleUrl: './config-creation.component.scss'
 })
 export class ConfigCreationComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;

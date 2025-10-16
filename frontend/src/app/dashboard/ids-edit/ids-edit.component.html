@@ -1,63 +1,70 @@
 
-<div class="flexbox-container">
-    <h2 mat-dialog-title>Update IDS</h2>
-            <mat-dialog-content>
-                <form [formGroup]="idsEdit">
-                    <div class="flexbox-item">
-                        <mat-form-field>
-                            <mat-label>Name</mat-label>
-                            <input matInput value={{data.container.name}} readonly="" required>
-                        </mat-form-field>
-                    </div>
-                        <div class="flexbox-item">
-                            <mat-form-field>
-                                <mat-label>Target host</mat-label>
-                                <input matInput value={{data.container.host_system_id}} readonly="" required>
-                            </mat-form-field>
-                        </div>
-                        <div class="flexbox-item">
-                            <mat-form-field>
-                                <mat-label>Port</mat-label>
-                                <input matInput value={{data.container.port}} readonly="" required>
-                            </mat-form-field>
-                        </div>
-                        <div class="flexbox-item">
-                            <mat-form-field>
-                                <mat-label>Configuration</mat-label>
-                                <mat-select [formControl]="idsEdit.controls.config" required>
-                                    <mat-option *ngFor="let c of configurationList" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </div>
-                        <div class="flexbox-item" *ngIf="selectedRuleset">
-                            <mat-form-field>
-                                <mat-label>Ruleset</mat-label>
-                                <mat-select [formControl]="idsEdit.controls.ruleset" required>
-                                    <mat-option *ngFor="let c of rulesetList" value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </div>
-                        <div class="flexbox-item">
-                            <mat-form-field>
-                                <mat-label>IDS Tool</mat-label>
-                                <input matInput value={{selectedIdsTool.name}} readonly="" required>
-                            </mat-form-field>
-                        </div>
-                        <div class="flexbox-item">
-                            <mat-form-field>
-                                <mat-label>Description</mat-label>
-                                <textarea matInput [formControl]="idsEdit.controls.description" required></textarea>
-                            </mat-form-field>
-                        </div>
-                </form>
-            </mat-dialog-content>
-            <mat-dialog-actions>
-                <div class="flexbox-item action-button-div">
-                    <button (click)="save()" class="custom-button mat-elevation-z8" mat-flat-button
-                        color="success">Save</button>
-                    <button (click)="exit()" class="custom-button mat-elevation-z8" mat-flat-button
-                        color="warn">Exit</button>
-                </div>
+<div >
+  <mat-dialog-content>
+    <form [formGroup]="idsEdit">
+      <div class="form-item">
+        <mat-form-field>
+          <mat-label>Name</mat-label>
+          <input matInput value={{data.container.name}} readonly="" disabled>
+        </mat-form-field>
+      </div>
+      <div class="form-item">
+        <mat-form-field>
+          <mat-label>Target host</mat-label>
+          <input matInput value={{data.container.host_system_id}} readonly="" disabled>
+        </mat-form-field>
+      </div>
+      <div class="form-item" >
+        <mat-form-field >
+          <mat-label>Port</mat-label>
+          <input matInput value={{data.container.port}} readonly="" disabled>
+        </mat-form-field>
+      </div>
+      <div class="form-item">
+        <mat-form-field>
+          <mat-label>Configuration</mat-label>
+          <mat-select [formControl]="idsEdit.controls.config" required>
+            @for (c of configurationList; track c) {
+              <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (selectedRuleset) {
+        <div class="form-item">
+          <mat-form-field>
+            <mat-label>Ruleset</mat-label>
+            <mat-select [formControl]="idsEdit.controls.ruleset" required>
+              @for (c of rulesetList; track c) {
+                <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+      <div class="form-item">
+        <mat-form-field>
+          <mat-label>IDS Tool</mat-label>
+          <input matInput value={{selectedIdsTool.name}} readonly="" disabled>
+        </mat-form-field>
+      </div>
+      <div class="form-item">
+        <mat-form-field>
+          <mat-label>Description</mat-label>
+          <textarea matInput [formControl]="idsEdit.controls.description" required></textarea>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <div class="dialog-actions-div">
+      <button (click)="save()" class="start-button" matFab>
+        <mat-icon>save</mat-icon>
+      </button>
+      <button (click)="exit()" class="cancel-button" matFab>
+        <mat-icon>cancel</mat-icon>
+      </button>
+    </div>
 
-            </mat-dialog-actions>
+  </mat-dialog-actions>
 </div>

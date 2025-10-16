@@ -14,7 +14,7 @@
 
 
 
-![](./assets/Biceps_logo.gif)
+![](./assets/Biceps_logo.png)
 
 
 </div>

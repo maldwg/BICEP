@@ -1,105 +1,151 @@
 <app-alert-component></app-alert-component>
 <div class="component-header-div">
-    <h1> Overview on existing configurations </h1>
-</div>
-<div class="config-button-div">
-    <button class="mat-elevation-z8 flexbox-item-first-row" color="primary" mat-flat-button (click)="newConfig()">Upload new file</button>
+  <button matButton class="new-config-button moving-hover-button" (click)="newConfig()">New Config</button>
 </div>
 <div class="panel-flexbox-div">
-
-    <mat-expansion-panel class="panel-flexbox-item">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Configurations
-            </mat-panel-title>
-            <mat-panel-description>
-                Configurations for the IDS
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <div class="flexbox-container" >
-            <div class="flexbox-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
-                <mat-card class="mat-card" *ngIf="configuration.file_type === fileTypeDict.configuration">
-                    <mat-card-header>
-                        <mat-card-title>
-                            {{configuration.name}}
-                        </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <div>ID: {{configuration.id}} </div>
-                        <div>Description: {{configuration.description}} </div>
-                        <div>File type: {{configuration.file_type}} </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
-                        <button class="action-button" color="warn" (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
-                    </mat-card-actions>
-                </mat-card>
-            </div>
+  <div class ="expansion-panel">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Configurations
+      </mat-panel-title>
+      <mat-panel-description>
+        Configurations for the IDS
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <div class="expansion-panel-flexbox-container" >
+      @for (configuration of configurationList; track configuration) {
+        <div class="flexbox-item">
+          @if (configuration.file_type === fileTypeDict.configuration) {
+            <mat-card class="mat-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <span class="mat-card-title-text">{{configuration.name}}</span>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{configuration.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{configuration.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>File Type:</strong> <span>{{configuration.file_type}}</span>
+                </div>
+              </mat-card-content>
+              <mat-card-actions>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeConfiguration(configuration)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>                
+              </mat-card-actions>
+            </mat-card>
+          }
         </div>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel class="panel-flexbox-item">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Rulesets
-            </mat-panel-title>
-            <mat-panel-description>
-                Rulesets for signature based IDS
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <div class="flexbox-container" >
-            <div class="flexbox-item" *ngFor="let configuration of configurationList" class="mat-elevation-z8"> 
-                <mat-card class="mat-card" *ngIf="configuration.file_type === fileTypeDict.ruleSet">
-                    <mat-card-header>
-                        <mat-card-title>
-                            {{configuration.name}}
-                        </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <div>ID: {{configuration.id}} </div>
-                        <div>Description: {{configuration.description}} </div>
-                        <div>File type: {{configuration.file_type}} </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
-                        <button class="action-button" color="warn" (click)="removeConfiguration(configuration)"  mat-flat-button>Remove</button>
-                    </mat-card-actions>
-                </mat-card>
-            </div>
+      }
+    </div>
+  </mat-expansion-panel>
+  </div>
+  <div class="expansion-panel">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Rulesets
+      </mat-panel-title>
+      <mat-panel-description>
+        Rulesets for signature based IDS
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <div class="expansion-panel-flexbox-container" >
+      @for (configuration of configurationList; track configuration) {
+        <div class="flexbox-item" class="mat-elevation-z8">
+          @if (configuration.file_type === fileTypeDict.ruleSet) {
+            <mat-card class="mat-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <span class="mat-card-title-text">{{configuration.name}}</span>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{configuration.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{configuration.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>File Type:</strong> <span>{{configuration.file_type}}</span>
+                </div>
+              </mat-card-content>
+              <mat-card-actions>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeConfiguration(configuration)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>      
+              </mat-card-actions>
+            </mat-card>
+          }
         </div>
-    </mat-expansion-panel>
-
-    <mat-expansion-panel class="panel-flexbox-item">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Datasets
-            </mat-panel-title>
-            <mat-panel-description>
-                Datasets for static analysis
-            </mat-panel-description>
-        </mat-expansion-panel-header>
-        <div class="flexbox-container" >
-            <div class="flexbox-item" *ngFor="let dataset of datasetList" class="mat-elevation-z8"> 
-                <mat-card class="mat-card">
-                    <mat-card-header>
-                        <mat-card-title>
-                            {{dataset.name}}
-                        </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <div>ID: {{dataset.id}} </div>
-                        <div>Description: {{dataset.description}} </div>
-                        <div>Bening Requests: {{dataset.ammount_benign}} </div>
-                        <div>Malicious Requests: {{dataset.ammount_malicious}} </div>
-                        <div>Dataset Type: {{getDatasetTypeName(dataset.dataset_type_id)}} </div>
-                        <div>Timestamp Precision: {{dataset.timestamp_precision}} </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
-                        <button class="action-button" color="warn" (click)="removeDataset(dataset)"  mat-flat-button>Remove</button>
-                    </mat-card-actions>
-                </mat-card>
-            </div>
+      }
+    </div>
+  </mat-expansion-panel>
+  </div>
+  <div class="expansion-panel">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Datasets
+      </mat-panel-title>
+      <mat-panel-description>
+        Datasets for static analysis
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <div class="expansion-panel-flexbox-container" >
+      @for (dataset of datasetList; track dataset) {
+        <div class="flexbox-item" class="mat-elevation-z8">
+          <mat-card class="mat-card elevation3">
+            <mat-card-header>
+              <mat-card-title>
+                  <span class="mat-card-title-text">{{dataset.name}}</span>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{dataset.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{dataset.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Bening Requests:</strong> <span>{{dataset.ammount_benign}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Malicious Requests:</strong> <span>{{dataset.ammount_malicious}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Dataset Type:</strong> <span>{{getDatasetTypeName(dataset.dataset_type_id)}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Timestamp Precision:</strong> <span>{{dataset.timestamp_precision}}</span>
+                </div>
+            </mat-card-content>
+            <mat-card-actions>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeDataset(dataset)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>      
+            </mat-card-actions>
+          </mat-card>
         </div>
-    </mat-expansion-panel>
+      }
+    </div>
+  </mat-expansion-panel>
+  </div>
 </div>

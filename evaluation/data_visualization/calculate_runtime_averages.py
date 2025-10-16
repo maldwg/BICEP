@@ -1,7 +1,26 @@
 import csv
 import sys
-import numpy as np
 from statistics import mean
+import matplotlib.pyplot as plt
+
+
+def plot_runtimes(data: dict, title):
+    data_to_process = { k:v for k,v in data.items() if v != None }
+    names = list(data_to_process.keys())
+    values = list(data_to_process.values())
+
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(names, values, color="skyblue", edgecolor="black")
+    plt.yscale("log")
+    plt.ylabel("Runtime (s, log scale)")
+    plt.title(title)
+
+    # annotate bars
+    for bar, val in zip(bars, values):
+        plt.text(bar.get_x() + bar.get_width()/2, val, f"{val:.1f}",
+                 ha='center', va='bottom', fontsize=8)
+    plt.show()
+    plt.savefig(f"{title}.svg", format='svg')
 
 def main(csv_location):
     groups = {
@@ -35,7 +54,7 @@ def main(csv_location):
                     groups["slips"].append(float(runtime))    
  
     averages = {k: (mean(v) if v else None) for k, v in groups.items()}
-
+    print(averages)
     # print summary
     print("Average analysis times:")
     for k, v in averages.items():
@@ -63,6 +82,8 @@ def main(csv_location):
             else:
                 row += f"{ratio:>{col_width}.2f}"
         print(row)
+
+    plot_runtimes(averages, "Average Runtimes (Reduced Dataset)")
 
 if __name__ == "__main__":
     args = sys.argv[1:]

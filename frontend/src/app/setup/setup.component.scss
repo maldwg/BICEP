@@ -8,20 +8,9 @@
     align-items: flex-start;
   }
 
-.flexbox-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: center;
-  margin: auto;
-  padding: 2%;
-}
 
-.flexbox-item {
-  justify-content: center;
-  padding: 1%;
-  flex: 1 1 0px;
-}
+
+
 
 .submit-button-div {
   padding-top: 10%;
@@ -35,11 +24,11 @@
   border-radius: 20px;
 }
 
-.flexbox-container-setup-choice{
+.expansion-panel-flexbox-container-setup-choice{
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  column-gap: 30%;
+  column-gap: 10%;
   justify-content: center;
   margin: auto;
 
@@ -51,4 +40,17 @@
   padding: 1%;
   flex: 1 1 0px;
   margin: auto;
+}
+.flexbox-setup-choice-button {
+  width: 300px;
+  height: 300px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border-radius: 16px;
+  color: white;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: var(--mat-sys-level3) !important;
+  border: none;
+  background-color: rgb(255, 255, 255, 0.25);
 }

@@ -7,22 +7,20 @@ import { MatFormField, MatFormFieldModule, MatLabel } from '@angular/material/fo
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
+
 @Component({
-  selector: 'app-host-creation',
-  standalone: true,
-  imports: [
+    selector: 'app-host-creation',
+    imports: [
     MatFormFieldModule,
     MatInputModule,
     FormsModule,
     ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,
-    MatIconModule,
-    CommonModule
-  ],
-  templateUrl: './host-creation.component.html',
-  styleUrl: './host-creation.component.css'
+    MatIconModule
+],
+    templateUrl: './host-creation.component.html',
+    styleUrl: './host-creation.component.scss'
 })
 export class HostCreationComponent {
 

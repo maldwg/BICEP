@@ -1,20 +1,20 @@
-<div class="flexbox-container">
+<div style="margin-top: 5%; width: 100%;">
     <h2 mat-dialog-title>Add new Host</h2>
     <mat-dialog-content>
         <form [formGroup]="hostForm">
-          <div class="flexbox-item">
+          <div class="form-item">
             <mat-form-field>
               <mat-label>Name</mat-label>
               <input matInput required [formControl]="hostForm.controls.name">
             </mat-form-field>
           </div>
-          <div class="flexbox-item">
+          <div class="form-item">
             <mat-form-field>
-              <mat-label>Host</mat-label>
+              <mat-label>Hostname or IP</mat-label>
               <input matInput required [formControl]="hostForm.controls.host">
             </mat-form-field>
           </div>
-          <div class="flexbox-item">
+          <div class="form-item">
             <mat-form-field>
               <mat-label>Docker Port</mat-label>
               <input matInput required [formControl]="hostForm.controls.dockerPort">
@@ -22,10 +22,16 @@
           </div>
         </form>
     </mat-dialog-content>
-    <mat-dialog-actions class="flexbox-item">
-        <button class="action-button" mat-flat-button (click)="exit()" color="warn">Close</button>
-        <button class="action-button" mat-flat-button (click)="save()" color="success">Save</button>
-      </mat-dialog-actions>
-  </div>
+    <mat-dialog-actions >
+      <div class="dialog-actions-div">
+        <button class="start-button" matFab (click)="save()" >
+            <mat-icon>save</mat-icon>
+        </button>   
+        <button class="cancel-button" matFab (click)="exit()" >
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </div>
+    </mat-dialog-actions>
+</div>
   
   

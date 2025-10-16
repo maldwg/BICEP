@@ -1,39 +1,50 @@
 <app-alert-component></app-alert-component>
 <div class="component-header-div">
-    <h1> Overview on configured hosts </h1>
+  <button matButton class="new-config-button moving-hover-button" (click)="newHost()">Add New Host</button>
 </div>
-<div class="config-button-div">
-    <button class="mat-elevation-z8 flexbox-item-first-row" color="primary" mat-flat-button (click)="newHost()">Add new host</button>
-</div>
-        <div class="flexbox-container" >
-            <div class="flexbox-item" *ngFor="let hostSystem of hostSystemList" class="mat-elevation-z8"> 
-                <mat-card class="mat-card">
-                    <mat-card-header>
-                        <mat-card-title>
-                            <div style="display: flex; align-items: center;">
-                                <span>{{hostSystem.name}}</span>
-                                <ng-container *ngIf="hostSystem.status === hostStatus.available; else notAvailable">
-                                    <mat-icon style="color: green;">circle</mat-icon>
-                                </ng-container>
-                                <ng-template #notAvailable>
-                                <ng-container *ngIf="hostSystem.status === hostStatus.unavailable">
-                                    <mat-icon style="color: red;">circle</mat-icon>
-                                </ng-container>
-                                </ng-template>
-                            </div>
-                        </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <div>ID: {{hostSystem.id}} </div>
-                        <div>Host: {{hostSystem.host}} </div>
-                        <div>Docker Port: {{hostSystem.docker_port}} </div>
-                        <div>Status: {{hostSystem.status}} </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                        <button class="action-button" color="accent"  mat-flat-button>Details</button>
-                        <button class="action-button" color="warn" (click)="removeHost(hostSystem)"  mat-flat-button>Remove</button>
-                    </mat-card-actions>
-                </mat-card>
+
+<div class="expansion-panel-flexbox-container" style="justify-content: center;" >
+  @for (hostSystem of hostSystemList; track hostSystem) {
+    <div class="flexbox-item">
+      <mat-card class="mat-card">
+        <mat-card-header>
+          <mat-card-title>
+            <div style="display: flex; align-items: center;">
+              <span class="mat-card-title-text">{{hostSystem.name}} </span>
+              @if (hostSystem.status === hostStatus.available) {
+                <span><mat-icon style="padding-left: 50%; color: green;">circle</mat-icon></span>
+              } @else {
+                @if (hostSystem.status === hostStatus.unavailable) {
+                 <span><mat-icon style="padding-left: 50%; color: red;">circle</mat-icon></span>
+                }
+              }
             </div>
-        </div>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-row">
+            <strong>ID:</strong> <span>{{ hostSystem.id }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Host:</strong> <span>{{ hostSystem.host }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Docker Port:</strong> <span>{{ hostSystem.docker_port }}</span>
+          </div>
+          <div class="info-row">
+            <strong>Status:</strong> <span>{{ hostSystem.status }}</span>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button class="edit-button" matFab>
+            <mat-icon>edit_document</mat-icon>
+          </button>
+          <button class="delete-button" (click)="removeHost(hostSystem)"  matFab>
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  }
+</div>
 

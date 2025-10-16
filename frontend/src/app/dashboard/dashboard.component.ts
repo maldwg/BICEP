@@ -1,6 +1,5 @@
 import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { NavbarComponent } from '../components/navbar/navbar.component';
 import { IdsService } from '../services/ids/ids.service';
 import { Container, ContainerUpdateData } from '../models/container';
 import { MatCardModule } from '@angular/material/card';
@@ -36,11 +35,10 @@ import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [NavbarComponent, MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+    selector: 'app-dashboard',
+    imports: [MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -137,8 +135,8 @@ export class DashboardComponent implements OnInit {
   // TODO 10: if not status code 200 then popup with error code 
   startAnalysis(container: Container){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "50%",
-      width: "50%",
+      height: "35%",
+      width: "80%",
       data: {
         datasets: this.datasetList
       }
@@ -211,12 +209,12 @@ export class DashboardComponent implements OnInit {
 
   startEnsembleAnalysis(ensemble: Ensemble){
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "50%",
-      width: "50%",
+      height: "35%",
+      width: "80%",
       data: {
         datasets: this.datasetList
       }
-    })
+    });
     dialogRef.afterClosed().subscribe(res => {
       if(res != null){
         if(res.type === analysisTypes.static){
@@ -275,7 +273,9 @@ export class DashboardComponent implements OnInit {
         containerList: this.containerList,
         ensembleTechniqueList: this.ensembleTechniqueList,
         ensembleContainerList: this.ensembleContainerList
-      }
+      },
+      backdropClass: "bDrop"
+
     });
     dialogRef.afterClosed().subscribe(res => {
       // Ensure there is a reason to update
@@ -314,7 +314,8 @@ export class DashboardComponent implements OnInit {
         container: container,
         configList: this.configList,
         idsToolList: this.idsToolList
-      }
+      },
+      backdropClass: "bDrop",
     });
 
     dialogRef.afterClosed().subscribe(res => {

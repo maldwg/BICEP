@@ -4,7 +4,8 @@ import { Configuration, ConfigurationSetupData } from '../models/configuration';
 import { fileTypes } from '../models/acceptedFileTypes';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { CommonModule } from '@angular/common';
+import { MatIcon, MatIconModule } from '@angular/material/icon';
+
 import { ConfigCreationComponent } from './config-creation/config-creation.component';
 import {
   MatDialog,
@@ -27,11 +28,10 @@ import { DatasetTypesService } from '../services/dataset-type/dataset-type.servi
 
 
 @Component({
-  selector: 'app-config',
-  standalone: true,
-  imports: [ MatCardModule, MatButtonModule, CommonModule, MatExpansionModule, AlertComponent],
-  templateUrl: './config.component.html',
-  styleUrl: './config.component.css'
+    selector: 'app-config',
+    imports: [MatCardModule, MatButtonModule, MatExpansionModule, AlertComponent, MatIconModule],
+    templateUrl: './config.component.html',
+    styleUrl: './config.component.scss'
 })
 export class ConfigComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -100,6 +100,7 @@ export class ConfigComponent implements OnInit{
     const dialogRef = this.dialog.open(ConfigCreationComponent, {
       height: '50%',
       width: '40%',
+      panelClass: "matdialog-panel",
     });
  
     dialogRef.afterClosed().subscribe(res => {

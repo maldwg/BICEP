@@ -1,0 +1,29 @@
+=== Median Runtime per Dataset ===
+Dataset
+CIC-IDS2017    14.83
+CTU-13         13.56
+UNSW-NB15      12.94
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by Dataset ===
+                 Runtime       FPR       FNR        DR       FDR  ACCURACY  PRECISION   F_SCORE  UNASSIGNED_ALERTS_RATIO
+Dataset                                                                                                                 
+CIC-IDS2017  1655.911176  0.110000  0.789412  0.210588  0.317059  0.515294   0.682353  0.298824                 0.521765
+CTU-13       2576.231765  0.000000  0.967647  0.032353  0.000000  0.572353   1.000000  0.061765                 0.291176
+UNSW-NB15    4476.920588  0.053529  0.934706  0.067059  0.447059  0.541765   0.552941  0.093529                 0.317647 
+
+----------
+full
+=== Median Runtime per Dataset ===
+Dataset
+CIC-IDS2017    1943.844396
+CTU-13         2696.915603
+UNSW-NB15      1622.769845
+Name: Runtime, dtype: float64 
+
+=== Average Metrics by Dataset ===
+                 Runtime    FPR    FNR     DR    FDR  ACCURACY  PRECISION  F_SCORE  UNASSIGNED_ALERTS_RATIO
+Dataset                                                                                                    
+CIC-IDS2017  3321.174474  0.148  0.429  0.571  0.433     0.796      0.567    0.528                    0.147
+CTU-13       4241.424747  0.000  0.950  0.050  0.068     0.980      0.932    0.095                    0.606
+UNSW-NB15    2530.740254  0.096  0.841  0.159  0.857     0.813      0.143    0.125                    0.297 

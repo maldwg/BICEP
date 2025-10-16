@@ -2,33 +2,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+  font-family: inherit !important;
+
   }
-
-
-.flexbox-container{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    row-gap: 25px;
-    column-gap: 25px;
-    justify-content: center;
-    margin: 2%;
-    align-content: center;
-}
-
-.flexbox-item {
-  justify-content: center;     
-  }
-
 
 .action-button{
   margin: 1%;
   border-radius: 20px;
 }
 
-.flexbox-item-first-row{
-  padding-bottom: 5%;
-}
+
 
 .config-button-div{
   margin: auto;
@@ -43,4 +26,17 @@
 
 .spinning {
   animation: spin 3s linear infinite;
+}
+
+.new-config-button{
+  width: 180px;
+  height: 75px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  border-radius: 16px;
+  text-transform: capitalize;
+  transition: all 0.3s ease;
+  box-shadow: var(--mat-sys-level3) !important;
+  background-color: rgb(255, 255, 255, 0.25);
+  border: none;
 }

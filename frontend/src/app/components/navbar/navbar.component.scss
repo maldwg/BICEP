@@ -1,0 +1,46 @@
+.anchor {
+  text-align: center;
+  text-decoration: none;
+  color: black;
+  margin-right: 2%;
+  padding: 0.75%;
+}
+
+.anchor:hover {
+  color: orange;
+}
+
+/* Style for the active link */
+.active-link {
+  color: rgb(185, 103, 2);
+  text-decoration: underline;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-left {
+  display: flex;
+  gap: 16px;    
+}
+.toolbar-icon {
+  width: 64px;                      /* adjust size as needed */
+  height: 64px;
+  padding: 20% 0px 0px 0px;
+}
+.navbar{
+
+  display: flex;
+  justify-content: space-between;  /* left / right spacing */
+  align-items: center;
+  padding: 0 16px;      
+
+  box-shadow: var(--mat-sys-level3);
+  position: fixed;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0);  /* fully transparent */
+  backdrop-filter: blur(12px);               /* optional frosted effect */
+  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+}
