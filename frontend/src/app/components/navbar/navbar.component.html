@@ -1,11 +1,21 @@
 <div style="padding-bottom: 5%">
         <mat-toolbar class="navbar">
                 <div class="navbar-left">
-                        <a class="anchor" routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-                        <a class="anchor" routerLink="/metrics" routerLinkActive="active-link">Metrics</a>
-                        <a class="anchor" routerLink="/setup" routerLinkActive="active-link">Setup</a>
-                        <a class="anchor" routerLink="/upload" routerLinkActive="active-link">Uploads</a>
-                        <a class="anchor" routerLink="/hosts" routerLinkActive="active-link">Docker Hosts</a>
+                        <div class="navbar-button-div" routerLinkActive="active-div" [routerLinkActiveOptions]="{ exact: true }">
+                                 <a class="anchor" routerLink="/">Dashboard</a>
+                        </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div">
+                                <a class="anchor" routerLink="/metrics">Metrics</a>
+                        </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div">
+                                <a class="anchor" routerLink="/setup">Setup</a>
+                        </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div">
+                                <a class="anchor" routerLink="/upload">Uploads</a>
+                        </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div">
+                                <a class="anchor" routerLink="/hosts">Docker Hosts</a>
+                        </div>
                 </div>
                 <div class="navbar-right">
                         <img src="../../../assets/Biceps_logo.svg" alt="Logo" class="toolbar-icon">
