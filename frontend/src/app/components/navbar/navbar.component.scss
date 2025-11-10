@@ -4,17 +4,15 @@
   color: black;
   margin-right: 2%;
   padding: 0.75%;
+  // for the maticon
+  display: inline-flex;
+  align-items: center;
+
 }
 
-// .anchor:hover {
-//   color: orange;
-// }
-
-// /* Style for the active link */
-// .active-link {
-//   color: rgb(185, 103, 2);
-//   text-decoration: underline;
-// }
+::ng-deep .mat-mdc-menu-panel {
+  overflow-x: hidden !important;
+}
 
 .navbar-button-div {
   padding: 8px; 
@@ -30,7 +28,7 @@
 
 .active-div{
     background-color: rgba(255,255,255,0.5);
-    box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.2);
+   box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.2);
 
 }
 
@@ -62,3 +60,5 @@
   backdrop-filter: blur(12px);               /* optional frosted effect */
   -webkit-backdrop-filter: blur(12px);       /* Safari support */
 }
+
+

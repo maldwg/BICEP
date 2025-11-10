@@ -7,6 +7,17 @@
                         <div class="navbar-button-div" routerLinkActive="active-div">
                                 <a class="anchor" routerLink="/metrics">Metrics</a>
                         </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div" [matMenuTriggerFor]="benchmarkingMenu">
+                                <a class="anchor">Benchmarking <mat-icon>arrow_drop_down</mat-icon> </a>
+                                <mat-menu #benchmarkingMenu="matMenu"  yPosition="below" xPosition="after">
+                                        <button mat-menu-item routerLink="/benchmarking/start">
+                                                Start
+                                        </button>
+                                        <button mat-menu-item routerLink="/benchmarking/results">
+                                                Results
+                                        </button>
+                                </mat-menu>
+                        </div>
                         <div class="navbar-button-div" routerLinkActive="active-div">
                                 <a class="anchor" routerLink="/setup">Setup</a>
                         </div>
