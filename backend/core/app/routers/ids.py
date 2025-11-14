@@ -1,5 +1,6 @@
 import asyncio
 from http.client import HTTPResponse
+from app.models.benchmarking import BenchmarkingResultTransferObject
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
 from app.validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, stop_analysisData, AnalysisFinishedData
 from app.models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
@@ -181,5 +182,11 @@ async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: Backg
     LOGGER.debug(f"Created {len(alerts)} alerts")
     background_tasks.add_task(push_alerts_to_loki, alerts, labels)
     if alert_data.analysis_type == "static":
-        background_tasks.add_task(calculate_evaluation_metrics_and_push, db=db, dataset_id=alert_data.dataset_id, alerts=alerts,container_name=container.name)
+        benchmarking_results = BenchmarkingResultTransferObject(
+            alerts=alerts,
+            dataset_id=alert_data.dataset_id,
+            start_time=alert_data.start_time,
+            stop_time=alert_data.stop_time
+        )
+        background_tasks.add_task(calculate_evaluation_metrics_and_push, db=db, benchmarking_results=benchmarking_results,container_name=container.name)
     return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)

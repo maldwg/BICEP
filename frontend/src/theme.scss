@@ -79,7 +79,7 @@ body {
   position: relative;
   margin: 0;
   height: 100vh;
-  overflow-x: hidden;      /* hide horizontal scroll, vertical scroll allowed */
+  overflow-x: hidden;     
   overflow-y: auto;
   background: url("./assets/Biceps_logo.svg") no-repeat center bottom;
   background-size: 500px auto;  
@@ -91,10 +91,10 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(ellipse 100% 100% at 50% 30%, #ffd5d3 60%, #b610109f 80%);
+  background: radial-gradient(ellipse 110% 110% at 50% 30%, #ffd5d362 60%, #b610109f 80%);
   background-size: 100% 100%;
   animation: pulseBg 6s ease-in-out infinite alternate;
-  mix-blend-mode: multiply; /* lets the image show through */
+  mix-blend-mode: multiply; 
 }
 
 

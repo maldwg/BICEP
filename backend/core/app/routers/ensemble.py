@@ -22,8 +22,8 @@ from app.prometheus import push_evaluation_metrics_to_prometheus
 from app.loki import push_alerts_to_loki, get_all_alerts_for_ensemble_from_analysis_id, clean_up_alerts_in_loki
 from app.logger import LOGGER
 from app.database import get_db
+from app.models.benchmarking import BenchmarkingResultTransferObject, BenchmarkingIntermediateResult,save_intermedaite_result, save_intermedaite_result, get_all_intermediate_results_for_ensemble_and_id
 from datetime import datetime
-import time
 router = APIRouter(
     prefix="/ensemble"
 )
@@ -184,6 +184,14 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
     if analysis_is_static:
         LOGGER.debug("Static analysis data received")
         await update_sendig_logs_status(db=db, container=container, ensemble=ensemble,status=ANALYSIS_STATUS.IDLE.value)
+        intermediate_result = BenchmarkingIntermediateResult(
+                ensemble_name = ensemble.name,
+                ensemble_uuid = ensemble.current_analysis_id,
+                container_name = container.name,
+                start_time = alert_data.start_time,
+                stop_time = alert_data.stop_time
+        )
+        await save_intermedaite_result(db, intermediate_result)
         if not await last_container_sending_logs(db=db, container=container, ensemble=ensemble):
             LOGGER.debug(f"Successfully pushed alerts for container {container.name}")
             LOGGER.debug(f"{container.name} is not the last running container")
@@ -200,7 +208,16 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             backgroundtasks.add_task(clean_up_alerts_in_loki, ensemble.current_analysis_id)
             # push the logs for the ensemble
             backgroundtasks.add_task(push_alerts_to_loki, ensembled_alerts, labels=labels)
-            backgroundtasks.add_task(calculate_evaluation_metrics_and_push, db=db, dataset_id=alert_data.dataset_id, alerts=ensembled_alerts,ensemble_name=ensemble.name)
+            all_intermediate_results = await get_all_intermediate_results_for_ensemble_and_id(db, ensemble.current_analysis_id, ensemble.name)
+            result_with_first_analysis_begin = min(all_intermediate_results,key=lambda r: datetime.strptime(r.start_time, "%d-%m-%Y %H:%M:%S.%f"))
+            result_with_last_stopped_analysis = max(all_intermediate_results,key=lambda r: datetime.strptime(r.stop_time, "%d-%m-%Y %H:%M:%S.%f"))
+            benchmarking_results = BenchmarkingResultTransferObject(
+                alerts=alerts,
+                dataset_id=alert_data.dataset_id,
+                start_time=result_with_first_analysis_begin.start_time,
+                stop_time=result_with_last_stopped_analysis.stop_time
+            )           
+            backgroundtasks.add_task(calculate_evaluation_metrics_and_push, db=db, benchmarking_results=benchmarking_results ,ensemble_name=ensemble.name)
             return JSONResponse({"content": f"Successfully pushed alerts for ensemble {ensemble.name}"}, status_code=200)    
     else:
         LOGGER.debug("Network analysis data received")

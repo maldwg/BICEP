@@ -444,8 +444,11 @@ export class DashboardComponent implements OnInit {
     return this.containerList.filter(c => containerIds.includes(c.id)).map(c => c.name);
   }
 
-  checkEnsembleContainersAreIdleByEnsembleId(ensembleid: number){
-    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensembleid).map(c => c.ids_container_id);
+  checkEnsembleContainersAreIdleByEnsembleId(ensemble: Ensemble){
+    if(ensemble.status !== statusTypes.idle){
+      return true
+    }
+    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensemble.id).map(c => c.ids_container_id);
     let containers: Container[] = this.containerList.filter(c => ensembleContainerIds.includes(c.id));
     let flag: boolean = true
     containers.forEach(container => {

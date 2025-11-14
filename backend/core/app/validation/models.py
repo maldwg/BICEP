@@ -81,6 +81,8 @@ class AlertData(BaseModel):
     dataset_id: Optional[int] = None
     container_id: int
     ensemble_id: Optional[int] = None
+    start_time: Optional[str] = None
+    stop_time: Optional[str] = None
 
 
 class AnalysisFinishedData(BaseModel):

@@ -1,0 +1,52 @@
+
+.table-container {
+  width: 80%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin: auto;
+}
+
+.mat-mdc-table {
+  backdrop-filter: blur(5px);
+  background-color: rgba(255, 255, 255, 0.2 );
+}
+
+.mat-mdc-row:hover {
+  background-color: rgba(255, 255, 255, 0.025 );
+}
+
+.mat-mdc-paginator{
+   backdrop-filter: blur(5px);
+    background-color: rgba(255, 255, 255, 0.5 );  
+}
+
+
+.search  
+{
+// width: 30%;
+// margin-bottom: 12px;
+
+}
+
+
+.table-wrap {
+overflow: auto;
+}
+
+
+table {
+width: 100%;
+}
+
+
+// mat-toolbar {
+// position: sticky;
+// top: 0;
+// z-index: 1;
+// }
+
+::ng-deep .mdc-text-field--outlined {
+  background-color: white !important;
+}

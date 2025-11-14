@@ -7,6 +7,7 @@ import socket
 from contextlib import closing
 from enum import Enum
 import os
+from app.models.benchmarking import BenchmarkingResult, add_benchmarking_result, BenchmarkingResultTransferObject
 import httpx
 from fastapi import Response, Request
 import pandas as pd
@@ -253,15 +254,31 @@ def get_item_counts_of_dict(d: dict):
         items += len(v)
     return items
 
-async def calculate_evaluation_metrics_and_push(db, dataset_id: int, alerts: list[Alert], container_name: str = None, ensemble_name: str = None):
+async def calculate_evaluation_metrics_and_push(db, benchmarking_results:BenchmarkingResultTransferObject, container_name: str = None, ensemble_name: str = None):
     from .metrics import calculate_evaluation_metrics
     from .models.dataset import get_dataset_by_id
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
     # and an error will be thrown
-    dataset = await get_dataset_by_id(db, dataset_id)
-    metrics = await calculate_evaluation_metrics(db, dataset_id, alerts)
+    dataset = await get_dataset_by_id(db, benchmarking_results.dataset_id)
+    metrics = await calculate_evaluation_metrics(db, benchmarking_results.dataset_id, benchmarking_results.alerts)
     LOGGER.info(f"container {container_name} for enesemble {ensemble_name} got metrics {metrics}")
-    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)   
+    await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)  
+    result = BenchmarkingResult(
+        dataset_name = dataset.name,
+        ids_name = container_name if container_name else ensemble_name,
+        ensembling_method = "TODO" if ensemble_name else "",
+        start_time = benchmarking_results.start_time,
+        stop_time = benchmarking_results.stop_time,
+        runtime = benchmarking_results.runtime,
+        acc = metrics["ACCURACY"],
+        fpr = metrics["FPR"],
+        fnr = metrics["FNR"],
+        fdr = metrics["FDR"],
+        prec = metrics["PRECISION"],
+        detection_rate = metrics["DR"],
+        f1_score = metrics["F_SCORE"]
+    ) 
+    await add_benchmarking_result(db, result)
     await db.close()
 
 def extract_ts_srcip_srcport_dstip_dstport_from_alert(alert: Alert, precision: Precision = MilisecondPrecision()):

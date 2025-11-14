@@ -9,6 +9,7 @@ from app.models.ids_container import get_all_container, update_container
 from app.models.ensemble import get_all_ensembles, update_ensemble
 from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
+from app.models.benchmarking import get_all_benchmarking_results
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem, get_host_by_id
@@ -19,12 +20,14 @@ import uuid
 import shutil
 import os
 
-
 router = APIRouter(
     prefix="/crud"
 )
 
-
+@router.get("/benchmarking-results/all")
+async def get_benchmarking_results(db=Depends(get_db)):
+    benchmarking_results = await get_all_benchmarking_results(db)
+    return benchmarking_results
 
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):

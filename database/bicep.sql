@@ -105,17 +105,39 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 );
 
 
+CREATE TABLE IF NOT EXISTS benchmarking_result (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dataset_name VARCHAR(256),
+    ids_name VARCHAR(256),
+    ensembling_method VARCHAR(256),
+    start_time VARCHAR(256),
+    stop_time VARCHAR(256),
+    runtime FLOAT,
+    prec FLOAT,
+    detection_rate FLOAT,
+    f1_score FLOAT,
+    acc FLOAT,
+    fpr FLOAT,
+    fnr FLOAT,
+    fdr FLOAT
+);
+
+CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ensemble_name VARCHAR(256),
+    ensemble_uuid VARCHAR(64),
+    container_name VARCHAR(128),
+    start_time VARCHAR(256),
+    stop_time VARCHAR(256)
+);
+
 
 INSERT INTO dataset_type (name, description, function_prefix) VALUES ('Network Analysis Data', 'Network traffic data in form of PCAPs. The labels are in CSV file format', 'network_traffic_data');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Snort', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-snort', 'latest');
-
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
-
-
 INSERT INTO docker_host_system (name, host, docker_port, status) VALUES ("Core-server", "localhost", 2375, "unavailable");
-
 INSERT INTO dataset (name, data_file_path, labels_file_path, description, ammount_benign, ammount_malicious, dataset_type_id, timestamp_precision) VALUES ('sample-data','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.pcap','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.csv','Sample data including 0,5% of all requests from the CICIDS Dataset',11367,2791, 1, 'minute');
 
 

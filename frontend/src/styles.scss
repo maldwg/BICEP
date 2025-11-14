@@ -27,6 +27,7 @@ h2 {
     box-shadow: var(--mat-sys-level3) !important;
 }
 
+
 .success-button{
     @include mat.button-overrides((
         filled-container-color: $success,
@@ -229,7 +230,7 @@ mat-card {
   margin: 0.5rem;          
   overflow-wrap: anywhere; 
   white-space: normal;    
-  min-height: 300px;
+  min-height: 400px;
   min-width: 400px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px); 
