@@ -1,6 +1,5 @@
 <div class="table-container component-header-div">
-  <!-- Search Bar -->
-  <div style="margin: auto;" *ngIf="dataSource; else loading">
+  <div class="flex-container-search-and-download">
     <mat-form-field appearance="outline" class="search">
       <mat-label>Search</mat-label>
       <input
@@ -10,21 +9,25 @@
       />
       <mat-icon matPrefix>search</mat-icon>
       <button
-        mat-icon-button
         matSuffix
         aria-label="Clear"
         *ngIf="searchControl.value"
         (click)="searchControl.setValue(''); dataSource.setFilter('')"
-      >
+        class="delete-button"
+        mat-icon-button>
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
-
-    <!-- Table -->
+    <button class="download-button" (click)="downloadResultsAsCSV()" matFab extended>
+      <mat-icon>download</mat-icon>
+      CSV
+    </button>
+  </div>
+  <div class="flex-container" style="width: 90%;">
     <table
       mat-table
       matSort
-      class="mat-elevation-z8"
+      *ngIf="dataSource; else loading"
     >
       <!-- Id Column -->
       <ng-container matColumnDef="id">
@@ -91,7 +94,6 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
-
     <!-- Paginator -->
     <mat-paginator
       #paginator

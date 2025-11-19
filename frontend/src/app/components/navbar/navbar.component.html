@@ -9,7 +9,7 @@
                         </div>
                         <div class="navbar-button-div" routerLinkActive="active-div" [matMenuTriggerFor]="benchmarkingMenu">
                                 <a class="anchor">Benchmarking <mat-icon>arrow_drop_down</mat-icon> </a>
-                                <mat-menu #benchmarkingMenu="matMenu"  yPosition="below" xPosition="after">
+                                <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown" yPosition="below" xPosition="after">
                                         <button mat-menu-item routerLink="/benchmarking/start">
                                                 Start
                                         </button>
