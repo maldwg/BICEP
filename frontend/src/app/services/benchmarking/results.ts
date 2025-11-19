@@ -18,6 +18,10 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
   private filter$ = new BehaviorSubject<string>('');
   private dataSubject = new BehaviorSubject<BenchmarkingResultsItem[]>([]);
 
+  get data(): BenchmarkingResultsItem[] {
+    return this.dataSubject.value;
+  }
+
   constructor(private benchmarkingService: BenchmarkingService) {
     super();
   }
@@ -62,26 +66,26 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
     this.filter$.next(value.trim().toLowerCase());
   }
   /** Filter the data (client-side) */
-private getFilteredData(data: BenchmarkingResultsItem[]): BenchmarkingResultsItem[] {
-  const filterValue = this.filter$.value?.trim().toLowerCase();
-  if (!filterValue) return data;
+  private getFilteredData(data: BenchmarkingResultsItem[]): BenchmarkingResultsItem[] {
+    const filterValue = this.filter$.value?.trim().toLowerCase();
+    if (!filterValue) return data;
 
-  return data.filter(item =>
-    Object.values(item)
-      .map(v => (v == null ? '' : String(v).toLowerCase()))
-      .join(' ')
-      .includes(filterValue)
-  );
-}
+    return data.filter(item =>
+      Object.values(item)
+        .map(v => (v == null ? '' : String(v).toLowerCase()))
+        .join(' ')
+        .includes(filterValue)
+    );
+  }
   /**
    * Paginate the data (client-side). If you're using server-side pagination,
    * this would be replaced by requesting the appropriate data from the server.
    */
-private getPagedData(data: BenchmarkingResultsItem[]): BenchmarkingResultsItem[] {
-  if (!this.paginator) return data;
-  const startIndex = this.paginator.pageIndex * this.paginator.pageSize;
-  return data.slice(startIndex, startIndex + this.paginator.pageSize); // ✅ use slice, not splice
-}
+  private getPagedData(data: BenchmarkingResultsItem[]): BenchmarkingResultsItem[] {
+    if (!this.paginator) return data;
+    const startIndex = this.paginator.pageIndex * this.paginator.pageSize;
+    return data.slice(startIndex, startIndex + this.paginator.pageSize); // ✅ use slice, not splice
+  }
 
   /**
    * Sort the data (client-side). If you're using server-side sorting,

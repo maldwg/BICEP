@@ -4,6 +4,8 @@ import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { ResultsDataSource } from '../../services/benchmarking/results';
 import { MatIconModule } from '@angular/material/icon';
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { BenchmarkingResultsItem } from '../../models/benchmarking';
 import { FormControl, NgModel, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -13,17 +15,19 @@ import { BenchmarkingService } from '../../services/benchmarking/benchmarking.se
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { NgxEchartsModule } from 'ngx-echarts';
+import { ComparisonComponent } from './comparison/comparison.component';
 
 @Component({
   selector: 'app-results',
   templateUrl: './results.component.html',
   styleUrl: './results.component.scss',
-  imports: [NgxEchartsModule, MatTableModule, MatPaginatorModule, MatSortModule, MatIconModule, CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatButtonModule],
+  imports: [NgxEchartsModule, MatTableModule, MatPaginatorModule, MatSortModule, MatIconModule, CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatButtonModule, MatCheckboxModule, ComparisonComponent],
 })
 export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatTable) table!: MatTable<BenchmarkingResultsItem>;
+
 
 
   constructor(private benchmarkingService: BenchmarkingService) { }
@@ -34,16 +38,51 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = [
-    'id', 'ids_name', 'dataset_name', 'ensembling_method', 'start_time', 'stop_time', 'runtime',
+    'select', 'id', 'ids_name', 'dataset_name', 'ensembling_method', 'start_time', 'stop_time', 'runtime',
     'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score'];
+
+  selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
+  showComparison = false;
+
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.data.length;
+    return numSelected === numRows;
+  }
+
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  masterToggle() {
+    this.isAllSelected() ?
+      this.selection.clear() :
+      this.dataSource.data.forEach((row: BenchmarkingResultsItem) => this.selection.select(row));
+  }
+
+  /** The label for the checkbox on the passed row */
+  checkboxLabel(row?: BenchmarkingResultsItem): string {
+    if (!row) {
+      return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
+    }
+    return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.id}`;
+  }
+
+  toggleComparisonView() {
+    const selectedItems = this.selection.selected;
+    if (selectedItems.length < 2) {
+      return;
+    }
+    this.showComparison = !this.showComparison;
+  }
 
 
   chartOption = {
-    radar: { indicator: [
-      { name: 'A', max: 100 },
-      { name: 'B', max: 100 },
-      { name: 'C', max: 100 }
-    ]},
+    radar: {
+      indicator: [
+        { name: 'A', max: 100 },
+        { name: 'B', max: 100 },
+        { name: 'C', max: 100 }
+      ]
+    },
     series: [{
       type: 'radar',
       data: [{ value: [80, 60, 70] }]
