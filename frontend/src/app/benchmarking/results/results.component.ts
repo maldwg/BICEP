@@ -12,11 +12,13 @@ import { MatInputModule } from '@angular/material/input';
 import { BenchmarkingService } from '../../services/benchmarking/benchmarking.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
+import { NgxEchartsModule } from 'ngx-echarts';
+
 @Component({
   selector: 'app-results',
   templateUrl: './results.component.html',
   styleUrl: './results.component.scss',
-  imports: [MatTableModule, MatPaginatorModule, MatSortModule, MatIconModule, CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatButtonModule],
+  imports: [NgxEchartsModule, MatTableModule, MatPaginatorModule, MatSortModule, MatIconModule, CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatButtonModule],
 })
 export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -34,6 +36,19 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   displayedColumns = [
     'id', 'ids_name', 'dataset_name', 'ensembling_method', 'start_time', 'stop_time', 'runtime',
     'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score'];
+
+
+  chartOption = {
+    radar: { indicator: [
+      { name: 'A', max: 100 },
+      { name: 'B', max: 100 },
+      { name: 'C', max: 100 }
+    ]},
+    series: [{
+      type: 'radar',
+      data: [{ value: [80, 60, 70] }]
+    }]
+  };
 
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort;

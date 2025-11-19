@@ -39,9 +39,9 @@
 }
 
 
-
+// TODO: values are hardcoded here because shades from theme could not be applied directly
 .mat-mdc-header-row {
-  background-color: rgba(211, 47, 47, 0.8); // Material red 700
+  background-color: rgba(211, 47, 47, 0.3); // Material red 700
 }
 
 
