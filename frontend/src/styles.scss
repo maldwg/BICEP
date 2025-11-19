@@ -84,7 +84,7 @@ h2 {
 }
 
 .download-button {
-  @include mat.fab-overrides((container-color: rgba(255, 193, 7, 0.9),
+  @include mat.fab-overrides((container-color: rgba(33, 150, 243, 0.9),
       foreground-color: white,
     ));
 }

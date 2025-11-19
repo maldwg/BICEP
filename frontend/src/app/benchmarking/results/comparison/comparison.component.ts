@@ -11,6 +11,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
     selector: 'app-comparison',
@@ -28,7 +29,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
         FormsModule,
         ReactiveFormsModule,
         MatCheckboxModule,
-        MatButtonToggleModule
+        MatButtonToggleModule,
+        MatCardModule
     ]
 })
 export class ComparisonComponent implements OnInit, OnChanges {
