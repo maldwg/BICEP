@@ -217,7 +217,15 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
                 start_time=result_with_first_analysis_begin.start_time,
                 stop_time=result_with_last_stopped_analysis.stop_time
             )           
-            backgroundtasks.add_task(calculate_evaluation_metrics_and_push, db=db, benchmarking_results=benchmarking_results ,ensemble_name=ensemble.name)
+            # Fetch ensemble technique name
+            ensemble_technique_name = ensemble.ensemble_technique.name if ensemble.ensemble_technique else None
+            backgroundtasks.add_task(
+                calculate_evaluation_metrics_and_push, 
+                db=db, 
+                benchmarking_results=benchmarking_results,
+                ensemble_name=ensemble.name,
+                ensemble_technique_name=ensemble_technique_name
+            )
             return JSONResponse({"content": f"Successfully pushed alerts for ensemble {ensemble.name}"}, status_code=200)    
     else:
         LOGGER.debug("Network analysis data received")

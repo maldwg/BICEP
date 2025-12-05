@@ -1,15 +1,21 @@
 <div style="padding-bottom: 5%">
         <mat-toolbar class="navbar">
                 <div class="navbar-left">
-                        <div class="navbar-button-div" routerLinkActive="active-div" [routerLinkActiveOptions]="{ exact: true }">
-                                 <a class="anchor" routerLink="/">Dashboard</a>
+                        <div class="navbar-button-div" routerLinkActive="active-div"
+                                [routerLinkActiveOptions]="{ exact: true }">
+                                <a class="anchor" routerLink="/">Dashboard</a>
                         </div>
                         <div class="navbar-button-div" routerLinkActive="active-div">
                                 <a class="anchor" routerLink="/metrics">Metrics</a>
                         </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div" [matMenuTriggerFor]="benchmarkingMenu">
+                        <div class="navbar-button-div" routerLinkActive="active-div">
+                                <a class="anchor" routerLink="/monitoring">Monitoring</a>
+                        </div>
+                        <div class="navbar-button-div" routerLinkActive="active-div"
+                                [matMenuTriggerFor]="benchmarkingMenu">
                                 <a class="anchor">Benchmarking <mat-icon>arrow_drop_down</mat-icon> </a>
-                                <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown" yPosition="below" xPosition="after">
+                                <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown"
+                                        yPosition="below" xPosition="after">
                                         <button mat-menu-item routerLink="/benchmarking/start">
                                                 Start
                                         </button>

@@ -102,6 +102,10 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
         case 'ids_name': return compare(a.ids_name, b.ids_name, isAsc);
         case 'dataset_name': return compare(+a.id, +b.id, isAsc);
         case 'ensembnling_method': return compare(a.ids_name, b.ids_name, isAsc);
+        case 'configuration_name': return compare(a.configuration_name || '', b.configuration_name || '', isAsc);
+        case 'ruleset_name': return compare(a.ruleset_name || '', b.ruleset_name || '', isAsc);
+        case 'avg_cpu_usage': return compare(a.avg_cpu_usage || 0, b.avg_cpu_usage || 0, isAsc);
+        case 'avg_memory_usage': return compare(a.avg_memory_usage || 0, b.avg_memory_usage || 0, isAsc);
         case 'acc': return compare(+a.id, +b.id, isAsc);
         case 'prec': return compare(a.ids_name, b.ids_name, isAsc);
         case 'fnr': return compare(+a.id, +b.id, isAsc);

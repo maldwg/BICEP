@@ -254,19 +254,34 @@ def get_item_counts_of_dict(d: dict):
         items += len(v)
     return items
 
-async def calculate_evaluation_metrics_and_push(db, benchmarking_results:BenchmarkingResultTransferObject, container_name: str = None, ensemble_name: str = None):
+async def calculate_evaluation_metrics_and_push(db, benchmarking_results:BenchmarkingResultTransferObject, container_name: str = None, ensemble_name: str = None, configuration_name: str = None, ruleset_name: str = None, ensemble_technique_name: str = None):
     from .metrics import calculate_evaluation_metrics
     from .models.dataset import get_dataset_by_id
+    from .prometheus import query_average_cpu_usage, query_average_memory_usage
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
     # and an error will be thrown
     dataset = await get_dataset_by_id(db, benchmarking_results.dataset_id)
     metrics = await calculate_evaluation_metrics(db, benchmarking_results.dataset_id, benchmarking_results.alerts)
     LOGGER.info(f"container {container_name} for enesemble {ensemble_name} got metrics {metrics}")
     await push_evaluation_metrics_to_prometheus(metrics, container_name=container_name, dataset_name=dataset.name, ensemble_name=ensemble_name)  
+    
+    # Query resource usage metrics from Prometheus
+    avg_cpu = None
+    avg_memory = None
+    if container_name:
+        try:
+            avg_cpu = await query_average_cpu_usage(container_name, benchmarking_results.start_time, benchmarking_results.stop_time)
+            avg_memory = await query_average_memory_usage(container_name, benchmarking_results.start_time, benchmarking_results.stop_time)
+            LOGGER.info(f"Resource metrics for {container_name}: CPU={avg_cpu}%, Memory={avg_memory}MB")
+        except Exception as e:
+            LOGGER.error(f"Failed to query resource metrics: {e}")
+    
     result = BenchmarkingResult(
         dataset_name = dataset.name,
         ids_name = container_name if container_name else ensemble_name,
-        ensembling_method = "TODO" if ensemble_name else "",
+        ensembling_method = ensemble_technique_name if ensemble_technique_name else "",
+        configuration_name = configuration_name,
+        ruleset_name = ruleset_name,
         start_time = benchmarking_results.start_time,
         stop_time = benchmarking_results.stop_time,
         runtime = benchmarking_results.runtime,
@@ -276,7 +291,9 @@ async def calculate_evaluation_metrics_and_push(db, benchmarking_results:Benchma
         fdr = metrics["FDR"],
         prec = metrics["PRECISION"],
         detection_rate = metrics["DR"],
-        f1_score = metrics["F_SCORE"]
+        f1_score = metrics["F_SCORE"],
+        avg_cpu_usage = avg_cpu,
+        avg_memory_usage = avg_memory
     ) 
     await add_benchmarking_result(db, result)
     await db.close()

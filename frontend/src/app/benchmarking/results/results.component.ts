@@ -38,8 +38,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = [
-    'select', 'id', 'ids_name', 'dataset_name', 'ensembling_method', 'start_time', 'stop_time', 'runtime',
-    'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score'];
+    'select', 'id', 'ids_name', 'dataset_name', 'ensembling_method', 'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
+    'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score', 'avg_cpu_usage', 'avg_memory_usage'];
 
   selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
   showComparison = false;

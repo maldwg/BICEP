@@ -44,6 +44,8 @@ class BenchmarkingResult(Base):
     dataset_name = Column(String(256))
     ids_name = Column(String(256))
     ensembling_method = Column(String(256))
+    configuration_name = Column(String(256))
+    ruleset_name = Column(String(256))
     start_time = Column(String(256))
     stop_time = Column(String(256))
     runtime = Column(Float)
@@ -54,6 +56,8 @@ class BenchmarkingResult(Base):
     fpr = Column(Float)
     fnr = Column(Float)
     fdr = Column(Float)
+    avg_cpu_usage = Column(Float)
+    avg_memory_usage = Column(Float)
 
 async def add_benchmarking_result(db: AsyncSession, result: BenchmarkingResult):
     db.add(result)

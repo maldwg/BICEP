@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import crud, ids, ensemble
+from app.routers import crud, ids, ensemble, monitoring, benchmarking_metrics
 from fastapi_utils.tasks import repeat_every
 from app.database import get_db
 from contextlib import asynccontextmanager
@@ -31,6 +31,8 @@ app.add_middleware(
 app.include_router(ids.router)
 app.include_router(crud.router)
 app.include_router(ensemble.router)
+app.include_router(monitoring.router)
+app.include_router(benchmarking_metrics.router)
 
 @repeat_every(seconds=15)
 @crud.router.patch("/host/{id}/availability")

@@ -1,0 +1,38 @@
+<div class="monitoring-container">
+    <div class="header">
+        <h1>System Monitoring</h1>
+        <p>Real-time metrics for active IDS containers</p>
+
+        <div class="controls">
+            <mat-form-field appearance="outline" class="time-selector">
+                <mat-label>Time Range</mat-label>
+                <mat-select [(value)]="selectedTimeRange" (selectionChange)="onTimeRangeChange()">
+                    <mat-option value="5m">Last 5 minutes</mat-option>
+                    <mat-option value="15m">Last 15 minutes</mat-option>
+                    <mat-option value="30m">Last 30 minutes</mat-option>
+                    <mat-option value="1h">Last 1 hour</mat-option>
+                    <mat-option value="3h">Last 3 hours</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+
+    <div class="charts-wrapper" *ngIf="containers.length > 0; else noContainers">
+        <!-- CPU Chart -->
+        <div class="chart-container">
+            <div echarts [options]="cpuChartOption" class="chart"></div>
+        </div>
+
+        <!-- Memory Chart -->
+        <div class="chart-container">
+            <div echarts [options]="memoryChartOption" class="chart"></div>
+        </div>
+    </div>
+
+    <ng-template #noContainers>
+        <div class="no-data">
+            <mat-icon>info</mat-icon>
+            <p>No active IDS containers found.</p>
+        </div>
+    </ng-template>
+</div>

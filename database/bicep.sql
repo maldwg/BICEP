@@ -110,6 +110,8 @@ CREATE TABLE IF NOT EXISTS benchmarking_result (
     dataset_name VARCHAR(256),
     ids_name VARCHAR(256),
     ensembling_method VARCHAR(256),
+    configuration_name VARCHAR(256),
+    ruleset_name VARCHAR(256),
     start_time VARCHAR(256),
     stop_time VARCHAR(256),
     runtime FLOAT,
@@ -119,7 +121,9 @@ CREATE TABLE IF NOT EXISTS benchmarking_result (
     acc FLOAT,
     fpr FLOAT,
     fnr FLOAT,
-    fdr FLOAT
+    fdr FLOAT,
+    avg_cpu_usage FLOAT,
+    avg_memory_usage FLOAT
 );
 
 CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (

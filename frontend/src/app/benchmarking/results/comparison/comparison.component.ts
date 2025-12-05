@@ -12,6 +12,8 @@ import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-comparison',
@@ -48,12 +50,19 @@ export class ComparisonComponent implements OnInit, OnChanges {
         { value: 'acc', viewValue: 'Accuracy' },
         { value: 'prec', viewValue: 'Precision' },
         { value: 'f1_score', viewValue: 'F1 Score' },
-        { value: 'runtime', viewValue: 'Runtime' }
+        { value: 'runtime', viewValue: 'Runtime' },
+        { value: 'cpu_usage', viewValue: 'CPU Usage (%)' },
+        { value: 'memory_usage', viewValue: 'RAM Usage (MB)' }
     ];
 
     selectedMetrics = new FormControl(['detection_rate', 'acc', 'f1_score']);
     selectedChartType = 'bar';
     aggregationMethod = 'none'; // 'none', 'average', 'median'
+
+    // Cache for series data
+    seriesDataCache: { [key: number]: { cpu: number[], memory: number[] } } = {};
+
+    constructor(private http: HttpClient) { }
 
     ngOnInit(): void {
         this.updateChart();
@@ -70,10 +79,18 @@ export class ComparisonComponent implements OnInit, OnChanges {
         this.chartInstance = ec;
     }
 
-    updateChart() {
+    async updateChart() {
         if (!this.items || this.items.length === 0) return;
 
         const metrics = this.selectedMetrics.value || [];
+
+        // Check if resource metrics are selected
+        const hasResourceMetrics = metrics.some(m => m === 'cpu_usage' || m === 'memory_usage');
+
+        if (hasResourceMetrics) {
+            await this.fetchSeriesDataIfNeeded();
+        }
+
         const dataToRender = this.getProcessedData();
 
         if (this.selectedChartType === 'bar') {
@@ -85,12 +102,43 @@ export class ComparisonComponent implements OnInit, OnChanges {
         }
     }
 
+    async fetchSeriesDataIfNeeded() {
+        const itemsToFetch = this.items.filter(item => !this.seriesDataCache[item.id]);
+
+        if (itemsToFetch.length === 0) return;
+
+        const requests = itemsToFetch.map(item => ({
+            id: item.id,
+            container_name: item.ids_name, // Assuming ids_name is the container name
+            start_time: item.start_time,
+            end_time: item.stop_time
+        }));
+
+        try {
+            const response = await this.http.post<{ content: { [key: number]: { cpu: number[], memory: number[] } } }>(
+                `${environment.backendUrl}/benchmarking/metrics/series`,
+                requests
+            ).toPromise();
+
+            if (response && response.content) {
+                this.seriesDataCache = { ...this.seriesDataCache, ...response.content };
+            }
+        } catch (error) {
+            console.error("Failed to fetch series data", error);
+        }
+    }
+
     getProcessedData(): any[] {
         if (this.aggregationMethod === 'none') {
-            return this.items.map(item => ({
-                ...item,
-                displayName: `${item.ids_name} (ID: ${item.id})`
-            }));
+            return this.items.map(item => {
+                const cached = this.seriesDataCache[item.id];
+                return {
+                    ...item,
+                    displayName: `${item.ids_name} (ID: ${item.id})`,
+                    cpu_usage: cached ? cached.cpu : [],
+                    memory_usage: cached ? cached.memory : []
+                };
+            });
         }
 
         // Group by IDS Name
@@ -108,13 +156,26 @@ export class ComparisonComponent implements OnInit, OnChanges {
             const aggregatedItem: any = { ids_name: idsName, displayName: idsName };
 
             this.metrics.forEach(m => {
-                const values = group.map(item => Number(item[m.value as keyof BenchmarkingResultsItem]));
-                if (this.aggregationMethod === 'average') {
-                    aggregatedItem[m.value] = values.reduce((a, b) => a + b, 0) / values.length;
-                } else if (this.aggregationMethod === 'median') {
-                    values.sort((a, b) => a - b);
-                    const mid = Math.floor(values.length / 2);
-                    aggregatedItem[m.value] = values.length % 2 !== 0 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+                if (m.value === 'cpu_usage' || m.value === 'memory_usage') {
+                    // For resource metrics, we aggregate all series data
+                    const allValues: number[] = [];
+                    group.forEach(item => {
+                        const cached = this.seriesDataCache[item.id];
+                        if (cached) {
+                            if (m.value === 'cpu_usage') allValues.push(...cached.cpu);
+                            if (m.value === 'memory_usage') allValues.push(...cached.memory);
+                        }
+                    });
+                    aggregatedItem[m.value] = allValues;
+                } else {
+                    const values = group.map(item => Number(item[m.value as keyof BenchmarkingResultsItem]));
+                    if (this.aggregationMethod === 'average') {
+                        aggregatedItem[m.value] = values.reduce((a, b) => a + b, 0) / values.length;
+                    } else if (this.aggregationMethod === 'median') {
+                        values.sort((a, b) => a - b);
+                        const mid = Math.floor(values.length / 2);
+                        aggregatedItem[m.value] = values.length % 2 !== 0 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+                    }
                 }
             });
             return aggregatedItem;
@@ -122,7 +183,10 @@ export class ComparisonComponent implements OnInit, OnChanges {
     }
 
     renderBarChart(items: any[], metrics: string[]) {
-        const series = metrics.map(metric => {
+        // Filter out resource metrics for bar chart as they are arrays
+        const validMetrics = metrics.filter(m => m !== 'cpu_usage' && m !== 'memory_usage');
+
+        const series = validMetrics.map(metric => {
             return {
                 name: this.getMetricLabel(metric),
                 type: 'bar',
@@ -141,7 +205,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
                 axisPointer: { type: 'shadow' }
             },
             legend: {
-                data: metrics.map(m => this.getMetricLabel(m))
+                data: validMetrics.map(m => this.getMetricLabel(m))
             },
             grid: {
                 left: '3%',
@@ -162,13 +226,16 @@ export class ComparisonComponent implements OnInit, OnChanges {
     }
 
     renderRadarChart(items: any[], metrics: string[]) {
-        const indicator = metrics.map(metric => ({
+        // Filter out resource metrics
+        const validMetrics = metrics.filter(m => m !== 'cpu_usage' && m !== 'memory_usage');
+
+        const indicator = validMetrics.map(metric => ({
             name: this.getMetricLabel(metric),
             max: this.getMaxValue(metric)
         }));
 
         const data = items.map(item => ({
-            value: metrics.map(metric => item[metric]),
+            value: validMetrics.map(metric => item[metric]),
             name: item.displayName
         }));
 
@@ -190,95 +257,162 @@ export class ComparisonComponent implements OnInit, OnChanges {
     }
 
     renderBoxplot(items: any[], metrics: string[]) {
-        // For boxplot, we ideally want to show the distribution of the *original* data points for each IDS/Metric
-        // If aggregation is ON, boxplot doesn't make much sense for the aggregated value itself (it's a single point).
-        // So, if aggregation is ON, we might want to disable boxplot or show the distribution of the group.
+        // Handle resource metrics differently:
+        // If resource metrics are selected, we show boxplots of the time-series data for each run/group.
+        // If standard metrics are selected, we show distribution across runs (as before).
 
-        // Let's implement:
-        // If Aggregation is NONE: Show distribution of metrics across the selected individual runs (same as before).
-        // If Aggregation is AVG/MEDIAN: It's better to show the distribution of the *groups* (IDS Names).
+        // Check if we have resource metrics mixed with standard metrics
+        const resourceMetrics = metrics.filter(m => m === 'cpu_usage' || m === 'memory_usage');
+        const standardMetrics = metrics.filter(m => m !== 'cpu_usage' && m !== 'memory_usage');
 
-        let sourceData: any[] = [];
-        let axisData: string[] = [];
+        // Priority: If resource metrics are present, visualize them. 
+        // Ideally we shouldn't mix them in one chart if the X-axis meaning changes.
+        // Let's visualize the first resource metric if present, or fallback to standard behavior.
 
-        if (this.aggregationMethod === 'none') {
-            // Treat metrics as categories
-            sourceData = metrics.map(metric => items.map(item => Number(item[metric])));
-            axisData = metrics.map(m => this.getMetricLabel(m));
-        } else {
-            // Group by IDS Name is already done in getProcessedData, but for boxplot we need the raw values
-            // So we need to re-group here if we want to show boxplots per IDS.
-            // Actually, the user requirement "provide an option to group results by IDS name... and then only display the median or average"
-            // implies that for Bar/Radar we show the single value. For Boxplot, showing the distribution IS the point.
+        if (resourceMetrics.length > 0) {
+            // Visualize distribution of the resource metric for each item (Run or Group)
+            const metric = resourceMetrics[0]; // Take the first one
 
-            // Let's stick to the previous implementation for now where we show metric distribution across the *displayed* items.
-            sourceData = metrics.map(metric => items.map(item => Number(item[metric])));
-            axisData = metrics.map(m => this.getMetricLabel(m));
-        }
+            const sourceData = items.map(item => item[metric] || []);
+            const axisData = items.map(item => item.displayName);
 
-        this.chartOption = {
-            title: [
-                {
-                    text: 'Metric Distribution',
-                    left: 'center',
-                }
-            ],
-            dataset: [
-                {
-                    source: sourceData
-                },
-                {
-                    transform: {
-                        type: 'boxplot',
-                        config: { itemNameFormatter: (params: any) => axisData[params.value] }
+            this.chartOption = {
+                title: [
+                    {
+                        text: `${this.getMetricLabel(metric)} Distribution`,
+                        left: 'center',
+                    }
+                ],
+                dataset: [
+                    {
+                        source: sourceData
+                    },
+                    {
+                        transform: {
+                            type: 'boxplot',
+                            config: { itemNameFormatter: (params: any) => axisData[params.value] }
+                        }
+                    },
+                    {
+                        fromDatasetIndex: 1,
+                        fromTransformResult: 1
+                    }
+                ],
+                tooltip: {
+                    trigger: 'item',
+                    axisPointer: {
+                        type: 'shadow'
                     }
                 },
-                {
-                    fromDatasetIndex: 1,
-                    fromTransformResult: 1
-                }
-            ],
-            tooltip: {
-                trigger: 'item',
-                axisPointer: {
-                    type: 'shadow'
-                }
-            },
-            grid: {
-                left: '10%',
-                right: '10%',
-                bottom: '15%'
-            },
-            xAxis: {
-                type: 'category',
-                boundaryGap: true,
-                nameGap: 30,
-                splitArea: {
-                    show: false
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
                 },
-                splitLine: {
-                    show: false
-                }
-            },
-            yAxis: {
-                type: 'value',
-                splitArea: {
-                    show: true
-                }
-            },
-            series: [
-                {
-                    name: 'boxplot',
-                    type: 'boxplot',
-                    datasetIndex: 1
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: true,
+                    nameGap: 30,
+                    splitArea: {
+                        show: false
+                    },
+                    splitLine: {
+                        show: false
+                    }
                 },
-                {
-                    name: 'outlier',
-                    type: 'scatter',
-                    datasetIndex: 2
-                }
-            ]
-        };
+                yAxis: {
+                    type: 'value',
+                    name: metric === 'cpu_usage' ? '%' : 'MB',
+                    splitArea: {
+                        show: true
+                    }
+                },
+                series: [
+                    {
+                        name: 'boxplot',
+                        type: 'boxplot',
+                        datasetIndex: 1
+                    },
+                    {
+                        name: 'outlier',
+                        type: 'scatter',
+                        datasetIndex: 2
+                    }
+                ]
+            };
+
+        } else {
+            // Standard behavior for scalar metrics
+            let sourceData: any[] = [];
+            let axisData: string[] = [];
+
+            sourceData = metrics.map(metric => items.map(item => Number(item[metric])));
+            axisData = metrics.map(m => this.getMetricLabel(m));
+
+            this.chartOption = {
+                title: [
+                    {
+                        text: 'Metric Distribution',
+                        left: 'center',
+                    }
+                ],
+                dataset: [
+                    {
+                        source: sourceData
+                    },
+                    {
+                        transform: {
+                            type: 'boxplot',
+                            config: { itemNameFormatter: (params: any) => axisData[params.value] }
+                        }
+                    },
+                    {
+                        fromDatasetIndex: 1,
+                        fromTransformResult: 1
+                    }
+                ],
+                tooltip: {
+                    trigger: 'item',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: true,
+                    nameGap: 30,
+                    splitArea: {
+                        show: false
+                    },
+                    splitLine: {
+                        show: false
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    splitArea: {
+                        show: true
+                    }
+                },
+                series: [
+                    {
+                        name: 'boxplot',
+                        type: 'boxplot',
+                        datasetIndex: 1
+                    },
+                    {
+                        name: 'outlier',
+                        type: 'scatter',
+                        datasetIndex: 2
+                    }
+                ]
+            };
+        }
     }
 
     getMetricLabel(metric: string): string {

@@ -182,11 +182,26 @@ async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: Backg
     LOGGER.debug(f"Created {len(alerts)} alerts")
     background_tasks.add_task(push_alerts_to_loki, alerts, labels)
     if alert_data.analysis_type == "static":
+        # Fetch configuration and ruleset names
+        configuration = await get_config_by_id(db, container.configuration_id)
+        configuration_name = configuration.name if configuration else None
+        ruleset_name = None
+        if container.ruleset_id:
+            ruleset = await get_config_by_id(db, container.ruleset_id)
+            ruleset_name = ruleset.name if ruleset else None
+        
         benchmarking_results = BenchmarkingResultTransferObject(
             alerts=alerts,
             dataset_id=alert_data.dataset_id,
             start_time=alert_data.start_time,
             stop_time=alert_data.stop_time
         )
-        background_tasks.add_task(calculate_evaluation_metrics_and_push, db=db, benchmarking_results=benchmarking_results,container_name=container.name)
+        background_tasks.add_task(
+            calculate_evaluation_metrics_and_push, 
+            db=db, 
+            benchmarking_results=benchmarking_results,
+            container_name=container.name,
+            configuration_name=configuration_name,
+            ruleset_name=ruleset_name
+        )
     return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)
