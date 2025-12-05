@@ -212,7 +212,7 @@ async def receive_alerts_from_ids_for_ensemble(alert_data: AlertData, background
             result_with_first_analysis_begin = min(all_intermediate_results,key=lambda r: datetime.strptime(r.start_time, "%d-%m-%Y %H:%M:%S.%f"))
             result_with_last_stopped_analysis = max(all_intermediate_results,key=lambda r: datetime.strptime(r.stop_time, "%d-%m-%Y %H:%M:%S.%f"))
             benchmarking_results = BenchmarkingResultTransferObject(
-                alerts=alerts,
+                alerts=ensembled_alerts,
                 dataset_id=alert_data.dataset_id,
                 start_time=result_with_first_analysis_begin.start_time,
                 stop_time=result_with_last_stopped_analysis.stop_time
