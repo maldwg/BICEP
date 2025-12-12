@@ -1,30 +1,24 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxEchartsModule, NGX_ECHARTS_CONFIG } from 'ngx-echarts';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment';
-import { Subscription, interval, switchMap } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { EChartsOption } from 'echarts';
+import { MetricsService, ContainerMetric } from '../services/monitoring/metrics.service';
 
-interface ContainerMetric {
-  id: number;
-  name: string;
-  status: string;
-  cpu_usage: number;
-  memory_usage: number;
-}
+// ContainerMetric now imported from MetricsService
 
 @Component({
   selector: 'app-monitoring',
   standalone: true,
-  imports: [CommonModule, NgxEchartsModule, MatCardModule, MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, FormsModule],
+  imports: [CommonModule, NgxEchartsModule, MatCardModule, MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatCheckboxModule, FormsModule],
   templateUrl: './monitoring.component.html',
   styleUrl: './monitoring.component.scss',
   providers: [
@@ -57,7 +51,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   customEndTime: string = '';
   useCustomRange: boolean = false;
 
-  constructor(private http: HttpClient) { }
+  // CSV Export
+  selectedContainersForExport: Set<string> = new Set();
+  allContainersSelected: boolean = false;
+
+  constructor(private metricsService: MetricsService) { }
 
   ngOnInit(): void {
     // Load historical data first
@@ -65,16 +63,13 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
     // Poll every 5 seconds for live updates
     this.pollingSubscription = interval(this.pollingInterValSeconds * 1000)
-      .pipe(
-        switchMap(() => this.http.get<{ content: ContainerMetric[] }>(`${environment.backendUrl}/monitoring/metrics`))
-      )
-      .subscribe({
-        next: (response) => {
-          if (!this.useCustomRange) {
-            this.updateMetrics(response.content);
-          }
-        },
-        error: (error) => console.error('Error fetching metrics:', error)
+      .subscribe(() => {
+        if (!this.useCustomRange) {
+          this.metricsService.getCurrentMetrics().subscribe({
+            next: (metrics) => this.updateMetrics(metrics),
+            error: (error) => console.error('Error fetching metrics:', error)
+          });
+        }
       });
   }
 
@@ -151,23 +146,22 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   loadHistoricalData(): void {
-    let params: any = { step: '15s' };
+    let start: string;
+    let end: string | undefined;
 
     if (this.useCustomRange && this.customStartTime && this.customEndTime) {
       // Convert datetime-local format to ISO
-      params.start = new Date(this.customStartTime).toISOString();
-      params.end = new Date(this.customEndTime).toISOString();
+      start = new Date(this.customStartTime).toISOString();
+      end = new Date(this.customEndTime).toISOString();
     } else {
-      // Use quick range
-      params.start = this.selectedTimeRange || '15m';
-      // Don't send 'end' parameter for quick ranges - backend defaults to 'now'
+      //Use quick range
+      start = this.selectedTimeRange || '15m';
+      end = undefined; // Backend defaults to 'now'
     }
 
-    this.http.get<any>(`${environment.backendUrl}/monitoring/metrics/historical`, { params }).subscribe({
-      next: (response) => {
-        if (response && response.content) {
-          this.loadHistoricalDataToCharts(response.content);
-        }
+    this.metricsService.getHistoricalMetrics(start, end).subscribe({
+      next: (data) => {
+        this.loadHistoricalDataToCharts(data);
       },
       error: (error) => {
         console.error('Error loading historical data:', error);
@@ -278,6 +272,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }));
 
     this.cpuChartOption = {
+      backgroundColor: 'rgba(255, 255, 255, 0.02)', // Almost transparent
       title: {
         text: 'CPU Usage (Cores)',
         left: 'center',
@@ -290,7 +285,8 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       legend: {
         data: this.containers.map(c => c.name),
         bottom: 0,
-        textStyle: { color: '#ccc' }
+        textStyle: { color: '#ccc' },
+        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }]
       },
       grid: {
         left: '3%',
@@ -325,6 +321,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }));
 
     this.memoryChartOption = {
+      backgroundColor: 'rgba(255, 255, 255, 0.02)', // Almost transparent
       title: {
         text: 'Memory Usage (MB)',
         left: 'center',
@@ -337,7 +334,8 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       legend: {
         data: this.containers.map(c => c.name),
         bottom: 0,
-        textStyle: { color: '#ccc' }
+        textStyle: { color: '#ccc' },
+        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }]
       },
       grid: {
         left: '3%',
@@ -360,5 +358,84 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       },
       series: memorySeries as any[]
     };
+  }
+
+  // CSV Export Methods
+  toggleContainerSelection(containerName: string): void {
+    if (this.selectedContainersForExport.has(containerName)) {
+      this.selectedContainersForExport.delete(containerName);
+    } else {
+      this.selectedContainersForExport.add(containerName);
+    }
+    this.updateAllContainersSelected();
+  }
+
+  toggleAllContainers(): void {
+    if (this.allContainersSelected) {
+      this.selectedContainersForExport.clear();
+    } else {
+      this.containers.forEach(c => this.selectedContainersForExport.add(c.name));
+    }
+    this.allContainersSelected = !this.allContainersSelected;
+  }
+
+  private updateAllContainersSelected(): void {
+    this.allContainersSelected = this.containers.length > 0 &&
+      this.selectedContainersForExport.size === this.containers.length;
+  }
+
+  isContainerSelected(containerName: string): boolean {
+    return this.selectedContainersForExport.has(containerName);
+  }
+
+  exportToCSV(): void {
+    if (this.selectedContainersForExport.size === 0) {
+      alert('Please select at least one container to export');
+      return;
+    }
+
+    // CSV Header
+    const headers = ['Timestamp', 'Container', 'CPU (cores)', 'RAM (MB)'];
+    const rows: string[][] = [headers];
+
+    // Collect data for selected containers
+    for (const containerName of this.selectedContainersForExport) {
+      const cpuData = this.cpuHistory.get(containerName);
+      const memData = this.memoryHistory.get(containerName);
+
+      if (cpuData && memData) {
+        for (let i = 0; i < this.timeLabels.length; i++) {
+          const cpu = cpuData[i];
+          const mem = memData[i];
+
+          // Skip null values
+          if (cpu !== null && mem !== null) {
+            rows.push([
+              this.timeLabels[i],
+              containerName,
+              cpu.toString(),
+              mem.toString()
+            ]);
+          }
+        }
+      }
+    }
+
+    // Convert to CSV string
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    link.setAttribute('download', `metrics_export_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
