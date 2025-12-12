@@ -28,10 +28,27 @@
   display: flex;
   gap: 15px;
   align-items: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
 }
 
 .time-selector {
   width: 200px;
+}
+
+.datetime-picker {
+  width: 240px;
+}
+
+.datetime-picker input {
+  cursor: pointer;
+}
+
+.separator {
+  color: black;
+  font-weight: 1000;
+  padding: 10px;
+  margin: auto;
 }
 
 .charts-wrapper {

@@ -61,25 +61,24 @@ async def image_exists(client, image_name):
 
 
 async def inject_config(ids_container, configuration):
-    container_url = ids_container.get_container_http_url()
-    endpoint = "/configuration"
-    configuration_content = await configuration.read_content()
-    async with httpx.AsyncClient(timeout=10) as client:
-        form_data={
-            "file": (configuration.name, configuration_content, "application/octet-stream"),
-            "container_id": (None, str(ids_container.id), "application/json"),
-            }
-        
-        response = await client.post(container_url+endpoint,files=form_data)
-        
+    config_data = await configuration.read_content()
+    files = {
+        "file": (configuration.name, config_data, "application/octet-stream")
+    }
+    form_data = {
+        "container_id": ids_container.id,
+        "container_name": ids_container.name
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(ids_container.get_container_http_url() + "/configuration", files=files, data=form_data)
     return response
+
 async def inject_ruleset(ids_container, ruleset):
-    container_url = ids_container.get_container_http_url()
-    endpoint = "/ruleset"
     ruleset_content = await ruleset.read_content()
     async with httpx.AsyncClient(timeout=10) as client:
         file={"file": (ruleset.name, ruleset_content)}
-        response = await client.post(container_url+endpoint,files=file)
+        response = await client.post(ids_container.get_container_http_url() + "/ruleset",files=file)
     return response
 
 async def remove_docker_container(ids_container):

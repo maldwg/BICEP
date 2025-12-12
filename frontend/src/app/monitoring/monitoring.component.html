@@ -1,18 +1,27 @@
 <div class="monitoring-container">
     <div class="header">
-        <h1>System Monitoring</h1>
-        <p>Real-time metrics for active IDS containers</p>
-
         <div class="controls">
             <mat-form-field appearance="outline" class="time-selector">
-                <mat-label>Time Range</mat-label>
-                <mat-select [(value)]="selectedTimeRange" (selectionChange)="onTimeRangeChange()">
+                <mat-label>Quick Range</mat-label>
+                <mat-select [(value)]="selectedTimeRange" (selectionChange)="onQuickRangeChange()">
                     <mat-option value="5m">Last 5 minutes</mat-option>
                     <mat-option value="15m">Last 15 minutes</mat-option>
                     <mat-option value="30m">Last 30 minutes</mat-option>
                     <mat-option value="1h">Last 1 hour</mat-option>
                     <mat-option value="3h">Last 3 hours</mat-option>
                 </mat-select>
+            </mat-form-field>
+
+            <span class="separator"></span>
+
+            <mat-form-field appearance="outline" class="datetime-picker">
+                <mat-label>From</mat-label>
+                <input matInput type="datetime-local" [(ngModel)]="customStartTime" (change)="onCustomTimeChange()">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="datetime-picker">
+                <mat-label>To</mat-label>
+                <input matInput type="datetime-local" [(ngModel)]="customEndTime" (change)="onCustomTimeChange()">
             </mat-form-field>
         </div>
     </div>

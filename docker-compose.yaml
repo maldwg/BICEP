@@ -23,20 +23,19 @@ services:
       - GF_PATHS_PROVISIONING=/usr/share/grafana/conf/provisioning
       - TZ=UTC
 
-
   prometheus:
     build:
       context: ./prometheus
-    ports: 
+    ports:
       - 9090:9090
     networks:
       - bicep
   prometheus-push-gateway:
     image: prom/pushgateway
-    ports: 
+    ports:
       - 9091:9091
     networks:
-        - bicep
+      - bicep
   core:
     build:
       context: ./backend/core
@@ -55,7 +54,8 @@ services:
       - DATASET_BASE_PATH=/opt
       - CONFIGURATION_STORE_BASE_PATH=/opt/configuration_data
       - RULESET_STORE_BASE_PATH=/opt/rulesets
-      - PROMETHEUS_URL=prometheus-push-gateway:9091
+      - PROMETHEUS_PUSH_GATEWAY_URL=prometheus-push-gateway:9091
+      - PROMETHEUS_URL=prometheus:9090
       - LOKI_URL=http://loki:3100
       - TZ=UTC
       - UVICORN_TIMEOUT_GRACEFUL_SHUTDOWN=600
@@ -73,11 +73,11 @@ services:
       - bicep
   loki:
     build:
-      context: ./loki 
+      context: ./loki
     ports:
       - 3100:3100
     networks:
-      - bicep  
+      - bicep
     command: -config.file=/mnt/config/loki-config.yaml
     volumes:
       - ./loki/loki:/mnt/config
@@ -97,7 +97,7 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - bicep
-      
+
 networks:
   bicep:
     driver: bridge

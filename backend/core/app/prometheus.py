@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 async def push_evaluation_metrics_to_prometheus(metrics: dict, container_name: str=None, ensemble_name: str=None, dataset_name: str = None):
     timestamp = datetime.now().isoformat()
-    prometheusUrl = os.environ.get('PROMETHEUS_URL')
+    prometheusUrl = os.environ.get('PROMETHEUS_PUSH_GATEWAYURL')
     registry = CollectorRegistry()
     for k,v in metrics.items():
         if ensemble_name:
@@ -173,12 +173,13 @@ async def query_current_cpu_usage(container_name: str) -> float:
     try:
         import httpx
         
-        prometheus_url = os.environ.get('PROMETHEUS_URL')
+        prometheus_url = os.environ.get('PROMETHEUS_URL', 'http://prometheus:9090')
         if not prometheus_url:
             return None
         
-        # Query for current CPU usage rate in cores (not percentage)
-        query = f'avg(rate(container_cpu_usage_seconds_total{{name=~".*{container_name}.*"}}[1m]))'
+        # Query for current CPU usage from pushgateway metrics
+        # The metrics are pushed with the label "name" matching container_name
+        query = f'container_cpu_usage{{name="{container_name}"}}'
         
         params = {
             'query': query
@@ -212,12 +213,12 @@ async def query_current_memory_usage(container_name: str) -> float:
     try:
         import httpx
         
-        prometheus_url = os.environ.get('PROMETHEUS_URL')
+        prometheus_url = os.environ.get('PROMETHEUS_URL', 'http://prometheus:9090')
         if not prometheus_url:
             return None
         
-        # Query for current memory usage
-        query = f'avg(container_memory_usage_bytes{{name=~".*{container_name}.*"}}) / 1024 / 1024'
+        # Query for current memory usage from pushgateway metrics
+        query = f'container_memory_usage_bytes{{name="{container_name}"}} / 1024 / 1024'
         
         params = {
             'query': query
