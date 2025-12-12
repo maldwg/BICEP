@@ -41,6 +41,10 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   cpuChartOption: EChartsOption = {};
   memoryChartOption: EChartsOption = {};
 
+  // Chart instances for preserving selection
+  private cpuChartInstance: any;
+  private memoryChartInstance: any;
+
   // Time range settings
   selectedTimeRange: string = '5m';
   maxDataPoints: number = 60;
@@ -51,24 +55,20 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   customEndTime: string = '';
   useCustomRange: boolean = false;
 
-  // CSV Export
-  selectedContainersForExport: Set<string> = new Set();
-  allContainersSelected: boolean = false;
-
   constructor(private metricsService: MetricsService) { }
 
   ngOnInit(): void {
     // Load historical data first
     this.loadHistoricalData();
 
-    // Poll every 5 seconds for live updates
+    // Poll every 5 seconds - reload the full historical dataset
+    // This ensures we get all 2s data points without timeline issues
     this.pollingSubscription = interval(this.pollingInterValSeconds * 1000)
       .subscribe(() => {
         if (!this.useCustomRange) {
-          this.metricsService.getCurrentMetrics().subscribe({
-            next: (metrics) => this.updateMetrics(metrics),
-            error: (error) => console.error('Error fetching metrics:', error)
-          });
+          // Simply reload the complete historical data for selected range
+          // This gets all 2s data points that containers pushed
+          this.loadHistoricalData();
         }
       });
   }
@@ -114,22 +114,22 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     this.customEndTime = '';
 
     // Update maxDataPoints based on selected time range
-    // Assuming polling interval of 5 seconds
+    // With 2s intervals: maxPoints = (minutes * 60) / 2
     switch (this.selectedTimeRange) {
       case '5m':
-        this.maxDataPoints = 5 / this.pollingInterValSeconds;
+        this.maxDataPoints = (5 * 60) / 2; // 150 points
         break;
       case '15m':
-        this.maxDataPoints = 15 / this.pollingInterValSeconds;
+        this.maxDataPoints = (15 * 60) / 2; // 450 points
         break;
       case '30m':
-        this.maxDataPoints = 30 / this.pollingInterValSeconds;
+        this.maxDataPoints = (30 * 60) / 2; // 900 points
         break;
       case '1h':
-        this.maxDataPoints = 60 / this.pollingInterValSeconds;
+        this.maxDataPoints = (60 * 60) / 2; // 1800 points
         break;
       case '3h':
-        this.maxDataPoints = 180 / this.pollingInterValSeconds;
+        this.maxDataPoints = (180 * 60) / 2; // 5400 points
         break;
     }
 
@@ -138,9 +138,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   onCustomTimeChange(): void {
-    if (this.customStartTime && this.customEndTime) {
+    // Support flexible ranges:
+    // - Both start and end: Range query
+    // - Only start: From start to now
+    // - Only end: Ignored (need start)
+    // - Neither: Ignored
+    if (this.customStartTime) {
       this.useCustomRange = true;
-      this.selectedTimeRange = '';  // Clear quick range selection
+      this.selectedTimeRange = 'custom';
       this.loadHistoricalData();
     }
   }
@@ -149,23 +154,24 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     let start: string;
     let end: string | undefined;
 
-    if (this.useCustomRange && this.customStartTime && this.customEndTime) {
-      // Convert datetime-local format to ISO
+    if (this.useCustomRange && this.customStartTime) {
+      // Custom range: use provided times
       start = new Date(this.customStartTime).toISOString();
-      end = new Date(this.customEndTime).toISOString();
+      end = this.customEndTime ? new Date(this.customEndTime).toISOString() : undefined;
     } else {
-      //Use quick range
-      start = this.selectedTimeRange || '15m';
+      // Quick range: use selected time range
+      start = this.selectedTimeRange || '5m';
       end = undefined; // Backend defaults to 'now'
     }
 
-    this.metricsService.getHistoricalMetrics(start, end).subscribe({
+    // Use 2s step to capture all container pushes (containers push every ~2s)
+    this.metricsService.getHistoricalMetrics(start, end, '2s').subscribe({
       next: (data) => {
         this.loadHistoricalDataToCharts(data);
       },
       error: (error) => {
         console.error('Error loading historical data:', error);
-        // If no historical data, keep live monitoring
+        // If no historical data, keep monitoring
       }
     });
   }
@@ -261,6 +267,33 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   updateCharts(): void {
+    // Preserve current legend selection state
+    let cpuSelected: { [key: string]: boolean } = {};
+    let memSelected: { [key: string]: boolean } = {};
+
+    // Capture current selection from chart instances
+    if (this.cpuChartInstance) {
+      try {
+        const cpuOption = this.cpuChartInstance.getOption();
+        if (cpuOption && cpuOption.legend && cpuOption.legend[0] && cpuOption.legend[0].selected) {
+          cpuSelected = { ...cpuOption.legend[0].selected };
+        }
+      } catch (e) {
+        // Ignore errors during option retrieval
+      }
+    }
+
+    if (this.memoryChartInstance) {
+      try {
+        const memOption = this.memoryChartInstance.getOption();
+        if (memOption && memOption.legend && memOption.legend[0] && memOption.legend[0].selected) {
+          memSelected = { ...memOption.legend[0].selected };
+        }
+      } catch (e) {
+        // Ignore errors during option retrieval
+      }
+    }
+
     // CPU Chart
     const cpuSeries = this.containers.map(container => ({
       name: container.name,
@@ -272,11 +305,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }));
 
     this.cpuChartOption = {
-      backgroundColor: 'rgba(255, 255, 255, 0.02)', // Almost transparent
+      backgroundColor: 'transparent',
       title: {
         text: 'CPU Usage (Cores)',
         left: 'center',
-        textStyle: { color: '#e0e0e0' }
+        textStyle: { color: 'black', fontFamily: 'Roboto, sans-serif' }
       },
       tooltip: {
         trigger: 'axis',
@@ -285,8 +318,9 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       legend: {
         data: this.containers.map(c => c.name),
         bottom: 0,
-        textStyle: { color: '#ccc' },
-        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }]
+        textStyle: { color: 'black', fontFamily: 'Roboto, sans-serif' },
+        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }],
+        selected: Object.keys(cpuSelected).length > 0 ? cpuSelected : undefined
       },
       grid: {
         left: '3%',
@@ -298,14 +332,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
         type: 'category',
         boundaryGap: false,
         data: this.timeLabels,
-        axisLabel: { color: '#ccc', rotate: 30 }
+        axisLabel: { color: '#000000', fontFamily: 'Roboto, sans-serif', rotate: 30 }
       },
       yAxis: {
         type: 'value',
-        name: 'CPU Cores',
-        axisLabel: { color: '#ccc' },
-        nameTextStyle: { color: '#ccc' },
-        splitLine: { lineStyle: { color: '#333' } }
+        name: 'CPU (cores)',
+        axisLabel: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+        nameTextStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+        splitLine: { lineStyle: { color: '#e0e0e0' } }
       },
       series: cpuSeries as any[]
     };
@@ -321,11 +355,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }));
 
     this.memoryChartOption = {
-      backgroundColor: 'rgba(255, 255, 255, 0.02)', // Almost transparent
+      backgroundColor: 'transparent',
       title: {
         text: 'Memory Usage (MB)',
         left: 'center',
-        textStyle: { color: '#e0e0e0' }
+        textStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' }
       },
       tooltip: {
         trigger: 'axis',
@@ -334,8 +368,9 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       legend: {
         data: this.containers.map(c => c.name),
         bottom: 0,
-        textStyle: { color: '#ccc' },
-        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }]
+        textStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }],
+        selected: Object.keys(memSelected).length > 0 ? memSelected : undefined
       },
       grid: {
         left: '3%',
@@ -347,50 +382,29 @@ export class MonitoringComponent implements OnInit, OnDestroy {
         type: 'category',
         boundaryGap: false,
         data: this.timeLabels,
-        axisLabel: { color: '#ccc', rotate: 30 }
+        axisLabel: { color: '#000000', fontFamily: 'Roboto, sans-serif', rotate: 30 }
       },
       yAxis: {
         type: 'value',
         name: 'Memory (MB)',
-        axisLabel: { color: '#ccc' },
-        nameTextStyle: { color: '#ccc' },
-        splitLine: { lineStyle: { color: '#333' } }
+        axisLabel: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+        nameTextStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+        splitLine: { lineStyle: { color: '#e0e0e0' } }
       },
       series: memorySeries as any[]
     };
   }
 
-  // CSV Export Methods
-  toggleContainerSelection(containerName: string): void {
-    if (this.selectedContainersForExport.has(containerName)) {
-      this.selectedContainersForExport.delete(containerName);
-    } else {
-      this.selectedContainersForExport.add(containerName);
-    }
-    this.updateAllContainersSelected();
-  }
+  /**
+   * Export CSV with only containers currently visible in charts
+   * Reads selection from chart legend state
+   */
+  exportCSV(): void {
+    // Get currently selected (visible) containers from CPU chart legend
+    const visibleContainers = this.getVisibleContainers();
 
-  toggleAllContainers(): void {
-    if (this.allContainersSelected) {
-      this.selectedContainersForExport.clear();
-    } else {
-      this.containers.forEach(c => this.selectedContainersForExport.add(c.name));
-    }
-    this.allContainersSelected = !this.allContainersSelected;
-  }
-
-  private updateAllContainersSelected(): void {
-    this.allContainersSelected = this.containers.length > 0 &&
-      this.selectedContainersForExport.size === this.containers.length;
-  }
-
-  isContainerSelected(containerName: string): boolean {
-    return this.selectedContainersForExport.has(containerName);
-  }
-
-  exportToCSV(): void {
-    if (this.selectedContainersForExport.size === 0) {
-      alert('Please select at least one container to export');
+    if (visibleContainers.length === 0) {
+      alert('No containers are currently visible in the charts. Use the legend to show containers before exporting.');
       return;
     }
 
@@ -398,8 +412,8 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     const headers = ['Timestamp', 'Container', 'CPU (cores)', 'RAM (MB)'];
     const rows: string[][] = [headers];
 
-    // Collect data for selected containers
-    for (const containerName of this.selectedContainersForExport) {
+    // Collect data for visible containers only
+    for (const containerName of visibleContainers) {
       const cpuData = this.cpuHistory.get(containerName);
       const memData = this.memoryHistory.get(containerName);
 
@@ -437,5 +451,50 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  /**
+   * Get list of currently visible containers based on chart legend selection
+   */
+  private getVisibleContainers(): string[] {
+    const visible: string[] = [];
+
+    if (this.cpuChartInstance) {
+      try {
+        const cpuOption = this.cpuChartInstance.getOption();
+        if (cpuOption && cpuOption.legend && cpuOption.legend[0]) {
+          const selected = cpuOption.legend[0].selected;
+
+          // If no selection state, all are visible
+          if (!selected || Object.keys(selected).length === 0) {
+            return this.containers.map(c => c.name);
+          }
+
+          // Return only containers marked as selected (true)
+          for (const [containerName, isSelected] of Object.entries(selected)) {
+            if (isSelected) {
+              visible.push(containerName);
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback: export all if can't read selection
+        return this.containers.map(c => c.name);
+      }
+    } else {
+      // No chart instance yet, export all
+      return this.containers.map(c => c.name);
+    }
+
+    return visible;
+  }
+
+  // Chart initialization handlers to capture instances
+  onCpuChartInit(chartInstance: any): void {
+    this.cpuChartInstance = chartInstance;
+  }
+
+  onMemoryChartInit(chartInstance: any): void {
+    this.memoryChartInstance = chartInstance;
   }
 }

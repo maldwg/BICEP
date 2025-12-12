@@ -44,11 +44,9 @@
   cursor: pointer;
 }
 
-.separator {
-  color: black;
-  font-weight: 1000;
-  padding: 10px;
-  margin: auto;
+.custom-time-inputs {
+  display: flex;
+  gap: 15px;
 }
 
 .charts-wrapper {
@@ -60,8 +58,9 @@
 
 .chart-container {
   width: 100%;
-  background-color: rgba(30, 30, 30, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--mat-sys-background);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   padding: 20px;
 }
@@ -85,4 +84,10 @@
   width: 48px;
   height: 48px;
   margin-bottom: 10px;
+}
+
+/* Export FAB Button */
+.export-fab {
+  margin-top: 0px;
+  margin-left: auto;
 }
