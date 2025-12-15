@@ -1,0 +1,93 @@
+.monitoring-container {
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  width: 80%;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.header p {
+  margin: 5px 0 15px;
+  color: #aaa;
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.time-selector {
+  width: 200px;
+}
+
+.datetime-picker {
+  width: 240px;
+}
+
+.datetime-picker input {
+  cursor: pointer;
+}
+
+.custom-time-inputs {
+  display: flex;
+  gap: 15px;
+}
+
+.charts-wrapper {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.chart-container {
+  width: 100%;
+  background-color: var(--mat-sys-background);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.chart {
+  height: 400px;
+  width: 100%;
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #aaa;
+}
+
+.no-data mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 10px;
+}
+
+/* Export FAB Button */
+.export-fab {
+  margin-top: 0px;
+  margin-left: auto;
+}

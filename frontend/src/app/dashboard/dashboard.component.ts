@@ -33,6 +33,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
+import { repeat } from 'rxjs';
 
 @Component({
     selector: 'app-dashboard',
@@ -65,6 +66,8 @@ export class DashboardComponent implements OnInit {
 
   // TODO 5: do not allow analyssis if other container of ensemble is running, so if ensemble is not idle do not allow for executions!
 
+  POLL_DELAY = 5000;
+
   ngOnInit(): void {
     this.getAllContainer();
     this.getAllEnsembles();
@@ -78,13 +81,11 @@ export class DashboardComponent implements OnInit {
   
   getAllContainer(): void{
     this.idsService.getAllIdsContainer()
-      /*
-      This works, but do I realy want that many requests in the backgrun d? better having only on demand and update the object accordingly
       .pipe(
         repeat({
-          delay: 5000
+          delay: this.POLL_DELAY
         })
-      )*/
+      )
       .subscribe(data =>  {
         this.containerList = data
       });
@@ -120,6 +121,11 @@ export class DashboardComponent implements OnInit {
 
   getAllEnsembles(){
     this.ensembleService.getAllEnsembles()
+      .pipe(
+        repeat({
+          delay: this.POLL_DELAY
+        })
+      )
       .subscribe(data => {
         this.ensembleList = data
       });
@@ -127,6 +133,11 @@ export class DashboardComponent implements OnInit {
 
   getAllEnsembleContainer(){
     this.ensembleService.getEnsembleContainers()  
+      .pipe(
+        repeat({
+          delay: this.POLL_DELAY
+        })
+      )
       .subscribe(data => {
         this.ensembleContainerList = data
       });
@@ -433,8 +444,11 @@ export class DashboardComponent implements OnInit {
     return this.containerList.filter(c => containerIds.includes(c.id)).map(c => c.name);
   }
 
-  checkEnsembleContainersAreIdleByEnsembleId(ensembleid: number){
-    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensembleid).map(c => c.ids_container_id);
+  checkEnsembleContainersAreIdleByEnsembleId(ensemble: Ensemble){
+    if(ensemble.status !== statusTypes.idle){
+      return true
+    }
+    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensemble.id).map(c => c.ids_container_id);
     let containers: Container[] = this.containerList.filter(c => ensembleContainerIds.includes(c.id));
     let flag: boolean = true
     containers.forEach(container => {

@@ -1,0 +1,50 @@
+<div class="comparison-container">
+    <div class="header">
+        <button class="back-button" (click)="close.emit()" matFab extended>
+            <mat-icon>arrow_left</mat-icon>
+            Back
+        </button>
+    </div>
+    <mat-card>
+        <mat-card-content>
+            <div class="config-panel">
+                <div class="config-section">
+                    <h3>Chart Type</h3>
+                    <mat-button-toggle-group [(ngModel)]="selectedChartType" (change)="updateChart()"
+                        aria-label="Chart Type">
+                        <mat-button-toggle value="bar">Bar Chart</mat-button-toggle>
+                        <mat-button-toggle value="radar">Radar Chart</mat-button-toggle>
+                        <mat-button-toggle value="boxplot">Boxplot</mat-button-toggle>
+                    </mat-button-toggle-group>
+                </div>
+                <div class="config-section">
+                    <h3>Aggregation (by IDS)</h3>
+                    <mat-button-toggle-group [(ngModel)]="aggregationMethod" (change)="updateChart()"
+                        aria-label="Aggregation">
+                        <mat-button-toggle value="none">None</mat-button-toggle>
+                        <mat-button-toggle value="average">Average</mat-button-toggle>
+                        <mat-button-toggle value="median">Median</mat-button-toggle>
+                    </mat-button-toggle-group>
+                </div>
+
+                <div class="config-section metrics-section">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Metrics</mat-label>
+                        <mat-select [formControl]="selectedMetrics" multiple>
+                            <mat-option *ngFor="let metric of metrics"
+                                [value]="metric.value">{{metric.viewValue}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+
+                <button class="download-button" style="margin-top: 2%;" (click)="downloadChart()" matFab extended>
+                    <mat-icon>download</mat-icon> Download SVG
+                </button>
+            </div>
+
+            <div class="chart-container">
+                <div echarts [options]="chartOption" (chartInit)="onChartInit($event)" class="echart"></div>
+            </div>
+        </mat-card-content>
+    </mat-card>
+</div>

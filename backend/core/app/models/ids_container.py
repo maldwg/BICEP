@@ -28,10 +28,8 @@ class IdsContainer(Base):
     ruleset_id = Column(Integer, ForeignKey("configuration.id"))
     host_system_id = Column(Integer, ForeignKey("docker_host_system.id"))
 
-
     host_system = relationship('DockerHostSystem', back_populates='container', lazy="selectin")
     ensemble_ids = relationship('EnsembleIds', cascade="all, delete", lazy="selectin")
-
 
     async def setup(self, db: AsyncSession):
         from app.models.configuration import get_config_by_id

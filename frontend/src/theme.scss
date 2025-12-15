@@ -3,21 +3,15 @@
 
 :root {
 
-  @include mat.dialog-overrides((
-    container-color:  rgba(255, 255, 255, 0.7),
-    subhead-weight: 500,
-    container-elevation-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.8)
+  @include mat.dialog-overrides((container-color: rgba(255, 255, 255, 0.7),
+      subhead-weight: 500,
+      container-elevation-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.8)));
 
-  ));
-
-  @include mat.theme((
-    color: (
-      primary: mat.$red-palette,
-    ),
-    typography: 'Roboto, sans-serif',
-    density: 0,
-    ), $overrides: (
-      // primary: orange,
+  @include mat.theme((color: (primary: mat.$red-palette,
+      ),
+      typography: 'Roboto, sans-serif',
+      density: 0,
+    ), $overrides: ( // primary: orange,
       // on-primary: 
       // primary-container: 
       // on-primary-container: 
@@ -56,7 +50,7 @@
       surface-container-low: rgba(255, 255, 255, 0.3),
       // surface-container-lowest: white,
       // surface-container: white,
-      surface-container: rgba(255, 255, 255, 0.9), 
+      surface-container: rgba(255, 255, 255, 0.9),
       // surface-container-highest: white,
       // on-surface:
       // shadow:
@@ -71,18 +65,17 @@
       // on-error-container:
       // surface-variant:
       // on-surface-variant:
-    )
-  );
+    ));
 }
 
 body {
   position: relative;
   margin: 0;
   height: 100vh;
-  overflow-x: hidden;      /* hide horizontal scroll, vertical scroll allowed */
+  overflow-x: hidden;
   overflow-y: auto;
-  background: url("./assets/Biceps_logo.svg") no-repeat center bottom;
-  background-size: 500px auto;  
+  //background: url("./assets/Biceps_logo_plain.svg") no-repeat center bottom;
+  background-size: 500px auto;
   background-attachment: scroll;
 }
 
@@ -91,10 +84,10 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(ellipse 100% 100% at 50% 30%, #ffd5d3 60%, #b610109f 80%);
+  background: radial-gradient(ellipse 110% 110% at 50% 30%, #ffd5d362 60%, #b610109f 80%);
   background-size: 100% 100%;
   animation: pulseBg 6s ease-in-out infinite alternate;
-  mix-blend-mode: multiply; /* lets the image show through */
+  mix-blend-mode: multiply;
 }
 
 
@@ -102,10 +95,12 @@ body::before {
   0% {
     background-size: 100% 100%;
   }
+
   // repeat value to fake a pause when edges are colored
   30% {
     background-size: 100% 100%;
   }
+
   100% {
     background-size: 130% 130%;
   }

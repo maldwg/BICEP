@@ -8,8 +8,8 @@ $submit: blue;
 $action: purple;
 
 h1 {
-    text-shadow: 3px 5px 10px grey;
-    padding-bottom: 5%;
+  text-shadow: 3px 5px 10px grey;
+  padding-bottom: 5%;
 }
 
 h2 {
@@ -17,85 +17,86 @@ h2 {
   margin-bottom: 5%;
   margin-top: 5%;
 }
+
 .elevation1 {
-    box-shadow: var(--mat-sys-level1) !important;
+  box-shadow: var(--mat-sys-level1) !important;
 }
+
 .elevation2 {
-    box-shadow: var(--mat-sys-level2) !important;
+  box-shadow: var(--mat-sys-level2) !important;
 }
+
 .elevation3 {
-    box-shadow: var(--mat-sys-level3) !important;
+  box-shadow: var(--mat-sys-level3) !important;
 }
 
-.success-button{
-    @include mat.button-overrides((
-        filled-container-color: $success,
+
+.success-button {
+  @include mat.button-overrides((filled-container-color: $success,
     ));
 }
 
-.danger-button{
-    @include mat.button-overrides((
-        filled-container-color: $danger,
+.danger-button {
+  @include mat.button-overrides((filled-container-color: $danger,
     ));
 }
 
-.options-button{
-    @include mat.button-overrides((
-        filled-container-color: $options,
+.options-button {
+  @include mat.button-overrides((filled-container-color: $options,
     ));
 }
 
-.cancel-button{
-    @include mat.fab-overrides((
-        container-color: rgba(255, 100, 100, 0.8),
-        foreground-color: white,
+.cancel-button {
+  @include mat.fab-overrides((container-color: rgba(255, 100, 100, 0.8),
+      foreground-color: white,
     ));
 }
-.submit-button{
-    @include mat.fab-overrides((
-        container-color: rgba(76, 175, 80, 0.9),
-        foreground-color: white,
+
+.submit-button {
+  @include mat.fab-overrides((container-color: rgba(76, 175, 80, 0.9),
+      foreground-color: white,
     ));
 }
 
 
 .delete-button {
-  @include mat.fab-overrides((
-    container-color: rgba(244, 67, 54, 0.9),
-    foreground-color: white,
-  ));
+  @include mat.fab-overrides((container-color: rgba(244, 67, 54, 0.9),
+      foreground-color: white,
+    ));
 }
 
 .start-button {
-  @include mat.fab-overrides((
-    container-color: rgba(76, 175, 80, 0.9),
-    foreground-color: white,
-  ));
+  @include mat.fab-overrides((container-color: rgba(76, 175, 80, 0.9),
+      foreground-color: white,
+    ));
 }
 
 .stop-button {
-  @include mat.fab-overrides((
-    container-color: rgba(211, 47, 47, 0.9),
-    foreground-color: white,
-  ));
+  @include mat.fab-overrides((container-color: rgba(211, 47, 47, 0.9),
+      foreground-color: white,
+    ));
 }
+
 .edit-button {
-  @include mat.fab-overrides((
-    container-color: rgba(255, 193, 7, 0.9),
-    foreground-color: white,
-  ));
+  @include mat.fab-overrides((container-color: rgba(255, 193, 7, 0.9),
+      foreground-color: white,
+    ));
+}
+
+.download-button {
+  @include mat.fab-overrides((container-color: rgba(33, 150, 243, 0.9),
+      foreground-color: white,
+    ));
 }
 
 .back-button {
-  @include mat.fab-overrides((
-    container-color: rgba(96, 125, 139, 0.9),
-    foreground-color: white,
-  ));
+  @include mat.fab-overrides((container-color: rgba(96, 125, 139, 0.9),
+      foreground-color: white,
+    ));
 }
 
-.action-button{
-    @include mat.button-overrides((
-        filled-container-color: $action,
+.action-button {
+  @include mat.button-overrides((filled-container-color: $action,
     ));
   width: 150px;
   height: 50px;
@@ -105,65 +106,70 @@ h2 {
   border: none;
 }
 
-.moving-hover-button{
+.moving-hover-button {
   &:hover {
     transform: translateY(-8px) scale(1.05);
-    transition: all 0.3s ease; /* smooth hover */   
-    filter: brightness(70%);  /* darker by 15% */
+    transition: all 0.3s ease;
+    /* smooth hover */
+    filter: brightness(70%);
+    /* darker by 15% */
   }
 }
 
 button:hover {
   transform: translateY(-2px) scale(1.02);
-  transition: all 0.3s ease; /* smooth hover */   
-  filter: brightness(70%);  /* darker by 15% */
+  transition: all 0.3s ease;
+  /* smooth hover */
+  filter: brightness(70%);
+  /* darker by 15% */
 }
 
-button {
-    box-shadow: var(--mat-sys-level3)
-}
+// button {
+//     box-shadow: var(--mat-sys-level3)
+// }
 
-html, body { 
-    height: 100%; 
-    width: 100%;
-    overflow-x: auto; 
-    overflow-y: auto; 
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 .component-header-div {
-    margin: auto;
-    margin-top: 2%;
+  margin: auto;
+  margin-top: 2%;
 }
 
 .custom-button {
-    border-radius: 20px;
+  border-radius: 20px;
 }
 
 .mat-success {
-    background-color: #4CAF50;
-    color: #fff;
+  background-color: #4CAF50;
+  color: #fff;
 }
 
 
 .matdialog-glass-optic {
   box-shadow: var(--mat-sys-level2);
   z-index: 1000;
-  backdrop-filter: blur(3px);               
-  -webkit-backdrop-filter: blur(12px);      
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .matdialog-panel {
   box-shadow: var(--mat-sys-level2);
   z-index: 1000;
   box-shadow: var(--mat-sys-level3);
-  border-radius: 30px; 
-  backdrop-filter: blur(8px);              
-  -webkit-backdrop-filter: blur(12px);      
+  border-radius: 30px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .matdialog-backdrop {
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); 
+  -webkit-backdrop-filter: blur(10px);
 }
 
 
@@ -177,14 +183,14 @@ html, body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.form-dialog-container{
-    display: flex;
-    flex-wrap: wrap;
-    margin: auto;
-    width: 100%;
-    justify-content: center;
-    align-items: center;  
-    padding-top: 2%;
+.form-dialog-container {
+  display: flex;
+  flex-wrap: wrap;
+  margin: auto;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  padding-top: 2%;
 }
 
 .form-item {
@@ -193,54 +199,55 @@ html, body {
   align-items: center;
 }
 
-.form-field{
+.form-field {
   width: 70%;
 }
 
-.form-mat-card {      
-  white-space: normal;    
+.form-mat-card {
+  white-space: normal;
   min-height: 500px;
   min-width: 400px;
-  max-height: 700px;;
+  max-height: 700px;
+  ;
 }
 
 
 .expansion-panel-flexbox-container {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 2%;
-    width: 100%;
-    padding-left: 1rem;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 1px;
- 
+  display: flex;
+  flex-wrap: wrap;
+  margin: 2%;
+  width: 100%;
+  padding-left: 1rem;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 1px;
+
 }
 
 .flexbox-item {
-    padding-left: 1rem;
-  }
+  padding-left: 1rem;
+}
 
 mat-card {
-  max-width: 300px;       
+  max-width: 300px;
   max-height: 400px;
   height: 100%;
-  width: 100%;             
-  margin: 0.5rem;          
-  overflow-wrap: anywhere; 
-  white-space: normal;    
-  min-height: 300px;
+  width: 100%;
+  margin: 0.5rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  min-height: 400px;
   min-width: 400px;
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); 
-    box-shadow: var(--mat-sys-level3) !important;
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--mat-sys-level3) !important;
 
 }
 
-mat-card-content{
+mat-card-content {
   flex: 1;
   overflow-y: auto;
-  padding-right: 0.5rem; 
+  padding-right: 0.5rem;
   margin-top: 1.5rem;
 }
 
@@ -261,21 +268,21 @@ mat-card-actions {
 }
 
 .info-row strong {
-  min-width: 180px; 
+  min-width: 180px;
   text-align: left;
 }
 
-.mat-card-title-text{
-  font-weight: bold; 
+.mat-card-title-text {
+  font-weight: bold;
   text-transform: uppercase;
 }
 
 .bDrop {
-   backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
 mat-dialog-container {
-      backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 .mat-mdc-form-field .mdc-text-field--disabled {
@@ -283,7 +290,7 @@ mat-dialog-container {
 }
 
 .dialog-actions-div {
-  margin: auto; 
+  margin: auto;
   padding-bottom: 2%;
 }
 
@@ -310,16 +317,13 @@ mat-dialog-container {
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    -webkit-box-shadow: inset 0 0 8px rgba(229, 115, 115, 0.9); 
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 8px rgba(229, 115, 115, 0.9);
   border: 2px solid transparent;
   background-clip: content-box;
   transition: background-color 0.3s;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background-color:rgba(229, 57, 53, 0.6); 
+  background-color: rgba(229, 57, 53, 0.6);
 }
-
-
-
-

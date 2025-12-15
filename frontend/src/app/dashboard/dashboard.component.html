@@ -44,7 +44,7 @@
                 <div class="info-row">
                   <strong>Containers:</strong> <span>{{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }}</span>
                 </div>
-                @if (!checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
+                @if (!checkEnsembleContainersAreIdleByEnsembleId(ensemble)) {
                   <div class="info-message">
                     Warning: At least one container from this ensemble is not idle. Stop it before trying to analyze the ensemble
                   </div>
@@ -53,7 +53,7 @@
               <mat-card-actions>
                   <div class="ids-action-button-container">
                     <div>
-                      @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble.id)) {
+                      @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble)) {
                         <button (click)="startEnsembleAnalysis(ensemble)" class="start-button" matFab>
                           <mat-icon>play_arrow</mat-icon> 
                         </button>
