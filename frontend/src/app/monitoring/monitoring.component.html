@@ -26,9 +26,8 @@
                 </mat-form-field>
             </div>
 
-            <!-- Export Button - uses chart legend selection -->
-            <button mat-fab extended (click)="exportCSV()" style="margin-top: 0px;" *ngIf="containers.length > 0"
-                class="export-fab download-button">
+            <button matTooltip="Export selected containers to CSV" mat-fab extended (click)="exportCSV()"
+                style="margin-top: 0px;" *ngIf="containers.length > 0" class="export-fab download-button">
                 <mat-icon>download</mat-icon>
                 Export
             </button>

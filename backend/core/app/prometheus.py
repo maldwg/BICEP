@@ -33,13 +33,13 @@ async def query_average_cpu_usage(
 
         # Query for average CPU usage rate over the time range
         # rate() calculates per-second rate, multiply by 100 for percentage
-        query = f'avg(rate(container_cpu_usage_seconds_total{{name=~".*{container_name}.*"}}[1m])) * 100'
+        query = f'avg(container_cpu_usage{{name=~".*{container_name}.*"}})'
 
         params = {
             "query": query,
             "start": start_ts,
             "end": end_ts,
-            "step": "15s",  # Sample every 15 seconds
+            "step": "1s",  # Sample every 15 seconds
         }
 
         async with httpx.AsyncClient() as client:
@@ -106,7 +106,7 @@ async def query_average_memory_usage(
         # Query for average memory usage, convert bytes to MB
         query = f'avg(container_memory_usage_bytes{{name=~".*{container_name}.*"}}) / 1024 / 1024'
 
-        params = {"query": query, "start": start_ts, "end": end_ts, "step": "15s"}
+        params = {"query": query, "start": start_ts, "end": end_ts, "step": "1s"}
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -257,9 +257,9 @@ async def query_cpu_usage_series(
         end_ts = datetime.strptime(end_time, "%d-%m-%Y %H:%M:%S.%f").timestamp()
 
         # Query for CPU usage rate over the time range
-        query = f'rate(container_cpu_usage_seconds_total{{name=~".*{container_name}.*"}}[1m]) * 100'
+        query = f'container_cpu_usage{{name=~".*{container_name}.*"}}'
 
-        params = {"query": query, "start": start_ts, "end": end_ts, "step": "15s"}
+        params = {"query": query, "start": start_ts, "end": end_ts, "step": "2s"}
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -308,7 +308,7 @@ async def query_memory_usage_series(
         # Query for memory usage
         query = f'container_memory_usage_bytes{{name=~".*{container_name}.*"}} / 1024 / 1024'
 
-        params = {"query": query, "start": start_ts, "end": end_ts, "step": "15s"}
+        params = {"query": query, "start": start_ts, "end": end_ts, "step": "2s"}
 
         async with httpx.AsyncClient() as client:
             response = await client.get(

@@ -12,13 +12,14 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { EChartsOption } from 'echarts';
 import { MetricsService, ContainerMetric } from '../services/monitoring/metrics.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // ContainerMetric now imported from MetricsService
 
 @Component({
   selector: 'app-monitoring',
   standalone: true,
-  imports: [CommonModule, NgxEchartsModule, MatCardModule, MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatCheckboxModule, FormsModule],
+  imports: [CommonModule, NgxEchartsModule, MatCardModule, MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatCheckboxModule, FormsModule, MatTooltipModule],
   templateUrl: './monitoring.component.html',
   styleUrl: './monitoring.component.scss',
   providers: [

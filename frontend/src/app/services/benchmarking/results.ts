@@ -46,6 +46,9 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
       ),
       map((data) => {
         const filtered = this.getFilteredData([...data]);
+        if (this.paginator) {
+          this.paginator.length = filtered.length;
+        }
         const sorted = this.getSortedData(filtered);
         const paged = this.getPagedData(sorted);
         this.dataSubject.next(paged);

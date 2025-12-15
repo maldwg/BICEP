@@ -557,7 +557,6 @@ async def test_receive_alerts_from_ids_static_analysis_last_container(
     get_alerts_mock,
     cleanup_mock,
     calculate_metrics_mock,
-    push_metrics_mock,
     db_session_fixture: DatabaseSessionFixture,
 ):
     db_session = await db_session_fixture.get_db_session()
