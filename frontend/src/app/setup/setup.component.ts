@@ -1,14 +1,14 @@
 import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
-import {MatSelectModule} from '@angular/material/select';
-import {MatInputModule} from '@angular/material/input';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {MatCardModule} from '@angular/material/card';
-import {MatButtonModule} from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { IdsService } from '../services/ids/ids.service';
 import { ConfigService } from '../services/config/config.service';
 import { Router } from '@angular/router';
-import { Container, ContainerSetupData } from '../models/container';
+import { Container, ContainerSetupData, CidsServiceConfig } from '../models/container';
 import { Configuration } from '../models/configuration';
 import { fileTypes } from '../models/acceptedFileTypes';
 import { IdsTool } from '../models/ids';
@@ -17,7 +17,7 @@ import { Ensemble, EnsembleSetupData, EnsembleTechnique } from '../models/ensemb
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { describe } from 'node:test';
 import { runInThisContext } from 'node:vm';
-import {MatTooltipModule} from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { HttpResponse } from '@angular/common/http';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
@@ -25,10 +25,10 @@ import { AlertComponent } from '../components/alert-component/alert-component.co
 import { hostStatus } from '../models/status';
 import { MatIconModule } from '@angular/material/icon';
 @Component({
-    selector: 'app-setup',
-    imports: [MatIconModule,AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
-    templateUrl: './setup.component.html',
-    styleUrl: './setup.component.scss'
+  selector: 'app-setup',
+  imports: [MatIconModule, AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
+  templateUrl: './setup.component.html',
+  styleUrl: './setup.component.scss'
 })
 export class SetupComponent implements OnInit {
 
@@ -60,6 +60,25 @@ export class SetupComponent implements OnInit {
   userChoice = "";
   requiresRuleset = false;
 
+  // CIDS Support
+  selectedTool: IdsTool | undefined;
+  cidsConfigurations: CidsServiceConfig[] = [];
+  availableServices: string[] = [];
+  deploymentType = "SINGLE_CONTAINER";
+
+  // Runtime Configs available for selection
+  runtimeConfigs: Configuration[] = [];
+  deploymentConfigs: Configuration[] = [];
+
+  // Helper for CIDS Form: Host -> Services
+  cidsHostSelection = new FormControl();
+  cidsServiceSelection = new FormControl();
+  cidsCountSelection = new FormControl(1);
+  cidsRuntimeConfigSelection = new FormControl(); // For CIDS Runtime Config
+  cidsComposeSelection = new FormControl(); // Select additional compose files? Or just use main config?
+  // Current plan: Use main config for services parsing.
+
+
 
   constructor(
     private idsService: IdsService,
@@ -67,47 +86,82 @@ export class SetupComponent implements OnInit {
     private ensembleService: EnsembleService,
     private router: Router,
     private hostService: DockerHostService,
-  ) {}
+  ) { }
 
 
   ngOnInit(): void {
-   this.getAllIdsTools();
-   this.getAllContainer();
-   this.getAllEnemsebles();
-   this.getAllTechniques();
-   this.getConfigurations();
-   this.getRuleSets();
-   this.getAllHostSystems();
+    this.getAllIdsTools();
+    this.getAllContainer();
+    this.getAllEnemsebles();
+    this.getAllTechniques();
+    this.getConfigurations();
+    this.getRuleSets();
+    this.getAllHostSystems();
 
 
 
-   this.idsForm.controls.idsTool.valueChanges.subscribe((toolId) => {
-    const selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
-    this.requiresRuleset = selectedTool ? selectedTool.requires_ruleset : false;
-  }); 
+    this.idsForm.controls.idsTool.valueChanges.subscribe((toolId) => {
+      this.selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
+      this.requiresRuleset = this.selectedTool ? this.selectedTool.requires_ruleset : false;
+      this.deploymentType = this.selectedTool?.deployment_type || "SINGLE_CONTAINER";
+
+      // Reset CIDS state on tool change
+      this.cidsConfigurations = [];
+      this.availableServices = [];
+    });
+
+    // Listen for config changes to fetch services if CIDS
+    this.idsForm.controls.config.valueChanges.subscribe((configId) => {
+      if (this.deploymentType === 'DOCKER_COMPOSE' && configId) {
+        this.configService.getConfigurationServices(parseInt(configId)).subscribe(services => {
+          this.availableServices = services;
+        });
+      }
+    });
 
   }
 
+  addCidsConfiguration() {
+    if (this.cidsHostSelection.value && this.cidsServiceSelection.value) {
+      const newConfig: CidsServiceConfig = {
+        host_system_id: parseInt(this.cidsHostSelection.value),
+        service_name: this.cidsServiceSelection.value,
+        count: this.cidsCountSelection.value || 1
+      };
+      this.cidsConfigurations.push(newConfig);
+    }
+  }
+
+  removeCidsConfiguration(index: number) {
+    this.cidsConfigurations.splice(index, 1);
+  }
+
+  getHostName(id: number): string {
+    return this.hostSystems.find(h => h.id === id)?.name || 'Unknown';
+  }
+
   onSubmit(): void {
-    if (this.idsForm.valid){
+    if (this.idsForm.valid) {
       let containerData: ContainerSetupData = {
         host_system_id: parseInt(this.idsForm.value.host!),
         ids_tool_id: parseInt(this.idsForm.value.idsTool!),
         configuration_id: parseInt(this.idsForm.value.config!),
         description: this.idsForm.value.description!,
-        ruleset_id: this.idsForm.value.ruleset ? parseInt( this.idsForm.value.ruleset ) : undefined 
-      };    
+        ruleset_id: this.idsForm.value.ruleset ? parseInt(this.idsForm.value.ruleset) : undefined,
+        cids_configurations: this.cidsConfigurations,
+        runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined
+      };
       this.idsService.sendContainerSetupData(containerData)
         .subscribe(res => console.log(res),
-        err => {
-          this.errorPopup.showError(err.error["error"], err.status);
-        });
+          err => {
+            this.errorPopup.showError(err.error["error"], err.status);
+          });
       this.router.navigate(["/"]);
     }
   }
 
-  onEnsembleSubmit(){
-    if(this.ensembleForm.valid){
+  onEnsembleSubmit() {
+    if (this.ensembleForm.valid) {
       let ensembleData: EnsembleSetupData = {
         name: this.ensembleForm.value.name!,
         description: this.ensembleForm.value.description!,
@@ -119,22 +173,27 @@ export class SetupComponent implements OnInit {
       this.ensembleService.sendEnsembleData(ensembleData)
         .subscribe(res => {
           // TODO 5: go thorugh each response object here and see if it was succesful??
-            this.router.navigate(["/"])
-          },
-          err =>{
+          this.router.navigate(["/"])
+        },
+          err => {
             this.errorPopup.showError(err.error["error"], err.status);
-        })
+          })
     }
-      
+
   }
 
   getConfigurations() {
     let type: string = fileTypes.configuration;
     this.configService.getAllConfigurationsByType(type)
       .subscribe(data => {
-        this.idsConfigs = data.map(config => ({
-          id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type
-        })); 
+        const allConfigs = data.map(config => ({
+          id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type, config_type: config.config_type
+        }));
+        this.idsConfigs = allConfigs; // For backward compatibility / general list
+
+        // Filter for specific config types
+        this.runtimeConfigs = allConfigs.filter(c => c.config_type === 'RUNTIME' || !c.config_type || c.config_type === 'CONFIGURATION');
+        this.deploymentConfigs = allConfigs.filter(c => c.config_type === 'DEPLOYMENT');
       });
   }
 
@@ -144,26 +203,27 @@ export class SetupComponent implements OnInit {
       .subscribe(data => {
         this.ruleSets = data.map(config => ({
           id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type
-        })); 
+        }));
       });
   }
 
   getAllIdsTools() {
     this.idsService.getAllIdsTools()
       .subscribe(data => {
-        this.idsTools = data.map( tool => ({
+        this.idsTools = data.map(tool => ({
           id: tool.id,
-          name: tool.name, 
-          idsType: tool.idsType, 
-          analysis_method: tool.analysis_method, 
+          name: tool.name,
+          ids_type: tool.ids_type,
+          analysis_method: tool.analysis_method,
           requires_ruleset: tool.requires_ruleset,
           image_name: tool.image_name,
-          image_tag: tool.image_tag
+          image_tag: tool.image_tag,
+          deployment_type: tool.deployment_type
         }));
       });
   }
 
-  getAllContainer(){
+  getAllContainer() {
     this.idsService.getAllNonEnsembledIdsContainer()
       .subscribe(data => {
         this.containers = data.map(container => ({
@@ -175,13 +235,14 @@ export class SetupComponent implements OnInit {
           configuration_id: container.configuration_id,
           ids_tool_id: container.ids_tool_id,
           description: container.description,
-          ruleset_id: container.ruleset_id
+          ruleset_id: container.ruleset_id,
+          type: container.type
         }))
       })
   }
 
 
-  getAllTechniques(){
+  getAllTechniques() {
     this.ensembleService.getAllTechnqiues()
       .subscribe(data => {
         this.ensembleTechniques = data.map(technique => ({
@@ -193,7 +254,7 @@ export class SetupComponent implements OnInit {
       });
   }
 
-  getAllEnemsebles(){
+  getAllEnemsebles() {
     this.ensembleService.getAllEnsembles()
       .subscribe(data => {
         this.ensembles = data.map(ensemble => ({
@@ -207,20 +268,20 @@ export class SetupComponent implements OnInit {
       });
   }
 
-  setUserChoice(choice: string){
+  setUserChoice(choice: string) {
     this.userChoice = choice;
   }
 
-getAllHostSystems(){
-  this.hostService.getAllHosts().subscribe(hosts => {
-    this.hostSystems = hosts.map(hostSystem => ({
-      id: hostSystem.id,
-      name: hostSystem.name,
-      host: hostSystem.host,
-      docker_port: hostSystem.docker_port,
-      status: hostSystem.status
-    }));
-  })
-}
+  getAllHostSystems() {
+    this.hostService.getAllHosts().subscribe(hosts => {
+      this.hostSystems = hosts.map(hostSystem => ({
+        id: hostSystem.id,
+        name: hostSystem.name,
+        host: hostSystem.host,
+        docker_port: hostSystem.docker_port,
+        status: hostSystem.status
+      }));
+    })
+  }
 
 }

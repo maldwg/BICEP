@@ -15,10 +15,10 @@ export class ConfigService {
     private http: HttpClient
   ) { }
 
-  
 
-// rewrite both to not use deserialized configuration 
-// thenj use these methods to 
+
+  // rewrite both to not use deserialized configuration 
+  // thenj use these methods to 
   getAllConfigurations(): Observable<Configuration[]> {
     let path = "/crud/configuration/all";
     return this.http.get<Configuration[]>(environment.backendUrl + path);
@@ -28,7 +28,7 @@ export class ConfigService {
     let path = "/crud/configuration/all/" + fileType;
     return this.http.get<Configuration[]>(environment.backendUrl + path);
     //.pipe(
-      //map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
+    //map(serializedConfigs => serializedConfigs.map(serializedConfig => this.deserializeConfiguration(serializedConfig)))
     //);
   }
 
@@ -39,32 +39,37 @@ export class ConfigService {
     );
   }
 
-// TODO add service point for deserialized get for each config
+  // TODO add service point for deserialized get for each config
 
-  getAllFileTypes(): Observable<string[]>{
+  getAllFileTypes(): Observable<string[]> {
     let path = "/crud/configuration/file-types";
-    return this.http.get<string[]>(environment.backendUrl+path);
+    return this.http.get<string[]>(environment.backendUrl + path);
   }
 
   removeConfiguration(id: number): Observable<HttpResponse<any>> {
     let path = "/crud/configuration/";
-    return this.http.delete<HttpResponse<any>>(environment.backendUrl+path+id, { observe: 'response' });
+    return this.http.delete<HttpResponse<any>>(environment.backendUrl + path + id, { observe: 'response' });
   }
 
-  addConfiguration(configuration: ConfigurationSetupData){
+  addConfiguration(configuration: ConfigurationSetupData) {
     let path = "/crud/configuration/add"
     const formData = new FormData();
     formData.append("name", configuration.name);
     formData.append("description", configuration.description);
     formData.append('configuration', configuration.configuration, configuration.configuration.name);
     formData.append("file_type", configuration.file_type);
-    return this.http.post(environment.backendUrl+path, formData, {
+    return this.http.post(environment.backendUrl + path, formData, {
       reportProgress: true,
       observe: "events"
     });
   }
 
 
+
+  getConfigurationServices(id: number): Observable<string[]> {
+    let path = `/crud/configuration/${id}/services`;
+    return this.http.get<string[]>(environment.backendUrl + path);
+  }
 
   deserializeConfiguration(serializedConfig: SerializedConfiguration): DeserializedConfiguration {
     return {

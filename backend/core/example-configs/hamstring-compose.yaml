@@ -1,0 +1,501 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.9.3
+    container_name: zookeeper
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+    volumes:
+      - zk-data:/var/lib/zookeeper/data
+      - zk-txn-logs:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s localhost:8080/commands | grep ruok"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka1
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    ports:
+      - "8097:8097"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19092"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://${HOST_IP}:8097
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:8097
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+    volumes:
+      - kafka-data1:/var/lib/kafka/data
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka2
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    ports:
+      - "8098:8098"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19093"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:19093,EXTERNAL://${HOST_IP}:8098
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19093,EXTERNAL://0.0.0.0:8098
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+    volumes:
+      - kafka-data2:/var/lib/kafka/data
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka3
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    ports:
+      - "8099:8099"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19094"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:19094,EXTERNAL://${HOST_IP}:8099
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19094,EXTERNAL://0.0.0.0:8099
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+    volumes:
+      - kafka-data3:/var/lib/kafka/data
+
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:24.3.12.75-alpine
+    container_name: clickhouse-server
+    volumes:
+      - ../../create_tables:/docker-entrypoint-initdb.d
+      - ch_data:/var/lib/clickhouse/
+      - ch_logs:/var/log/clickhouse-server/
+    networks:
+      - hamstring
+    restart: "unless-stopped"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 8123" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:11.2.2-security-01
+    container_name: grafana
+    networks:
+      - hamstring
+    restart: "unless-stopped"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../../grafana-provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ../../grafana-provisioning/dashboards/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ../../grafana-provisioning/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z localhost 3000" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9088:9090"
+    volumes:
+      - ../../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - hamstring
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    command: ["--kafka.server=kafka1:19092", "--kafka.server=kafka2:19093", "--kafka.server=kafka3:19094"]
+    networks:
+      - hamstring
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+
+  zeek1:
+    build:
+      context: ../../
+      dockerfile: docker/dockerfiles/Dockerfile.zeek
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    network_mode: host
+    volumes:
+      - ../../src:/opt/src
+      - ../../config.yaml:/opt/config.yaml
+      - ../data/test_pcaps/:/opt/static_files
+    environment:
+      - CONTAINER_NAME=zeek1
+
+  monitoring_agent-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.monitoring
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    networks:
+      - hamstring
+    environment:
+      - GROUP_ID=monitoring_agent
+    profiles: ["dev"]
+
+  monitoring_agent:
+    image: stefan96/hamstring-monitoring:v1.0.0
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    networks:
+      - hamstring
+    environment:
+      - GROUP_ID=monitoring_agent
+    profiles: ["prod"]
+
+  logserver-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.logserver
+    volumes:
+      - "${MOUNT_PATH:?MOUNT_PATH not set}:/opt/file.txt"
+      - ../../../config.yaml:/app/config.yaml
+    environment:
+      - GROUP_ID=log_storage
+    networks:
+      - hamstring
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  logserver:
+    image: stefan96/hamstring-logserver:v1.0.0
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    volumes:
+      - "${MOUNT_PATH:?MOUNT_PATH not set}:/opt/file.txt"
+      - ../../../config.yaml:/app/config.yaml
+    environment:
+      - GROUP_ID=log_storage
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  logcollector-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.logcollector
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    environment:
+      - GROUP_ID=log_collection
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  logcollector:
+    image: stefan96/hamstring-logcollector:v1.0.0
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    environment:
+      - GROUP_ID=log_collection
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  prefilter-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.prefilter
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+    environment:
+      - GROUP_ID=log_filtering
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  prefilter:
+    image: stefan96/hamstring-prefilter:v1.0.0
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+    environment:
+      - GROUP_ID=log_filtering
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  inspector-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.inspector
+      network: host
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512m
+        reservations:
+          cpus: '1'
+          memory: 256m
+    environment:
+      - GROUP_ID=data_inspection
+      - NUMBER_OF_INSTANCES=1
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  inspector:
+    image: stefan96/hamstring-inspector:v1.0.0
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512m
+        reservations:
+          cpus: '1'
+          memory: 256m
+    environment:
+      - GROUP_ID=data_inspection
+      - NUMBER_OF_INSTANCES=1
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  detector-dev:
+    build:
+      context: ../../..
+      dockerfile: docker/dockerfiles/Dockerfile.detector
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+    environment:
+      - GROUP_ID=data_analysis
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["dev"]
+
+  detector:
+    image: stefan96/hamstring-detector:v1.0.0
+    restart: "unless-stopped"
+    volumes:
+      - ../../../config.yaml:/app/config.yaml
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: 1
+    environment:
+      - GROUP_ID=data_analysis
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    profiles: ["prod"]
+
+networks:
+  hamstring:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.27.0.0/16
+          gateway: 172.27.0.1
+
+volumes:
+  ch_data:
+  ch_logs:
+  kafka-data1:
+  kafka-data2:
+  kafka-data3:
+  zk-data:
+  zk-txn-logs:

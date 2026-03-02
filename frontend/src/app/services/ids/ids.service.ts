@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IdsTool } from '../../models/ids';
+import { IdsTool, IdsToolCreateData, IdsToolUpdateData } from '../../models/ids';
 import { Container, ContainerSetupData, ContainerUpdateData } from '../../models/container';
 import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
@@ -16,49 +16,64 @@ export class IdsService {
     private http: HttpClient
   ) { }
 
-  
-  sendContainerSetupData(containerData: ContainerSetupData): Observable<HttpResponse<any>>{
+
+  sendContainerSetupData(containerData: ContainerSetupData): Observable<HttpResponse<any>> {
     let path = "/ids/setup";
-    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, containerData, { observe: 'response' });
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, containerData, { observe: 'response' });
   }
 
-  updateContainer(container: ContainerUpdateData): Observable<HttpResponse<any>>{
+  updateContainer(container: ContainerUpdateData): Observable<HttpResponse<any>> {
     let path = "/crud/container"
-    return this.http.patch<ContainerUpdateData>(environment.backendUrl+path, container, { observe: 'response' });
+    return this.http.patch<ContainerUpdateData>(environment.backendUrl + path, container, { observe: 'response' });
   }
 
   getAllIdsTools(): Observable<IdsTool[]> {
     let path = "/crud/ids-tool/all";
-    return this.http.get<IdsTool[]>(environment.backendUrl+path);
+    return this.http.get<IdsTool[]>(environment.backendUrl + path);
   }
 
-  getAllIdsContainer(): Observable<Container[]>{
+  getAllIdsContainer(): Observable<Container[]> {
     let path = "/crud/container/all"
-    return this.http.get<Container[]>(environment.backendUrl+path);
+    return this.http.get<Container[]>(environment.backendUrl + path);
   }
 
-  getAllNonEnsembledIdsContainer(): Observable<Container[]>{
+  getAllNonEnsembledIdsContainer(): Observable<Container[]> {
     let path = "/crud/container/without/ensemble"
-    return this.http.get<Container[]>(environment.backendUrl+path);
+    return this.http.get<Container[]>(environment.backendUrl + path);
   }
 
   removeContainerById(id: number) {
     let path = "/ids/remove/";
-    return this.http.delete(environment.backendUrl+path+id, { observe: 'response' });
+    return this.http.delete(environment.backendUrl + path + id, { observe: 'response' });
   }
 
-  start_static_analysis(staticAnalysisData: StaticAnalysisData) : Observable<HttpResponse<any>>{
+  start_static_analysis(staticAnalysisData: StaticAnalysisData): Observable<HttpResponse<any>> {
     let path = "/ids/analysis/static";
-    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, staticAnalysisData, { observe: 'response' });
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, staticAnalysisData, { observe: 'response' });
   }
 
-  start_network_analysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>>{
+  start_network_analysis(networkAnalysisData: NetworkAnalysisData): Observable<HttpResponse<any>> {
     let path = "/ids/analysis/network";
-    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, networkAnalysisData, { observe: 'response' });
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, networkAnalysisData, { observe: 'response' });
   }
 
-  stop_analysis(stopData: stop_analysisData): Observable<HttpResponse<any>>{
+  stop_analysis(stopData: stop_analysisData): Observable<HttpResponse<any>> {
     let path = "/ids/analysis/stop";
-    return this.http.post<HttpResponse<any>>(environment.backendUrl+path, stopData, { observe: 'response' });
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, stopData, { observe: 'response' });
+  }
+
+  addIdsTool(toolData: IdsToolCreateData): Observable<HttpResponse<any>> {
+    let path = "/crud/ids-tool/add";
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' });
+  }
+
+  updateIdsTool(toolData: IdsToolUpdateData): Observable<HttpResponse<any>> {
+    let path = "/crud/ids-tool";
+    return this.http.patch<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' });
+  }
+
+  deleteIdsTool(id: number): Observable<HttpResponse<any>> {
+    let path = "/crud/ids-tool/delete/";
+    return this.http.delete(environment.backendUrl + path + id, { observe: 'response' });
   }
 }

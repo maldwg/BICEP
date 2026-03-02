@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from app.routers.monitoring import get_monitoring_metrics, get_historical_metrics
-from app.models.ids_container import IdsContainer
+from app.models.ids_system import IdsSystem
 from app.utils import STATUS
 from datetime import datetime
 
@@ -13,7 +13,7 @@ def mock_db_session():
 
 @pytest.fixture
 def mock_active_container():
-    container = MagicMock(spec=IdsContainer)
+    container = MagicMock(spec=IdsSystem)
     container.id = 1
     container.name = "test-container"
     container.status = STATUS.ACTIVE.value

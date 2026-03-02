@@ -1,7 +1,7 @@
 FROM alpine:3.20.0
 
 RUN apk add --update py-pip
-RUN apk add python3 py-pip gcc py3-mysqlclient tshark python3-dev musl-dev linux-headers openssl
+RUN apk add python3 py-pip gcc py3-mysqlclient tshark python3-dev musl-dev linux-headers openssl docker docker-compose
 
 RUN mkdir /opt/app
 COPY ./requirements.txt /opt/app/requirements.txt
@@ -16,6 +16,10 @@ COPY ./example-configs/sample-data.pcap /opt/sample-data/dc22a2fd-b0a2-4bfa-9038
 RUN mkdir -p /opt/configuration_data/uuid1
 RUN mkdir -p /opt/configuration_data/uuid2
 RUN mkdir -p /opt/configuration_data/uuid3
+RUN mkdir -p /opt/configuration_data/uuid4
+RUN mkdir -p /opt/configuration_data/uuid5
+RUN mkdir -p /opt/configuration_data/uuid6
+
 RUN mkdir -p /opt/rulesets/uuid1
 RUN mkdir -p /opt/rulesets/uuid2
 RUN mkdir -p /opt/rulesets/uuid3
@@ -24,6 +28,9 @@ RUN mkdir -p /opt/rulesets/uuid4
 COPY ./example-configs/snort.lua /opt/configuration_data/uuid1/snort.lua
 COPY ./example-configs/suricata.yaml /opt/configuration_data/uuid2/suricata.yaml
 COPY ./example-configs/slips.yaml /opt/configuration_data/uuid3/slips.yaml
+COPY ./example-configs/wazuh-compose.yaml /opt/configuration_data/uuid4/wazuh-compose.yaml
+COPY ./example-configs/hamstring-compose.yaml /opt/configuration_data/uuid5/hamstring-compose.yaml
+COPY ./example-configs/minimal-compose.yaml /opt/configuration_data/uuid6/minimal-compose.yaml
 
 COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
 COPY ./example-configs/snort-all.rules /opt/rulesets/uuid2/snort-all.rules

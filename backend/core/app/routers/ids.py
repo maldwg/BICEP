@@ -2,13 +2,34 @@ import asyncio
 from http.client import HTTPResponse
 from app.models.benchmarking import BenchmarkingResultTransferObject
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
-from app.validation.models import AlertData, IdsContainerCreate, EnsembleCreate, NetworkAnalysisData, StaticAnalysisData, stop_analysisData, AnalysisFinishedData
-from app.models.ids_container import IdsContainer, get_container_by_id, update_container_status, get_all_container
+from app.validation.models import (
+    AlertData,
+    IdsContainerCreate,
+    EnsembleCreate,
+    NetworkAnalysisData,
+    StaticAnalysisData,
+    stop_analysisData,
+    AnalysisFinishedData,
+)
+from app.models.ids_system import (
+    IdsSystem,
+    get_container_by_id,
+    update_container_status,
+    get_all_container,
+)
 from app.models.configuration import Configuration, get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
-from app.utils import DOCKER_HOST_STATUS,create_response_error, create_response_message, find_free_port, STATUS, parse_response_for_triggered_analysis, calculate_evaluation_metrics_and_push
-import httpx 
-import json 
+from app.utils import (
+    DOCKER_HOST_STATUS,
+    create_response_error,
+    create_response_message,
+    find_free_port,
+    STATUS,
+    parse_response_for_triggered_analysis,
+    calculate_evaluation_metrics_and_push,
+)
+import httpx
+import json
 from fastapi.encoders import jsonable_encoder
 from app.loki import push_alerts_to_loki
 from app.bicep_utils.models.ids_base import Alert
@@ -21,38 +42,40 @@ import time
 
 
 from app.models.ensemble import get_ensemble_by_id
-router = APIRouter(
-    prefix="/ids"
-)
+
+router = APIRouter(prefix="/ids")
 
 
 @router.post("/setup")
 async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
     host = await get_host_by_id(db, data.host_system_id)
     if host.status == DOCKER_HOST_STATUS.UNAVAILABLE.value:
-        return JSONResponse({"message": "The specified host is unavailable, try another!"}, status_code=500)
+        return JSONResponse(
+            {"message": "The specified host is unavailable, try another!"},
+            status_code=500,
+        )
 
-    free_port=find_free_port()
+    free_port = find_free_port()
     if data.ruleset_id:
         ruleset_id = data.ruleset_id
     else:
         ruleset_id = None
-    ids_container = IdsContainer(
+    ids_system = IdsSystem(
         host_system_id=host.id,
         port=free_port,
         description=data.description,
         configuration_id=data.configuration_id,
         ids_tool_id=data.ids_tool_id,
         status=STATUS.ACTIVE.value,
-        ruleset_id=ruleset_id
-        )
-    await ids_container.setup(db)
+        ruleset_id=ruleset_id,
+    )
+    await ids_system.setup(db, cids_configurations=data.cids_configurations)
     return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db)):
-    container: IdsContainer = await get_container_by_id(db, container_id)
+    container: IdsSystem = await get_container_by_id(db, container_id)
     try:
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
@@ -62,67 +85,106 @@ async def remove_container(container_id: int, db=Depends(get_db)):
     await container.teardown(db)
     return Response(status_code=204)
 
+
 @router.post("/analysis/static")
-async def start_static_container_analysis(static_analysis_data: StaticAnalysisData, db=Depends(get_db)):
-    container: IdsContainer = await get_container_by_id(db, static_analysis_data.container_id)
+async def start_static_container_analysis(
+    static_analysis_data: StaticAnalysisData, db=Depends(get_db)
+):
+    container: IdsSystem = await get_container_by_id(
+        db, static_analysis_data.container_id
+    )
     LOGGER.debug(container.ensemble_ids)
     if container.ensemble_ids != []:
         LOGGER.debug("test")
-        return JSONResponse({"error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"}, status_code=500)
-    
-    if container.status != STATUS.IDLE.value:
-        return JSONResponse({"error": f"container with id {container.id} is not Idle!, aborting"}, status_code=500)
-    
-    if not await container.is_available():
-         return JSONResponse({"error": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
+        return JSONResponse(
+            {
+                "error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"
+            },
+            status_code=500,
+        )
 
+    if container.status != STATUS.IDLE.value:
+        return JSONResponse(
+            {"error": f"container with id {container.id} is not Idle!, aborting"},
+            status_code=500,
+        )
+
+    if not await container.is_available():
+        return JSONResponse(
+            {
+                "error": f"container with id {container.id} is not available! Check if it should be deleted"
+            },
+            status_code=500,
+        )
 
     dataset: Dataset = await get_dataset_by_id(db, static_analysis_data.dataset_id)
     await update_container_status(db, STATUS.ACTIVE.value, container)
-    form_data= {
-            "container_id": (None, str(container.id), "application/json"),
-            # "dataset": (dataset.name, data_file, "application/octet-stream"),
-            "dataset_id": (None, str(dataset.id), "application/json")
-        }    
+    form_data = {
+        "container_id": (None, str(container.id), "application/json"),
+        # "dataset": (dataset.name, data_file, "application/octet-stream"),
+        "dataset_id": (None, str(dataset.id), "application/json"),
+    }
     response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
-    response = await parse_response_for_triggered_analysis(response, container, "static")
+    response = await parse_response_for_triggered_analysis(
+        response, container, "static"
+    )
     # set container status to IDLE if request failed
-    if response.status_code != 200: 
+    if response.status_code != 200:
         await update_container_status(db, STATUS.IDLE.value, container)
 
     return response
 
+
 @router.post("/analysis/network")
-async def start_network_container_analysis(network_analysis_data: NetworkAnalysisData, db=Depends(get_db)):
-    container: IdsContainer = await get_container_by_id(db, network_analysis_data.container_id)
+async def start_network_container_analysis(
+    network_analysis_data: NetworkAnalysisData, db=Depends(get_db)
+):
+    container: IdsSystem = await get_container_by_id(
+        db, network_analysis_data.container_id
+    )
 
     if container.ensemble_ids != []:
-            return JSONResponse({"error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"}, status_code=500)
-        
+        return JSONResponse(
+            {
+                "error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"
+            },
+            status_code=500,
+        )
 
     if container.status != STATUS.IDLE.value:
-        return JSONResponse({"error": f"container with id {container.id} is not Idle!, aborting"}, status_code=500) 
-    
+        return JSONResponse(
+            {"error": f"container with id {container.id} is not Idle!, aborting"},
+            status_code=500,
+        )
 
     if not await container.is_available():
-         return JSONResponse({"error": f"container with id {container.id} is not available! Check if it should be deleted"}, status_code=500)
-
+        return JSONResponse(
+            {
+                "error": f"container with id {container.id} is not available! Check if it should be deleted"
+            },
+            status_code=500,
+        )
 
     data = json.dumps(network_analysis_data.__dict__)
     await update_container_status(db, STATUS.ACTIVE.value, container)
     response: HTTPResponse = await container.start_network_analysis(data)
     timestamp = datetime.now().isoformat()
-    LOGGER.info(f"Started network analysis for container{container.name} at {timestamp}")
-    response = await parse_response_for_triggered_analysis(response, container, "network")
+    LOGGER.info(
+        f"Started network analysis for container{container.name} at {timestamp}"
+    )
+    response = await parse_response_for_triggered_analysis(
+        response, container, "network"
+    )
     # set container status to IDLE if request failed
     if response.status_code != 200:
         await update_container_status(db, STATUS.IDLE.value, container)
-    
+
     return response
+
 
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
-    container: IdsContainer = await get_container_by_id(db, stop_data.container_id)
+    container: IdsSystem = await get_container_by_id(db, stop_data.container_id)
     # check if container is part of an ensemble to prevent stopping an ensemble container individually
     if container.ensemble_ids != []:
         for ensemble_ids_of_container in container.ensemble_ids:
@@ -141,16 +203,24 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
         message = f"Analysis for container {container.id} did not stop successfully"
         return create_response_error(message, 500)
 
+
 # Endpoint to receive notice when triggered analysis (static) has finished
 @router.post("/analysis/finished")
-async def finished_analysis(analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)):
+async def finished_analysis(
+    analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
+):
     container = await get_container_by_id(db, analysisFinishedData.container_id)
     await update_container_status(db, STATUS.IDLE.value, container)
-    return JSONResponse({"message": f"Successfully stopped analysis for container {container.name}"}, status_code=200)
+    return JSONResponse(
+        {"message": f"Successfully stopped analysis for container {container.name}"},
+        status_code=200,
+    )
 
 
 @router.post("/publish/alerts")
-async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: BackgroundTasks, db=Depends(get_db)):
+async def receive_alerts_from_ids(
+    alert_data: AlertData, background_tasks: BackgroundTasks, db=Depends(get_db)
+):
     container = await get_container_by_id(db, alert_data.container_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for container {container.name}")
@@ -165,18 +235,17 @@ async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: Backg
         dataset = await get_dataset_by_id(db, dataset_id=alert_data.dataset_id)
         labels["dataset"] = dataset.name
 
-    
     alerts = [
         Alert(
-            time=alert.time, 
-            destination_ip=alert.destination_ip, 
-            destination_port=alert.destination_port, 
-            source_ip=alert.source_ip, 
-            source_port=alert.source_port, 
-            severity=alert.severity, 
-            type=alert.type, 
-            message=alert.message
-            ) 
+            time=alert.time,
+            destination_ip=alert.destination_ip,
+            destination_port=alert.destination_port,
+            source_ip=alert.source_ip,
+            source_port=alert.source_port,
+            severity=alert.severity,
+            type=alert.type,
+            message=alert.message,
+        )
         for alert in alert_data.alerts
     ]
     LOGGER.debug(f"Created {len(alerts)} alerts")
@@ -189,19 +258,21 @@ async def receive_alerts_from_ids(alert_data: AlertData, background_tasks: Backg
         if container.ruleset_id:
             ruleset = await get_config_by_id(db, container.ruleset_id)
             ruleset_name = ruleset.name if ruleset else None
-        
+
         benchmarking_results = BenchmarkingResultTransferObject(
             alerts=alerts,
             dataset_id=alert_data.dataset_id,
             start_time=alert_data.start_time,
-            stop_time=alert_data.stop_time
+            stop_time=alert_data.stop_time,
         )
         background_tasks.add_task(
-            calculate_evaluation_metrics_and_push, 
-            db=db, 
+            calculate_evaluation_metrics_and_push,
+            db=db,
             benchmarking_results=benchmarking_results,
             container_name=container.name,
             configuration_name=configuration_name,
-            ruleset_name=ruleset_name
+            ruleset_name=ruleset_name,
         )
-    return JSONResponse({"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200)
+    return JSONResponse(
+        {"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200
+    )

@@ -77,7 +77,7 @@ models.ensemble\_technique module
 models.ids\_container module
 ----------------------------
 
-.. automodule:: models.ids_container
+.. automodule:: models.ids_component
    :members:
    :show-inheritance:
    :undoc-members:

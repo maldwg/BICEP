@@ -12,8 +12,8 @@ from app.models.ensemble_ids import (
     last_container_sending_logs,
 )
 from app.models.configuration import Configuration, get_config_by_id
-from app.models.ids_container import (
-    IdsContainer,
+from app.models.ids_system import (
+    IdsSystem,
     get_container_by_id,
     update_container_status,
 )
@@ -40,7 +40,7 @@ from app.models.ensemble import (
     remove_ensemble,
     update_ensemble_status,
 )
-from app.models.ids_container import IdsContainer
+from app.models.ids_system import IdsSystem
 from app.models.dataset import Dataset, get_dataset_by_id
 import httpx
 from app.utils import (
@@ -102,11 +102,11 @@ async def remove_ensemble_endpoint(ensemble_id: int, db=Depends(get_db)):
     ensemble: Ensemble = await get_ensemble_by_id(db, ensemble_id)
     ids_ensembles: list[EnsembleIds] = await get_all_ensemble_container(db)
     container_id_list = [
-        ids_ensemble.ids_container_id
+        ids_ensemble.ids_system_id
         for ids_ensemble in ids_ensembles
         if ids_ensemble.ensemble_id == ensemble_id
     ]
-    container_list: list[IdsContainer] = [
+    container_list: list[IdsSystem] = [
         await get_container_by_id(db=db, id=id) for id in container_id_list
     ]
     responses = []
@@ -131,7 +131,7 @@ async def start_static_ensemble_analysis(
     static_analysis_data: StaticAnalysisData, db=Depends(get_db)
 ):
     ensemble: Ensemble = await get_ensemble_by_id(db, static_analysis_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
     for container in containers:
         if container.status != STATUS.IDLE.value:
             message = f"container with id {container.id} is not Idle!, aborting"
@@ -165,7 +165,7 @@ async def start_network_ensemble_analysis(
     network_analysis_data: NetworkAnalysisData, db=Depends(get_db)
 ):
     ensemble: Ensemble = await get_ensemble_by_id(db, network_analysis_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
 
     for container in containers:
         if container.status != STATUS.IDLE.value:
@@ -200,7 +200,7 @@ async def start_network_ensemble_analysis(
 @router.post("/analysis/stop")
 async def stop_ensemble_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     ensemble: Ensemble = await get_ensemble_by_id(db, stop_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
 
     responses = []
 
@@ -228,7 +228,7 @@ async def stop_ensemble_analysis(stop_data: stop_analysisData, db=Depends(get_db
 async def finished_ensemble_analysis(
     analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
 ):
-    container: IdsContainer = await get_container_by_id(
+    container: IdsSystem = await get_container_by_id(
         db, analysisFinishedData.container_id
     )
     ensemble: Ensemble = await get_ensemble_by_id(db, analysisFinishedData.ensemble_id)
@@ -251,9 +251,7 @@ async def finished_ensemble_analysis(
 async def receive_alerts_from_ids_for_ensemble(
     alert_data: AlertData, backgroundtasks: BackgroundTasks, db=Depends(get_db)
 ):
-    container: IdsContainer = await get_container_by_id(
-        db=db, id=alert_data.container_id
-    )
+    container: IdsSystem = await get_container_by_id(db=db, id=alert_data.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")

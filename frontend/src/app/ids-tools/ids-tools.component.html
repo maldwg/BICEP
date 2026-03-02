@@ -1,0 +1,49 @@
+<app-alert-component></app-alert-component>
+<div class="component-header-div">
+    <button matButton class="new-config-button moving-hover-button" (click)="newTool()">Add New Tool</button>
+</div>
+
+<div class="expansion-panel-flexbox-container" style="justify-content: center;">
+    @for (tool of toolList; track tool) {
+    <div class="flexbox-item">
+        <mat-card class="mat-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <span class="mat-card-title-text">{{ tool.name }}</span>
+                </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="info-row">
+                    <strong>ID:</strong> <span>{{ tool.id }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Type:</strong> <span>{{ tool.ids_type }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Analysis:</strong> <span>{{ tool.analysis_method }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Requires Ruleset:</strong> <span>{{ tool.requires_ruleset ? 'Yes' : 'No' }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Image:</strong> <span>{{ tool.image_name }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Tag:</strong> <span>{{ tool.image_tag }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Deployment:</strong> <span>{{ getDeploymentLabel(tool.deployment_type) }}</span>
+                </div>
+            </mat-card-content>
+            <mat-card-actions>
+                <button class="edit-button" matFab (click)="editTool(tool)">
+                    <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button" matFab (click)="removeTool(tool)">
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </mat-card-actions>
+        </mat-card>
+    </div>
+    }
+</div>

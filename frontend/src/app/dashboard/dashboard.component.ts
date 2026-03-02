@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { Ensemble, EnsembleContainer, EnsembleTechnique, EnsembleUpdateData } from '../models/ensemble';
-import {MatExpansionModule} from '@angular/material/expansion';
+import { MatExpansionModule } from '@angular/material/expansion';
 import {
   MatDialog,
   MAT_DIALOG_DATA,
@@ -36,10 +36,10 @@ import { AlertComponent } from "../components/alert-component/alert-component.co
 import { repeat } from 'rxjs';
 
 @Component({
-    selector: 'app-dashboard',
-    imports: [MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
-    templateUrl: './dashboard.component.html',
-    styleUrl: './dashboard.component.scss'
+  selector: 'app-dashboard',
+  imports: [MatCardModule, CommonModule, MatButtonModule, MatExpansionModule, MatIconModule, AlertComponent],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -52,7 +52,7 @@ export class DashboardComponent implements OnInit {
   ensembleContainerList: EnsembleContainer[] = [];
   dockerHostList: DockerHostSystem[] = [];
 
-  constructor (
+  constructor(
     private idsService: IdsService,
     public idsDialog: MatDialog,
     public EnsembleDialog: MatDialog,
@@ -61,8 +61,8 @@ export class DashboardComponent implements OnInit {
     private configService: ConfigService,
     private datasetService: DatasetService,
     private hostService: DockerHostService
-    
-  ) {}
+
+  ) { }
 
   // TODO 5: do not allow analyssis if other container of ensemble is running, so if ensemble is not idle do not allow for executions!
 
@@ -78,48 +78,48 @@ export class DashboardComponent implements OnInit {
     this.getAllEnsembleContainer();
     this.getAllHosts();
   }
-  
-  getAllContainer(): void{
+
+  getAllContainer(): void {
     this.idsService.getAllIdsContainer()
       .pipe(
         repeat({
           delay: this.POLL_DELAY
         })
       )
-      .subscribe(data =>  {
+      .subscribe(data => {
         this.containerList = data
       });
   }
 
-  getAllConfigs(){
+  getAllConfigs() {
     this.configService.getAllConfigurations()
       .subscribe(data => {
         this.configList = data
       });
   }
 
-  getAllDatasets(){
+  getAllDatasets() {
     this.datasetService.getAllDatasets()
       .subscribe(data => {
         this.datasetList = data
       });
   }
 
-  getAllTechnqiues(){
+  getAllTechnqiues() {
     this.ensembleService.getAllTechnqiues()
       .subscribe(data => {
         this.ensembleTechniqueList = data
-      });   
+      });
   }
 
-  getAllIdsTools(){
+  getAllIdsTools() {
     this.idsService.getAllIdsTools()
       .subscribe(data => {
         this.idsToolList = data
       });
   }
 
-  getAllEnsembles(){
+  getAllEnsembles() {
     this.ensembleService.getAllEnsembles()
       .pipe(
         repeat({
@@ -131,8 +131,8 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  getAllEnsembleContainer(){
-    this.ensembleService.getEnsembleContainers()  
+  getAllEnsembleContainer() {
+    this.ensembleService.getEnsembleContainers()
       .pipe(
         repeat({
           delay: this.POLL_DELAY
@@ -144,7 +144,7 @@ export class DashboardComponent implements OnInit {
   }
 
   // TODO 10: if not status code 200 then popup with error code 
-  startAnalysis(container: Container){
+  startAnalysis(container: Container) {
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "35%",
       width: "80%",
@@ -154,34 +154,34 @@ export class DashboardComponent implements OnInit {
     })
     dialogRef.afterClosed().subscribe(res => {
       console.log(res)
-      if(res != null){
-        if(res.type === analysisTypes.static){
+      if (res != null) {
+        if (res.type === analysisTypes.static) {
           let staticAnalysisData: StaticAnalysisData = {
             container_id: container.id,
             dataset_id: res.dataset
           }
           this.idsService.start_static_analysis(staticAnalysisData)
             .subscribe(backendRes => {
-                container.status = statusTypes.active
-              },
+              container.status = statusTypes.active
+            },
               err => {
                 this.errorPopup.showError(err.error["error"], err.status);
-            })
+              })
         }
-        else if(res.type === analysisTypes.network){
+        else if (res.type === analysisTypes.network) {
           let networkAnalysisData: NetworkAnalysisData = {
             container_id: container.id
           }
-  
+
           // TODO 10: Refactor all endpoints like this to propagate backend errors/m,essages
           this.idsService.start_network_analysis(networkAnalysisData)
             .subscribe(backendRes => {
-                container.status = statusTypes.active
-              },
+              container.status = statusTypes.active
+            },
               err => {
                 this.errorPopup.showError(err.error["error"], err.status);
-            })
-        }  
+              })
+        }
       }
       else {
         console.log("User Canceled analysis start");
@@ -189,20 +189,20 @@ export class DashboardComponent implements OnInit {
     })
   }
 
-  getAllHosts(){
+  getAllHosts() {
     this.hostService.getAllHosts()
       .subscribe(hosts => {
-      this.dockerHostList = hosts.map(host => ({
-        id: host.id,
-        name: host.name,
-        host: host.host,
-        docker_port: host.docker_port
-      }));
-    });
+        this.dockerHostList = hosts.map(host => ({
+          id: host.id,
+          name: host.name,
+          host: host.host,
+          docker_port: host.docker_port
+        }));
+      });
   }
-  
 
-  stop_analysis(container: Container){
+
+  stop_analysis(container: Container) {
     let stopData: stop_analysisData = {
       container_id: container.id
     }
@@ -214,11 +214,11 @@ export class DashboardComponent implements OnInit {
         },
         err => {
           this.errorPopup.showError(err.error["error"], err.status);
-      })
+        })
   }
 
 
-  startEnsembleAnalysis(ensemble: Ensemble){
+  startEnsembleAnalysis(ensemble: Ensemble) {
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
       height: "35%",
       width: "80%",
@@ -227,33 +227,33 @@ export class DashboardComponent implements OnInit {
       }
     });
     dialogRef.afterClosed().subscribe(res => {
-      if(res != null){
-        if(res.type === analysisTypes.static){
+      if (res != null) {
+        if (res.type === analysisTypes.static) {
           let staticAnalysisData: StaticAnalysisData = {
             ensemble_id: ensemble.id,
             dataset_id: res.dataset
           }
           this.ensembleService.start_static_analysis(staticAnalysisData)
-            .subscribe( 
+            .subscribe(
               response => {
                 ensemble.status = statusTypes.active
               },
               err => {
                 this.errorPopup.showError(err.error["error"], err.status);
-            })
+              })
         }
-        else if(res.type === analysisTypes.network){
+        else if (res.type === analysisTypes.network) {
           let networkAnalysisData: NetworkAnalysisData = {
             ensemble_id: ensemble.id
           }
           this.ensembleService.start_network_analysis(networkAnalysisData)
             .subscribe(response => {
-                ensemble.status = statusTypes.active
-                // TODO 5: update status of each container
-              },
+              ensemble.status = statusTypes.active
+              // TODO 5: update status of each container
+            },
               err => {
                 this.errorPopup.showError(err.error["error"], err.status);
-            })
+              })
         }
       }
       else {
@@ -262,20 +262,20 @@ export class DashboardComponent implements OnInit {
     })
   }
 
-  stopEnsembleAnalysis(ensemble: Ensemble){
+  stopEnsembleAnalysis(ensemble: Ensemble) {
     let stopData: stop_analysisData = {
       ensemble_id: ensemble.id
     }
     this.ensembleService.stop_analysis(stopData)
-      .subscribe(res  => {
-          ensemble.status = statusTypes.idle
-          // TODO 5: update containers to dile again 
-        },
+      .subscribe(res => {
+        ensemble.status = statusTypes.idle
+        // TODO 5: update containers to dile again 
+      },
         err => {
           this.errorPopup.showError(err.error["error"], err.status);
-      })
+        })
   }
-  editEnsemble(ensemble: Ensemble){
+  editEnsemble(ensemble: Ensemble) {
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
       height: "50%",
       width: "50%",
@@ -290,8 +290,8 @@ export class DashboardComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(res => {
       // Ensure there is a reason to update
-      let previousContainerOfEnsemble = this.ensembleContainerList.filter(e_ids => e_ids.ensemble_id == ensemble.id).map(e_ids => e_ids.ids_container_id.toString())
-      if(res != null){
+      let previousContainerOfEnsemble = this.ensembleContainerList.filter(e_ids => e_ids.ensemble_id == ensemble.id).map(e_ids => e_ids.ids_system_id.toString())
+      if (res != null) {
         let ensembleUpdate: EnsembleUpdateData = {
           id: ensemble.id,
           name: res.name,
@@ -301,23 +301,23 @@ export class DashboardComponent implements OnInit {
         }
         this.ensembleService.updateEnsemble(ensembleUpdate)
           .subscribe(backendres => {
-              ensemble.status = statusTypes.idle
-              ensemble.name = ensembleUpdate.name;
-              ensemble.description = ensembleUpdate.description;
-              ensemble.technique_id = ensembleUpdate.technique_id;
-              // TODO 5: update containers to dile again 
-            },
+            ensemble.status = statusTypes.idle
+            ensemble.name = ensembleUpdate.name;
+            ensemble.description = ensembleUpdate.description;
+            ensemble.technique_id = ensembleUpdate.technique_id;
+            // TODO 5: update containers to dile again 
+          },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);
             })
-        
-        
+
+
         // location.reload();
-      } 
+      }
     })
   }
 
-  edit(container: Container){
+  edit(container: Container) {
     const dialogRef = this.idsDialog.open(IdsEditComponent, {
       height: "50%",
       width: "50%",
@@ -331,7 +331,7 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(res => {
       // Ensure there is at least one field that needs an update
-      if(res != null){
+      if (res != null) {
         let configId = parseInt(res.config);
         let rulesetId = parseInt(res.ruleset);
         let data: ContainerUpdateData = {
@@ -342,13 +342,13 @@ export class DashboardComponent implements OnInit {
         }
         this.idsService.updateContainer(data)
           .subscribe(backendres => {
-              container.description = res.description;
-              container.configuration_id = configId;
-              container.ruleset_id = rulesetId;
-            },
+            container.description = res.description;
+            container.configuration_id = configId;
+            container.ruleset_id = rulesetId;
+          },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);
-          })
+            })
 
 
         // TODO 0: update or refetch the ensembleContainers as well
@@ -357,25 +357,25 @@ export class DashboardComponent implements OnInit {
 
   }
 
-  removeEnsemble(ensembleToRemove: Ensemble){
+  removeEnsemble(ensembleToRemove: Ensemble) {
     this.ensembleService.removeEnsemble(ensembleToRemove)
       .subscribe(backendres => {
-          this.ensembleList = this.ensembleList.filter(ensemble => ensemble.id !== ensembleToRemove.id)
-        },
-        err =>  {
+        this.ensembleList = this.ensembleList.filter(ensemble => ensemble.id !== ensembleToRemove.id)
+      },
+        err => {
           this.errorPopup.showError(err.error["error"], err.status);
-      })
+        })
 
   }
 
-  remove(containerToRemove: Container){
+  remove(containerToRemove: Container) {
     this.idsService.removeContainerById(containerToRemove.id)
       .subscribe(backendres => {
-          this.containerList = this.containerList.filter(container => container !== containerToRemove);
-        },
+        this.containerList = this.containerList.filter(container => container !== containerToRemove);
+      },
         err => {
           this.errorPopup.showError(err.error["error"], err.status);
-      })
+        })
 
   }
 
@@ -392,78 +392,78 @@ export class DashboardComponent implements OnInit {
     return this.idsToolList.find(t => t.id == toolId)?.name;
   }
 
-  getEnsembleTechniqueName(techniqueId: number){
+  getEnsembleTechniqueName(techniqueId: number) {
     return this.ensembleTechniqueList.find(t => t.id == techniqueId)?.name;
   }
 
-  containerIsIdle(container: Container){
-    if(container.status !== statusTypes.idle){
+  containerIsIdle(container: Container) {
+    if (container.status !== statusTypes.idle) {
       return false;
     }
-    else{
+    else {
       return true;
     }
   }
 
 
-  containerIsActive(container: Container){
-    if(container.status !== statusTypes.active){
+  containerIsActive(container: Container) {
+    if (container.status !== statusTypes.active) {
       return false;
     }
-    else{
+    else {
       return true;
     }
   }
 
 
-  containerIsSettingUp(container: Container){
-    if(container.status !== statusTypes.setting_up){
+  containerIsSettingUp(container: Container) {
+    if (container.status !== statusTypes.setting_up) {
       return false;
     }
-    else{
+    else {
       return true;
     }
   }
 
-  ensembleIsIdle(ensemble: Ensemble){
-    if(ensemble.status !== statusTypes.idle){
+  ensembleIsIdle(ensemble: Ensemble) {
+    if (ensemble.status !== statusTypes.idle) {
       return false;
     }
-    else{
+    else {
       return true;
     }
   }
 
-  getEnsembleContainerFromEnsembleId(id: number){
+  getEnsembleContainerFromEnsembleId(id: number) {
     return this.ensembleContainerList.filter(e => e.ensemble_id == id);
   }
 
-  getEnsembleContainerNamesFromEnsembleId(id: number){
+  getEnsembleContainerNamesFromEnsembleId(id: number) {
     let ensembleContainer: EnsembleContainer[] = this.getEnsembleContainerFromEnsembleId(id);
-    let containerIds = ensembleContainer.map(e => e.ids_container_id);
+    let containerIds = ensembleContainer.map(e => e.ids_system_id);
     return this.containerList.filter(c => containerIds.includes(c.id)).map(c => c.name);
   }
 
-  checkEnsembleContainersAreIdleByEnsembleId(ensemble: Ensemble){
-    if(ensemble.status !== statusTypes.idle){
+  checkEnsembleContainersAreIdleByEnsembleId(ensemble: Ensemble) {
+    if (ensemble.status !== statusTypes.idle) {
       return true
     }
-    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensemble.id).map(c => c.ids_container_id);
+    let ensembleContainerIds: number[] = this.getEnsembleContainerFromEnsembleId(ensemble.id).map(c => c.ids_system_id);
     let containers: Container[] = this.containerList.filter(c => ensembleContainerIds.includes(c.id));
     let flag: boolean = true
     containers.forEach(container => {
-      if(container.status !== statusTypes.idle){
+      if (container.status !== statusTypes.idle) {
         flag = false;
       }
     });
     return flag;
   }
 
-  getHostName(id: number){
+  getHostName(id: number) {
     return this.dockerHostList.find(host => host.id == id)?.name;
   }
 
-  arrayEquals(a: Array<any>, b: Array<any>){
+  arrayEquals(a: Array<any>, b: Array<any>) {
     return Array.isArray(a) &&
       Array.isArray(b) &&
       a.length === b.length &&

@@ -1,0 +1,10 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.mat-success {
+    background-color: green;
+    color: #fff;
+}

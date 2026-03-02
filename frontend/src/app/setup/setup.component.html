@@ -1,99 +1,98 @@
 <app-alert-component></app-alert-component>
 <div class="component-header-div">
   @if (userChoice !== '') {
-    <div class="expansion-panel-flexbox-container-setup-choice">
-      <button matFab extended class="back-button" (click)="setUserChoice('')">
-        <mat-icon>arrow_back</mat-icon>
-        Back
-      </button>
-    </div>
+  <div class="expansion-panel-flexbox-container-setup-choice">
+    <button matFab extended class="back-button" (click)="setUserChoice('')">
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </button>
+  </div>
   }
   @if (userChoice === '') {
-    <div class="expansion-panel-flexbox-container-setup-choice">
-      <div class="flexbox-setup-choice-div">
-        <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ensemble')" matButton>
-          New Ensemble
-        </button>
-      </div>
-      <div class="flexbox-setup-choice-div">
-        <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ids')" matButton>
-          New IDS
-        </button>
-      </div>
+  <div class="expansion-panel-flexbox-container-setup-choice">
+    <div class="flexbox-setup-choice-div">
+      <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ensemble')" matButton>
+        New Ensemble
+      </button>
     </div>
+    <div class="flexbox-setup-choice-div">
+      <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ids')" matButton>
+        New IDS
+      </button>
+    </div>
+  </div>
   }
 </div>
 
 @if (userChoice === 'ensemble') {
-  <div class="form-dialog-container">
-    <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()">
-      <mat-card>
-        <mat-card-content>
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label>Name</mat-label>
-              <input matInput required [formControl]="ensembleForm.controls.name">
-            </mat-form-field>
-          </div>
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label>Technique</mat-label>
-              <mat-select [formControl]="ensembleForm.controls.technique" matTooltip="Select the method to weight the different IDS" required>
-                @for (t of ensembleTechniques; track t) {
-                  <mat-option value={{t.id}}>{{t.name}}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label>Available IDS Container</mat-label>
-              <mat-select  [formControl]="ensembleForm.controls.containers" matTooltip="Only Containers not in an ensemble are displayed" required multiple>
-                @for (c of containers; track c) {
-                  <mat-option value={{c.id}}>{{c.name}}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label>Description</mat-label>
-              <textarea matInput [formControl]="ensembleForm.controls.description" required></textarea>
-            </mat-form-field>
-          </div>
-        </mat-card-content>
-      </mat-card>
-      <div class="submit-button-div">
-        <button matFab extended type="submit" class="submit-button" >
-          Submit
-          <mat-icon>send</mat-icon>
-        </button>
-      </div>
-    </form>
-  </div>
+<div class="form-dialog-container">
+  <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()">
+    <mat-card>
+      <mat-card-content>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Name</mat-label>
+            <input matInput required [formControl]="ensembleForm.controls.name">
+          </mat-form-field>
+        </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Technique</mat-label>
+            <mat-select [formControl]="ensembleForm.controls.technique"
+              matTooltip="Select the method to weight the different IDS" required>
+              @for (t of ensembleTechniques; track t) {
+              <mat-option value={{t.id}}>{{t.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Available IDS Container</mat-label>
+            <mat-select [formControl]="ensembleForm.controls.containers"
+              matTooltip="Only Containers not in an ensemble are displayed" required multiple>
+              @for (c of containers; track c) {
+              <mat-option value={{c.id}}>{{c.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Description</mat-label>
+            <textarea matInput [formControl]="ensembleForm.controls.description" required></textarea>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <div class="submit-button-div">
+      <button matFab extended type="submit" class="submit-button">
+        Submit
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </form>
+</div>
 }
 
 @if (userChoice === 'ids') {
-  <div class="form-dialog-container">
-    <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
-      <mat-card class="form-mat-card">
-        <mat-card-content>
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label >Host System</mat-label>
-              <mat-select [formControl]="idsForm.controls.host" required>
-                @for (host of hostSystems; track host) {
-                  <mat-option
-                    [disabled]="host.status === hostStatus.unavailable"
-                    [ngClass]="{'unavailable-host': host.status === hostStatus.unavailable}"
-                    [value]="host.id"
-                    >
-                    <span>
-                      {{ host.name }} @if (host.status === hostStatus.unavailable) {
-                      - unavailable
-                    }
-                  </span>
-                </mat-option>
+<div class="form-dialog-container">
+  <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
+    <mat-card class="form-mat-card">
+      <mat-card-content>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Host System</mat-label>
+            <mat-select [formControl]="idsForm.controls.host" required>
+              @for (host of hostSystems; track host) {
+              <mat-option [disabled]="host.status === hostStatus.unavailable"
+                [ngClass]="{'unavailable-host': host.status === hostStatus.unavailable}" [value]="host.id">
+                <span>
+                  {{ host.name }} @if (host.status === hostStatus.unavailable) {
+                  - unavailable
+                  }
+                </span>
+              </mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -103,7 +102,7 @@
             <mat-label>IDS Tool</mat-label>
             <mat-select [formControl]="idsForm.controls.idsTool" required>
               @for (ids of idsTools; track ids) {
-                <mat-option value={{ids.id}}>{{ids.name}}</mat-option>
+              <mat-option value={{ids.id}}>{{ids.name}}</mat-option>
               }
             </mat-select>
           </mat-form-field>
@@ -111,24 +110,26 @@
         <div class="form-item">
           <mat-form-field class="form-field">
             <mat-label>Configuration</mat-label>
-            <mat-select [formControl]="idsForm.controls.config" matTooltip="The main configuration fie for the IDS" required>
+            <mat-select [formControl]="idsForm.controls.config" matTooltip="The main configuration fie for the IDS"
+              required>
               @for (c of idsConfigs; track c) {
-                <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+              <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
               }
             </mat-select>
           </mat-form-field>
         </div>
         @if (requiresRuleset) {
-          <div class="form-item">
-            <mat-form-field class="form-field">
-              <mat-label>Ruleset</mat-label>
-              <mat-select [formControl]="idsForm.controls.ruleset" matTooltip="The ruleset for subsequent analysis" required>
-                @for (rule of ruleSets; track rule) {
-                  <mat-option value={{rule.id}}>{{rule.name}}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Ruleset</mat-label>
+            <mat-select [formControl]="idsForm.controls.ruleset" matTooltip="The ruleset for subsequent analysis"
+              required>
+              @for (rule of ruleSets; track rule) {
+              <mat-option value={{rule.id}}>{{rule.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
         }
         <div class="form-item">
           <mat-form-field class="form-field">
@@ -138,12 +139,82 @@
         </div>
       </mat-card-content>
     </mat-card>
+
+    <!-- CIDS Configuration Section -->
+    @if (deploymentType === 'DOCKER_COMPOSE') {
+    <mat-card class="form-mat-card" style="margin-top: 20px;">
+      <mat-card-header>
+        <mat-card-title>CIDS Service Deployment</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Runtime Configuration</mat-label>
+            <mat-select [formControl]="cidsRuntimeConfigSelection">
+              @for (c of runtimeConfigs; track c) {
+              <mat-option [value]="c.id">ID: {{c.id}} - {{c.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Service</mat-label>
+            <mat-select [formControl]="cidsServiceSelection">
+              @for (svc of availableServices; track svc) {
+              <mat-option [value]="svc">{{svc}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-item">
+          <mat-form-field class="form-field">
+            <mat-label>Target Host</mat-label>
+            <mat-select [formControl]="cidsHostSelection">
+              @for (host of hostSystems; track host) {
+              <mat-option [value]="host.id"
+                [disabled]="host.status === hostStatus.unavailable">{{host.name}}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <!-- 
+          <div class="form-item">
+            <mat-form-field class="form-field">
+               <mat-label>Count</mat-label>
+               <input matInput type="number" [formControl]="cidsCountSelection" min="1">
+            </mat-form-field>
+          </div> 
+          -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+          <button mat-raised-button color="primary" type="button" (click)="addCidsConfiguration()">Add
+            Assignment</button>
+        </div>
+
+        <!-- List of Assignments -->
+        @if (cidsConfigurations.length > 0) {
+        <h3>Assignments</h3>
+        <div *ngFor="let config of cidsConfigurations; let i = index"
+          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+          <span>
+            <strong>{{config.service_name}}</strong> -> {{getHostName(config.host_system_id)}}
+            <!-- ({{config.count}}x) -->
+          </span>
+          <button mat-icon-button color="warn" type="button" (click)="removeCidsConfiguration(i)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+    }
+
     <div class="submit-button-div">
-        <button matFab extended type="submit" class="submit-button" >
-          Submit
-          <mat-icon>send</mat-icon>
-        </button>
-      </div>
+      <button matFab extended type="submit" class="submit-button">
+        Submit
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
   </form>
 </div>
 }

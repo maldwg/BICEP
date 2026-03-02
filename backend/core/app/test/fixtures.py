@@ -155,7 +155,7 @@ async def db_session_fixture():
     second_mock_ids_tool.id = (2,)
     second_mock_ids_tool.name = "Slips"
 
-    mock_ids_container = MagicMock(spec=IdsContainer)
+    mock_ids_container = MagicMock(spec=IdsSystem)
     mock_ids_container.id = 1
     mock_ids_container.status = STATUS.IDLE.value
     mock_ids_container.name = "container-0"
@@ -180,10 +180,10 @@ async def db_session_fixture():
     mock_ensemble_ids = MagicMock(spec=EnsembleIds)
     mock_ensemble_ids.id = 1
     mock_ensemble_ids.ensemble_id = 1
-    mock_ensemble_ids.ids_container_id = 3
+    mock_ensemble_ids.ids_system_id = 3
     mock_ensemble.technique_id = 1
 
-    mock_ids_container_in_ensemble = MagicMock(spec=IdsContainer)
+    mock_ids_container_in_ensemble = MagicMock(spec=IdsSystem)
     mock_ids_container_in_ensemble.id = 3
     mock_ids_container_in_ensemble.status = STATUS.IDLE.value
     mock_ids_container_in_ensemble.name = "container-3"
@@ -212,7 +212,7 @@ async def db_session_fixture():
                 mock_result.scalars.return_value.all.return_value = [
                     mock_docker_host_system
                 ]
-            elif model == IdsContainer:
+            elif model == IdsSystem:
                 mock_result.scalar_one_or_none.return_value = mock_ids_container
                 mock_result.scalars.return_value.all.return_value = [mock_ids_container]
             elif model == IdsTool:

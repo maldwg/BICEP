@@ -135,14 +135,14 @@ This methodresets the **send_alerts_periodically_task** variable, stops the task
 **Ensembling**
 
 Creating an ensemble is a straightforward process, since it is only a logical connection between existing IDS containers. The only requirement is that the containers are already set up. 
-A user can then combine as many containers as desired into an ensemble using the frontend. This action updates the database by adding entries to the **ensemble_ids_container** table. 
+A user can then combine as many containers as desired into an ensemble using the frontend. This action updates the database by adding entries to the **ensemble_ids** table. 
 Analyses in an ensemble work similarly to those for a single system, as the Core endpoint for an ensemble uses the same class methods as for a standalone system. 
 The backend loops over each container and executes the previously described methods for static or network analysis. The results are then handled differently, as explained in the following.
 
 **Static Analysis for Ensembles**
 
 In contrast to an analysis for a single system, the ensemble endpoint must handle multiple instances that send their results independently.
-Thus, when an ensemble initiates a static analysis, all entries in the **ensemble_ids_container** table for that ensemble are updated to the **PROCESSING** status. When an IDS result arrives, 
+Thus, when an ensemble initiates a static analysis, all entries in the **ensemble_ids** table for that ensemble are updated to the **PROCESSING** status. When an IDS result arrives, 
 the endpoint pushes the alerts, and then updates the database entry, setting the status to **IDLE**. This allows the endpoint to check whether the container that sent the alerts is the last one running. 
 If it is not the last, the endpoint continues to wait for the final container to send its results. 
 Once the final container completes its task, all alerts are retrieved from Loki. To identify the alerts of the other containers of the ensemble, 
@@ -155,9 +155,9 @@ Finally, the ensemble alerts and evaluation metrics are pushed to Loki and Prome
 The network analysis for an ensemble operates similarly to static analyses, with the primary difference being that each container sends its results periodically until the analysis is stopped by the user. 
 The round mechanism detailed for the static analysis is used here again. However, in the case of a network analysis, one round is not a whole analysis but rather one timeframe in that the containers are sending logs.
 Since the time window for each period and each container is identical, it is expected that each container sends its results with only a minor offset. 
-To handle these results, the status of the **ensemble_ids_container** table is updated to **LOGS_SENT** instead of **PROCESSING** once the logs from a container in a round have been published. 
+To handle these results, the status of the **ensemble_ids** table is updated to **LOGS_SENT** instead of **PROCESSING** once the logs from a container in a round have been published. 
 This status indicates that the IDS has completed its round and is analysing the next one. When the final container sends its alerts, 
 all previous alerts of the round are gathered from Loki and combined into ensemble alerts using the configured ensembling technique. The resulting alerts are then pushed to Loki again. 
-A new round begins by updating the status of all containers in the ensemble in the **ensemble_ids_container** table back to **PROCESSING** and generating a new UUID, 
+A new round begins by updating the status of all containers in the ensemble in the **ensemble_ids** table back to **PROCESSING** and generating a new UUID, 
 which is assigned as the value for the ensemble's **current_analysis_id**.
 

@@ -13,24 +13,25 @@ import { IdsTool } from '../../models/ids';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-    selector: 'app-ids-edit',
-    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule,MatIconModule],
-    templateUrl: './ids-edit.component.html',
-    styleUrl: './ids-edit.component.scss'
+  selector: 'app-ids-edit',
+  imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatCardModule, MatButtonModule, MatDialogModule, MatIconModule],
+  templateUrl: './ids-edit.component.html',
+  styleUrl: './ids-edit.component.scss'
 })
-export class IdsEditComponent implements OnInit{
+export class IdsEditComponent implements OnInit {
 
   selectedIdsTool: IdsTool = {
     id: 0,
     name: "",
     analysis_method: "",
-    idsType: "",
+    ids_type: 'host',
     requires_ruleset: false,
-    image_name: "",
-    image_tag: ""
-  }
+    image_name: '',
+    image_tag: '',
+    deployment_type: 'SINGLE_CONTAINER'
+  };
 
-  
+
   selectedRuleset: Configuration = {
     id: 0,
     file_path: "",
@@ -66,18 +67,18 @@ export class IdsEditComponent implements OnInit{
 
   constructor(
     public dialogRef: MatDialogRef<IdsEditComponent>,
-    @Inject (MAT_DIALOG_DATA) public data: {container: Container, configList: Configuration[], idsToolList: IdsTool[]},
-  ) {}
+    @Inject(MAT_DIALOG_DATA) public data: { container: Container, configList: Configuration[], idsToolList: IdsTool[] },
+  ) { }
 
 
-  exit(): void{
+  exit(): void {
     this.dialogRef.close(null);
   }
 
-  save(): void{
-    if(this.idsEdit.valid){
+  save(): void {
+    if (this.idsEdit.valid) {
       this.dialogRef.close(this.idsEdit.value);
-      
+
     }
   }
 

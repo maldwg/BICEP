@@ -10,8 +10,10 @@ CREATE TABLE IF NOT EXISTS ids_tool(
     analysis_method VARCHAR(64) NOT NULL,
     requires_ruleset BOOLEAN NOT NULL,
     image_name VARCHAR(128) NOT NULL,
-    image_tag VARCHAR(64) NOT NULL
+    image_tag VARCHAR(64) NOT NULL,
+    deployment_type VARCHAR(64) NOT NULL DEFAULT 'SINGLE_CONTAINER'
 );
+
 
 
 CREATE TABLE IF NOT EXISTS docker_host_system(
@@ -29,7 +31,8 @@ CREATE TABLE IF NOT EXISTS configuration(
     name VARCHAR(64) NOT NULL,
     file_path VARCHAR(1024) NOT NULL,
     file_type VARCHAR(32) NOT NULL,
-    description VARCHAR(2048) NOT NULL
+    description VARCHAR(2048) NOT NULL,
+    config_type VARCHAR(32) NOT NULL DEFAULT 'CONFIGURATION'
 );
 
 CREATE TABLE IF NOT EXISTS dataset_type(
@@ -63,7 +66,7 @@ CREATE TABLE IF NOT EXISTS ensemble_technique(
     function_name VARCHAR(128) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS ids_container (
+CREATE TABLE IF NOT EXISTS ids_system (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name varchar(64) NOT NULL,
     port INT NOT NULL,
@@ -73,11 +76,14 @@ CREATE TABLE IF NOT EXISTS ids_container (
     configuration_id INT NOT NULL,
     ids_tool_id INT NOT NULL,
     ruleset_id INT,
+    runtime_configuration_id INT,
+    type VARCHAR(32) NOT NULL DEFAULT 'NIDS',
 
     FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id),
     FOREIGN KEY (configuration_id) REFERENCES configuration(id),
     FOREIGN KEY (ids_tool_id) REFERENCES ids_tool(id),
-    FOREIGN KEY (ruleset_id) REFERENCES configuration(id)
+    FOREIGN KEY (ruleset_id) REFERENCES configuration(id),
+    FOREIGN KEY (runtime_configuration_id) REFERENCES configuration(id)
 
 );
 
@@ -97,11 +103,24 @@ CREATE TABLE IF NOT EXISTS ensemble(
 CREATE TABLE IF NOT EXISTS ensemble_ids(
     id INT AUTO_INCREMENT PRIMARY KEY,
     ensemble_id  INT NOT NULL,
-    ids_container_id INT NOT NULL,
+    ids_system_id INT NOT NULL,
     status VARCHAR(32),
 
     FOREIGN KEY (ensemble_id) REFERENCES ensemble(id),
-    FOREIGN KEY (ids_container_id) REFERENCES ids_container(id)
+    FOREIGN KEY (ids_system_id) REFERENCES ids_system(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS ids_component(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    container_id INT NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    role VARCHAR(32) NOT NULL,
+    host_system_id INT,
+    port INT,
+
+    FOREIGN KEY (container_id) REFERENCES ids_system(id),
+    FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id)
 );
 
 
@@ -137,25 +156,36 @@ CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (
 
 
 INSERT INTO dataset_type (name, description, function_prefix) VALUES ('Network Analysis Data', 'Network traffic data in form of PCAPs. The labels are in CSV file format', 'network_traffic_data');
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest');
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest');
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag) VALUES ('Snort', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-snort', 'latest');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest', 'SINGLE_CONTAINER');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest', 'SINGLE_CONTAINER');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type) VALUES ('Snort', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-snort', 'latest', 'SINGLE_CONTAINER');
+-- Sample CIDS Tool
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type) VALUES ('Wazuh', 'HIDS', 'Log-based', false, 'wazuh/wazuh', '4.7.2', 'DOCKER_COMPOSE');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type) VALUES ('Hamstring', 'CIDS', 'ML-based', false, 'hamstring/hamstring', 'latest', 'DOCKER_COMPOSE');
+
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 INSERT INTO docker_host_system (name, host, docker_port, status) VALUES ("Core-server", "localhost", 2375, "unavailable");
 INSERT INTO dataset (name, data_file_path, labels_file_path, description, ammount_benign, ammount_malicious, dataset_type_id, timestamp_precision) VALUES ('sample-data','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.pcap','/opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.csv','Sample data including 0,5% of all requests from the CICIDS Dataset',11367,2791, 1, 'minute');
 
 
 INSERT INTO configuration VALUES
-(1, 'suricata.yaml', '/opt/configuration_data/uuid2/suricata.yaml', 'configuration', 'default suricata configuartion');
+(1, 'suricata.yaml', '/opt/configuration_data/uuid2/suricata.yaml', 'configuration', 'default suricata configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(2, 'snort.lua', '/opt/configuration_data/uuid1/snort.lua', 'configuration', 'default snort configuartion');
+(2, 'snort.lua', '/opt/configuration_data/uuid1/snort.lua', 'configuration', 'default snort configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(3, 'slips.yaml', '/opt/configuration_data/uuid3/slips.yaml', 'configuration', 'default slips configuartion');
+(3, 'slips.yaml', '/opt/configuration_data/uuid3/slips.yaml', 'configuration', 'default slips configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(4, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'rule-set', 'default et/open rules');
+(4, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'rule-set', 'default et/open rules', 'RULESET');
 INSERT INTO configuration VALUES
-(5, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'rule-set', 'default snort community rules');
+(5, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'rule-set', 'default snort community rules', 'RULESET');
 INSERT INTO configuration VALUES
-(6, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'rule-set', 'All opensource suricata rules');
+(6, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'rule-set', 'All opensource suricata rules', 'RULESET');
 INSERT INTO configuration VALUES
-(7, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'rule-set', 'lightspd max detect + community rules');
+(7, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'rule-set', 'lightspd max detect + community rules', 'RULESET');
+-- Sample CIDS Config
+INSERT INTO configuration VALUES
+(8, 'wazuh-compose.yaml', '/opt/configuration_data/uuid4/wazuh-compose.yaml', 'configuration', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
+INSERT INTO configuration VALUES
+(9, 'hamstring-compose.yaml', '/opt/configuration_data/uuid5/hamstring-compose.yaml', 'configuration', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
+INSERT INTO configuration VALUES
+(10, 'minimal-compose.yaml', '/opt/configuration_data/uuid6/minimal-compose.yaml', 'configuration', 'Minimal Docker Compose Setup', 'DEPLOYMENT');

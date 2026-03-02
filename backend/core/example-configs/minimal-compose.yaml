@@ -1,0 +1,7 @@
+services:
+  s1:
+    image: busybox
+    command: "sleep 10000"
+  s2:
+    image: busybox
+    command: "sleep 10001"
