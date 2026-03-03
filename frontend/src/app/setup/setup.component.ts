@@ -115,6 +115,16 @@ export class SetupComponent implements OnInit {
       if (this.deploymentType === 'DOCKER_COMPOSE' && configId) {
         this.configService.getConfigurationServices(parseInt(configId)).subscribe(services => {
           this.availableServices = services;
+
+          // Auto-assign all services to the best available host (Core server preferred)
+          const defaultHostId = this.getDefaultHostId();
+          if (defaultHostId !== null) {
+            this.cidsConfigurations = services.map(svc => ({
+              host_system_id: defaultHostId,
+              service_name: svc,
+              count: 1
+            }));
+          }
         });
       }
     });
@@ -136,8 +146,28 @@ export class SetupComponent implements OnInit {
     this.cidsConfigurations.splice(index, 1);
   }
 
+  updateCidsHostAssignment(index: number, hostId: number): void {
+    this.cidsConfigurations[index].host_system_id = hostId;
+  }
+
   getHostName(id: number): string {
     return this.hostSystems.find(h => h.id === id)?.name || 'Unknown';
+  }
+
+  getDefaultHostId(): number | null {
+    // Prefer the "Core" host
+    const coreHost = this.hostSystems.find(h =>
+      h.name.toLowerCase().includes('core') && h.status !== hostStatus.unavailable
+    );
+    if (coreHost) return coreHost.id;
+
+    // Fall back to the host selected in the main form
+    const selectedHost = this.idsForm.controls.host.value;
+    if (selectedHost) return parseInt(selectedHost);
+
+    // Fall back to the first available host
+    const firstAvailable = this.hostSystems.find(h => h.status !== hostStatus.unavailable);
+    return firstAvailable ? firstAvailable.id : null;
   }
 
   onSubmit(): void {

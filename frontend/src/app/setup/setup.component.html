@@ -142,7 +142,7 @@
 
     <!-- CIDS Configuration Section -->
     @if (deploymentType === 'DOCKER_COMPOSE') {
-    <mat-card class="form-mat-card" style="margin-top: 20px;">
+    <mat-card class="form-mat-card cids-card">
       <mat-card-header>
         <mat-card-title>CIDS Service Deployment</mat-card-title>
       </mat-card-header>
@@ -157,53 +157,30 @@
             </mat-select>
           </mat-form-field>
         </div>
-        <div class="form-item">
-          <mat-form-field class="form-field">
-            <mat-label>Service</mat-label>
-            <mat-select [formControl]="cidsServiceSelection">
-              @for (svc of availableServices; track svc) {
-              <mat-option [value]="svc">{{svc}}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-        <div class="form-item">
-          <mat-form-field class="form-field">
-            <mat-label>Target Host</mat-label>
-            <mat-select [formControl]="cidsHostSelection">
-              @for (host of hostSystems; track host) {
-              <mat-option [value]="host.id"
-                [disabled]="host.status === hostStatus.unavailable">{{host.name}}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-        <!-- 
-          <div class="form-item">
-            <mat-form-field class="form-field">
-               <mat-label>Count</mat-label>
-               <input matInput type="number" [formControl]="cidsCountSelection" min="1">
-            </mat-form-field>
-          </div> 
-          -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-          <button mat-raised-button color="primary" type="button" (click)="addCidsConfiguration()">Add
-            Assignment</button>
-        </div>
-
-        <!-- List of Assignments -->
+        <!-- Service Assignments (auto-populated, editable inline) -->
         @if (cidsConfigurations.length > 0) {
-        <h3>Assignments</h3>
-        <div *ngFor="let config of cidsConfigurations; let i = index"
-          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
-          <span>
-            <strong>{{config.service_name}}</strong> -> {{getHostName(config.host_system_id)}}
-            <!-- ({{config.count}}x) -->
-          </span>
-          <button mat-icon-button color="warn" type="button" (click)="removeCidsConfiguration(i)">
+        <h3 class="cids-assignments-heading">Service Assignments</h3>
+        @for (config of cidsConfigurations; track config; let i = $index) {
+        <div class="cids-assignment-row">
+          <div class="cids-assignment-service">
+            <mat-icon class="cids-service-icon">dns</mat-icon>
+            <span class="cids-service-name">{{ config.service_name }}</span>
+          </div>
+          <mat-icon class="cids-arrow-icon">arrow_forward</mat-icon>
+          <mat-form-field class="cids-host-select">
+            <mat-label>Target Host</mat-label>
+            <mat-select [value]="config.host_system_id" (selectionChange)="updateCidsHostAssignment(i, $event.value)">
+              @for (host of hostSystems; track host) {
+              <mat-option [value]="host.id" [disabled]="host.status === hostStatus.unavailable">{{ host.name
+                }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button mat-icon-button type="button" class="delete-button" (click)="removeCidsConfiguration(i)">
             <mat-icon>delete</mat-icon>
           </button>
         </div>
+        }
         }
       </mat-card-content>
     </mat-card>

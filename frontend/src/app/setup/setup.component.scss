@@ -1,12 +1,13 @@
-.unavailable-host{
+.unavailable-host {
   color: gray;
   font-style: italic;
 }
+
 :host {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
 
 
 
@@ -17,14 +18,14 @@
   margin: auto;
   display: flex;
   justify-content: center;
-  
+
 }
 
 .custom-button {
   border-radius: 20px;
 }
 
-.expansion-panel-flexbox-container-setup-choice{
+.expansion-panel-flexbox-container-setup-choice {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -34,13 +35,14 @@
 
 }
 
-.flexbox-setup-choice-div{
+.flexbox-setup-choice-div {
   justify-content: center;
   text-align: center;
   padding: 1%;
   flex: 1 1 0px;
   margin: auto;
 }
+
 .flexbox-setup-choice-button {
   width: 300px;
   height: 300px;
@@ -53,4 +55,64 @@
   box-shadow: var(--mat-sys-level3) !important;
   border: none;
   background-color: rgb(255, 255, 255, 0.25);
+}
+
+// CIDS Assignment rows
+.cids-assignment-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.cids-assignment-service {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 40%;
+  min-width: 35%;
+}
+
+.cids-service-icon {
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+.cids-service-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+
+.cids-arrow-icon {
+  font-size: 24px;
+  color: rgba(76, 175, 80, 0.9);
+  flex-shrink: 0;
+}
+
+.cids-host-select {
+  flex: 1;
+  margin-top: 5%;
+  max-width: 100%;
+  min-width: 40%;
+}
+
+.cids-card {
+  margin-top: 5%;
+}
+
+.cids-assignments-heading {
+  margin-top: 3%;
+  margin-bottom: 3%;
 }
