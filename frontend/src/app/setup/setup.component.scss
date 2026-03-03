@@ -62,6 +62,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 1rem;
   padding: 8px 16px;
   margin-bottom: 8px;
   border-radius: 12px;
@@ -115,4 +116,14 @@
 .cids-assignments-heading {
   margin-top: 3%;
   margin-bottom: 3%;
+}
+
+.cids-add-row {
+  border-style: dashed;
+  margin-top: 2%;
+}
+
+.cids-add-service-select {
+  min-width: 7rem;
+  margin-top: 5%;
 }

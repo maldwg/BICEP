@@ -182,6 +182,31 @@
         </div>
         }
         }
+        <!-- Add new assignment row -->
+        <div class="cids-assignment-row cids-add-row">
+          <mat-icon class="cids-service-icon">add_circle_outline</mat-icon>
+          <mat-form-field class="cids-add-service-select">
+            <mat-label>Service</mat-label>
+            <mat-select [formControl]="cidsServiceSelection">
+              @for (svc of availableServices; track svc) {
+              <mat-option [value]="svc">{{ svc }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-icon class="cids-arrow-icon">arrow_forward</mat-icon>
+          <mat-form-field class="cids-host-select">
+            <mat-label>Host</mat-label>
+            <mat-select [formControl]="cidsHostSelection">
+              @for (host of hostSystems; track host) {
+              <mat-option [value]="host.id" [disabled]="host.status === hostStatus.unavailable">{{ host.name
+                }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button mat-icon-button type="button" class="start-button" (click)="addCidsConfiguration()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
       </mat-card-content>
     </mat-card>
     }
