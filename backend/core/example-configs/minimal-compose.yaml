@@ -2,6 +2,14 @@ services:
   s1:
     image: busybox
     command: "sleep 10000"
+    labels:
+      bicep.config.mount: /app/config.yaml
+    deploy:
+      mode: "replicated"
+      replicas: ${S1_SCALE:-1}
   s2:
     image: busybox
     command: "sleep 10001"
+    deploy:
+      mode: "replicated"
+      replicas: ${S2_SCALE:-1}

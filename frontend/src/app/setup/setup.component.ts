@@ -66,6 +66,11 @@ export class SetupComponent implements OnInit {
   availableServices: string[] = [];
   deploymentType = "SINGLE_CONTAINER";
 
+  // CIDS Environment Variables
+  cidsEnvVars: { key: string, value: string }[] = [];
+  envVarKeyControl = new FormControl('');
+  envVarValueControl = new FormControl('');
+
   // Runtime Configs available for selection
   runtimeConfigs: Configuration[] = [];
   deploymentConfigs: Configuration[] = [];
@@ -108,6 +113,13 @@ export class SetupComponent implements OnInit {
       // Reset CIDS state on tool change
       this.cidsConfigurations = [];
       this.availableServices = [];
+
+      // Auto-populate mandatory env vars from tool definition
+      this.cidsEnvVars = [];
+      if (this.selectedTool?.required_env_vars) {
+        const vars = this.selectedTool.required_env_vars.split(',').map(v => v.trim()).filter(v => v);
+        this.cidsEnvVars = vars.map(key => ({ key, value: '' }));
+      }
     });
 
     // Listen for config changes to fetch services if CIDS
@@ -150,8 +162,31 @@ export class SetupComponent implements OnInit {
     this.cidsConfigurations[index].host_system_id = hostId;
   }
 
+  updateCidsCount(index: number, event: Event): void {
+    const value = parseInt((event.target as HTMLInputElement).value) || 1;
+    this.cidsConfigurations[index].count = Math.max(1, value);
+  }
+
   getHostName(id: number): string {
     return this.hostSystems.find(h => h.id === id)?.name || 'Unknown';
+  }
+
+  addEnvVar(): void {
+    const key = this.envVarKeyControl.value?.trim();
+    const value = this.envVarValueControl.value?.trim();
+    if (key && value) {
+      this.cidsEnvVars.push({ key, value });
+      this.envVarKeyControl.reset();
+      this.envVarValueControl.reset();
+    }
+  }
+
+  removeEnvVar(index: number): void {
+    this.cidsEnvVars.splice(index, 1);
+  }
+
+  updateEnvVarValue(index: number, event: Event): void {
+    this.cidsEnvVars[index].value = (event.target as HTMLInputElement).value;
   }
 
   getDefaultHostId(): number | null {
@@ -179,7 +214,10 @@ export class SetupComponent implements OnInit {
         description: this.idsForm.value.description!,
         ruleset_id: this.idsForm.value.ruleset ? parseInt(this.idsForm.value.ruleset) : undefined,
         cids_configurations: this.cidsConfigurations,
-        runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined
+        runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined,
+        env_vars: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsEnvVars.length > 0
+          ? this.cidsEnvVars.reduce((acc, ev) => ({ ...acc, [ev.key]: ev.value }), {} as { [key: string]: string })
+          : undefined
       };
       this.idsService.sendContainerSetupData(containerData)
         .subscribe(res => console.log(res),
@@ -248,7 +286,8 @@ export class SetupComponent implements OnInit {
           requires_ruleset: tool.requires_ruleset,
           image_name: tool.image_name,
           image_tag: tool.image_tag,
-          deployment_type: tool.deployment_type
+          deployment_type: tool.deployment_type,
+          required_env_vars: tool.required_env_vars || ''
         }));
       });
   }

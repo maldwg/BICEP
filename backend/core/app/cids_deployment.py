@@ -21,6 +21,7 @@ async def start_cids_deployment(
     db_session,
     cids_configurations=None,
     runtime_config=None,
+    env_vars=None,
 ):
     """
     Deploys a CIDS using Docker Compose or NixOS based on the tool's deployment type.
@@ -34,6 +35,7 @@ async def start_cids_deployment(
             db_session,
             cids_configurations,
             runtime_config,
+            env_vars=env_vars,
         )
     elif ids_tool.deployment_type == "NIXOS":
         await deploy_nixos(ids_container, ids_tool, config, ruleset, db_session)
@@ -49,6 +51,7 @@ async def deploy_docker_compose(
     db_session,
     cids_configurations,
     runtime_config=None,
+    env_vars=None,
 ):
 
     # Group services by host
@@ -82,9 +85,13 @@ async def deploy_docker_compose(
 
         for svc in services:
             if svc.service_name in compose_data["services"]:
-                host_compose_data["services"][svc.service_name] = compose_data[
-                    "services"
-                ][svc.service_name]
+                svc_data = compose_data["services"][svc.service_name].copy()
+                # Remove profiles — BICEP explicitly selects services to deploy
+                svc_data.pop("profiles", None)
+                # Remove container_name — let Docker Compose use project-name prefix
+                # to avoid conflicts when multiple CIDS use the same compose file
+                svc_data.pop("container_name", None)
+                host_compose_data["services"][svc.service_name] = svc_data
 
         if not host_compose_data["services"]:
             continue
@@ -94,14 +101,49 @@ async def deploy_docker_compose(
         work_dir = f"/tmp/bicep_cids_{ids_container.id}_{host_name_safe}"
         os.makedirs(work_dir, exist_ok=True)
 
-        # >TODO: why writing ?? Just use the already written stuff!
+        # Inject config mount for services with bicep.config.mount label
+        config_written = False
+        for svc_name, svc_data in host_compose_data["services"].items():
+            labels = svc_data.get("labels", {})
+            # Labels can be a list ["key=value"] or dict {"key": "value"}
+            mount_path = None
+            if isinstance(labels, dict):
+                mount_path = labels.get("bicep.config.mount")
+            elif isinstance(labels, list):
+                for label in labels:
+                    if label.startswith("bicep.config.mount="):
+                        mount_path = label.split("=", 1)[1]
+                        break
+
+            if mount_path:
+                # Write the selected config file to work_dir (once)
+                if not config_written:
+                    config_file_content = config_content
+                    if isinstance(config_file_content, str):
+                        config_file_content = config_file_content.encode("utf-8")
+                    config_local_path = os.path.join(work_dir, "bicep_config")
+                    with open(config_local_path, "wb") as f:
+                        f.write(config_file_content)
+                    config_written = True
+
+                # Add volume mount: ./bicep_config:/container/path
+                volume_entry = f"./bicep_config:{mount_path}"
+                if "volumes" not in svc_data:
+                    svc_data["volumes"] = []
+                # Remove any existing mount to the same container path
+                svc_data["volumes"] = [
+                    v
+                    for v in svc_data["volumes"]
+                    if not (isinstance(v, str) and v.endswith(f":{mount_path}"))
+                ]
+                svc_data["volumes"].append(volume_entry)
+
+                LOGGER.info(f"Mounting config into {svc_name} at {mount_path}")
 
         # Write partial docker-compose.yaml
         compose_file_path = os.path.join(work_dir, "docker-compose.yaml")
         with open(compose_file_path, "w") as f:
             yaml.dump(host_compose_data, f)
-
-
 
         # Write Ruleset if available
         if ruleset:
@@ -124,7 +166,7 @@ async def deploy_docker_compose(
         # Determine Docker Host Connection
         host_ip, docker_port = host_system.get_host_and_docker_port()
         docker_host_url = f"tcp://{host_ip}:{docker_port}"
-        
+
         try:
             client = DockerClient(
                 host=docker_host_url,
@@ -139,12 +181,23 @@ async def deploy_docker_compose(
             # Env variables
             env = os.environ.copy()
             env["CORE_URL"] = get_core_url()
+            # Merge user-provided environment variables
+            if env_vars:
+                env.update(env_vars)
+            os.environ.update(env)
+
+            # Build scale configuration from service counts
+            scales = {}
+            for svc in services:
+                count = getattr(svc, "count", 1) or 1
+                if count > 1:
+                    scales[svc.service_name] = count
 
             # Up
             # python-on-whales up runs synchronously (or blocking), but we are in async function.
             # Ideally we run this in executor to avoid blocking event loop.
             def run_compose_up():
-                client.compose.up(detach=True, quiet=False)
+                client.compose.up(detach=True, quiet=False, scales=scales)
 
             await asyncio.to_thread(run_compose_up)
 
@@ -180,6 +233,12 @@ async def deploy_docker_compose(
 
         except DockerException as e:
             LOGGER.error(f"Docker Compose failed on {host_system.name}: {e}")
+            # Log the generated compose file for debugging
+            try:
+                with open(compose_file_path, "r") as f:
+                    LOGGER.debug(f"Generated compose file:\n{f.read()}")
+            except Exception:
+                pass
             raise Exception(f"Docker Compose failed on {host_system.name}: {e}")
 
     await db_session.commit()

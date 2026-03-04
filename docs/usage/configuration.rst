@@ -34,3 +34,81 @@ Host Configurations
 If you want to add an IDS you might need adaptations to the host for your system to work properly.
 As of now, we do not intend to support a feature where you can make adaptations to the host machines
 via BICEP. If you desire such a functionality, feel free to open an issiue!
+
+
+.. _cids_scaling:
+
+CIDS Service Scaling
+---------------------
+When deploying a CIDS via Docker Compose, BICEP supports scaling individual services
+by specifying a replica count per service in the setup UI.
+
+**Docker Compose Convention**
+
+Scalable services should use the ``deploy.replicas`` directive with an environment
+variable that defaults to ``1``:
+
+.. code-block:: yaml
+
+    services:
+      my-sensor:
+        image: my-ids/sensor:latest
+        deploy:
+          mode: "replicated"
+          replicas: ${MY_SENSOR_SCALE:-1}
+
+The variable naming convention is ``${SERVICE_NAME_SCALE:-1}`` where
+``SERVICE_NAME`` is the service name in uppercase with hyphens replaced by
+underscores.
+
+**How It Works**
+
+When deploying, BICEP collects the replica count for each service from the
+assignment table and passes them as ``--scale service=N`` flags to
+``docker compose up``. Services with a count of 1 use the default and are
+not explicitly scaled.
+
+.. note::
+   The ``container_name`` directive must be removed from services that should
+   be scalable, as Docker does not allow multiple containers with the same name.
+
+
+.. _cids_config_injection:
+
+CIDS Configuration Injection
+------------------------------
+Unlike NIDS/HIDS deployments where configuration files are injected into a running
+container, CIDS services receive their configuration as a **volume mount at startup**.
+
+**Docker Compose Convention**
+
+Services that require the user-selected configuration file must declare a
+``bicep.config.mount`` label specifying the container path where the config
+should be mounted:
+
+.. code-block:: yaml
+
+    services:
+      my-processor:
+        image: my-ids/processor:latest
+        labels:
+          bicep.config.mount: /app/config.yaml
+
+When BICEP deploys the CIDS, it:
+
+1. Writes the user-selected configuration file to the deployment working directory
+2. Scans all services for the ``bicep.config.mount`` label
+3. Adds a volume mount (``./bicep_config:/app/config.yaml``) to each labelled service
+4. Any existing volume mount targeting the same container path is automatically replaced
+
+.. note::
+   Do **not** include a hardcoded volume mount for the config file in your compose
+   file. Use only the label — BICEP handles the mount automatically.
+
+**Environment Variables**
+
+Required environment variables for a CIDS can be defined per IDS tool in BICEP
+(comma-separated in the ``required_env_vars`` field). These are displayed to the
+user during setup and must be filled in before deployment. Users may also add
+custom variables. All variables are injected into ``docker compose up`` via the
+process environment.

@@ -16,6 +16,7 @@ class IdsTool(Base):
     image_name = Column(String(128), nullable=False)
     image_tag = Column(String(64), nullable=False)
     deployment_type = Column(String(64), nullable=False, default="SINGLE_CONTAINER")
+    required_env_vars = Column(String(512), nullable=True, default="")
 
     container = relationship("IdsSystem", lazy="selectin")
 

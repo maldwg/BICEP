@@ -57,7 +57,8 @@ export class IdsToolsComponent implements OnInit {
                     requires_ruleset: result.requires_ruleset,
                     image_name: result.image_name,
                     image_tag: result.image_tag,
-                    deployment_type: result.deployment_type
+                    deployment_type: result.deployment_type,
+                    required_env_vars: result.required_env_vars || ''
                 };
                 this.idsService.addIdsTool(toolData).subscribe(
                     res => {
@@ -89,7 +90,8 @@ export class IdsToolsComponent implements OnInit {
                     requires_ruleset: result.requires_ruleset,
                     image_name: result.image_name,
                     image_tag: result.image_tag,
-                    deployment_type: result.deployment_type
+                    deployment_type: result.deployment_type,
+                    required_env_vars: result.required_env_vars || ''
                 };
                 this.idsService.updateIdsTool(toolData).subscribe(
                     res => {

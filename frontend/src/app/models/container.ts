@@ -24,7 +24,8 @@ export interface ContainerSetupData {
     ruleset_id?: number,
     cids_configurations?: CidsServiceConfig[],
     runtime_configuration_id?: number,
-    type?: string  // NIDS, HIDS, CIDS - defaults to NIDS
+    type?: string,  // NIDS, HIDS, CIDS - defaults to NIDS
+    env_vars?: { [key: string]: string }
 }
 
 export interface CidsServiceConfig {

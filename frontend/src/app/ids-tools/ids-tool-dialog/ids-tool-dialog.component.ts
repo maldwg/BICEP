@@ -36,6 +36,7 @@ export class IdsToolDialogComponent {
     imageNameControl: FormControl;
     imageTagControl: FormControl;
     deploymentTypeControl: FormControl;
+    requiredEnvVarsControl: FormControl;
 
     toolForm: FormGroup;
 
@@ -56,6 +57,7 @@ export class IdsToolDialogComponent {
         this.imageNameControl = new FormControl(this.isEditMode ? data.tool!.image_name : '');
         this.imageTagControl = new FormControl(this.isEditMode ? data.tool!.image_tag : 'latest');
         this.deploymentTypeControl = new FormControl(this.isEditMode ? data.tool!.deployment_type : 'SINGLE_CONTAINER');
+        this.requiredEnvVarsControl = new FormControl(this.isEditMode ? data.tool!.required_env_vars : '');
 
         this.toolForm = new FormGroup({
             name: this.nameControl,
@@ -65,6 +67,7 @@ export class IdsToolDialogComponent {
             image_name: this.imageNameControl,
             image_tag: this.imageTagControl,
             deployment_type: this.deploymentTypeControl,
+            required_env_vars: this.requiredEnvVarsControl,
         });
     }
 

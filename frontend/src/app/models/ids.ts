@@ -6,7 +6,8 @@ export interface IdsTool {
     requires_ruleset: boolean,
     image_name: string,
     image_tag: string,
-    deployment_type: string
+    deployment_type: string,
+    required_env_vars: string  // comma-separated list of mandatory env var names
 }
 
 export interface IdsToolCreateData {
@@ -16,7 +17,8 @@ export interface IdsToolCreateData {
     requires_ruleset: boolean,
     image_name: string,
     image_tag: string,
-    deployment_type: string
+    deployment_type: string,
+    required_env_vars: string
 }
 
 export interface IdsToolUpdateData {
@@ -27,5 +29,6 @@ export interface IdsToolUpdateData {
     requires_ruleset: boolean,
     image_name: string,
     image_tag: string,
-    deployment_type: string
+    deployment_type: string,
+    required_env_vars: string
 }

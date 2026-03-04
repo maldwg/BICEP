@@ -21,6 +21,7 @@ class IdsContainerCreate(BaseModel):
     ids_tool_id: int
     ruleset_id: Optional[int] = None
     cids_configurations: Optional[list[CidsServiceConfig]] = []
+    env_vars: Optional[dict[str, str]] = {}
 
 
 class IdsContainerUpdate(BaseModel):
@@ -120,6 +121,7 @@ class IdsToolCreate(BaseModel):
     image_name: str
     image_tag: str
     deployment_type: str = "SINGLE_CONTAINER"
+    required_env_vars: Optional[str] = ""
 
 
 class IdsToolUpdate(BaseModel):
@@ -131,3 +133,4 @@ class IdsToolUpdate(BaseModel):
     image_name: str
     image_tag: str
     deployment_type: str
+    required_env_vars: Optional[str] = ""

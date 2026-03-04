@@ -176,6 +176,10 @@
               }
             </mat-select>
           </mat-form-field>
+          <mat-form-field class="cids-replicas-input">
+            <mat-label>×</mat-label>
+            <input matInput type="number" min="1" [value]="config.count" (change)="updateCidsCount(i, $event)">
+          </mat-form-field>
           <button mat-icon-button type="button" class="delete-button" (click)="removeCidsConfiguration(i)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -203,7 +207,42 @@
               }
             </mat-select>
           </mat-form-field>
+          <mat-form-field class="cids-replicas-input">
+            <mat-label>×</mat-label>
+            <input matInput type="number" min="1" [formControl]="cidsCountSelection">
+          </mat-form-field>
           <button mat-icon-button type="button" class="start-button" (click)="addCidsConfiguration()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+
+        <!-- Environment Variables Section -->
+        <h3 class="cids-assignments-heading">Environment Variables</h3>
+        @for (env of cidsEnvVars; track env; let i = $index) {
+        <div class="cids-assignment-row">
+          <span class="cids-env-key">{{ env.key }}</span>
+          <span class="cids-env-equals">=</span>
+          <mat-form-field class="cids-env-field">
+            <mat-label>Value</mat-label>
+            <input matInput [value]="env.value" (input)="updateEnvVarValue(i, $event)" placeholder="Enter value...">
+          </mat-form-field>
+          <button mat-icon-button type="button" class="delete-button" (click)="removeEnvVar(i)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        }
+        <div class="cids-assignment-row cids-add-row">
+          <mat-icon class="cids-service-icon">settings</mat-icon>
+          <mat-form-field class="cids-env-field">
+            <mat-label>Key</mat-label>
+            <input matInput [formControl]="envVarKeyControl" placeholder="e.g. HOST_IP">
+          </mat-form-field>
+          <span class="cids-env-equals">=</span>
+          <mat-form-field class="cids-env-field">
+            <mat-label>Value</mat-label>
+            <input matInput [formControl]="envVarValueControl" placeholder="e.g. 192.168.1.1">
+          </mat-form-field>
+          <button mat-icon-button type="button" class="start-button" (click)="addEnvVar()">
             <mat-icon>add</mat-icon>
           </button>
         </div>

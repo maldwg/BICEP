@@ -225,8 +225,16 @@ class CidsSystem(IdsSystem):
 
         cids_configurations = kwargs.get("cids_configurations")
         runtime_config = kwargs.get("runtime_config")
+        env_vars = kwargs.get("env_vars", {})
         await start_cids_deployment(
-            self, ids_tool, config, ruleset, db, cids_configurations, runtime_config
+            self,
+            ids_tool,
+            config,
+            ruleset,
+            db,
+            cids_configurations,
+            runtime_config,
+            env_vars=env_vars,
         )
 
     async def teardown(self, db: AsyncSession):

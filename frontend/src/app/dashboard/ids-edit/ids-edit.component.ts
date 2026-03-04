@@ -28,7 +28,8 @@ export class IdsEditComponent implements OnInit {
     requires_ruleset: false,
     image_name: '',
     image_tag: '',
-    deployment_type: 'SINGLE_CONTAINER'
+    deployment_type: 'SINGLE_CONTAINER',
+    required_env_vars: ''
   };
 
 

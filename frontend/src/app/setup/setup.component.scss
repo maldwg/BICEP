@@ -57,6 +57,30 @@
   background-color: rgb(255, 255, 255, 0.25);
 }
 
+
+.cids-card {
+  max-width: 100rem;
+  max-height: 100rem;
+  height: 100%;
+  width: 100%;
+  min-height: 25rem;
+  min-width: 25rem;
+
+}
+
+
+.ng-touched,
+.ng-dirty,
+.ng-invalid {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  ;
+
+
+}
+
 // CIDS Assignment rows
 .cids-assignment-row {
   display: flex;
@@ -125,5 +149,36 @@
 
 .cids-add-service-select {
   min-width: 7rem;
+  margin-top: 5%;
+}
+
+.cids-replicas-input {
+  max-width: 70px;
+  margin-top: 5%;
+  text-align: center;
+}
+
+.cids-env-key {
+  font-weight: 600;
+  font-family: monospace;
+  font-size: 0.95rem;
+  min-width: 100px;
+}
+
+.cids-env-equals {
+  font-weight: 700;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  padding: 0 4px;
+}
+
+.cids-env-value {
+  font-family: monospace;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.cids-env-field {
+  flex: 1;
   margin-top: 5%;
 }

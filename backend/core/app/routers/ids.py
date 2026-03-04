@@ -55,21 +55,45 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
             status_code=500,
         )
 
+    # Look up the tool to determine the correct IDS system subclass
+    from app.models.ids_tool import get_ids_by_id
+
+    ids_tool = await get_ids_by_id(db, data.ids_tool_id)
+    if not ids_tool:
+        return JSONResponse(
+            {"message": "IDS Tool not found"},
+            status_code=404,
+        )
+
     free_port = find_free_port()
-    if data.ruleset_id:
-        ruleset_id = data.ruleset_id
+    ruleset_id = data.ruleset_id if data.ruleset_id else None
+
+    # Create the correct subclass based on deployment type
+    if ids_tool.deployment_type == "DOCKER_COMPOSE":
+        from app.models.ids_system import CidsSystem
+
+        ids_system = CidsSystem(
+            host_system_id=host.id,
+            port=free_port,
+            description=data.description,
+            configuration_id=data.configuration_id,
+            ids_tool_id=data.ids_tool_id,
+            status=STATUS.ACTIVE.value,
+            ruleset_id=ruleset_id,
+        )
     else:
-        ruleset_id = None
-    ids_system = IdsSystem(
-        host_system_id=host.id,
-        port=free_port,
-        description=data.description,
-        configuration_id=data.configuration_id,
-        ids_tool_id=data.ids_tool_id,
-        status=STATUS.ACTIVE.value,
-        ruleset_id=ruleset_id,
+        ids_system = IdsSystem(
+            host_system_id=host.id,
+            port=free_port,
+            description=data.description,
+            configuration_id=data.configuration_id,
+            ids_tool_id=data.ids_tool_id,
+            status=STATUS.ACTIVE.value,
+            ruleset_id=ruleset_id,
+        )
+    await ids_system.setup(
+        db, cids_configurations=data.cids_configurations, env_vars=data.env_vars
     )
-    await ids_system.setup(db, cids_configurations=data.cids_configurations)
     return JSONResponse(content={"message": "setup done"}, status_code=200)
 
 

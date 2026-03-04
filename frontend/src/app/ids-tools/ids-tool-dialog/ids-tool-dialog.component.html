@@ -55,6 +55,13 @@
                     </mat-select>
                 </mat-form-field>
             </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Required Env Vars</mat-label>
+                    <input matInput [formControl]="requiredEnvVarsControl" placeholder="e.g. HOST_IP,MOUNT_PATH">
+                    <mat-hint>Comma-separated list of mandatory environment variable names</mat-hint>
+                </mat-form-field>
+            </div>
         </form>
     </mat-dialog-content>
     <mat-dialog-actions>
