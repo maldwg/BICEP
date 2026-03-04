@@ -176,17 +176,20 @@ INSERT INTO configuration VALUES
 INSERT INTO configuration VALUES
 (3, 'slips.yaml', '/opt/configuration_data/uuid3/slips.yaml', 'configuration', 'default slips configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(4, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'rule-set', 'default et/open rules', 'RULESET');
+(4, 'hamstring_config.yaml', '/opt/configuration_data/uuid7/hamstring_config.yaml', 'configuration', 'default hamstring configuartion', 'RUNTIME');
+
 INSERT INTO configuration VALUES
-(5, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'rule-set', 'default snort community rules', 'RULESET');
+(5, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'rule-set', 'default et/open rules', 'RULESET');
 INSERT INTO configuration VALUES
-(6, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'rule-set', 'All opensource suricata rules', 'RULESET');
+(6, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'rule-set', 'default snort community rules', 'RULESET');
 INSERT INTO configuration VALUES
-(7, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'rule-set', 'lightspd max detect + community rules', 'RULESET');
+(7, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'rule-set', 'All opensource suricata rules', 'RULESET');
+INSERT INTO configuration VALUES
+(8, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'rule-set', 'lightspd max detect + community rules', 'RULESET');
 -- Sample CIDS Config
 INSERT INTO configuration VALUES
-(8, 'wazuh-compose.yaml', '/opt/configuration_data/uuid4/wazuh-compose.yaml', 'configuration', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
+(9, 'wazuh-compose.yaml', '/opt/configuration_data/uuid4/wazuh-compose.yaml', 'configuration', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
 INSERT INTO configuration VALUES
-(9, 'hamstring-compose.yaml', '/opt/configuration_data/uuid5/hamstring-compose.yaml', 'configuration', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
+(10, 'hamstring-compose.yaml', '/opt/configuration_data/uuid5/hamstring-compose.yaml', 'configuration', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
 INSERT INTO configuration VALUES
-(10, 'minimal-compose.yaml', '/opt/configuration_data/uuid6/minimal-compose.yaml', 'configuration', 'Minimal Docker Compose Setup', 'DEPLOYMENT');
+(11, 'minimal-compose.yaml', '/opt/configuration_data/uuid6/minimal-compose.yaml', 'configuration', 'Minimal Docker Compose Setup', 'DEPLOYMENT');

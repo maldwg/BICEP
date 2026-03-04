@@ -51,6 +51,7 @@ export class SetupComponent implements OnInit {
   });
 
   idsConfigs: Configuration[] = [];
+  filteredConfigs: Configuration[] = [];
   ruleSets: Configuration[] = [];
   idsTools: IdsTool[] = [];
   hostSystems: DockerHostSystem[] = [];
@@ -109,6 +110,15 @@ export class SetupComponent implements OnInit {
       this.selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
       this.requiresRuleset = this.selectedTool ? this.selectedTool.requires_ruleset : false;
       this.deploymentType = this.selectedTool?.deployment_type || "SINGLE_CONTAINER";
+
+      // Filter configs based on deployment type
+      if (this.deploymentType === 'DOCKER_COMPOSE') {
+        this.filteredConfigs = this.deploymentConfigs;
+      } else {
+        this.filteredConfigs = this.runtimeConfigs;
+      }
+      // Reset config selection when tool changes
+      this.idsForm.controls.config.reset();
 
       // Reset CIDS state on tool change
       this.cidsConfigurations = [];
@@ -257,11 +267,14 @@ export class SetupComponent implements OnInit {
         const allConfigs = data.map(config => ({
           id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type, config_type: config.config_type
         }));
-        this.idsConfigs = allConfigs; // For backward compatibility / general list
+        this.idsConfigs = allConfigs;
 
         // Filter for specific config types
         this.runtimeConfigs = allConfigs.filter(c => c.config_type === 'RUNTIME' || !c.config_type || c.config_type === 'CONFIGURATION');
         this.deploymentConfigs = allConfigs.filter(c => c.config_type === 'DEPLOYMENT');
+
+        // Default: show all until a tool is selected
+        this.filteredConfigs = allConfigs;
       });
   }
 

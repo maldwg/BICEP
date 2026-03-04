@@ -3,6 +3,7 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 """
 
 import asyncio
+import os
 import docker
 from http.client import HTTPResponse
 import json
@@ -238,37 +239,68 @@ class CidsSystem(IdsSystem):
         )
 
     async def teardown(self, db: AsyncSession):
-        """CIDS teardown: stop and remove each component individually using tracked deployment info."""
-        from app.docker import get_docker_client
+        """CIDS teardown: use docker compose down to remove all containers at once."""
+        from python_on_whales import DockerClient
+        from python_on_whales.exceptions import DockerException
+        from collections import defaultdict
 
         LOGGER.info(
             f"Tearing down CIDS {self.name} ({len(self.components)} components)"
         )
 
+        # Group components by host to run compose down per host
+        components_by_host = defaultdict(list)
         for component in self.components:
-            try:
-                client = get_docker_client(component.host_system)
-                try:
-                    container = client.containers.get(component.name)
-                    container.stop(timeout=10)
-                    container.remove()
-                    LOGGER.info(
-                        f"Removed component {component.name} from {component.host_system.name}"
-                    )
-                except docker.errors.NotFound:
-                    LOGGER.warning(
-                        f"Component {component.name} not found on {component.host_system.name}, skipping"
-                    )
-                except Exception as e:
-                    LOGGER.error(f"Error stopping component {component.name}: {e}")
-                finally:
-                    client.close()
-            except Exception as e:
-                LOGGER.error(
-                    f"Could not connect to Docker host for {component.name}: {e}"
-                )
+            components_by_host[component.host_system_id].append(component)
 
-            await db.delete(component)
+        for host_id, components in components_by_host.items():
+            host_system = components[0].host_system
+            host_name_safe = host_system.name.replace(" ", "_").lower()
+            project_name = f"bicep_cids_{self.id}_{host_name_safe}"
+            work_dir = f"/tmp/{project_name}"
+            compose_file = os.path.join(work_dir, "docker-compose.yaml")
+
+            host_ip, docker_port = host_system.get_host_and_docker_port()
+            docker_host_url = f"tcp://{host_ip}:{docker_port}"
+
+            try:
+                if os.path.exists(compose_file):
+                    client = DockerClient(
+                        host=docker_host_url,
+                        compose_files=[compose_file],
+                        compose_project_name=project_name,
+                    )
+                    try:
+                        client.compose.down(volumes=True, timeout=15)
+                        LOGGER.info(
+                            f"Compose down completed for {project_name} on {host_system.name}"
+                        )
+                    except DockerException as e:
+                        LOGGER.error(f"Compose down failed for {project_name}: {e}")
+                else:
+                    # Compose file missing — fall back to individual container removal
+                    LOGGER.warning(
+                        f"Compose file not found at {compose_file}, removing containers individually"
+                    )
+                    import docker
+
+                    docker_client = docker.DockerClient(base_url=docker_host_url)
+                    for component in components:
+                        try:
+                            container = docker_client.containers.get(component.name)
+                            container.stop(timeout=10)
+                            container.remove()
+                            LOGGER.info(f"Removed {component.name}")
+                        except docker.errors.NotFound:
+                            LOGGER.warning(f"{component.name} not found, skipping")
+                        except Exception as e:
+                            LOGGER.error(f"Error removing {component.name}: {e}")
+                    docker_client.close()
+            except Exception as e:
+                LOGGER.error(f"Teardown error on {host_system.name}: {e}")
+
+            for component in components:
+                await db.delete(component)
 
         await db.delete(self)
         await db.commit()
