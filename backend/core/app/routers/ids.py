@@ -80,6 +80,7 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
             ids_tool_id=data.ids_tool_id,
             status=STATUS.ACTIVE.value,
             ruleset_id=ruleset_id,
+            runtime_configuration_id=data.runtime_configuration_id,
         )
     else:
         ids_system = IdsSystem(

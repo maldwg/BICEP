@@ -102,7 +102,8 @@ async def deploy_docker_compose(
         os.makedirs(work_dir, exist_ok=True)
 
         # Inject config mount for services with bicep.config.mount label
-        config_written = False
+        needs_config_on_host = False
+        services_needing_config = []
         for svc_name, svc_data in host_compose_data["services"].items():
             labels = svc_data.get("labels", {})
             # Labels can be a list ["key=value"] or dict {"key": "value"}
@@ -116,18 +117,11 @@ async def deploy_docker_compose(
                         break
 
             if mount_path:
-                # Write the selected config file to work_dir (once)
-                if not config_written:
-                    config_file_content = config_content
-                    if isinstance(config_file_content, str):
-                        config_file_content = config_file_content.encode("utf-8")
-                    config_local_path = os.path.join(work_dir, "bicep_config")
-                    with open(config_local_path, "wb") as f:
-                        f.write(config_file_content)
-                    config_written = True
+                needs_config_on_host = True
+                services_needing_config.append((svc_name, svc_data, mount_path))
 
-                # Add volume mount: ./bicep_config:/container/path
-                volume_entry = f"./bicep_config:{mount_path}"
+                # Add volume mount using absolute host path
+                volume_entry = f"{work_dir}/bicep_config:{mount_path}"
                 if "volumes" not in svc_data:
                     svc_data["volumes"] = []
                 # Remove any existing mount to the same container path
@@ -138,7 +132,7 @@ async def deploy_docker_compose(
                 ]
                 svc_data["volumes"].append(volume_entry)
 
-                LOGGER.info(f"Mounting config into {svc_name} at {mount_path}")
+                LOGGER.info(f"Will mount config into {svc_name} at {mount_path}")
 
         # Write partial docker-compose.yaml
         compose_file_path = os.path.join(work_dir, "docker-compose.yaml")
@@ -166,6 +160,61 @@ async def deploy_docker_compose(
         # Determine Docker Host Connection
         host_ip, docker_port = host_system.get_host_and_docker_port()
         docker_host_url = f"tcp://{host_ip}:{docker_port}"
+
+        # Write runtime config file to Docker HOST filesystem via temporary container
+        if needs_config_on_host and runtime_config:
+            import io
+            import tarfile
+
+            runtime_content = await runtime_config.read_content()
+            if isinstance(runtime_content, str):
+                runtime_content = runtime_content.encode("utf-8")
+
+            host_docker = docker.DockerClient(base_url=docker_host_url)
+            try:
+                # Create a stopped container with /tmp bind-mounted from the host
+                tmp_container = host_docker.containers.create(
+                    "alpine",
+                    "true",
+                    volumes={"/tmp": {"bind": "/tmp", "mode": "rw"}},
+                )
+                try:
+                    # Ensure the directory exists on the host
+                    tmp_container.start()
+                    tmp_container.wait()
+                    # Recreate with mkdir
+                    tmp_container.remove()
+                    tmp_container = host_docker.containers.create(
+                        "alpine",
+                        ["mkdir", "-p", work_dir],
+                        volumes={"/tmp": {"bind": "/tmp", "mode": "rw"}},
+                    )
+                    tmp_container.start()
+                    tmp_container.wait()
+
+                    # Build a tar archive containing the config file
+                    tar_stream = io.BytesIO()
+                    with tarfile.open(fileobj=tar_stream, mode="w") as tar:
+                        file_info = tarfile.TarInfo(name="bicep_config")
+                        file_info.size = len(runtime_content)
+                        tar.addfile(file_info, io.BytesIO(runtime_content))
+                    tar_stream.seek(0)
+
+                    # Copy the tar into the container at the work_dir path
+                    tmp_container.put_archive(work_dir, tar_stream)
+                    LOGGER.info(
+                        f"Config file written to Docker host at {work_dir}/bicep_config"
+                    )
+                finally:
+                    try:
+                        tmp_container.remove(force=True)
+                    except Exception:
+                        pass
+            except Exception as e:
+                LOGGER.error(f"Failed to write config to Docker host: {e}")
+                raise
+            finally:
+                host_docker.close()
 
         try:
             client = DockerClient(

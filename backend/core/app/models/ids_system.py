@@ -238,6 +238,79 @@ class CidsSystem(IdsSystem):
             env_vars=env_vars,
         )
 
+        # Wait for all containers to become healthy
+        import time
+
+        timeout = 120
+        start_time = time.time()
+        while True:
+            if await self.is_available():
+                LOGGER.info(f"CIDS {self.id} is healthy after deployment")
+                break
+            if time.time() - start_time > timeout:
+                LOGGER.error(f"CIDS {self.id} did not become healthy within {timeout}s")
+                await self.teardown(db)
+                raise Exception(f"CIDS did not become healthy within {timeout}s")
+            await asyncio.sleep(3)
+
+    async def is_available(self) -> bool:
+        """Check CIDS health via Docker container health status instead of HTTP."""
+        from python_on_whales import DockerClient
+        from collections import defaultdict
+
+        if not self.components:
+            LOGGER.debug(f"CIDS {self.id} has no components, not healthy")
+            return False
+
+        # Group components by host
+        components_by_host = defaultdict(list)
+        for component in self.components:
+            components_by_host[component.host_system_id].append(component)
+
+        for host_id, components in components_by_host.items():
+            host_system = components[0].host_system
+            host_name_safe = host_system.name.replace(" ", "_").lower()
+            project_name = f"bicep_cids_{self.id}_{host_name_safe}"
+            work_dir = f"/tmp/{project_name}"
+            compose_file = os.path.join(work_dir, "docker-compose.yaml")
+
+            host_ip, docker_port = host_system.get_host_and_docker_port()
+            docker_host_url = f"tcp://{host_ip}:{docker_port}"
+
+            try:
+                if not os.path.exists(compose_file):
+                    LOGGER.warning(f"Compose file missing for {project_name}")
+                    return False
+
+                client = DockerClient(
+                    host=docker_host_url,
+                    compose_files=[compose_file],
+                    compose_project_name=project_name,
+                )
+                containers = client.compose.ps()
+
+                if not containers:
+                    LOGGER.debug(f"No containers running for {project_name}")
+                    return False
+
+                for c in containers:
+                    health = c.state.health.status if c.state.health else None
+                    if health and health != "healthy":
+                        LOGGER.debug(
+                            f"Container {c.name} is {health}, CIDS not healthy yet"
+                        )
+                        return False
+                    if not c.state.running:
+                        LOGGER.debug(f"Container {c.name} is not running")
+                        return False
+
+            except Exception as e:
+                LOGGER.error(f"CIDS healthcheck error on {host_system.name}: {e}")
+                return False
+
+        LOGGER.debug(f"CIDS {self.id} is healthy (all containers running/healthy)")
+        return True
+
     async def teardown(self, db: AsyncSession):
         """CIDS teardown: use docker compose down to remove all containers at once."""
         from python_on_whales import DockerClient
@@ -257,44 +330,38 @@ class CidsSystem(IdsSystem):
             host_system = components[0].host_system
             host_name_safe = host_system.name.replace(" ", "_").lower()
             project_name = f"bicep_cids_{self.id}_{host_name_safe}"
-            work_dir = f"/tmp/{project_name}"
-            compose_file = os.path.join(work_dir, "docker-compose.yaml")
 
             host_ip, docker_port = host_system.get_host_and_docker_port()
             docker_host_url = f"tcp://{host_ip}:{docker_port}"
 
             try:
-                if os.path.exists(compose_file):
-                    client = DockerClient(
-                        host=docker_host_url,
-                        compose_files=[compose_file],
-                        compose_project_name=project_name,
+                # Use only project name — no compose file needed for teardown.
+                # This avoids env var interpolation errors (e.g. MOUNT_PATH not set).
+                client = DockerClient(
+                    host=docker_host_url,
+                    compose_project_name=project_name,
+                )
+                try:
+                    client.compose.down(volumes=True, timeout=15)
+                    LOGGER.info(
+                        f"Compose down completed for {project_name} on {host_system.name}"
                     )
-                    try:
-                        client.compose.down(volumes=True, timeout=15)
-                        LOGGER.info(
-                            f"Compose down completed for {project_name} on {host_system.name}"
-                        )
-                    except DockerException as e:
-                        LOGGER.error(f"Compose down failed for {project_name}: {e}")
-                else:
-                    # Compose file missing — fall back to individual container removal
-                    LOGGER.warning(
-                        f"Compose file not found at {compose_file}, removing containers individually"
-                    )
-                    import docker
+                except DockerException as e:
+                    LOGGER.warning(f"Compose down failed for {project_name}: {e}")
+                    # Fall back to individual container removal
+                    import docker as docker_sdk
 
-                    docker_client = docker.DockerClient(base_url=docker_host_url)
+                    docker_client = docker_sdk.DockerClient(base_url=docker_host_url)
                     for component in components:
                         try:
                             container = docker_client.containers.get(component.name)
                             container.stop(timeout=10)
                             container.remove()
                             LOGGER.info(f"Removed {component.name}")
-                        except docker.errors.NotFound:
+                        except docker_sdk.errors.NotFound:
                             LOGGER.warning(f"{component.name} not found, skipping")
-                        except Exception as e:
-                            LOGGER.error(f"Error removing {component.name}: {e}")
+                        except Exception as inner_e:
+                            LOGGER.error(f"Error removing {component.name}: {inner_e}")
                     docker_client.close()
             except Exception as e:
                 LOGGER.error(f"Teardown error on {host_system.name}: {e}")
