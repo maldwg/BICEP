@@ -1,16 +1,16 @@
 .errors-container {
-  position: absolute;
+  position: fixed;
+  top: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  
+
   left: 0;
   right: 0;
   gap: 10px;
   z-index: 1000;
-
-
 }
+
 .red-icon {
   color: white;
   padding: 1%;
@@ -19,6 +19,7 @@
 .red-icon:hover {
   color: black;
 }
+
 .error-popup {
   background: rgba(255, 0, 0, 0.8);
   color: white;
@@ -37,6 +38,7 @@
   flex-direction: row;
   align-items: center;
 }
+
 .error-div {
   display: flex;
   justify-content: space-between;

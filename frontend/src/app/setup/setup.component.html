@@ -26,7 +26,7 @@
 
 @if (userChoice === 'ensemble') {
 <div class="form-dialog-container">
-  <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()">
+  <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()" novalidate>
     <mat-card>
       <mat-card-content>
         <div class="form-item">
@@ -150,7 +150,7 @@
         <div class="form-item">
           <mat-form-field class="form-field">
             <mat-label>Runtime Configuration</mat-label>
-            <mat-select [formControl]="cidsRuntimeConfigSelection">
+            <mat-select [formControl]="cidsRuntimeConfigSelection" required>
               @for (c of runtimeConfigs; track c) {
               <mat-option [value]="c.id">ID: {{c.id}} - {{c.name}}</mat-option>
               }
@@ -224,7 +224,8 @@
           <span class="cids-env-equals">=</span>
           <mat-form-field class="cids-env-field">
             <mat-label>Value</mat-label>
-            <input matInput [value]="env.value" (input)="updateEnvVarValue(i, $event)" placeholder="Enter value...">
+            <input matInput [value]="env.value" (input)="updateEnvVarValue(i, $event)" placeholder="Enter value..."
+              required>
           </mat-form-field>
           <button mat-icon-button type="button" class="delete-button" (click)="removeEnvVar(i)">
             <mat-icon>delete</mat-icon>

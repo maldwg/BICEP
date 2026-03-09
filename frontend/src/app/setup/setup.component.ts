@@ -216,26 +216,48 @@ export class SetupComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.idsForm.valid) {
-      let containerData: ContainerSetupData = {
-        host_system_id: parseInt(this.idsForm.value.host!),
-        ids_tool_id: parseInt(this.idsForm.value.idsTool!),
-        configuration_id: parseInt(this.idsForm.value.config!),
-        description: this.idsForm.value.description!,
-        ruleset_id: this.idsForm.value.ruleset ? parseInt(this.idsForm.value.ruleset) : undefined,
-        cids_configurations: this.cidsConfigurations,
-        runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined,
-        env_vars: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsEnvVars.length > 0
-          ? this.cidsEnvVars.reduce((acc, ev) => ({ ...acc, [ev.key]: ev.value }), {} as { [key: string]: string })
-          : undefined
-      };
-      this.idsService.sendContainerSetupData(containerData)
-        .subscribe(res => console.log(res),
-          err => {
-            this.errorPopup.showError(err.error["error"], err.status);
-          });
-      this.router.navigate(["/"]);
+    // 1. Base form validation
+    if (!this.idsForm.valid) {
+      this.errorPopup.showError('Please fill out all required fields.', 400);
+      return;
     }
+
+    // 2. CIDS-specific validation
+    if (this.deploymentType === 'DOCKER_COMPOSE') {
+      // Runtime config required for CIDS
+      if (!this.cidsRuntimeConfigSelection.value) {
+        this.errorPopup.showError('Please select a runtime configuration for the CIDS deployment.', 400);
+        return;
+      }
+      // All mandatory env vars must have values
+      const emptyVars = this.cidsEnvVars.filter(ev => !ev.value || ev.value.trim() === '');
+      if (emptyVars.length > 0) {
+        const missing = emptyVars.map(ev => ev.key).join(', ');
+        this.errorPopup.showError(`Please fill in all required environment variables: ${missing}`, 400);
+        return;
+      }
+    }
+
+    // All validation passed, build and send request
+    let containerData: ContainerSetupData = {
+      host_system_id: parseInt(this.idsForm.value.host!),
+      ids_tool_id: parseInt(this.idsForm.value.idsTool!),
+      configuration_id: parseInt(this.idsForm.value.config!),
+      description: this.idsForm.value.description!,
+      ruleset_id: this.idsForm.value.ruleset ? parseInt(this.idsForm.value.ruleset) : undefined,
+      cids_configurations: this.cidsConfigurations,
+      runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined,
+      env_vars: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsEnvVars.length > 0
+        ? this.cidsEnvVars.reduce((acc, ev) => ({ ...acc, [ev.key]: ev.value }), {} as { [key: string]: string })
+        : undefined
+    };
+
+    this.idsService.sendContainerSetupData(containerData)
+      .subscribe(res => console.log(res),
+        err => {
+          this.errorPopup.showError(err.error["error"], err.status);
+        });
+    this.router.navigate(["/"]);
   }
 
   onEnsembleSubmit() {

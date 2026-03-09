@@ -117,7 +117,7 @@ services:
       - kafka-data3:/var/lib/kafka/data
 
   logserver:
-    image: stefan96/heidgaf-logserver:latest
+    image: hamstring-logserver:latest
     restart: "unless-stopped"
     networks:
       - hamstring
@@ -137,7 +137,7 @@ services:
     profiles: ["prod"]
 
   logcollector:
-    image: stefan96/heidgaf-logcollector:latest
+    image: hamstring-logcollector:latest
     restart: "unless-stopped"
     labels:
       bicep.config.mount: /app/config.yaml
@@ -155,7 +155,7 @@ services:
     profiles: ["prod"]
 
   prefilter:
-    image: stefan96/heidgaf-prefilter:latest
+    image: hamstring-prefilter:latest
     restart: "unless-stopped"
     labels:
       bicep.config.mount: /app/config.yaml
@@ -176,7 +176,7 @@ services:
     profiles: ["prod"]
 
   inspector:
-    image: stefan96/heidgaf-inspector:latest
+    image: hamstring-inspector:latest
     restart: "unless-stopped"
     labels:
       bicep.config.mount: /app/config.yaml
@@ -205,7 +205,7 @@ services:
     profiles: ["prod"]
 
   detector:
-    image: stefan96/heidgaf-detector:latest
+    image: hamstring-detector:latest
     restart: "unless-stopped"
     labels:
       bicep.config.mount: /app/config.yaml
