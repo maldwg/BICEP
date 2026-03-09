@@ -3,7 +3,7 @@ import { Configuration, ConfigurationSetupData, SerializedConfiguration, Deseria
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable, finalize, map } from 'rxjs';
-import { ContainerSetupData } from '../../models/container';
+import { ContainerSetupData, ComposeService } from '../../models/container';
 import { config } from 'process';
 
 @Injectable({
@@ -66,9 +66,9 @@ export class ConfigService {
 
 
 
-  getConfigurationServices(id: number): Observable<string[]> {
+  getConfigurationServices(id: number): Observable<ComposeService[]> {
     let path = `/crud/configuration/${id}/services`;
-    return this.http.get<string[]>(environment.backendUrl + path);
+    return this.http.get<ComposeService[]>(environment.backendUrl + path);
   }
 
   deserializeConfiguration(serializedConfig: SerializedConfiguration): DeserializedConfiguration {

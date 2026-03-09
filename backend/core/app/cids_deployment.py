@@ -101,20 +101,23 @@ async def deploy_docker_compose(
         work_dir = f"/tmp/bicep_cids_{ids_container.id}_{host_name_safe}"
         os.makedirs(work_dir, exist_ok=True)
 
-        # Inject config mount for services with bicep.config.mount label
+        # Inject config mount and sensor port mappings
         needs_config_on_host = False
         services_needing_config = []
         for svc_name, svc_data in host_compose_data["services"].items():
             labels = svc_data.get("labels", {})
-            # Labels can be a list ["key=value"] or dict {"key": "value"}
             mount_path = None
+            is_sensor = False
+            
             if isinstance(labels, dict):
                 mount_path = labels.get("bicep.config.mount")
+                is_sensor = labels.get("bicep.sensor") in ("true", True, "1")
             elif isinstance(labels, list):
                 for label in labels:
                     if label.startswith("bicep.config.mount="):
                         mount_path = label.split("=", 1)[1]
-                        break
+                    elif label.startswith("bicep.sensor="):
+                        is_sensor = label.split("=", 1)[1].lower() in ("true", "1")
 
             if mount_path:
                 needs_config_on_host = True
@@ -131,8 +134,20 @@ async def deploy_docker_compose(
                     if not (isinstance(v, str) and v.endswith(f":{mount_path}"))
                 ]
                 svc_data["volumes"].append(volume_entry)
-
                 LOGGER.info(f"Will mount config into {svc_name} at {mount_path}")
+                
+            if is_sensor:
+                LOGGER.info(f"Identified {svc_name} as CIDS sensor. Mapping port {ids_container.port}:8000")
+                if "ports" not in svc_data:
+                    svc_data["ports"] = []
+                
+                # Check if 8000 is already mapped, if not add mapping
+                has_port_mapping = any(
+                    str(p).endswith(":8000") or str(p) == "8000" 
+                    for p in svc_data["ports"]
+                )
+                if not has_port_mapping:
+                    svc_data["ports"].append(f"{ids_container.port}:8000")
 
         # Write partial docker-compose.yaml
         compose_file_path = os.path.join(work_dir, "docker-compose.yaml")

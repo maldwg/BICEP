@@ -4,6 +4,7 @@ services:
     command: "sleep 10000"
     labels:
       bicep.config.mount: /app/config.yaml
+      bicep.sensor: "true"
     deploy:
       mode: "replicated"
       replicas: ${S1_SCALE:-1}

@@ -73,9 +73,20 @@ async def get_config_services(id: int, db=Depends(get_db)):
         # Parse YAML
         compose_data = yaml.safe_load(content)
         if not compose_data or 'services' not in compose_data:
-             return []
-        
-        return list(compose_data['services'].keys())
+            return []
+            
+        services = []
+        for name, params in compose_data['services'].items():
+            labels = params.get("labels", {})
+            is_sensor = False
+            if isinstance(labels, dict):
+                is_sensor = labels.get("bicep.sensor") in ("true", True, "1")
+            elif isinstance(labels, list):
+                is_sensor = any(isinstance(l, str) and l.startswith("bicep.sensor=") and l.split("=", 1)[1].lower() in ("true", "1") for l in labels)
+            
+            services.append({"name": name, "is_sensor": is_sensor})
+            
+        return services
     except Exception as e:
         LOGGER.error(f"Error parsing services for config {id}: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)

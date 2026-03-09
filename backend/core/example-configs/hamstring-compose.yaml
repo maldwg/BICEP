@@ -134,7 +134,6 @@ services:
         condition: service_healthy
       kafka3:
         condition: service_healthy
-    profiles: ["prod"]
 
   logcollector:
     image: hamstring-logcollector:latest
@@ -152,7 +151,6 @@ services:
         condition: service_healthy
       kafka3:
         condition: service_healthy
-    profiles: ["prod"]
 
   prefilter:
     image: hamstring-prefilter:latest
@@ -173,7 +171,6 @@ services:
         condition: service_healthy
       kafka3:
         condition: service_healthy
-    profiles: ["prod"]
 
   inspector:
     image: hamstring-inspector:latest
@@ -202,7 +199,6 @@ services:
         condition: service_healthy
       kafka3:
         condition: service_healthy
-    profiles: ["prod"]
 
   detector:
     image: hamstring-detector:latest
@@ -223,8 +219,21 @@ services:
         condition: service_healthy
       kafka3:
         condition: service_healthy
-    profiles: ["prod"]
 
+  zeek: 
+    image: hamstring-zeek:latest
+    labels: 
+      bicep.sensor: "true"
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    deploy:
+      mode: "replicated"
+      replicas: ${DETECTOR_SCALE:-1}
 networks:
   hamstring:
     driver: bridge

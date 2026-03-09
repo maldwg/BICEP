@@ -28,10 +28,16 @@ export interface ContainerSetupData {
     env_vars?: { [key: string]: string }
 }
 
+export interface ComposeService {
+    name: string,
+    is_sensor: boolean
+}
+
 export interface CidsServiceConfig {
     service_name: string,
     host_system_id: number,
-    count: number
+    count: number,
+    is_sensor?: boolean
 }
 
 

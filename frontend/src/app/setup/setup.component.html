@@ -163,8 +163,13 @@
         @for (config of cidsConfigurations; track config; let i = $index) {
         <div class="cids-assignment-row">
           <div class="cids-assignment-service">
-            <mat-icon class="cids-service-icon">dns</mat-icon>
+            <mat-icon class="cids-service-icon" [color]="config.is_sensor ? 'primary' : ''" [matTooltip]="config.is_sensor ? 'Sensor Component (API Port mapped here)' : ''">
+              {{ config.is_sensor ? 'sensors' : 'dns' }}
+            </mat-icon>
             <span class="cids-service-name">{{ config.service_name }}</span>
+            @if (config.is_sensor) {
+              <span class="cids-sensor-badge">Sensor</span>
+            }
           </div>
           <mat-icon class="cids-arrow-icon">arrow_forward</mat-icon>
           <mat-form-field class="cids-host-select">
@@ -193,7 +198,7 @@
             <mat-label>Service</mat-label>
             <mat-select [formControl]="cidsServiceSelection">
               @for (svc of availableServices; track svc) {
-              <mat-option [value]="svc">{{ svc }}</mat-option>
+              <mat-option [value]="svc.name">{{ svc.name }} @if(svc.is_sensor){ <strong>(Sensor)</strong> }</mat-option>
               }
             </mat-select>
           </mat-form-field>

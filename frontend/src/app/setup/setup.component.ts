@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { IdsService } from '../services/ids/ids.service';
 import { ConfigService } from '../services/config/config.service';
 import { Router } from '@angular/router';
-import { Container, ContainerSetupData, CidsServiceConfig } from '../models/container';
+import { Container, ContainerSetupData, CidsServiceConfig, ComposeService } from '../models/container';
 import { Configuration } from '../models/configuration';
 import { fileTypes } from '../models/acceptedFileTypes';
 import { IdsTool } from '../models/ids';
@@ -64,7 +64,7 @@ export class SetupComponent implements OnInit {
   // CIDS Support
   selectedTool: IdsTool | undefined;
   cidsConfigurations: CidsServiceConfig[] = [];
-  availableServices: string[] = [];
+  availableServices: ComposeService[] = [];
   deploymentType = "SINGLE_CONTAINER";
 
   // CIDS Environment Variables
@@ -143,8 +143,9 @@ export class SetupComponent implements OnInit {
           if (defaultHostId !== null) {
             this.cidsConfigurations = services.map(svc => ({
               host_system_id: defaultHostId,
-              service_name: svc,
-              count: 1
+              service_name: svc.name,
+              count: 1,
+              is_sensor: svc.is_sensor
             }));
           }
         });
@@ -155,10 +156,12 @@ export class SetupComponent implements OnInit {
 
   addCidsConfiguration() {
     if (this.cidsHostSelection.value && this.cidsServiceSelection.value) {
+      const selectedSvc = this.availableServices.find(s => s.name === this.cidsServiceSelection.value);
       const newConfig: CidsServiceConfig = {
         host_system_id: parseInt(this.cidsHostSelection.value),
         service_name: this.cidsServiceSelection.value,
-        count: this.cidsCountSelection.value || 1
+        count: this.cidsCountSelection.value || 1,
+        is_sensor: selectedSvc ? selectedSvc.is_sensor : false
       };
       this.cidsConfigurations.push(newConfig);
     }
