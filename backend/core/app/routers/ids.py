@@ -13,8 +13,8 @@ from app.validation.models import (
 )
 from app.models.ids_system import (
     IdsSystem,
-    get_container_by_id,
-    update_container_status,
+    get_ids_system_by_id,
+    update_ids_status,
     get_all_container,
 )
 from app.models.configuration import Configuration, get_config_by_id
@@ -100,7 +100,7 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db)):
-    container: IdsSystem = await get_container_by_id(db, container_id)
+    container: IdsSystem = await get_ids_system_by_id(db, container_id)
     try:
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
@@ -115,101 +115,109 @@ async def remove_container(container_id: int, db=Depends(get_db)):
 async def start_static_container_analysis(
     static_analysis_data: StaticAnalysisData, db=Depends(get_db)
 ):
-    container: IdsSystem = await get_container_by_id(
+    ids: IdsSystem = await get_ids_system_by_id(
         db, static_analysis_data.container_id
     )
-    LOGGER.debug(container.ensemble_ids)
-    if container.ensemble_ids != []:
-        LOGGER.debug("test")
+    if ids.ensemble_ids != []:
         return JSONResponse(
             {
-                "error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"
+                "error": f"container with id {ids.id} is part of an ensemble. Hence, no individual analysis is possible"
             },
             status_code=500,
         )
 
-    if container.status != STATUS.IDLE.value:
+    if ids.status != STATUS.IDLE.value:
         return JSONResponse(
-            {"error": f"container with id {container.id} is not Idle!, aborting"},
+            {"error": f"container with id {ids.id} is not Idle!, aborting"},
             status_code=500,
         )
 
-    if not await container.is_available():
+    if not await ids.is_available():
         return JSONResponse(
             {
-                "error": f"container with id {container.id} is not available! Check if it should be deleted"
+                "error": f"container with id {ids.id} is not available! Check if it should be deleted"
             },
             status_code=500,
         )
 
     dataset: Dataset = await get_dataset_by_id(db, static_analysis_data.dataset_id)
-    await update_container_status(db, STATUS.ACTIVE.value, container)
+    await update_ids_status(db, STATUS.ACTIVE.value, ids)
     form_data = {
-        "container_id": (None, str(container.id), "application/json"),
+        "container_id": (None, str(ids.id), "application/json"),
         # "dataset": (dataset.name, data_file, "application/octet-stream"),
         "dataset_id": (None, str(dataset.id), "application/json"),
     }
-    response: HTTPResponse = await container.start_static_analysis(form_data, dataset)
-    response = await parse_response_for_triggered_analysis(
-        response, container, "static"
-    )
-    # set container status to IDLE if request failed
-    if response.status_code != 200:
-        await update_container_status(db, STATUS.IDLE.value, container)
+    try:
+        response: HTTPResponse = await ids.start_static_analysis(form_data, dataset)
+        response = await parse_response_for_triggered_analysis(
+            response, ids, "static"
+        )
+        # set container status to IDLE if request failed
+        if response.status_code != 200:
+            await update_ids_status(db, STATUS.IDLE.value, ids)
 
-    return response
+        return response
+    except Exception as e:
+        await update_ids_status(db, STATUS.IDLE.value, ids)
+        LOGGER.error(f"Failed to start static analysis: {e}")
+        return create_response_error(f"Failed to start static analysis: {e}", 500)
 
 
 @router.post("/analysis/network")
 async def start_network_container_analysis(
     network_analysis_data: NetworkAnalysisData, db=Depends(get_db)
 ):
-    container: IdsSystem = await get_container_by_id(
+    ids: IdsSystem = await get_ids_system_by_id(
         db, network_analysis_data.container_id
     )
 
-    if container.ensemble_ids != []:
+    if ids.ensemble_ids != []:
         return JSONResponse(
             {
-                "error": f"container with id {container.id} is part of an ensemble. Hence, no individual analysis is possible"
+                "error": f"container with id {ids.id} is part of an ensemble. Hence, no individual analysis is possible"
             },
             status_code=500,
         )
 
-    if container.status != STATUS.IDLE.value:
+    if ids.status != STATUS.IDLE.value:
         return JSONResponse(
-            {"error": f"container with id {container.id} is not Idle!, aborting"},
+            {"error": f"container with id {ids.id} is not Idle!, aborting"},
             status_code=500,
         )
 
-    if not await container.is_available():
+    if not await ids.is_available():
         return JSONResponse(
             {
-                "error": f"container with id {container.id} is not available! Check if it should be deleted"
+                "error": f"container with id {ids.id} is not available! Check if it should be deleted"
             },
             status_code=500,
         )
 
     data = json.dumps(network_analysis_data.__dict__)
-    await update_container_status(db, STATUS.ACTIVE.value, container)
-    response: HTTPResponse = await container.start_network_analysis(data)
-    timestamp = datetime.now().isoformat()
-    LOGGER.info(
-        f"Started network analysis for container{container.name} at {timestamp}"
-    )
-    response = await parse_response_for_triggered_analysis(
-        response, container, "network"
-    )
-    # set container status to IDLE if request failed
-    if response.status_code != 200:
-        await update_container_status(db, STATUS.IDLE.value, container)
+    await update_ids_status(db, STATUS.ACTIVE.value, ids)
+    try:
+        response: HTTPResponse = await ids.start_network_analysis(data)
+        timestamp = datetime.now().isoformat()
+        LOGGER.info(
+            f"Started network analysis for container{ids.name} at {timestamp}"
+        )
+        response = await parse_response_for_triggered_analysis(
+            response, ids, "network"
+        )
+        # set container status to IDLE if request failed
+        if response.status_code != 200:
+            await update_ids_status(db, STATUS.IDLE.value, ids)
 
-    return response
+        return response
+    except Exception as e:
+        await update_ids_status(db, STATUS.IDLE.value, ids)
+        LOGGER.error(f"Failed to start network analysis: {e}")
+        return create_response_error(f"Failed to start network analysis: {e}", 500)
 
 
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
-    container: IdsSystem = await get_container_by_id(db, stop_data.container_id)
+    container: IdsSystem = await get_ids_system_by_id(db, stop_data.container_id)
     # check if container is part of an ensemble to prevent stopping an ensemble container individually
     if container.ensemble_ids != []:
         for ensemble_ids_of_container in container.ensemble_ids:
@@ -221,7 +229,7 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     response: HTTPResponse = await container.stop_analysis()
     # set container status to active/idle afterwards before
     if response.status_code == 200:
-        await update_container_status(db, STATUS.IDLE.value, container)
+        await update_ids_status(db, STATUS.IDLE.value, container)
         message = f"Analysis for container {container.id} stopped successfully"
         return create_response_message(message, 200)
     else:
@@ -234,8 +242,8 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(
     analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
 ):
-    container = await get_container_by_id(db, analysisFinishedData.container_id)
-    await update_container_status(db, STATUS.IDLE.value, container)
+    container = await get_ids_system_by_id(db, analysisFinishedData.container_id)
+    await update_ids_status(db, STATUS.IDLE.value, container)
     return JSONResponse(
         {"message": f"Successfully stopped analysis for container {container.name}"},
         status_code=200,
@@ -246,7 +254,7 @@ async def finished_analysis(
 async def receive_alerts_from_ids(
     alert_data: AlertData, background_tasks: BackgroundTasks, db=Depends(get_db)
 ):
-    container = await get_container_by_id(db, alert_data.container_id)
+    container = await get_ids_system_by_id(db, alert_data.container_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for container {container.name}")
     labels = {

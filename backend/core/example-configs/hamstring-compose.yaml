@@ -5,6 +5,8 @@ services:
     restart: "unless-stopped"
     networks:
       - hamstring
+    labels:
+      - "bicep.role=INFRA"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -24,6 +26,8 @@ services:
     restart: "unless-stopped"
     networks:
       - hamstring
+    labels:
+      - "bicep.role=INFRA"
     ports:
       - "8097:8097"
     depends_on:
@@ -56,6 +60,8 @@ services:
     restart: "unless-stopped"
     networks:
       - hamstring
+    labels:
+      - "bicep.role=INFRA"
     ports:
       - "8098:8098"
     depends_on:
@@ -89,6 +95,8 @@ services:
     restart: "unless-stopped"
     networks:
       - hamstring
+    labels:
+      - "bicep.role=INFRA"
     ports:
       - "8099:8099"
     depends_on:
@@ -122,7 +130,8 @@ services:
     networks:
       - hamstring
     labels:
-      bicep.config.mount: /app/config.yaml
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
     volumes:
       - "${MOUNT_PATH:?MOUNT_PATH not set}:/opt/file.txt"
     environment:
@@ -139,7 +148,8 @@ services:
     image: hamstring-logcollector:latest
     restart: "unless-stopped"
     labels:
-      bicep.config.mount: /app/config.yaml
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
     networks:
       - hamstring
     environment:
@@ -156,7 +166,8 @@ services:
     image: hamstring-prefilter:latest
     restart: "unless-stopped"
     labels:
-      bicep.config.mount: /app/config.yaml
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
     networks:
       - hamstring
     deploy:
@@ -176,7 +187,8 @@ services:
     image: hamstring-inspector:latest
     restart: "unless-stopped"
     labels:
-      bicep.config.mount: /app/config.yaml
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
     networks:
       - hamstring
     deploy:
@@ -204,7 +216,8 @@ services:
     image: hamstring-detector:latest
     restart: "unless-stopped"
     labels:
-      bicep.config.mount: /app/config.yaml
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
     networks:
       - hamstring
     deploy:
@@ -221,9 +234,11 @@ services:
         condition: service_healthy
 
   zeek: 
-    image: hamstring-zeek:latest
+    image: ghcr.io/maldwg/bicep-hamstring:1.0.0
     labels: 
-      bicep.sensor: "true"
+      - "bicep.role=SENSOR"
+      - "bicep.sensor=true"
+      - "bicep.config.mount=/app/config.yaml"
     depends_on:
       kafka1:
         condition: service_healthy
@@ -233,7 +248,7 @@ services:
         condition: service_healthy
     deploy:
       mode: "replicated"
-      replicas: ${DETECTOR_SCALE:-1}
+      replicas: ${ZEEK_SCALE:-1}
 networks:
   hamstring:
     driver: bridge

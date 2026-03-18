@@ -14,7 +14,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session, selectinload
 from app.models.ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
 from app.database import Base
-from app.models.ids_system import IdsSystem, update_container_status
+from app.models.ids_system import IdsSystem, update_ids_status
 from app.validation.models import EnsembleUpdate
 import httpx
 from sqlalchemy.future import select
@@ -38,14 +38,14 @@ class Ensemble(Base):
     )
 
     async def add_container(self, db: AsyncSession, container_id: int):
-        from app.models.ids_system import IdsSystem, get_container_by_id
+        from app.models.ids_system import IdsSystem, get_ids_system_by_id
 
         ensemble_ids = EnsembleIds(
             ensemble_id=self.id,
             ids_system_id=container_id,
             status=ANALYSIS_STATUS.IDLE.value,
         )
-        container: IdsSystem = await get_container_by_id(db, container_id)
+        container: IdsSystem = await get_ids_system_by_id(db, container_id)
         container_url = container.get_container_http_url()
         endpoint = f"/configure/ensemble/add/{self.id}"
         async with httpx.AsyncClient() as client:
@@ -56,10 +56,10 @@ class Ensemble(Base):
         return response
 
     async def remove_container(self, db: AsyncSession, container_id: int):
-        from app.models.ids_system import IdsSystem, get_container_by_id
+        from app.models.ids_system import IdsSystem, get_ids_system_by_id
 
         ensemble_ids = await get_ensemble_ids_by_ids(db, self.id, container_id)
-        container: IdsSystem = await get_container_by_id(db, container_id)
+        container: IdsSystem = await get_ids_system_by_id(db, container_id)
         response = await deregister_container_from_ensemble(container)
         if response.status_code == 200:
             await db.delete(ensemble_ids)
@@ -105,9 +105,9 @@ class Ensemble(Base):
                 response, container, "static", self.id
             )
             if response.status_code != 200:
-                await update_container_status(db, STATUS.IDLE.value, container)
+                await update_ids_status(db, STATUS.IDLE.value, container)
             else:
-                await update_container_status(db, STATUS.ACTIVE.value, container)
+                await update_ids_status(db, STATUS.ACTIVE.value, container)
             responses.append(response)
         return responses
 
@@ -139,9 +139,9 @@ class Ensemble(Base):
                 response, container, "network", self.id
             )
             if response.status_code != 200:
-                await update_container_status(db, STATUS.IDLE.value, container)
+                await update_ids_status(db, STATUS.IDLE.value, container)
             else:
-                await update_container_status(db, STATUS.ACTIVE.value, container)
+                await update_ids_status(db, STATUS.ACTIVE.value, container)
             responses.append(response)
         return responses
 

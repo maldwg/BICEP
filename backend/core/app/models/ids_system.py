@@ -238,6 +238,9 @@ class CidsSystem(IdsSystem):
             env_vars=env_vars,
         )
 
+        # Refresh the components relationship to reflect the newly deployed components
+        await db.refresh(self, attribute_names=["components"])
+
         # Wait for all containers to become healthy
         import time
 
@@ -252,6 +255,16 @@ class CidsSystem(IdsSystem):
                 await self.teardown(db)
                 raise Exception(f"CIDS did not become healthy within {timeout}s")
             await asyncio.sleep(3)
+
+        from app.docker import inject_config, inject_ruleset
+        
+        # 'config' holds the Docker Compose file. The actual plugin config is 'runtime_config'.
+        runtime_config = kwargs.get("runtime_config")
+        
+        if runtime_config:
+            await inject_config(self, runtime_config)
+        if ruleset:
+            await inject_ruleset(self, ruleset)
 
     async def is_available(self) -> bool:
         """Check CIDS health via Docker container health status instead of HTTP."""
@@ -309,7 +322,7 @@ class CidsSystem(IdsSystem):
                 return False
 
         LOGGER.debug(f"CIDS {self.id} is healthy (all containers running/healthy)")
-        return True
+        return await super().is_available()
 
     async def teardown(self, db: AsyncSession):
         """CIDS teardown: use docker compose down to remove all containers at once."""
@@ -377,11 +390,7 @@ class CidsSystem(IdsSystem):
         if self.components:
             for component in self.components:
                 if component.role == "SENSOR":
-                    if component.host_system:
-                        host = component.host_system.host
-                    else:
-                        host = self.host_system.host
-                    return f"http://{host}:{component.port}"
+                    return component.get_http_url()
         return super().get_container_http_url()
 
     async def start_network_analysis(self, data):
@@ -444,7 +453,7 @@ class CidsSystem(IdsSystem):
 # ==================== QUERY FUNCTIONS ====================
 
 
-async def get_container_by_id(db: AsyncSession, id: int) -> IdsSystem | None:
+async def get_ids_system_by_id(db: AsyncSession, id: int) -> IdsSystem | None:
     """Get an IDS system by ID."""
     stmt = select(IdsSystem).where(IdsSystem.id == id)
     result = await db.execute(stmt)
@@ -460,7 +469,7 @@ async def get_all_container(db: AsyncSession) -> list[IdsSystem]:
 
 async def remove_container_by_id(db: AsyncSession, id: int):
     """Remove an IDS system by ID."""
-    container = await get_container_by_id(db, id)
+    container = await get_ids_system_by_id(db, id)
     if container:
         await db.delete(container)
         await db.commit()
@@ -487,7 +496,7 @@ async def update_container(db: AsyncSession, container: IdsContainerUpdate):
     await db.refresh(container_db)
 
 
-async def update_container_status(
+async def update_ids_status(
     db: AsyncSession, status: STATUS, container: IdsSystem
 ):
     """Update the status of an IDS system."""

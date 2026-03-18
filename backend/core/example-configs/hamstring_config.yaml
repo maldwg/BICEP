@@ -14,7 +14,9 @@ logging:
       debug: false
     data_analysis.detector:
       debug: false
-
+  alerts:
+    path: "/opt/logs/alerts.txt"
+    
 pipeline:
   log_storage:
     logserver:
@@ -87,7 +89,15 @@ pipeline:
       batch_size: 50  # do not set higher
       batch_timeout: 2.0
 
-
+  alerting:
+    log_to_file: true
+    log_file_path: "/opt/logs/alerts.txt"
+    log_to_kafka: true
+    external_kafka_topic: "hamstring_alerts"
+    plugins:
+      - name: "hello_world"
+        alerter_module_name: "hello_world_alerter"
+        alerter_class_name: "HelloWorldAlerter"
   zeek:
     sensors:
       zeek1:

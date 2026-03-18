@@ -114,13 +114,13 @@ CREATE TABLE IF NOT EXISTS ensemble_ids(
 
 CREATE TABLE IF NOT EXISTS ids_component(
     id INT AUTO_INCREMENT PRIMARY KEY,
-    container_id INT NOT NULL,
+    ids_id INT NOT NULL,
     name VARCHAR(64) NOT NULL,
     role VARCHAR(32) NOT NULL,
     host_system_id INT,
     port INT,
 
-    FOREIGN KEY (container_id) REFERENCES ids_system(id),
+    FOREIGN KEY (ids_id) REFERENCES ids_system(id),
     FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id)
 );
 

@@ -5,6 +5,8 @@ services:
     hostname: wazuh.manager
     container_name: single-node-wazuh.manager
     restart: always
+    labels:
+      - "bicep.role=PIPELINE"
     ulimits:
       memlock:
         soft: -1
@@ -43,6 +45,8 @@ services:
     hostname: wazuh.indexer
     container_name: single-node-wazuh.indexer
     restart: always
+    labels:
+      - "bicep.role=INFRA"
     ports:
       - "9200:9200"
     environment:
@@ -74,6 +78,8 @@ services:
     hostname: wazuh.dashboard
     container_name: single-node-wazuh.dashboard
     restart: always
+    labels:
+      - "bicep.role=INFRA"
     ports:
       - 443:5601
     environment:

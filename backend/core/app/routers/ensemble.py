@@ -14,8 +14,8 @@ from app.models.ensemble_ids import (
 from app.models.configuration import Configuration, get_config_by_id
 from app.models.ids_system import (
     IdsSystem,
-    get_container_by_id,
-    update_container_status,
+    get_ids_system_by_id,
+    update_ids_status,
 )
 from app.models.ensemble_technique import (
     EnsembleTechnique,
@@ -107,7 +107,7 @@ async def remove_ensemble_endpoint(ensemble_id: int, db=Depends(get_db)):
         if ids_ensemble.ensemble_id == ensemble_id
     ]
     container_list: list[IdsSystem] = [
-        await get_container_by_id(db=db, id=id) for id in container_id_list
+        await get_ids_system_by_id(db=db, id=id) for id in container_id_list
     ]
     responses = []
     for container in container_list:
@@ -228,14 +228,14 @@ async def stop_ensemble_analysis(stop_data: stop_analysisData, db=Depends(get_db
 async def finished_ensemble_analysis(
     analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
 ):
-    container: IdsSystem = await get_container_by_id(
+    container: IdsSystem = await get_ids_system_by_id(
         db, analysisFinishedData.container_id
     )
     ensemble: Ensemble = await get_ensemble_by_id(db, analysisFinishedData.ensemble_id)
     await update_sendig_logs_status(
         db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.IDLE.value
     )
-    await update_container_status(db, STATUS.IDLE.value, container)
+    await update_ids_status(db, STATUS.IDLE.value, container)
     if await ensemble.container_is_last_one_running(db=db, container=container):
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)
         await ensemble.unset_analysis_id(db)
@@ -251,7 +251,7 @@ async def finished_ensemble_analysis(
 async def receive_alerts_from_ids_for_ensemble(
     alert_data: AlertData, backgroundtasks: BackgroundTasks, db=Depends(get_db)
 ):
-    container: IdsSystem = await get_container_by_id(db=db, id=alert_data.container_id)
+    container: IdsSystem = await get_ids_system_by_id(db=db, id=alert_data.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")

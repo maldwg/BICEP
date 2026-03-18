@@ -149,6 +149,21 @@ async def deploy_docker_compose(
                 if not has_port_mapping:
                     svc_data["ports"].append(f"{ids_container.port}:8000")
 
+                # Inject environment variables into sensor service
+                # (mirrors the env vars set for single-container IDS in docker.py)
+                if "environment" not in svc_data:
+                    svc_data["environment"] = {}
+                # If environment is a list (e.g. ["KEY=val"]), convert to dict
+                if isinstance(svc_data["environment"], list):
+                    env_dict = {}
+                    for entry in svc_data["environment"]:
+                        k, _, v = entry.partition("=")
+                        env_dict[k] = v
+                    svc_data["environment"] = env_dict
+                svc_data["environment"].setdefault("PORT", "8000")
+                svc_data["environment"].setdefault("CORE_URL", get_core_url())
+                svc_data["environment"].setdefault("TZ", "UTC")
+
         # Write partial docker-compose.yaml
         compose_file_path = os.path.join(work_dir, "docker-compose.yaml")
         with open(compose_file_path, "w") as f:

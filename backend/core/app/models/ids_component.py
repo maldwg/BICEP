@@ -9,7 +9,7 @@ class IdsComponent(Base):
     __tablename__ = "ids_component"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    container_id = Column(Integer, ForeignKey("ids_system.id"))
+    ids_id = Column(Integer, ForeignKey("ids_system.id"))
     name = Column(String(64), nullable=False)
     role = Column(String(32), nullable=False)  # SENSOR, AGGREGATOR, Other
     host_system_id = Column(Integer, ForeignKey("docker_host_system.id"))
