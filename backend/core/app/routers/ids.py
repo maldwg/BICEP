@@ -36,7 +36,7 @@ from app.bicep_utils.models.ids_base import Alert
 from app.models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from datetime import datetime
 import time
 
@@ -46,8 +46,33 @@ from app.models.ensemble import get_ensemble_by_id
 router = APIRouter(prefix="/ids")
 
 
+async def _finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
+    if SessionLocal is None:
+        LOGGER.error("Cannot continue IDS setup in background: database is not configured.")
+        return
+
+    async with SessionLocal() as db:
+        ids_system = await get_ids_system_by_id(db, ids_system_id)
+        if ids_system is None:
+            LOGGER.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
+            return
+
+        try:
+            await ids_system.setup(
+                db,
+                cids_configurations=cids_configurations,
+                env_vars=env_vars,
+            )
+        except Exception as exc:
+            LOGGER.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")
+
+
 @router.post("/setup")
-async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
+async def setup_ids(
+    data: IdsContainerCreate,
+    background_tasks: BackgroundTasks,
+    db=Depends(get_db),
+):
     host = await get_host_by_id(db, data.host_system_id)
     if host.status == DOCKER_HOST_STATUS.UNAVAILABLE.value:
         return JSONResponse(
@@ -67,35 +92,50 @@ async def setup_ids(data: IdsContainerCreate, db=Depends(get_db)):
 
     free_port = find_free_port()
     ruleset_id = data.ruleset_id if data.ruleset_id else None
+    initial_name = f"{ids_tool.name}-{free_port}"
 
     # Create the correct subclass based on deployment type
     if ids_tool.deployment_type == "DOCKER_COMPOSE":
         from app.models.ids_system import CidsSystem
 
         ids_system = CidsSystem(
+            name=initial_name,
             host_system_id=host.id,
             port=free_port,
             description=data.description,
             configuration_id=data.configuration_id,
             ids_tool_id=data.ids_tool_id,
-            status=STATUS.ACTIVE.value,
+            status=STATUS.SETTING_UP.value,
             ruleset_id=ruleset_id,
-            runtime_configuration_id=data.runtime_configuration_id,
         )
     else:
         ids_system = IdsSystem(
+            name=initial_name,
             host_system_id=host.id,
             port=free_port,
             description=data.description,
             configuration_id=data.configuration_id,
             ids_tool_id=data.ids_tool_id,
-            status=STATUS.ACTIVE.value,
+            status=STATUS.SETTING_UP.value,
             ruleset_id=ruleset_id,
         )
-    await ids_system.setup(
-        db, cids_configurations=data.cids_configurations, env_vars=data.env_vars
+
+    db.add(ids_system)
+    await db.commit()
+    await db.refresh(ids_system)
+
+    background_tasks.add_task(
+        _finish_ids_setup,
+        ids_system.id,
+        data.cids_configurations or [],
+        data.env_vars or {},
     )
-    return JSONResponse(content={"message": "setup done"}, status_code=200)
+
+    return JSONResponse(
+        content={"message": "setup started", "container_id": ids_system.id},
+        status_code=202,
+        background=background_tasks,
+    )
 
 
 @router.delete("/remove/{container_id}")

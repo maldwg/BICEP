@@ -79,12 +79,31 @@ async def get_config_services(id: int, db=Depends(get_db)):
         for name, params in compose_data['services'].items():
             labels = params.get("labels", {})
             is_sensor = False
+            config_mount_path = None
             if isinstance(labels, dict):
                 is_sensor = labels.get("bicep.sensor") in ("true", True, "1")
+                config_mount_path = labels.get("bicep.config.mount")
             elif isinstance(labels, list):
-                is_sensor = any(isinstance(l, str) and l.startswith("bicep.sensor=") and l.split("=", 1)[1].lower() in ("true", "1") for l in labels)
+                for label in labels:
+                    if not isinstance(label, str):
+                        continue
+                    if label.startswith("bicep.sensor="):
+                        is_sensor = label.split("=", 1)[1].lower() in ("true", "1")
+                    elif label.startswith("bicep.config.mount="):
+                        config_mount_path = label.split("=", 1)[1]
+
+            expected_config_extension = None
+            if config_mount_path:
+                expected_config_extension = (
+                    os.path.splitext(config_mount_path)[1].lower() or None
+                )
             
-            services.append({"name": name, "is_sensor": is_sensor})
+            services.append({
+                "name": name,
+                "is_sensor": is_sensor,
+                "config_mount_path": config_mount_path,
+                "expected_config_extension": expected_config_extension,
+            })
             
         return services
     except Exception as e:

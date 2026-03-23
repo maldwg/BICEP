@@ -1,4 +1,5 @@
 import pytest
+from fastapi import BackgroundTasks
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.main import app
@@ -20,11 +21,17 @@ async def test_setup_ids(db_session_fixture: DatabaseSessionFixture):
     )
 
     db_session = await db_session_fixture.get_db_session()
-    response = await setup_ids(request_data, db=db_session)
+    with patch("app.routers.ids.find_free_port", return_value=8080):
+        response = await setup_ids(
+            request_data,
+            background_tasks=BackgroundTasks(),
+            db=db_session,
+        )
     response_json = json.loads(response.body.decode())
 
-    assert response.status_code == 200
-    assert response_json == {"message": "setup done"}
+    assert response.status_code == 202
+    assert response_json["message"] == "setup started"
+    assert "container_id" in response_json
 
 
 @pytest.mark.asyncio

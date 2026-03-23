@@ -8,6 +8,7 @@ class CidsServiceConfig(BaseModel):
     service_name: str
     host_system_id: int
     count: int = 1
+    runtime_configuration_id: Optional[int] = None
 
 
 class IdsContainerCreate(BaseModel):
@@ -20,7 +21,6 @@ class IdsContainerCreate(BaseModel):
     configuration_id: int
     ids_tool_id: int
     ruleset_id: Optional[int] = None
-    runtime_configuration_id: Optional[int] = None
     cids_configurations: Optional[list[CidsServiceConfig]] = []
     env_vars: Optional[dict[str, str]] = {}
 

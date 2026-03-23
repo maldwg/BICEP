@@ -11,9 +11,6 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_SERVER_ID: 1
-    volumes:
-      - zk-data:/var/lib/zookeeper/data
-      - zk-txn-logs:/var/lib/zookeeper/log
     healthcheck:
       test: ["CMD-SHELL", "curl -s localhost:8080/commands | grep ruok"]
       interval: 10s
@@ -51,8 +48,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
-    volumes:
-      - kafka-data1:/var/lib/kafka/data
 
   kafka2:
     image: confluentinc/cp-kafka:7.9.3
@@ -86,8 +81,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
-    volumes:
-      - kafka-data2:/var/lib/kafka/data
 
   kafka3:
     image: confluentinc/cp-kafka:7.9.3
@@ -121,8 +114,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
-    volumes:
-      - kafka-data3:/var/lib/kafka/data
 
   logserver:
     image: hamstring-logserver:latest
@@ -233,6 +224,26 @@ services:
       kafka3:
         condition: service_healthy
 
+  alerter:
+    image: hamstring-alerter:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    deploy:
+      mode: "replicated"
+      replicas: ${ALERTER_SCALE:-1}
+    environment:
+      - GROUP_ID=data_alerting
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    networks:
+        - hamstring
   zeek: 
     image: ghcr.io/maldwg/bicep-hamstring:1.0.0
     labels: 
@@ -249,17 +260,51 @@ services:
     deploy:
       mode: "replicated"
       replicas: ${ZEEK_SCALE:-1}
+    network_mode: host
+    environment:
+      - CONTAINER_NAME=zeek
+
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:24.3.12.75-alpine
+    container_name: clickhouse-server
+    labels: 
+      - "bicep.role=INFRA"
+      - "bicep.config.mount=/docker-entrypoint-initdb.d/init_tables.sql"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 8123" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+        - hamstring
+
+  monitoring-agent:
+    image: hamstring-monitoring:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=INFRA"
+      - "bicep.config.mount=/app/config.yaml"
+    deploy:
+      mode: "replicated"
+      replicas: ${MONITORING_SCALE:-1}
+    environment:
+      - GROUP_ID=monitoring_agent
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+    networks:
+        - hamstring
+
+
 networks:
   hamstring:
     driver: bridge
     ipam:
       driver: default
 
-volumes:
-  ch_data:
-  ch_logs:
-  kafka-data1:
-  kafka-data2:
-  kafka-data3:
-  zk-data:
-  zk-txn-logs:

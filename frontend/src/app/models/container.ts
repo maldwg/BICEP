@@ -8,7 +8,6 @@ export interface IdsSystem {
     configuration_id: number,
     ids_tool_id: number,
     ruleset_id?: number,
-    runtime_configuration_id?: number,
     stream_metric_task_id?: string,
     type: string  // NIDS, HIDS, CIDS
 }
@@ -23,21 +22,25 @@ export interface ContainerSetupData {
     description: string,
     ruleset_id?: number,
     cids_configurations?: CidsServiceConfig[],
-    runtime_configuration_id?: number,
     type?: string,  // NIDS, HIDS, CIDS - defaults to NIDS
     env_vars?: { [key: string]: string }
 }
 
 export interface ComposeService {
     name: string,
-    is_sensor: boolean
+    is_sensor: boolean,
+    config_mount_path?: string | null,
+    expected_config_extension?: string | null,
 }
 
 export interface CidsServiceConfig {
     service_name: string,
     host_system_id: number,
     count: number,
-    is_sensor?: boolean
+    runtime_configuration_id?: number | null,
+    is_sensor?: boolean,
+    config_mount_path?: string | null,
+    expected_config_extension?: string | null,
 }
 
 

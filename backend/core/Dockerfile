@@ -20,6 +20,7 @@ RUN mkdir -p /opt/configuration_data/uuid4
 RUN mkdir -p /opt/configuration_data/uuid5
 RUN mkdir -p /opt/configuration_data/uuid6
 RUN mkdir -p /opt/configuration_data/uuid7
+RUN mkdir -p /opt/configuration_data/uuid8
 
 
 RUN mkdir -p /opt/rulesets/uuid1
@@ -34,7 +35,7 @@ COPY ./example-configs/wazuh-compose.yaml /opt/configuration_data/uuid4/wazuh-co
 COPY ./example-configs/hamstring-compose.yaml /opt/configuration_data/uuid5/hamstring-compose.yaml
 COPY ./example-configs/minimal-compose.yaml /opt/configuration_data/uuid6/minimal-compose.yaml
 COPY ./example-configs/hamstring_config.yaml /opt/configuration_data/uuid7/hamstring_config.yaml
-
+COPY ./example-configs/hamstring_clickhouse.sql /opt/configuration_data/uuid8/hamstring_clickhouse.sql
 
 COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
 COPY ./example-configs/snort-all.rules /opt/rulesets/uuid2/snort-all.rules

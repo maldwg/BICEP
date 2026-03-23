@@ -14,7 +14,9 @@ import app.models.dataset_types
 
 @pytest.fixture
 def mock_db_session():
-    return AsyncMock()
+    session = AsyncMock()
+    session.add = MagicMock()
+    return session
 
 
 @pytest.fixture
@@ -124,17 +126,19 @@ async def test_start_docker_container_normal(
     normal_tool.image_name = "test"
     normal_tool.image_tag = "latest"
 
-    with patch("app.docker.run_container_async") as mock_run:
-        mock_run.return_value = None
-        with patch("app.docker.check_container_health") as mock_health:
-            mock_health.return_value = True
-            with patch("app.docker.inject_config") as mock_inject:
+    with patch("app.docker.get_docker_client") as mock_get_client:
+        mock_get_client.return_value = MagicMock()
+        with patch("app.docker.run_container_async") as mock_run:
+            mock_run.return_value = None
+            with patch("app.docker.check_container_health") as mock_health:
+                mock_health.return_value = True
+                with patch("app.docker.inject_config") as mock_inject:
 
-                await start_docker_container(
-                    mock_ids_container, normal_tool, mock_config, None, mock_db_session
-                )
+                    await start_docker_container(
+                        mock_ids_container, normal_tool, mock_config, None, mock_db_session
+                    )
 
-                mock_run.assert_awaited_once()
+                    mock_run.assert_awaited_once()
 
 
 def test_ids_container_url_cids():
@@ -222,3 +226,46 @@ async def test_split_deployment(
                     "tcp://192.168.1.100:2375" == c.kwargs.get("host") for c in calls
                 )
                 assert has_remote_call
+
+
+@pytest.mark.asyncio
+async def test_deploy_docker_compose_rejects_wrong_runtime_config_extension(
+    mock_ids_container, mock_ids_tool, mock_db_session
+):
+    from app.validation.models import CidsServiceConfig
+
+    compose_config = MagicMock(spec=Configuration)
+    compose_config.read_content = AsyncMock(
+        return_value=b"""
+services:
+  detector:
+    image: detector
+    labels:
+      - "bicep.config.mount=/app/config.yaml"
+"""
+    )
+
+    runtime_config = MagicMock(spec=Configuration)
+    runtime_config.id = 99
+    runtime_config.name = "detector-config.txt"
+    runtime_config.file_path = "/tmp/detector-config.txt"
+
+    cids_configs = [
+        CidsServiceConfig(
+            service_name="detector",
+            host_system_id=1,
+            count=1,
+            runtime_configuration_id=99,
+        )
+    ]
+
+    with patch("app.cids_deployment.get_config_by_id", AsyncMock(return_value=runtime_config)):
+        with pytest.raises(ValueError, match="expects a config ending in '.yaml'"):
+            await deploy_docker_compose(
+                mock_ids_container,
+                mock_ids_tool,
+                compose_config,
+                None,
+                mock_db_session,
+                cids_configs,
+            )

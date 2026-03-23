@@ -193,3 +193,6 @@ INSERT INTO configuration VALUES
 (10, 'hamstring-compose.yaml', '/opt/configuration_data/uuid5/hamstring-compose.yaml', 'configuration', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
 INSERT INTO configuration VALUES
 (11, 'minimal-compose.yaml', '/opt/configuration_data/uuid6/minimal-compose.yaml', 'configuration', 'Minimal Docker Compose Setup', 'DEPLOYMENT');
+
+INSERT INTO configuration VALUES
+(12, 'hamstring_clickhouse.sql', '/opt/configuration_data/uuid8/hamstring_clickhouse.sql', 'configuration', 'Hamstring Clickhouse tables', 'RUNTIME');

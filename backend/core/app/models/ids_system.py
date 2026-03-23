@@ -5,6 +5,7 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 import asyncio
 import os
 import docker
+import httpx
 from http.client import HTTPResponse
 import json
 from sqlalchemy import Column, ForeignKey, Integer, String
@@ -87,8 +88,12 @@ class IdsSystem(Base):
             )
         except Exception as e:
             LOGGER.error(f"Setup failed: {e}")
-            await db.delete(self)
-            await db.commit()
+            try:
+                await self.teardown(db)
+            except Exception as teardown_error:
+                LOGGER.error(f"Teardown during failed setup also failed: {teardown_error}")
+                await db.delete(self)
+                await db.commit()
             raise
         self.status = STATUS.IDLE.value
         await db.commit()
@@ -225,7 +230,6 @@ class CidsSystem(IdsSystem):
         from app.cids_deployment import start_cids_deployment
 
         cids_configurations = kwargs.get("cids_configurations")
-        runtime_config = kwargs.get("runtime_config")
         env_vars = kwargs.get("env_vars", {})
         await start_cids_deployment(
             self,
@@ -234,7 +238,6 @@ class CidsSystem(IdsSystem):
             ruleset,
             db,
             cids_configurations,
-            runtime_config,
             env_vars=env_vars,
         )
 
@@ -252,22 +255,16 @@ class CidsSystem(IdsSystem):
                 break
             if time.time() - start_time > timeout:
                 LOGGER.error(f"CIDS {self.id} did not become healthy within {timeout}s")
-                await self.teardown(db)
                 raise Exception(f"CIDS did not become healthy within {timeout}s")
             await asyncio.sleep(3)
 
-        from app.docker import inject_config, inject_ruleset
-        
-        # 'config' holds the Docker Compose file. The actual plugin config is 'runtime_config'.
-        runtime_config = kwargs.get("runtime_config")
-        
-        if runtime_config:
-            await inject_config(self, runtime_config)
+        from app.docker import inject_ruleset
+
         if ruleset:
             await inject_ruleset(self, ruleset)
 
     async def is_available(self) -> bool:
-        """Check CIDS health via Docker container health status instead of HTTP."""
+        """Check CIDS health via compose state and a quick sensor health probe."""
         from python_on_whales import DockerClient
         from collections import defaultdict
 
@@ -321,8 +318,20 @@ class CidsSystem(IdsSystem):
                 LOGGER.error(f"CIDS healthcheck error on {host_system.name}: {e}")
                 return False
 
-        LOGGER.debug(f"CIDS {self.id} is healthy (all containers running/healthy)")
-        return await super().is_available()
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                response = await client.get(f"{self.get_container_http_url()}/healthcheck")
+            if response.status_code != 200:
+                LOGGER.debug(
+                    f"CIDS {self.id} sensor healthcheck returned {response.status_code}"
+                )
+                return False
+        except Exception as exc:
+            LOGGER.debug(f"CIDS {self.id} sensor healthcheck is not ready yet: {exc}")
+            return False
+
+        LOGGER.debug(f"CIDS {self.id} is healthy (all containers and sensor are ready)")
+        return True
 
     async def teardown(self, db: AsyncSession):
         """CIDS teardown: use docker compose down to remove all containers at once."""
@@ -390,7 +399,13 @@ class CidsSystem(IdsSystem):
         if self.components:
             for component in self.components:
                 if component.role == "SENSOR":
-                    return component.get_http_url()
+                    if component.host_system or not self.host_system:
+                        return component.get_http_url()
+
+                    host = self.host_system.host
+                    if "Core" in self.host_system.name or host == "localhost":
+                        host = get_core_host_ip()
+                    return f"http://{host}:{component.port}"
         return super().get_container_http_url()
 
     async def start_network_analysis(self, data):

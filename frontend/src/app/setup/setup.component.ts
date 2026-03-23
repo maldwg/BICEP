@@ -1,4 +1,4 @@
-import { Component, OnChanges, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,10 +15,7 @@ import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
 import { Ensemble, EnsembleSetupData, EnsembleTechnique } from '../models/ensemble';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
-import { describe } from 'node:test';
-import { runInThisContext } from 'node:vm';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { HttpResponse } from '@angular/common/http';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
@@ -80,7 +77,6 @@ export class SetupComponent implements OnInit {
   cidsHostSelection = new FormControl();
   cidsServiceSelection = new FormControl();
   cidsCountSelection = new FormControl(1);
-  cidsRuntimeConfigSelection = new FormControl(); // For CIDS Runtime Config
   cidsComposeSelection = new FormControl(); // Select additional compose files? Or just use main config?
   // Current plan: Use main config for services parsing.
 
@@ -145,10 +141,16 @@ export class SetupComponent implements OnInit {
               host_system_id: defaultHostId,
               service_name: svc.name,
               count: 1,
-              is_sensor: svc.is_sensor
+              runtime_configuration_id: null,
+              is_sensor: svc.is_sensor,
+              config_mount_path: svc.config_mount_path,
+              expected_config_extension: svc.expected_config_extension,
             }));
           }
         });
+      } else if (this.deploymentType === 'DOCKER_COMPOSE') {
+        this.availableServices = [];
+        this.cidsConfigurations = [];
       }
     });
 
@@ -161,7 +163,10 @@ export class SetupComponent implements OnInit {
         host_system_id: parseInt(this.cidsHostSelection.value),
         service_name: this.cidsServiceSelection.value,
         count: this.cidsCountSelection.value || 1,
-        is_sensor: selectedSvc ? selectedSvc.is_sensor : false
+        runtime_configuration_id: null,
+        is_sensor: selectedSvc ? selectedSvc.is_sensor : false,
+        config_mount_path: selectedSvc?.config_mount_path,
+        expected_config_extension: selectedSvc?.expected_config_extension,
       };
       this.cidsConfigurations.push(newConfig);
     }
@@ -180,8 +185,91 @@ export class SetupComponent implements OnInit {
     this.cidsConfigurations[index].count = Math.max(1, value);
   }
 
+  updateCidsRuntimeConfig(index: number, configId: string | number | null): void {
+    if (!this.cidsConfigurations[index].config_mount_path) {
+      this.cidsConfigurations[index].runtime_configuration_id = null;
+      return;
+    }
+    if (configId === null || configId === undefined || configId === '') {
+      this.cidsConfigurations[index].runtime_configuration_id = null;
+      return;
+    }
+    this.cidsConfigurations[index].runtime_configuration_id = parseInt(String(configId));
+  }
+
+  hasRuntimeConfigMount(config: CidsServiceConfig): boolean {
+    return !!config.config_mount_path;
+  }
+
   getHostName(id: number): string {
     return this.hostSystems.find(h => h.id === id)?.name || 'Unknown';
+  }
+
+  getRuntimeConfigName(configId: number | null | undefined): string {
+    if (!configId) {
+      return 'None';
+    }
+    return this.runtimeConfigs.find(config => config.id === configId)?.name || 'Unknown';
+  }
+
+  getRuntimeConfigHint(config: CidsServiceConfig): string {
+    if (!config.config_mount_path) {
+      return 'No bicep.config.mount label on this service. Leave runtime config set to None.';
+    }
+    if (config.expected_config_extension) {
+      return `Mount target: ${config.config_mount_path} (expects ${config.expected_config_extension})`;
+    }
+    return `Mount target: ${config.config_mount_path}`;
+  }
+
+  private getFileExtension(path: string | undefined | null): string | null {
+    if (!path) {
+      return null;
+    }
+    const dotIndex = path.lastIndexOf('.');
+    if (dotIndex < 0) {
+      return null;
+    }
+    return path.slice(dotIndex).toLowerCase();
+  }
+
+  private extensionsAreCompatible(expected: string | null | undefined, actual: string | null | undefined): boolean {
+    if (!expected || !actual) {
+      return true;
+    }
+    const aliases: Record<string, string[]> = {
+      '.yaml': ['.yaml', '.yml'],
+      '.yml': ['.yaml', '.yml'],
+    };
+    return (aliases[expected] || [expected]).includes(actual);
+  }
+
+  private validateCidsRuntimeConfigs(): string | null {
+    for (const config of this.cidsConfigurations) {
+      if (config.config_mount_path && !config.runtime_configuration_id) {
+        return `The service ${config.service_name} requires a runtime configuration because it mounts ${config.config_mount_path}. Please select one before submitting.`;
+      }
+
+      if (!config.runtime_configuration_id) {
+        continue;
+      }
+
+      const selectedRuntimeConfig = this.runtimeConfigs.find(runtimeConfig => runtimeConfig.id === config.runtime_configuration_id);
+      if (!selectedRuntimeConfig) {
+        return `The selected runtime configuration for ${config.service_name} could not be found.`;
+      }
+
+      if (!config.config_mount_path) {
+        return `The service ${config.service_name} has no config mount label. Please set its runtime config to None.`;
+      }
+
+      const actualExtension = this.getFileExtension(selectedRuntimeConfig.file_path || selectedRuntimeConfig.name);
+      if (!this.extensionsAreCompatible(config.expected_config_extension, actualExtension)) {
+        return `The service ${config.service_name} expects ${config.expected_config_extension} based on ${config.config_mount_path}, but ${selectedRuntimeConfig.name} uses ${actualExtension || 'no file extension'}.`;
+      }
+    }
+
+    return null;
   }
 
   addEnvVar(): void {
@@ -227,16 +315,17 @@ export class SetupComponent implements OnInit {
 
     // 2. CIDS-specific validation
     if (this.deploymentType === 'DOCKER_COMPOSE') {
-      // Runtime config required for CIDS
-      if (!this.cidsRuntimeConfigSelection.value) {
-        this.errorPopup.showError('Please select a runtime configuration for the CIDS deployment.', 400);
-        return;
-      }
       // All mandatory env vars must have values
       const emptyVars = this.cidsEnvVars.filter(ev => !ev.value || ev.value.trim() === '');
       if (emptyVars.length > 0) {
         const missing = emptyVars.map(ev => ev.key).join(', ');
         this.errorPopup.showError(`Please fill in all required environment variables: ${missing}`, 400);
+        return;
+      }
+
+      const runtimeConfigError = this.validateCidsRuntimeConfigs();
+      if (runtimeConfigError) {
+        this.errorPopup.showError(runtimeConfigError, 400);
         return;
       }
     }
@@ -248,19 +337,26 @@ export class SetupComponent implements OnInit {
       configuration_id: parseInt(this.idsForm.value.config!),
       description: this.idsForm.value.description!,
       ruleset_id: this.idsForm.value.ruleset ? parseInt(this.idsForm.value.ruleset) : undefined,
-      cids_configurations: this.cidsConfigurations,
-      runtime_configuration_id: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsRuntimeConfigSelection.value ? parseInt(this.cidsRuntimeConfigSelection.value) : undefined,
+      cids_configurations: this.cidsConfigurations.map(config => ({
+        service_name: config.service_name,
+        host_system_id: config.host_system_id,
+        count: config.count,
+        runtime_configuration_id: config.config_mount_path
+          ? (config.runtime_configuration_id ?? undefined)
+          : undefined,
+      })),
       env_vars: this.deploymentType === 'DOCKER_COMPOSE' && this.cidsEnvVars.length > 0
         ? this.cidsEnvVars.reduce((acc, ev) => ({ ...acc, [ev.key]: ev.value }), {} as { [key: string]: string })
         : undefined
     };
 
     this.idsService.sendContainerSetupData(containerData)
-      .subscribe(res => console.log(res),
+      .subscribe(_res => {
+          this.router.navigate(["/"]);
+        },
         err => {
           this.errorPopup.showError(err.error["error"], err.status);
         });
-    this.router.navigate(["/"]);
   }
 
   onEnsembleSubmit() {

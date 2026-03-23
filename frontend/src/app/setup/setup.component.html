@@ -147,16 +147,6 @@
         <mat-card-title>CIDS Service Deployment</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="form-item">
-          <mat-form-field class="form-field">
-            <mat-label>Runtime Configuration</mat-label>
-            <mat-select [formControl]="cidsRuntimeConfigSelection" required>
-              @for (c of runtimeConfigs; track c) {
-              <mat-option [value]="c.id">ID: {{c.id}} - {{c.name}}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
         <!-- Service Assignments (auto-populated, editable inline) -->
         @if (cidsConfigurations.length > 0) {
         <h3 class="cids-assignments-heading">Service Assignments</h3>
@@ -172,19 +162,33 @@
             }
           </div>
           <mat-icon class="cids-arrow-icon">arrow_forward</mat-icon>
-          <mat-form-field class="cids-host-select">
-            <mat-label>Target Host</mat-label>
-            <mat-select [value]="config.host_system_id" (selectionChange)="updateCidsHostAssignment(i, $event.value)">
-              @for (host of hostSystems; track host) {
-              <mat-option [value]="host.id" [disabled]="host.status === hostStatus.unavailable">{{ host.name
-                }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="cids-replicas-input">
-            <mat-label>×</mat-label>
-            <input matInput type="number" min="1" [value]="config.count" (change)="updateCidsCount(i, $event)">
-          </mat-form-field>
+          <div class="" style="display: flex; flex-direction: row; column-gap: 1rem; flex-wrap: wrap;">
+            <mat-form-field class="cids-host-select">
+              <mat-label>Target Host</mat-label>
+              <mat-select [value]="config.host_system_id" (selectionChange)="updateCidsHostAssignment(i, $event.value)">
+                @for (host of hostSystems; track host) {
+                <mat-option [value]="host.id" [disabled]="host.status === hostStatus.unavailable">{{ host.name
+                  }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field class="cids-replicas-input">
+              <mat-label>×</mat-label>
+              <input matInput type="number" min="1" [value]="config.count" (change)="updateCidsCount(i, $event)">
+            </mat-form-field>
+            @if (hasRuntimeConfigMount(config)) {
+            <mat-form-field class="cids-host-select">
+              <mat-label>Runtime Config</mat-label>
+              <mat-select [value]="config.runtime_configuration_id ?? null" (selectionChange)="updateCidsRuntimeConfig(i, $event.value)">
+                <mat-option [value]="null">None</mat-option>
+                @for (runtimeConfig of runtimeConfigs; track runtimeConfig) {
+                <mat-option [value]="runtimeConfig.id">ID: {{runtimeConfig.id}} - {{runtimeConfig.name}}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>{{ getRuntimeConfigHint(config) }}</mat-hint>
+            </mat-form-field>
+            }
+          </div>
           <button mat-icon-button type="button" class="delete-button" (click)="removeCidsConfiguration(i)">
             <mat-icon>delete</mat-icon>
           </button>

@@ -36,20 +36,20 @@ pipeline:
         protocol_base: dns
         required_log_information:
           - [ "ts", Timestamp, "%Y-%m-%dT%H:%M:%S" ]
-          - [ "status_code", ListItem, [ "NOERROR", "NXDOMAIN" ], [ "NXDOMAIN" ] ]
+          # - [ "status_code", ListItem, [ "NOERROR", "NXDOMAIN" ], [ "NXDOMAIN" ] ]
           - [ "src_ip", IpAddress ]
           - [ "dns_server_ip", IpAddress ]
           - [ "domain_name", RegEx, '^(?=.{1,253}$)((?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}$' ]
           - [ "record_type", ListItem, [ "A", "AAAA" ] ]
           # - [ "response_ip", IpAddress ]
-          - [ "size", RegEx, '^\d+$' ]
+          # - [ "size", RegEx, '^\d+$' ]
         batch_handler_config_override:
           batch_timeout: 30.1
 
   log_filtering:
     - name: "dga_filter"
       # method to apply for rule based prefiltering according to the needs
-      relevance_method: check_dga_relevance
+      relevance_method: no_relevance_check
       collector_name: dga_collector
 
 
@@ -70,7 +70,7 @@ pipeline:
           model_args:
             is_global: false
       anomaly_threshold: 0.0001
-      score_threshold: 0.005
+      score_threshold: 0.0005
       time_type: ms
       time_range: 20
 
@@ -81,7 +81,7 @@ pipeline:
       model: rf
       checksum: 5db8bfb617e80361362c33b1d1afc6d762c28e9fa9275fb11514a3bdef76bb88
       base_url: https://heibox.uni-heidelberg.de/d/0d5cbcbe16cd46a58021/
-      threshold: 0.005
+      threshold: 0.0005
       inspector_name: dga_inspector
 
   monitoring:
@@ -100,7 +100,7 @@ pipeline:
         alerter_class_name: "HelloWorldAlerter"
   zeek:
     sensors:
-      zeek1:
+      zeek:
         static_analysis: true
         protocols:
           - dns
@@ -128,6 +128,8 @@ environment:
       batch_sender_to_prefilter: "pipeline-batch_sender_to_prefilter"
       prefilter_to_inspector: "pipeline-prefilter_to_inspector"
       inspector_to_detector: "pipeline-inspector_to_detector"
+      detector_to_alerter: "pipeline-detector_to_alerter"
+
   monitoring:
     clickhouse_server:
       hostname: clickhouse-server

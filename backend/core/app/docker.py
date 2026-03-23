@@ -107,7 +107,7 @@ async def remove_docker_container(ids_container):
     client.close()
 
 
-async def check_container_health(ids_container, timeout=30):
+async def check_container_health(ids_container, timeout=90):
     start_time = time.time()
     container_url = ids_container.get_container_http_url()
     url = f"{container_url}/healthcheck"
