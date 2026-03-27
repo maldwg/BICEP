@@ -4,6 +4,7 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 
 import asyncio
 import os
+import shutil
 import docker
 import httpx
 from http.client import HTTPResponse
@@ -25,6 +26,76 @@ from app.database import Base
 from app.logger import LOGGER
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def _remove_work_dir(host_system, work_dir):
+    """Best-effort cleanup of temporary CIDS work directories on local/remote Docker hosts."""
+    if not work_dir.startswith("/tmp/bicep_cids_"):
+        LOGGER.warning(f"Skipping work dir cleanup for unexpected path: {work_dir}")
+        return
+
+    host = (host_system.host or "").strip().lower()
+    is_local = host in {"", "localhost", "127.0.0.1"}
+
+    if is_local:
+        shutil.rmtree(work_dir, ignore_errors=True)
+        LOGGER.info(f"Removed local CIDS temp directory: {work_dir}")
+        return
+
+    host_ip, docker_port = host_system.get_host_and_docker_port()
+    docker_host_url = f"tcp://{host_ip}:{docker_port}"
+    docker_client = docker.DockerClient(base_url=docker_host_url)
+    relative_path = os.path.relpath(work_dir, "/tmp")
+
+    tmp_container = None
+    try:
+        tmp_container = docker_client.containers.run(
+            "alpine:3.19",
+            command=["sh", "-c", "rm -rf -- \"$TARGET_PATH\""],
+            environment={"TARGET_PATH": f"/host_tmp/{relative_path}"},
+            detach=True,
+            volumes={"/tmp": {"bind": "/host_tmp", "mode": "rw"}},
+        )
+        tmp_container.wait(timeout=20)
+        LOGGER.info(f"Removed remote CIDS temp directory: {work_dir}")
+    except Exception as exc:
+        LOGGER.warning(f"Failed to remove remote CIDS temp directory {work_dir}: {exc}")
+    finally:
+        try:
+            if tmp_container:
+                tmp_container.remove(force=True)
+        except Exception:
+            pass
+        docker_client.close()
+
+
+def _cleanup_project_networks_and_volumes(docker_host_url, project_name):
+    """Best-effort cleanup of leftover compose resources for a CIDS project."""
+    docker_client = docker.DockerClient(base_url=docker_host_url)
+    compose_label = f"com.docker.compose.project={project_name}"
+    try:
+        leftover_containers = docker_client.containers.list(
+            all=True, filters={"label": compose_label}
+        )
+        for container in leftover_containers:
+            try:
+                container.remove(force=True, v=True)
+            except Exception as exc:
+                LOGGER.warning(f"Failed removing leftover container {container.name}: {exc}")
+
+        for network in docker_client.networks.list(filters={"label": compose_label}):
+            try:
+                network.remove()
+            except Exception as exc:
+                LOGGER.warning(f"Failed removing network {network.name}: {exc}")
+
+        for volume in docker_client.volumes.list(filters={"label": compose_label}):
+            try:
+                volume.remove(force=True)
+            except Exception as exc:
+                LOGGER.warning(f"Failed removing volume {volume.name}: {exc}")
+    finally:
+        docker_client.close()
 
 
 class IdsSystem(Base):
@@ -353,6 +424,7 @@ class CidsSystem(IdsSystem):
             host_system = components[0].host_system
             host_name_safe = host_system.name.replace(" ", "_").lower()
             project_name = f"bicep_cids_{self.id}_{host_name_safe}"
+            work_dir = f"/tmp/{project_name}"
 
             host_ip, docker_port = host_system.get_host_and_docker_port()
             docker_host_url = f"tcp://{host_ip}:{docker_port}"
@@ -388,6 +460,14 @@ class CidsSystem(IdsSystem):
                     docker_client.close()
             except Exception as e:
                 LOGGER.error(f"Teardown error on {host_system.name}: {e}")
+            finally:
+                try:
+                    _cleanup_project_networks_and_volumes(docker_host_url, project_name)
+                except Exception as cleanup_exc:
+                    LOGGER.warning(
+                        f"Resource cleanup failed for {project_name} on {host_system.name}: {cleanup_exc}"
+                    )
+                _remove_work_dir(host_system, work_dir)
 
             for component in components:
                 await db.delete(component)
