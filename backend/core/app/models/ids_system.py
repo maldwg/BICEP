@@ -258,7 +258,8 @@ class CidsSystem(IdsSystem):
                 raise Exception(f"CIDS did not become healthy within {timeout}s")
             await asyncio.sleep(3)
 
-        from app.docker import inject_ruleset
+        from app.docker import inject_ruleset,inject_config
+        await inject_config(self, config)
 
         if ruleset:
             await inject_ruleset(self, ruleset)
