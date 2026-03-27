@@ -30,22 +30,32 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 def _remove_work_dir(host_system, work_dir):
     """Best-effort cleanup of temporary CIDS work directories on local/remote Docker hosts."""
-    if not work_dir.startswith("/tmp/bicep_cids_"):
-        LOGGER.warning(f"Skipping work dir cleanup for unexpected path: {work_dir}")
+    normalized_work_dir = os.path.realpath(work_dir)
+    tmp_root = "/tmp"
+    expected_name_prefix = "bicep_cids_"
+
+    if (
+        os.path.commonpath([normalized_work_dir, tmp_root]) != tmp_root
+        or not os.path.basename(normalized_work_dir).startswith(expected_name_prefix)
+    ):
+        LOGGER.warning(
+            "Skipping work dir cleanup for unexpected path: "
+            f"{work_dir} (normalized: {normalized_work_dir})"
+        )
         return
 
     host = (host_system.host or "").strip().lower()
     is_local = host in {"", "localhost", "127.0.0.1"}
 
     if is_local:
-        shutil.rmtree(work_dir, ignore_errors=True)
-        LOGGER.info(f"Removed local CIDS temp directory: {work_dir}")
+        shutil.rmtree(normalized_work_dir, ignore_errors=True)
+        LOGGER.info(f"Removed local CIDS temp directory: {normalized_work_dir}")
         return
 
     host_ip, docker_port = host_system.get_host_and_docker_port()
     docker_host_url = f"tcp://{host_ip}:{docker_port}"
     docker_client = docker.DockerClient(base_url=docker_host_url)
-    relative_path = os.path.relpath(work_dir, "/tmp")
+    relative_path = os.path.relpath(normalized_work_dir, "/tmp")
 
     tmp_container = None
     try:
@@ -57,7 +67,7 @@ def _remove_work_dir(host_system, work_dir):
             volumes={"/tmp": {"bind": "/host_tmp", "mode": "rw"}},
         )
         tmp_container.wait(timeout=20)
-        LOGGER.info(f"Removed remote CIDS temp directory: {work_dir}")
+        LOGGER.info(f"Removed remote CIDS temp directory: {normalized_work_dir}")
     except Exception as exc:
         LOGGER.warning(f"Failed to remove remote CIDS temp directory {work_dir}: {exc}")
     finally:

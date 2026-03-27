@@ -16,6 +16,16 @@ def test_remove_work_dir_local_uses_shutil():
     mock_rmtree.assert_called_once_with("/tmp/bicep_cids_7_localhost", ignore_errors=True)
 
 
+def test_remove_work_dir_skips_path_traversal_outside_tmp():
+    host = MagicMock()
+    host.host = "localhost"
+
+    with patch("app.models.ids_system.shutil.rmtree") as mock_rmtree:
+        _remove_work_dir(host, "/tmp/bicep_cids_7_localhost/../../etc")
+
+    mock_rmtree.assert_not_called()
+
+
 def test_cleanup_project_networks_and_volumes_removes_labeled_resources():
     mock_client = MagicMock()
     mock_container = MagicMock()
