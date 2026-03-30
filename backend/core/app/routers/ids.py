@@ -1,11 +1,9 @@
-import asyncio
 from http.client import HTTPResponse
 from app.models.benchmarking import BenchmarkingResultTransferObject
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
 from app.validation.models import (
     AlertData,
     IdsContainerCreate,
-    EnsembleCreate,
     NetworkAnalysisData,
     StaticAnalysisData,
     stop_analysisData,
@@ -15,9 +13,8 @@ from app.models.ids_system import (
     IdsSystem,
     get_ids_system_by_id,
     update_ids_status,
-    get_all_container,
 )
-from app.models.configuration import Configuration, get_config_by_id
+from app.models.configuration import get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
 from app.utils import (
     DOCKER_HOST_STATUS,
@@ -28,9 +25,7 @@ from app.utils import (
     parse_response_for_triggered_analysis,
     calculate_evaluation_metrics_and_push,
 )
-import httpx
 import json
-from fastapi.encoders import jsonable_encoder
 from app.loki import push_alerts_to_loki
 from app.bicep_utils.models.ids_base import Alert
 from app.models.docker_host_system import get_host_by_id
@@ -38,7 +33,6 @@ from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from app.database import get_db, SessionLocal
 from datetime import datetime
-import time
 
 
 from app.models.ensemble import get_ensemble_by_id
@@ -144,9 +138,8 @@ async def remove_container(container_id: int, db=Depends(get_db)):
     try:
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
-        LOGGER.debug("stopped container analysis")
-    except Exception as e:
-        print(e)
+    except Exception as exc:
+        LOGGER.warning(f"Failed to stop analysis before teardown of {container.name}: {exc}")
     await container.teardown(db)
     return Response(status_code=204)
 

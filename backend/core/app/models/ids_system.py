@@ -4,10 +4,8 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 
 import asyncio
 import os
-import docker
 import httpx
 from http.client import HTTPResponse
-import json
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from app.models.ids_tool import get_ids_by_id
@@ -20,7 +18,7 @@ from app.utils import (
     stop_analysis,
     get_core_host_ip,
 )
-from app.validation.models import IdsContainerUpdate, NetworkAnalysisData
+from app.validation.models import IdsContainerUpdate
 from app.database import Base
 from app.logger import LOGGER
 from sqlalchemy.future import select
@@ -270,7 +268,6 @@ class CidsSystem(IdsSystem):
         from collections import defaultdict
 
         if not self.components:
-            LOGGER.debug(f"CIDS {self.id} has no components, not healthy")
             return False
 
         # Group components by host
@@ -278,7 +275,7 @@ class CidsSystem(IdsSystem):
         for component in self.components:
             components_by_host[component.host_system_id].append(component)
 
-        for host_id, components in components_by_host.items():
+        for components in components_by_host.values():
             host_system = components[0].host_system
             host_name_safe = host_system.name.replace(" ", "_").lower()
             project_name = f"bicep_cids_{self.id}_{host_name_safe}"
@@ -301,18 +298,13 @@ class CidsSystem(IdsSystem):
                 containers = client.compose.ps()
 
                 if not containers:
-                    LOGGER.debug(f"No containers running for {project_name}")
                     return False
 
                 for c in containers:
                     health = c.state.health.status if c.state.health else None
                     if health and health != "healthy":
-                        LOGGER.debug(
-                            f"Container {c.name} is {health}, CIDS not healthy yet"
-                        )
                         return False
                     if not c.state.running:
-                        LOGGER.debug(f"Container {c.name} is not running")
                         return False
 
             except Exception as e:
@@ -323,15 +315,10 @@ class CidsSystem(IdsSystem):
             async with httpx.AsyncClient(timeout=3.0) as client:
                 response = await client.get(f"{self.get_container_http_url()}/healthcheck")
             if response.status_code != 200:
-                LOGGER.debug(
-                    f"CIDS {self.id} sensor healthcheck returned {response.status_code}"
-                )
                 return False
-        except Exception as exc:
-            LOGGER.debug(f"CIDS {self.id} sensor healthcheck is not ready yet: {exc}")
+        except Exception:
             return False
 
-        LOGGER.debug(f"CIDS {self.id} is healthy (all containers and sensor are ready)")
         return True
 
     async def teardown(self, db: AsyncSession):
@@ -349,7 +336,7 @@ class CidsSystem(IdsSystem):
         for component in self.components:
             components_by_host[component.host_system_id].append(component)
 
-        for host_id, components in components_by_host.items():
+        for components in components_by_host.values():
             host_system = components[0].host_system
             host_name_safe = host_system.name.replace(" ", "_").lower()
             project_name = f"bicep_cids_{self.id}_{host_name_safe}"

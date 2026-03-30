@@ -64,7 +64,6 @@ async def deploy_docker_compose(
     """Orchestrates a full Docker Compose CIDS deployment."""
 
     compose_data = yaml.safe_load(await config.read_content())
-    LOGGER.debug(f"CIDS_CONFIG: {cids_configurations}")
     service_runtime_configs = await _resolve_service_runtime_configs(
         db_session, compose_data, cids_configurations or []
     )
@@ -451,11 +450,6 @@ async def _run_compose_and_register(
 
     except DockerException as e:
         LOGGER.error(f"Docker Compose failed on {host_system.name}: {e}")
-        try:
-            with open(compose_file_path, "r") as f:
-                LOGGER.debug(f"Generated compose file:\n{f.read()}")
-        except Exception:
-            pass
         raise Exception(f"Docker Compose failed on {host_system.name}: {e}")
 
 
