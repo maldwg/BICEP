@@ -31,7 +31,7 @@ async def start_docker_container(
     if not isinstance(deployment_type, str):
         deployment_type = "SINGLE_CONTAINER"
 
-    if deployment_type in {"DOCKER_COMPOSE", "NIXOS"}:
+    if deployment_type == "DOCKER_COMPOSE":
         await start_cids_deployment(
             ids_container, ids_tool, config, ruleset, db_session
         )

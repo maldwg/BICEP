@@ -31,7 +31,7 @@ async def start_cids_deployment(
     env_vars=None,
 ):
     """
-    Deploys a CIDS using Docker Compose or NixOS based on the tool's deployment type.
+    Deploys a CIDS using the implementation registered for its deployment type.
     """
     if ids_tool.deployment_type == "DOCKER_COMPOSE":
         await deploy_docker_compose(
@@ -43,8 +43,6 @@ async def start_cids_deployment(
             cids_configurations,
             env_vars=env_vars,
         )
-    elif ids_tool.deployment_type == "NIXOS":
-        await deploy_nixos(ids_container, ids_tool, config, ruleset, db_session)
     else:
         raise ValueError(f"Unsupported deployment type: {ids_tool.deployment_type}")
 
@@ -508,12 +506,3 @@ def _extract_exposed_port(container):
             if bindings and len(bindings) > 0:
                 return int(bindings[0]["HostPort"])
     return None
-
-
-# ---------------------------------------------------------------------------
-# NixOS deployment (placeholder)
-# ---------------------------------------------------------------------------
-
-
-async def deploy_nixos(ids_container, ids_tool, config, ruleset, db_session):
-    LOGGER.warning("NixOS deployment not fully implemented yet.")
