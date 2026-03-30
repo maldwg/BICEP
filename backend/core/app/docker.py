@@ -27,7 +27,11 @@ async def start_docker_container(
 ):
     from app.cids_deployment import start_cids_deployment
 
-    if ids_tool.deployment_type != "SINGLE_CONTAINER":
+    deployment_type = getattr(ids_tool, "deployment_type", "SINGLE_CONTAINER")
+    if not isinstance(deployment_type, str):
+        deployment_type = "SINGLE_CONTAINER"
+
+    if deployment_type in {"DOCKER_COMPOSE", "NIXOS"}:
         await start_cids_deployment(
             ids_container, ids_tool, config, ruleset, db_session
         )

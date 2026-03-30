@@ -32,7 +32,9 @@ def mock_ids_container():
 
 @pytest.fixture
 def mock_ids_tool():
-    return MagicMock()
+    tool = MagicMock()
+    tool.deployment_type = "SINGLE_CONTAINER"
+    return tool
 
 @pytest.fixture
 def mock_config():

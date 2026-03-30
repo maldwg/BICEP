@@ -151,9 +151,11 @@ async def db_session_fixture():
     mock_ids_tool = MagicMock(spec=IdsTool)
     mock_ids_tool.id = 1
     mock_ids_tool.name = "Suricata"
+    mock_ids_tool.deployment_type = "SINGLE_CONTAINER"
     second_mock_ids_tool = MagicMock(spec=IdsTool)
     second_mock_ids_tool.id = (2,)
     second_mock_ids_tool.name = "Slips"
+    second_mock_ids_tool.deployment_type = "SINGLE_CONTAINER"
 
     mock_ids_container = MagicMock(spec=IdsSystem)
     mock_ids_container.id = 1

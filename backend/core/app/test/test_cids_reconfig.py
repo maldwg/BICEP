@@ -8,31 +8,31 @@ from app.utils import STATUS
 
 @pytest.fixture
 def mock_host_system():
-    host = MagicMock(spec=DockerHostSystem)
-    host.id = 1
-    host.name = "TestHost"
-    host.host = "192.168.1.100"
-    host.docker_port = 2375
-    return host
+    return DockerHostSystem(
+        id=1,
+        name="TestHost",
+        host="192.168.1.100",
+        docker_port=2375,
+    )
 
 
 @pytest.fixture
 def mock_components(mock_host_system):
-    sensor = MagicMock(spec=IdsComponent)
-    sensor.id = 1
-    sensor.name = "bicep_cids_1_sensor"
-    sensor.role = "SENSOR"
-    sensor.port = 8081
-    sensor.host_system = mock_host_system
-    sensor.get_http_url.return_value = "http://192.168.1.100:8081"
+    sensor = IdsComponent(
+        id=1,
+        name="bicep_cids_1_sensor",
+        role="SENSOR",
+        port=8081,
+        host_system=mock_host_system,
+    )
 
-    aggregator = MagicMock(spec=IdsComponent)
-    aggregator.id = 2
-    aggregator.name = "bicep_cids_1_aggregator"
-    aggregator.role = "AGGREGATOR"
-    aggregator.port = 8082
-    aggregator.host_system = mock_host_system
-    aggregator.get_http_url.return_value = "http://192.168.1.100:8082"
+    aggregator = IdsComponent(
+        id=2,
+        name="bicep_cids_1_aggregator",
+        role="AGGREGATOR",
+        port=8082,
+        host_system=mock_host_system,
+    )
 
     return [sensor, aggregator]
 
@@ -40,25 +40,25 @@ def mock_components(mock_host_system):
 @pytest.fixture
 def mock_component_no_port(mock_host_system):
     """A component without an exposed port (e.g. internal-only service)."""
-    comp = MagicMock(spec=IdsComponent)
-    comp.id = 3
-    comp.name = "bicep_cids_1_internal"
-    comp.role = "INTERNAL"
-    comp.port = None
-    comp.host_system = mock_host_system
-    return comp
+    return IdsComponent(
+        id=3,
+        name="bicep_cids_1_internal",
+        role="INTERNAL",
+        port=None,
+        host_system=mock_host_system,
+    )
 
 
 @pytest.fixture
 def cids_system(mock_host_system, mock_components):
-    cids = CidsSystem.__new__(CidsSystem)
-    cids.id = 1
-    cids.name = "Test CIDS"
-    cids.port = 8080
-    cids.status = STATUS.IDLE.value
-    cids.host_system = mock_host_system
-    cids.components = mock_components
-    return cids
+    return CidsSystem(
+        id=1,
+        name="Test CIDS",
+        port=8080,
+        status=STATUS.IDLE.value,
+        host_system=mock_host_system,
+        components=mock_components,
+    )
 
 
 @pytest.fixture
