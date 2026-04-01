@@ -47,7 +47,7 @@ class IdsSystem(Base):
     host_system = relationship(
         "DockerHostSystem", back_populates="container", lazy="selectin"
     )
-    ids_tool = relationship("IdsTool", lazy="selectin")
+    ids_tool = relationship("IdsTool", lazy="selectin", back_populates="container")
     ensemble_ids = relationship("EnsembleIds", cascade="all, delete", lazy="selectin")
     components = relationship(
         IdsComponent,
