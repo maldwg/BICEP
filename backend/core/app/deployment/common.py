@@ -37,15 +37,7 @@ def register_deployment_plugin(plugin_cls: type[DeploymentPlugin]):
     return plugin_cls
 
 
-def _ensure_builtin_plugins_loaded():
-    from app.deployment.deployment_plugins import docker as _docker_plugin  # noqa: F401
-    from app.deployment.deployment_plugins import (
-        docker_compose as _docker_compose_plugin,
-    )  # noqa: F401
-
-
 def get_deployment_plugin(deployment_type: Any) -> DeploymentPlugin:
-    _ensure_builtin_plugins_loaded()
 
     normalized = normalize_deployment_type(deployment_type)
     plugin_cls = _DEPLOYMENT_PLUGINS.get(normalized)

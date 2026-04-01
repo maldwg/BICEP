@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 import docker as docker_sdk
 import httpx
 from python_on_whales import DockerClient
-
 from app.deployment.common import (
     DOCKER_COMPOSE_DEPLOYMENT,
     inject_config_to_url,

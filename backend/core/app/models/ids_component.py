@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.utils import get_core_host_ip
 
 
 class IdsComponent(Base):
@@ -20,7 +21,6 @@ class IdsComponent(Base):
 
     def get_http_url(self) -> str:
         """Get the HTTP URL for communicating with this component."""
-        from app.utils import get_core_host_ip
 
         if self.host_system:
             host = self.host_system.host

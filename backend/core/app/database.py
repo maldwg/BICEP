@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 import os 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker

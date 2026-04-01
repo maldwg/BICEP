@@ -1,6 +1,5 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.types import BLOB
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from app.models.ids_system import IdsSystem
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession

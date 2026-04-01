@@ -19,6 +19,7 @@ from app.models.configuration import get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
 from app.utils import (
     DOCKER_HOST_STATUS,
+    finish_ids_setup,
     create_response_error,
     create_response_message,
     find_free_port,
@@ -26,37 +27,17 @@ from app.utils import (
     parse_response_for_triggered_analysis,
     calculate_evaluation_metrics_and_push,
 )
-import json
 from app.loki import push_alerts_to_loki
 from app.bicep_utils.models.ids_base import Alert
 from app.models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
-from app.database import get_db, SessionLocal
+from app.database import get_db
 from datetime import datetime
-
-
+from app.models.ids_tool import get_ids_by_id
 from app.models.ensemble import get_ensemble_by_id
 
 router = APIRouter(prefix="/ids")
-
-
-async def _finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
-    async with SessionLocal() as db:
-        ids_system = await get_ids_system_by_id(db, ids_system_id)
-        if ids_system is None:
-            LOGGER.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
-            return
-
-        try:
-            await ids_system.setup(
-                db,
-                cids_configurations=cids_configurations,
-                env_vars=env_vars,
-            )
-        except Exception as exc:
-            LOGGER.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")
-
 
 @router.post("/setup")
 async def setup_ids(
@@ -72,7 +53,6 @@ async def setup_ids(
         )
 
     # Look up the tool to determine the correct IDS system subclass
-    from app.models.ids_tool import get_ids_by_id
 
     ids_tool = await get_ids_by_id(db, data.ids_tool_id)
     if not ids_tool:
@@ -102,7 +82,7 @@ async def setup_ids(
     await db.refresh(ids_system)
 
     background_tasks.add_task(
-        _finish_ids_setup,
+        finish_ids_setup,
         ids_system.id,
         data.cids_configurations or [],
         data.env_vars or {},

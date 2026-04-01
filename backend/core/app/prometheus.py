@@ -1,9 +1,7 @@
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 import os
-from app.bicep_utils.models.ids_base import Alert
 import logging
 from datetime import datetime
-import uuid
 import httpx
 
 logging.basicConfig(level=logging.INFO)

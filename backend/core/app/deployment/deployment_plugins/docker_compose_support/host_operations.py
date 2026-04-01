@@ -6,7 +6,6 @@ import os
 import shutil
 import tarfile
 from collections import defaultdict
-
 from python_on_whales.exceptions import DockerException
 
 

@@ -1,8 +1,6 @@
 import asyncio
-import base64
 import aiofiles
 from http.client import HTTPResponse
-import io
 import socket
 from contextlib import closing
 from enum import Enum
@@ -14,22 +12,20 @@ from app.models.benchmarking import (
 )
 import httpx
 from fastapi import Response, Request
-import pandas as pd
-import csv
-from app.models.dataset import Dataset
+from app.models.dataset import Dataset, add_dataset
 from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
-import uuid
 import shutil
+from app.database import SessionLocal
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from abc import ABC, abstractmethod
-
+from app.metrics import calculate_evaluation_metrics
+from app.models.dataset import get_dataset_by_id
+from app.prometheus import query_average_cpu_usage, query_average_memory_usage
 dataset_addition_tasks = set()
 
-
-# TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 class Precision(ABC):
     @property
     @abstractmethod
@@ -271,8 +267,6 @@ async def parse_response_for_triggered_analysis(
 async def calculate_and_add_dataset(
     data_file_path, labels_file_path, name, description, dataset_type, db
 ):
-    from .models.dataset import Dataset, add_dataset
-
     benign, malicious = await dataset_type.get_benign_and_malicious_counts(
         labels_file_path
     )
@@ -327,9 +321,6 @@ async def calculate_evaluation_metrics_and_push(
     ruleset_name: str = None,
     ensemble_technique_name: str = None,
 ):
-    from .metrics import calculate_evaluation_metrics
-    from .models.dataset import get_dataset_by_id
-    from .prometheus import query_average_cpu_usage, query_average_memory_usage
 
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
     # and an error will be thrown
@@ -429,3 +420,20 @@ def directory_is_empty(path):
         return True if len(os.listdir(path)) == 0 else False
     else:
         return True
+
+
+async def finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
+    async with SessionLocal() as db:
+        ids_system = await get_ids_system_by_id(db, ids_system_id)
+        if ids_system is None:
+            LOGGER.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
+            return
+
+        try:
+            await ids_system.setup(
+                db,
+                cids_configurations=cids_configurations,
+                env_vars=env_vars,
+            )
+        except Exception as exc:
+            LOGGER.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")

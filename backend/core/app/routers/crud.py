@@ -1,9 +1,7 @@
-import base64
-from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
 from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
-from app.models.dataset import Dataset, get_all_datasets, remove_dataset_by_id
+from app.models.dataset import get_all_datasets, remove_dataset_by_id
 from app.models.ids_tool import IdsTool, get_all_tools, add_ids_tool, update_ids_tool, delete_ids_tool
 from app.models.ids_system import get_all_container, update_container
 from app.models.ensemble import get_all_ensembles, update_ensemble
@@ -12,13 +10,14 @@ from app.models.ensemble_ids import get_all_ensemble_container
 from app.models.benchmarking import get_all_benchmarking_results
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData, IdsToolCreate, IdsToolUpdate
-from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem, get_host_by_id
+from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
 from app.logger import LOGGER
 from app.database import get_db
 import uuid
 import shutil
 import os
+import yaml
 
 router = APIRouter(
     prefix="/crud"
@@ -66,7 +65,6 @@ async def get_config_content( id: int, db=Depends(get_db)):
 
 @router.get("/configuration/{id}/services")
 async def get_config_services(id: int, db=Depends(get_db)):
-    import yaml
     try:
         configuration = await get_config_by_id(db, id)
         content = await configuration.read_content()

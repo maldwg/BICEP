@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship
 from app.database import Base
 from app.logger import LOGGER
 from app.models.ensemble_techniques_implementation import *

@@ -1,12 +1,9 @@
 from __future__ import annotations
-
 import asyncio
 import time
-
 import docker as docker_sdk
 import httpx
 from requests.models import Response
-
 from app.deployment.common import (
     SINGLE_CONTAINER_DEPLOYMENT,
     inject_config_to_url,

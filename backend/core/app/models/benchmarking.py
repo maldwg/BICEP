@@ -1,7 +1,6 @@
 from datetime import datetime
 from app.bicep_utils.models.ids_base import Alert
-from sqlalchemy import Column, ForeignKey, Integer, String, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import Base
 from sqlalchemy.future import select

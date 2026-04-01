@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from app.database import get_db
-from app.models.ids_system import get_all_container, IdsSystem
+from app.models.ids_system import get_all_container
 from app.utils import STATUS
 from app.logger import LOGGER
 import httpx

@@ -1,8 +1,6 @@
 import os
-import requests
 import json
-import time
-from datetime import datetime, timedelta,timezone
+from datetime import datetime, timedelta
 import httpx
 from app.bicep_utils.models.ids_base import Alert
 from app.logger import LOGGER
@@ -70,7 +68,6 @@ def get_timestamp_in_nanoseconds():
     return nanoseconds_since_epoch
 
 async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
-    from datetime import datetime, timedelta
 
     path = "/loki/api/v1/query_range"
     query = f'{{ensemble_analysis_id="{analysis_id}"}}'

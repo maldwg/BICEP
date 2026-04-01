@@ -1,6 +1,4 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Session
-
 from app.database import Base
 from app.utils import ANALYSIS_STATUS
 from sqlalchemy.future import select
@@ -32,8 +30,6 @@ async def get_all_ensemble_container(db: AsyncSession):
 
 
 async def last_container_sending_logs(db: AsyncSession, container, ensemble):
-    from datetime import datetime
-
     stmt = select(EnsembleIds).where(
         EnsembleIds.ensemble_id == ensemble.id,
         EnsembleIds.ids_system_id != container.id,

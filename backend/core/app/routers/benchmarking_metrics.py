@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
-from app.database import get_db
 from app.prometheus import query_cpu_usage_series, query_memory_usage_series
 from app.logger import LOGGER
 from pydantic import BaseModel
