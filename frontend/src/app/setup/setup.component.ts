@@ -13,7 +13,7 @@ import { Configuration } from '../models/configuration';
 import { fileTypes } from '../models/acceptedFileTypes';
 import { IdsTool } from '../models/ids';
 import { CommonModule } from '@angular/common';
-import { Ensemble, EnsembleSetupData, EnsembleTechnique } from '../models/ensemble';
+import { EnsembleSetupData, EnsembleTechnique } from '../models/ensemble';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DockerHostService } from '../services/host/host.service';
@@ -31,7 +31,6 @@ export class SetupComponent implements OnInit {
 
   hostStatus = hostStatus;
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
-  //  TODO 5: add name to IDS creation
   idsForm = new FormGroup({
     host: new FormControl("localhost"),
     description: new FormControl(""),
@@ -47,13 +46,11 @@ export class SetupComponent implements OnInit {
     technique: new FormControl(""),
   });
 
-  idsConfigs: Configuration[] = [];
   filteredConfigs: Configuration[] = [];
   ruleSets: Configuration[] = [];
   idsTools: IdsTool[] = [];
   hostSystems: DockerHostSystem[] = [];
   containers: Container[] = [];
-  ensembles: Ensemble[] = [];
   ensembleTechniques: EnsembleTechnique[] = [];
   userChoice = "";
   requiresRuleset = false;
@@ -73,14 +70,9 @@ export class SetupComponent implements OnInit {
   runtimeConfigs: Configuration[] = [];
   deploymentConfigs: Configuration[] = [];
 
-  // Helper for CIDS Form: Host -> Services
   cidsHostSelection = new FormControl();
   cidsServiceSelection = new FormControl();
   cidsCountSelection = new FormControl(1);
-  cidsComposeSelection = new FormControl(); // Select additional compose files? Or just use main config?
-  // Current plan: Use main config for services parsing.
-
-
 
   constructor(
     private idsService: IdsService,
@@ -94,13 +86,10 @@ export class SetupComponent implements OnInit {
   ngOnInit(): void {
     this.getAllIdsTools();
     this.getAllContainer();
-    this.getAllEnemsebles();
     this.getAllTechniques();
     this.getConfigurations();
     this.getRuleSets();
     this.getAllHostSystems();
-
-
 
     this.idsForm.controls.idsTool.valueChanges.subscribe((toolId) => {
       this.selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
@@ -199,17 +188,6 @@ export class SetupComponent implements OnInit {
 
   hasRuntimeConfigMount(config: CidsServiceConfig): boolean {
     return !!config.config_mount_path;
-  }
-
-  getHostName(id: number): string {
-    return this.hostSystems.find(h => h.id === id)?.name || 'Unknown';
-  }
-
-  getRuntimeConfigName(configId: number | null | undefined): string {
-    if (!configId) {
-      return 'None';
-    }
-    return this.runtimeConfigs.find(config => config.id === configId)?.name || 'Unknown';
   }
 
   getRuntimeConfigHint(config: CidsServiceConfig): string {
@@ -367,11 +345,8 @@ export class SetupComponent implements OnInit {
         technique: parseInt(this.ensembleForm.value.technique!),
         container_ids: this.ensembleForm.value.containers!
       }
-      console.log(this.ensembleForm)
-      console.log(this.ensembleForm.value.containers);
       this.ensembleService.sendEnsembleData(ensembleData)
-        .subscribe(res => {
-          // TODO 5: go thorugh each response object here and see if it was succesful??
+        .subscribe(_res => {
           this.router.navigate(["/"])
         },
           err => {
@@ -388,7 +363,6 @@ export class SetupComponent implements OnInit {
         const allConfigs = data.map(config => ({
           id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type, config_type: config.config_type
         }));
-        this.idsConfigs = allConfigs;
 
         // Filter for specific config types
         this.runtimeConfigs = allConfigs.filter(c => c.config_type === 'RUNTIME' || !c.config_type || c.config_type === 'CONFIGURATION');
@@ -453,20 +427,6 @@ export class SetupComponent implements OnInit {
           name: technique.name,
           description: technique.description,
           function_name: technique.function_name
-        }));
-      });
-  }
-
-  getAllEnemsebles() {
-    this.ensembleService.getAllEnsembles()
-      .subscribe(data => {
-        this.ensembles = data.map(ensemble => ({
-          id: ensemble.id,
-          name: ensemble.name,
-          description: ensemble.description,
-          technique_id: ensemble.technique_id,
-          status: ensemble.status,
-          current_analysis_id: ensemble.current_analysis_id
         }));
       });
   }

@@ -1,10 +1,10 @@
 from app.database import Base
 from sqlalchemy import Column, String, Integer
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils import DOCKER_HOST_STATUS, get_core_host_ip
-from app.docker import get_docker_client
+from app.deployment.deployment_plugins.docker import get_docker_client
 from app.logger import LOGGER
 import asyncio
 

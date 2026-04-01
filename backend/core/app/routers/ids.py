@@ -12,6 +12,7 @@ from app.validation.models import (
 from app.models.ids_system import (
     IdsSystem,
     get_ids_system_by_id,
+    get_ids_system_model,
     update_ids_status,
 )
 from app.models.configuration import get_config_by_id
@@ -88,31 +89,17 @@ async def setup_ids(
     ruleset_id = data.ruleset_id if data.ruleset_id else None
     initial_name = f"{ids_tool.name}-{free_port}"
 
-    # Create the correct subclass based on deployment type
-    if ids_tool.deployment_type == "DOCKER_COMPOSE":
-        from app.models.ids_system import CidsSystem
-
-        ids_system = CidsSystem(
-            name=initial_name,
-            host_system_id=host.id,
-            port=free_port,
-            description=data.description,
-            configuration_id=data.configuration_id,
-            ids_tool_id=data.ids_tool_id,
-            status=STATUS.SETTING_UP.value,
-            ruleset_id=ruleset_id,
-        )
-    else:
-        ids_system = IdsSystem(
-            name=initial_name,
-            host_system_id=host.id,
-            port=free_port,
-            description=data.description,
-            configuration_id=data.configuration_id,
-            ids_tool_id=data.ids_tool_id,
-            status=STATUS.SETTING_UP.value,
-            ruleset_id=ruleset_id,
-        )
+    ids_system_model = get_ids_system_model(getattr(ids_tool, "ids_type", None))
+    ids_system: IdsSystem = ids_system_model(
+        name=initial_name,
+        host_system_id=host.id,
+        port=free_port,
+        description=data.description,
+        configuration_id=data.configuration_id,
+        ids_tool_id=data.ids_tool_id,
+        status=STATUS.SETTING_UP.value,
+        ruleset_id=ruleset_id,
+    )
 
     db.add(ids_system)
     await db.commit()
@@ -165,7 +152,7 @@ async def start_static_container_analysis(
             status_code=500,
         )
 
-    if not await ids.is_available():
+    if not await ids.is_available(db):
         return JSONResponse(
             {
                 "error": f"container with id {ids.id} is not available! Check if it should be deleted"
@@ -218,7 +205,7 @@ async def start_network_container_analysis(
             status_code=500,
         )
 
-    if not await ids.is_available():
+    if not await ids.is_available(db):
         return JSONResponse(
             {
                 "error": f"container with id {ids.id} is not available! Check if it should be deleted"

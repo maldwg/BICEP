@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from app.models.ids_system import CidsSystem
 from app.models.ids_component import IdsComponent
 from app.models.docker_host_system import DockerHostSystem
+from app.models.ids_tool import IdsTool
 from app.utils import STATUS
 
 
@@ -51,11 +52,23 @@ def mock_component_no_port(mock_host_system):
 
 @pytest.fixture
 def cids_system(mock_host_system, mock_components):
+    ids_tool = IdsTool(
+        id=1,
+        name="Test CIDS Tool",
+        ids_type="CIDS",
+        analysis_method="NETWORK",
+        requires_ruleset=True,
+        image_name="test/image",
+        image_tag="latest",
+        deployment_type="DOCKER_COMPOSE",
+    )
     return CidsSystem(
         id=1,
         name="Test CIDS",
         port=8080,
         status=STATUS.IDLE.value,
+        ids_tool_id=ids_tool.id,
+        ids_tool=ids_tool,
         host_system=mock_host_system,
         components=mock_components,
     )
@@ -84,8 +97,8 @@ def mock_ruleset():
 
 @pytest.mark.asyncio
 @patch("app.models.ids_system.select")
-@patch("app.docker.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.docker.restart_docker_container", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
 async def test_cids_update_config_propagates_to_all_components(
     mock_restart, mock_inject, mock_select, cids_system, mock_config
 ):
@@ -112,8 +125,8 @@ async def test_cids_update_config_propagates_to_all_components(
 
 @pytest.mark.asyncio
 @patch("app.models.ids_system.select")
-@patch("app.docker.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.docker.restart_docker_container", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
 async def test_cids_update_config_skips_components_without_port(
     mock_restart,
     mock_inject,
@@ -140,8 +153,8 @@ async def test_cids_update_config_skips_components_without_port(
 
 @pytest.mark.asyncio
 @patch("app.models.ids_system.select")
-@patch("app.docker.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.docker.restart_docker_container", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
 async def test_cids_update_config_no_op_for_missing_config(
     mock_restart, mock_inject, mock_select, cids_system
 ):
@@ -162,8 +175,8 @@ async def test_cids_update_config_no_op_for_missing_config(
 
 @pytest.mark.asyncio
 @patch("app.models.ids_system.select")
-@patch("app.docker.inject_ruleset_to_url", new_callable=AsyncMock)
-@patch("app.docker.restart_docker_container", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.inject_ruleset_to_url", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
 async def test_cids_update_ruleset_propagates_to_all_components(
     mock_restart, mock_inject_ruleset, mock_select, cids_system, mock_ruleset
 ):
@@ -184,8 +197,8 @@ async def test_cids_update_ruleset_propagates_to_all_components(
 
 @pytest.mark.asyncio
 @patch("app.models.ids_system.select")
-@patch("app.docker.inject_ruleset_to_url", new_callable=AsyncMock)
-@patch("app.docker.restart_docker_container", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.inject_ruleset_to_url", new_callable=AsyncMock)
+@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
 async def test_cids_update_ruleset_no_op_for_missing_ruleset(
     mock_restart, mock_inject_ruleset, mock_select, cids_system
 ):
@@ -205,11 +218,11 @@ async def test_cids_update_ruleset_no_op_for_missing_ruleset(
 
 
 @pytest.mark.asyncio
-@patch("app.docker.get_docker_client")
+@patch("app.deployment.deployment_plugins.docker.get_docker_client")
 async def test_restart_docker_container_calls_docker_api(
     mock_get_client, mock_components
 ):
-    from app.docker import restart_docker_container
+    from app.deployment.deployment_plugins.docker import restart_docker_container
 
     mock_docker_client = MagicMock()
     mock_container = MagicMock()

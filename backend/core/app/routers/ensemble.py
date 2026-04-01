@@ -137,7 +137,7 @@ async def start_static_ensemble_analysis(
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             message = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(message, status_code=500)
         await update_sendig_logs_status(
@@ -174,7 +174,7 @@ async def start_network_ensemble_analysis(
                 status_code=500,
             )
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             content = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(content, status_code=500)
         await update_sendig_logs_status(
