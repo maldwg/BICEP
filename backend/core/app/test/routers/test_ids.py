@@ -1,15 +1,11 @@
 import pytest
 from fastapi import BackgroundTasks
-from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock, patch
-from app.main import app
-from app.database import get_db
+from unittest.mock import AsyncMock, patch
 from app.routers.ids import *
 from app.validation.models import *
-from app.models.docker_host_system import DockerHostSystem
 from http.client import HTTPResponse
 from app.test.fixtures import *
-
+import json
 
 @pytest.mark.asyncio
 async def test_setup_ids(db_session_fixture: DatabaseSessionFixture):

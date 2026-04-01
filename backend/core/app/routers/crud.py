@@ -112,7 +112,7 @@ async def get_config_services(id: int, db=Depends(get_db)):
 async def add_new_config(configuration: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), file_type: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
     file_name = configuration.filename
     if not file_type_is_accepted(file_type=file_type, file_ending=file_name.split(".")[-1]):
-        return JSONResponse({"error": f"file in {file_name.split(".")[-1]} format is not accepted as {file_type}"}, status_code=500)
+        return JSONResponse({"error": f"file in {file_name.split('.')[-1]} format is not accepted as {file_type}"}, status_code=500)
     if file_type == FILE_TYPES.CONFIG.value:
         base_path = os.getenv("CONFIGURATION_STORE_BASE_PATH")
     elif file_type == FILE_TYPES.RULE_SET.value:

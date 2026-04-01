@@ -285,7 +285,7 @@ def test_ids_component_get_http_url_remote_host():
     assert component.get_http_url() == "http://10.0.0.5:8081"
 
 
-@patch("app.utils.get_core_host_ip", return_value="172.17.0.1")
+@patch("app.models.ids_component.get_core_host_ip", return_value="172.17.0.1")
 def test_ids_component_get_http_url_localhost(mock_core_ip):
     """Component on localhost should resolve to the core host IP."""
     host = DockerHostSystem(id=1, name="localhost", host="localhost", docker_port=2375)
@@ -295,7 +295,7 @@ def test_ids_component_get_http_url_localhost(mock_core_ip):
     assert component.get_http_url() == "http://172.17.0.1:8081"
 
 
-@patch("app.utils.get_core_host_ip", return_value="172.17.0.1")
+@patch("app.models.ids_component.get_core_host_ip", return_value="172.17.0.1")
 def test_ids_component_get_http_url_no_host_system(mock_core_ip):
     """Component with no host_system should fall back to core host IP."""
     component = IdsComponent(id=1, name="sensor", role="SENSOR", port=8081)

@@ -1,9 +1,11 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 import os
 from pathlib import Path
 import shutil
 import pytest
 from app.utils import *
+from app.utils import stop_analysis as utils_stop_analysis
+from app.utils import start_network_analysis as utils_start_network_analysis
 from app.bicep_utils.models.ids_base import Alert
 from app.test.fixtures import *
 
@@ -556,7 +558,7 @@ async def test_start_network_analysis():
         mock_response.status_code = 200
         mock_client.post.return_value = mock_response
 
-        response = await start_network_analysis(container, data)
+        response = await utils_start_network_analysis(container, data)
         assert response.status_code == 200
         mock_client.post.assert_awaited_once()
 
@@ -576,7 +578,7 @@ async def test_stop_analysis():
         mock_response.status_code = 200
         mock_client.post.return_value = mock_response
 
-        response = await stop_analysis(container)
+        response = await utils_stop_analysis(container)
         assert response.status_code == 200
         mock_client.post.assert_awaited_once()
 
