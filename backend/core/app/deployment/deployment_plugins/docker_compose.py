@@ -129,7 +129,8 @@ class DockerComposeDeploymentPlugin(DeploymentPlugin):
 
     async def teardown(self, ids_system, db_session):
         deployment_service, _ = _build_compose_services()
-        await deployment_service.teardown(ids_system)
+        if not getattr(ids_system, "_deployment_cleanup_done", False):
+            await deployment_service.teardown(ids_system)
 
         for component in list(ids_system.components):
             await db_session.delete(component)

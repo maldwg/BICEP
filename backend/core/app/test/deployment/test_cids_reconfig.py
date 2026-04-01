@@ -96,17 +96,24 @@ def mock_ruleset():
 
 
 @pytest.mark.asyncio
-@patch("app.models.ids_system.select")
-@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.load_configuration",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.inject_config_to_url",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.restart_docker_container",
+    new_callable=AsyncMock,
+)
 async def test_cids_update_config_propagates_to_all_components(
-    mock_restart, mock_inject, mock_select, cids_system, mock_config
+    mock_restart, mock_inject, mock_load_configuration, cids_system, mock_config
 ):
     """update_config should inject config to every component with a port and then restart all."""
     db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_config
-    db.execute.return_value = mock_result
+    mock_load_configuration.return_value = mock_config
 
     await cids_system.update_config(db, config_id=10)
 
@@ -124,13 +131,22 @@ async def test_cids_update_config_propagates_to_all_components(
 
 
 @pytest.mark.asyncio
-@patch("app.models.ids_system.select")
-@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.load_configuration",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.inject_config_to_url",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.restart_docker_container",
+    new_callable=AsyncMock,
+)
 async def test_cids_update_config_skips_components_without_port(
     mock_restart,
     mock_inject,
-    mock_select,
+    mock_load_configuration,
     cids_system,
     mock_config,
     mock_component_no_port,
@@ -139,9 +155,7 @@ async def test_cids_update_config_skips_components_without_port(
     cids_system.components.append(mock_component_no_port)
 
     db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_config
-    db.execute.return_value = mock_result
+    mock_load_configuration.return_value = mock_config
 
     await cids_system.update_config(db, config_id=10)
 
@@ -152,17 +166,24 @@ async def test_cids_update_config_skips_components_without_port(
 
 
 @pytest.mark.asyncio
-@patch("app.models.ids_system.select")
-@patch("app.deployment.docker_compose.inject_config_to_url", new_callable=AsyncMock)
-@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.load_configuration",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.inject_config_to_url",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.restart_docker_container",
+    new_callable=AsyncMock,
+)
 async def test_cids_update_config_no_op_for_missing_config(
-    mock_restart, mock_inject, mock_select, cids_system
+    mock_restart, mock_inject, mock_load_configuration, cids_system
 ):
     """If the config ID doesn't exist, nothing should happen."""
     db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    db.execute.return_value = mock_result
+    mock_load_configuration.return_value = None
 
     await cids_system.update_config(db, config_id=999)
 
@@ -174,17 +195,24 @@ async def test_cids_update_config_no_op_for_missing_config(
 
 
 @pytest.mark.asyncio
-@patch("app.models.ids_system.select")
-@patch("app.deployment.docker_compose.inject_ruleset_to_url", new_callable=AsyncMock)
-@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.load_configuration",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.inject_ruleset_to_url",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.restart_docker_container",
+    new_callable=AsyncMock,
+)
 async def test_cids_update_ruleset_propagates_to_all_components(
-    mock_restart, mock_inject_ruleset, mock_select, cids_system, mock_ruleset
+    mock_restart, mock_inject_ruleset, mock_load_configuration, cids_system, mock_ruleset
 ):
     """update_ruleset should inject ruleset to every component with a port and restart all."""
     db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_ruleset
-    db.execute.return_value = mock_result
+    mock_load_configuration.return_value = mock_ruleset
 
     await cids_system.update_ruleset(db, ruleset_id=20)
 
@@ -196,17 +224,24 @@ async def test_cids_update_ruleset_propagates_to_all_components(
 
 
 @pytest.mark.asyncio
-@patch("app.models.ids_system.select")
-@patch("app.deployment.docker_compose.inject_ruleset_to_url", new_callable=AsyncMock)
-@patch("app.deployment.docker_compose.restart_docker_container", new_callable=AsyncMock)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.load_configuration",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.inject_ruleset_to_url",
+    new_callable=AsyncMock,
+)
+@patch(
+    "app.deployment.deployment_plugins.docker_compose.restart_docker_container",
+    new_callable=AsyncMock,
+)
 async def test_cids_update_ruleset_no_op_for_missing_ruleset(
-    mock_restart, mock_inject_ruleset, mock_select, cids_system
+    mock_restart, mock_inject_ruleset, mock_load_configuration, cids_system
 ):
     """If the ruleset ID doesn't exist, nothing should happen."""
     db = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    db.execute.return_value = mock_result
+    mock_load_configuration.return_value = None
 
     await cids_system.update_ruleset(db, ruleset_id=999)
 

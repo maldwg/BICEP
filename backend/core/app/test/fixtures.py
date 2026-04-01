@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+from pathlib import Path
 from app.routers.ids import *
 from app.validation.models import *
 from app.models.docker_host_system import DockerHostSystem
@@ -15,7 +16,7 @@ from sqlalchemy.sql.selectable import Select
 from app.models.benchmarking import BenchmarkingIntermediateResult
 import pytest_asyncio
 
-TESTS_BASE_DIR = "./backend/core/app/test"
+TESTS_BASE_DIR = Path(__file__).resolve().parent
 
 
 class DatabaseSessionFixture:

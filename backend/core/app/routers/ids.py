@@ -42,10 +42,6 @@ router = APIRouter(prefix="/ids")
 
 
 async def _finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
-    if SessionLocal is None:
-        LOGGER.error("Cannot continue IDS setup in background: database is not configured.")
-        return
-
     async with SessionLocal() as db:
         ids_system = await get_ids_system_by_id(db, ids_system_id)
         if ids_system is None:
@@ -213,7 +209,7 @@ async def start_network_container_analysis(
             status_code=500,
         )
 
-    data = json.dumps(network_analysis_data.__dict__)
+    data = network_analysis_data.__dict__ # json.dumps(network_analysis_data.__dict__)
     await update_ids_status(db, STATUS.ACTIVE.value, ids)
     try:
         response: HTTPResponse = await ids.start_network_analysis(data)

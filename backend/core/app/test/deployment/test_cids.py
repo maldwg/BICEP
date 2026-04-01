@@ -6,6 +6,9 @@ from app.deployment.deployment_plugins.docker_compose import deploy_docker_compo
 from app.deployment.deployment_plugins.docker_compose_support.host_operations import (
     ComposeHostOperations,
 )
+from app.deployment.deployment_plugins.docker_compose_support.deployment import (
+    ComposeDeploymentService,
+)
 from app.deployment.deployment_plugins.docker_compose_support.spec import (
     ComposeProjectPaths,
 )
@@ -163,6 +166,64 @@ async def test_compose_teardown_project_offloads_blocking_work():
     mock_to_thread.assert_awaited_once()
     assert mock_to_thread.await_args.args[1:] == (host_system, [], paths)
     mock_remove_local_work_dir.assert_awaited_once_with(paths.work_dir)
+
+
+@pytest.mark.asyncio
+async def test_compose_deploy_cleans_up_partial_deployment_on_start_failure():
+    host_system = MagicMock(spec=DockerHostSystem)
+    host_system.id = 1
+    host_system.name = "localhost"
+
+    deployment = MagicMock()
+    deployment.host_system = host_system
+    deployment.paths = ComposeProjectPaths(container_id=1, host_name="localhost")
+    deployment.runtime_config_files = {}
+
+    ids_container = MagicMock(spec=IdsSystem)
+    ids_container.id = 1
+    ids_container.host_system = MagicMock()
+    ids_container.host_system.id = 1
+    ids_container.components = []
+
+    config = MagicMock(spec=Configuration)
+    config.read_content = AsyncMock(return_value=b"services:\n  sensor:\n    image: im")
+
+    db_session = AsyncMock()
+
+    spec_manager = MagicMock()
+    spec_manager.load_compose_data.return_value = {"services": {"sensor": {"image": "im"}}}
+    spec_manager.resolve_service_runtime_configs = AsyncMock(return_value={})
+    spec_manager.group_services_by_host.return_value = {1: [MagicMock(service_name="sensor", count=1)]}
+    spec_manager.prepare_host_deployment.return_value = deployment
+    spec_manager.write_deployment_files = AsyncMock()
+
+    host_operations = MagicMock()
+    host_operations.start_project = AsyncMock(side_effect=Exception("compose up failed"))
+    host_operations.copy_runtime_configs = AsyncMock()
+    host_operations.group_components_by_host.return_value = {}
+    host_operations.teardown_project = AsyncMock(return_value=True)
+
+    service = ComposeDeploymentService(
+        get_host_by_id=AsyncMock(return_value=host_system),
+        spec_manager=spec_manager,
+        host_operations=host_operations,
+    )
+
+    with pytest.raises(Exception, match="compose up failed"):
+        await service.deploy(
+            ids_container=ids_container,
+            config=config,
+            ruleset=None,
+            db_session=db_session,
+            cids_configurations=None,
+        )
+
+    host_operations.teardown_project.assert_awaited_once_with(
+        host_system=host_system,
+        components=[],
+        paths=deployment.paths,
+    )
+    assert getattr(ids_container, "_deployment_cleanup_done", False) is True
 
 
 @pytest.mark.asyncio

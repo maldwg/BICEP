@@ -70,14 +70,15 @@ class ComposeHostOperations:
                 f"Docker Compose failed on {deployment.host_system.name}: {exc}"
             )
 
-    async def teardown_project(self, host_system, components, paths) -> None:
-        await asyncio.to_thread(
+    async def teardown_project(self, host_system, components, paths) -> bool:
+        remote_cleanup_ok = await asyncio.to_thread(
             self._teardown_remote_project_blocking,
             host_system,
             components,
             paths,
         )
         await self._remove_local_work_dir(paths.work_dir)
+        return remote_cleanup_ok
 
     def _cleanup_compose_resources_blocking(self, docker_host_url, project_name) -> None:
         client = self._docker_sdk.DockerClient(base_url=docker_host_url)
@@ -172,8 +173,9 @@ class ComposeHostOperations:
                     pass
             host_docker.close()
 
-    def _teardown_remote_project_blocking(self, host_system, components, paths) -> None:
+    def _teardown_remote_project_blocking(self, host_system, components, paths) -> bool:
         docker_host_url = self.get_docker_host_url(host_system)
+        cleanup_ok = True
 
         try:
             client = self._docker_client_cls(
@@ -200,8 +202,11 @@ class ComposeHostOperations:
             )
         except Exception as exc:
             self._logger.error(f"Teardown error on {host_system.name}: {exc}")
+            cleanup_ok = False
         finally:
             self._remove_remote_work_dir_blocking(docker_host_url, paths.work_dir)
+
+        return cleanup_ok
 
     def _build_scale_config(self, services) -> dict[str, int]:
         scales = {}
