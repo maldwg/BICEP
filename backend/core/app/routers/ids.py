@@ -189,7 +189,7 @@ async def start_network_container_analysis(
             status_code=500,
         )
 
-    data = network_analysis_data.__dict__ # json.dumps(network_analysis_data.__dict__)
+    data = network_analysis_data.__dict__
     await update_ids_status(db, STATUS.ACTIVE.value, ids)
     try:
         response: HTTPResponse = await ids.start_network_analysis(data)

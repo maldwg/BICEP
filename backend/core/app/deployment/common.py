@@ -37,8 +37,17 @@ def register_deployment_plugin(plugin_cls: type[DeploymentPlugin]):
     return plugin_cls
 
 
-def get_deployment_plugin(deployment_type: Any) -> DeploymentPlugin:
+_plugins_loaded = False
 
+def _ensure_builtin_plugins_loaded():
+    global _plugins_loaded
+    if not _plugins_loaded:
+        import app.deployment.deployment_plugins.docker
+        import app.deployment.deployment_plugins.docker_compose
+        _plugins_loaded = True
+
+def get_deployment_plugin(deployment_type: Any) -> DeploymentPlugin:
+    _ensure_builtin_plugins_loaded()
     normalized = normalize_deployment_type(deployment_type)
     plugin_cls = _DEPLOYMENT_PLUGINS.get(normalized)
     if plugin_cls is None:

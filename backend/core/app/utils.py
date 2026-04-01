@@ -24,6 +24,7 @@ from abc import ABC, abstractmethod
 from app.metrics import calculate_evaluation_metrics
 from app.models.dataset import get_dataset_by_id
 from app.prometheus import query_average_cpu_usage, query_average_memory_usage
+import json
 dataset_addition_tasks = set()
 
 class Precision(ABC):
@@ -235,8 +236,9 @@ async def start_static_analysis(container, form_data, dataset):
 async def start_network_analysis(container, data):
     endpoint = "/analysis/network"
     container_url = container.get_container_http_url()
+    LOGGER.debug(f"Sending network analysis request to {container_url + endpoint} with data: {data}")
     async with httpx.AsyncClient() as client:
-        response = await client.post(container_url + endpoint, data=data)
+        response = await client.post(container_url + endpoint, json=data)
     return response
 
 
@@ -423,6 +425,9 @@ def directory_is_empty(path):
 
 
 async def finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
+    # local import to avoid circular imports
+    from app.models.ids_system import get_ids_system_by_id
+    
     async with SessionLocal() as db:
         ids_system = await get_ids_system_by_id(db, ids_system_id)
         if ids_system is None:

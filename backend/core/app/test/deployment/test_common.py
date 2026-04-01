@@ -37,8 +37,9 @@ def test_register_and_get_deployment_plugin():
     previous_registry = dict(common._DEPLOYMENT_PLUGINS)
     common._DEPLOYMENT_PLUGINS.clear()
     try:
-        common.register_deployment_plugin(DummyPlugin)
-        plugin = common.get_deployment_plugin("custom")
+        with patch("app.deployment.common._ensure_builtin_plugins_loaded"):
+            common.register_deployment_plugin(DummyPlugin)
+            plugin = common.get_deployment_plugin("custom")
         assert isinstance(plugin, DummyPlugin)
     finally:
         common._DEPLOYMENT_PLUGINS.clear()
