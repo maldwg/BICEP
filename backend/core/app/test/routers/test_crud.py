@@ -92,7 +92,7 @@ async def test_add_new_dataset_unaccepeted_labels_file_type(
 
     assert response.status_code == 500
     assert response_json == {
-        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.TEST_DATA.value} "
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.DATASET.value} "
     }
 
 
@@ -126,7 +126,7 @@ async def test_add_new_dataset_unaccepeted_data_file_type(
 
     assert response.status_code == 500
     assert response_json == {
-        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.TEST_DATA.value} "
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.DATASET.value} "
     }
 
 
@@ -151,7 +151,7 @@ async def test_add_configuration(
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.CONFIG.value,
+        file_type=FILE_TYPES.RUNTIME.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
@@ -181,14 +181,14 @@ async def test_add_configuration_invalid_filetype(
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.CONFIG.value,
+        file_type=FILE_TYPES.RUNTIME.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
     assert response.status_code == 500
     assert response_json == {
-        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.CONFIG.value}"
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RUNTIME.value}"
     }
 
 
@@ -212,7 +212,7 @@ async def test_add_ruleset_invalid_filetype(
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.RULE_SET.value,
+        file_type=FILE_TYPES.RULESET.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
@@ -220,7 +220,7 @@ async def test_add_ruleset_invalid_filetype(
     assert response.status_code == 500
     print(response_json)
     assert response_json == {
-        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RULE_SET.value}"
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RULESET.value}"
     }
 
 
@@ -231,7 +231,7 @@ async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture
 
     assert len(result) == 2
     assert result[0].name == "test-config 1"
-    assert result[1].file_type == "rule-set"
+    assert result[1].file_type == "RULESET"
 
 
 @patch("app.routers.crud.get_all_configurations_by_type")
@@ -242,7 +242,7 @@ async def test_get_all_configs_of_a_filetype(
     db_session = await db_session_fixture.get_db_session()
     mock_ruleset = await db_session_fixture.get_ruleset_model()
     all_configs_mock.return_value = [mock_ruleset]
-    file_type = "rule-set"
+    file_type = "RULESET"
     response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
     assert len(response) == 1

@@ -135,14 +135,14 @@ async def db_session_fixture():
     mock_configuration = MagicMock(spec=Configuration)
     mock_configuration.id = (1,)
     mock_configuration.name = "test-config 1"
-    mock_configuration.file_type = "configuration"
+    mock_configuration.file_type = "RUNTIME"
     mock_configuration.file_path = f"{TESTS_BASE_DIR}/testfiles/test-config.yaml"
     file_content = open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
     mock_configuration.read_content = AsyncMock(return_value=file_content)
     mock_configuration_ruleset = MagicMock(SPEC=Configuration)
     mock_configuration_ruleset.id = 2
     mock_configuration_ruleset.name = "test-config 2"
-    mock_configuration_ruleset.file_type = "rule-set"
+    mock_configuration_ruleset.file_type = "RULESET"
     mock_configuration_ruleset.file_path = (
         f"{TESTS_BASE_DIR}/testfiles/test-config.yaml"
     )

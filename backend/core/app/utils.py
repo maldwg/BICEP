@@ -149,9 +149,10 @@ class ANALYSIS_STATUS(Enum):
 
 
 class FILE_TYPES(Enum):
-    CONFIG = "configuration"
-    TEST_DATA = "test-data"
-    RULE_SET = "rule-set"
+    RUNTIME = "RUNTIME"
+    DEPLOYMENT = "DEPLOYMENT"
+    DATASET = "DATASET"
+    RULESET = "RULESET"
 
 
 class DOCKER_HOST_STATUS(Enum):
@@ -161,11 +162,13 @@ class DOCKER_HOST_STATUS(Enum):
 
 def file_type_is_accepted(file_type: str, file_ending: str):
     match file_type:
-        case FILE_TYPES.CONFIG.value:
-            return True if file_ending in ["lua", "yaml", "xml", "conf"] else False
-        case FILE_TYPES.TEST_DATA.value:
-            return True if file_ending in ["pcap", "csv"] else False
-        case FILE_TYPES.RULE_SET.value:
+        case FILE_TYPES.RUNTIME.value:
+            return True if file_ending in ["lua", "yaml", "xml", "conf", "json", "sql"] else False
+        case FILE_TYPES.DEPLOYMENT.value:
+            return True if file_ending in ["yaml", "yml"] else False
+        case FILE_TYPES.DATASET.value:
+            return True if file_ending in ["pcap", "csv", "pcap_ISX", "pcapng"] else False
+        case FILE_TYPES.RULESET.value:
             return True if file_ending in ["rules"] else False
     return False
 

@@ -181,45 +181,38 @@ def test_check_directory_is_empty_with_filled_dir():
 # ==================== file_type_is_accepted ====================
 
 
-def test_file_type_is_accepted_config_lua():
-    assert file_type_is_accepted(FILE_TYPES.CONFIG.value, "lua") is True
+def test_file_type_is_accepted_runtime_valid():
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "lua") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "yaml") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "xml") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "conf") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "json") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "sql") is True
 
+def test_file_type_is_accepted_runtime_invalid():
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "txt") is False
 
-def test_file_type_is_accepted_config_yaml():
-    assert file_type_is_accepted(FILE_TYPES.CONFIG.value, "yaml") is True
+def test_file_type_is_accepted_deployment_valid():
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "yaml") is True
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "yml") is True
 
+def test_file_type_is_accepted_deployment_invalid():
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "txt") is False
 
-def test_file_type_is_accepted_config_xml():
-    assert file_type_is_accepted(FILE_TYPES.CONFIG.value, "xml") is True
+def test_file_type_is_accepted_dataset_valid():
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcap") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "csv") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcapng") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcap_ISX") is True
 
-
-def test_file_type_is_accepted_config_conf():
-    assert file_type_is_accepted(FILE_TYPES.CONFIG.value, "conf") is True
-
-
-def test_file_type_is_accepted_config_invalid():
-    assert file_type_is_accepted(FILE_TYPES.CONFIG.value, "txt") is False
-
-
-def test_file_type_is_accepted_test_data_pcap():
-    assert file_type_is_accepted(FILE_TYPES.TEST_DATA.value, "pcap") is True
-
-
-def test_file_type_is_accepted_test_data_csv():
-    assert file_type_is_accepted(FILE_TYPES.TEST_DATA.value, "csv") is True
-
-
-def test_file_type_is_accepted_test_data_invalid():
-    assert file_type_is_accepted(FILE_TYPES.TEST_DATA.value, "json") is False
-
+def test_file_type_is_accepted_dataset_invalid():
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "json") is False
 
 def test_file_type_is_accepted_ruleset_rules():
-    assert file_type_is_accepted(FILE_TYPES.RULE_SET.value, "rules") is True
-
+    assert file_type_is_accepted(FILE_TYPES.RULESET.value, "rules") is True
 
 def test_file_type_is_accepted_ruleset_invalid():
-    assert file_type_is_accepted(FILE_TYPES.RULE_SET.value, "txt") is False
-
+    assert file_type_is_accepted(FILE_TYPES.RULESET.value, "txt") is False
 
 def test_file_type_is_accepted_unknown_type():
     assert file_type_is_accepted("unknown-type", "txt") is False
@@ -532,9 +525,10 @@ def test_analysis_status_enum_values():
 
 
 def test_file_types_enum_values():
-    assert FILE_TYPES.CONFIG.value == "configuration"
-    assert FILE_TYPES.TEST_DATA.value == "test-data"
-    assert FILE_TYPES.RULE_SET.value == "rule-set"
+    assert FILE_TYPES.RUNTIME.value == "RUNTIME"
+    assert FILE_TYPES.DEPLOYMENT.value == "DEPLOYMENT"
+    assert FILE_TYPES.DATASET.value == "DATASET"
+    assert FILE_TYPES.RULESET.value == "RULESET"
 
 
 def test_docker_host_status_enum_values():

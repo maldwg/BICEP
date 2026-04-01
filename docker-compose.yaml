@@ -51,8 +51,9 @@ services:
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
-      - DATASET_BASE_PATH=/opt
-      - CONFIGURATION_STORE_BASE_PATH=/opt/configuration_data
+      - DATASET_BASE_PATH=/opt/datasets
+      - RUNTIME_STORE_BASE_PATH=/opt/runtime_configurations
+      - DEPLOYMENT_STORE_BASE_PATH=/opt/deployment_configurations
       - RULESET_STORE_BASE_PATH=/opt/rulesets
       - PROMETHEUS_PUSH_GATEWAY_URL=prometheus-push-gateway:9091
       - PROMETHEUS_URL=prometheus:9090

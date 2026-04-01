@@ -113,9 +113,11 @@ async def add_new_config(configuration: UploadFile = Form(...), name: str = Form
     file_name = configuration.filename
     if not file_type_is_accepted(file_type=file_type, file_ending=file_name.split(".")[-1]):
         return JSONResponse({"error": f"file in {file_name.split('.')[-1]} format is not accepted as {file_type}"}, status_code=500)
-    if file_type == FILE_TYPES.CONFIG.value:
-        base_path = os.getenv("CONFIGURATION_STORE_BASE_PATH")
-    elif file_type == FILE_TYPES.RULE_SET.value:
+    if file_type == FILE_TYPES.RUNTIME.value:
+        base_path = os.getenv("RUNTIME_STORE_BASE_PATH")
+    elif file_type == FILE_TYPES.DEPLOYMENT.value:
+        base_path = os.getenv("DEPLOYMENT_STORE_BASE_PATH")
+    elif file_type == FILE_TYPES.RULESET.value:
         base_path = os.getenv("RULESET_STORE_BASE_PATH")
     else:
         return JSONResponse({"error": f"filetype {file_type} not found "}, status_code=500)
@@ -141,10 +143,10 @@ async def add_new_config(configuration: UploadFile = Form(...), name: str = Form
 async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), dataset_type_id: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
     data_file_ending = data_file.filename.split(".")[-1]
     labels_file_ending = labels_file.filename.split(".")[-1]
-    if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=data_file_ending):
-        return JSONResponse({"error": f"file in {data_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
-    if not file_type_is_accepted(file_type=FILE_TYPES.TEST_DATA.value ,file_ending=labels_file_ending):
-        return JSONResponse({"error": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.TEST_DATA.value} "}, status_code=500)
+    if not file_type_is_accepted(file_type=FILE_TYPES.DATASET.value ,file_ending=data_file_ending):
+        return JSONResponse({"error": f"file in {data_file_ending} format is not accepted as {FILE_TYPES.DATASET.value} "}, status_code=500)
+    if not file_type_is_accepted(file_type=FILE_TYPES.DATASET.value ,file_ending=labels_file_ending):
+        return JSONResponse({"error": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.DATASET.value} "}, status_code=500)
     # For rulesets and general configurations
     dataset_type = await get_dataset_type_by_id(db, int(dataset_type_id))
     

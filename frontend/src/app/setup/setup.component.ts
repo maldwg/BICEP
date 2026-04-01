@@ -357,19 +357,18 @@ export class SetupComponent implements OnInit {
   }
 
   getConfigurations() {
-    let type: string = fileTypes.configuration;
-    this.configService.getAllConfigurationsByType(type)
+    this.configService.getAllConfigurations()
       .subscribe(data => {
         const allConfigs = data.map(config => ({
           id: config.id, name: config.name, file_path: config.file_path, description: config.description, file_type: config.file_type, config_type: config.config_type
         }));
 
         // Filter for specific config types
-        this.runtimeConfigs = allConfigs.filter(c => c.config_type === 'RUNTIME' || !c.config_type || c.config_type === 'CONFIGURATION');
-        this.deploymentConfigs = allConfigs.filter(c => c.config_type === 'DEPLOYMENT');
+        this.runtimeConfigs = allConfigs.filter(c => c.file_type === fileTypes.runtime);
+        this.deploymentConfigs = allConfigs.filter(c => c.file_type === fileTypes.deployment);
 
-        // Default: show all until a tool is selected
-        this.filteredConfigs = allConfigs;
+        // Default: show both until a tool is selected
+        this.filteredConfigs = [...this.runtimeConfigs, ...this.deploymentConfigs];
       });
   }
 

@@ -1,9 +1,11 @@
 export function getAcceptedFileTypesForConfigurationType(fileType: string){
       switch (fileType) {
-        case fileTypes.testData:
+        case fileTypes.dataset:
           return '.pcap,.csv,.pcap_ISX';
-        case fileTypes.configuration:
+        case fileTypes.runtime:
           return '.yaml,.conf,.json,.lua';
+        case fileTypes.deployment:
+          return '.yaml,.yml';
         case fileTypes.ruleSet:
           return '.rules';
         default:
@@ -13,7 +15,8 @@ export function getAcceptedFileTypesForConfigurationType(fileType: string){
     
 
 export const fileTypes = {
-    configuration: "configuration",
-    ruleSet: "rule-set",
-    testData: "test-data"
+    runtime: "RUNTIME",
+    deployment: "DEPLOYMENT",
+    ruleSet: "RULESET",
+    dataset: "DATASET"
 }

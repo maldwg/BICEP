@@ -170,29 +170,29 @@ INSERT INTO dataset (name, data_file_path, labels_file_path, description, ammoun
 
 
 INSERT INTO configuration VALUES
-(1, 'suricata.yaml', '/opt/configuration_data/uuid2/suricata.yaml', 'configuration', 'default suricata configuartion', 'RUNTIME');
+(1, 'suricata.yaml', '/opt/runtime_configurations/uuid2/suricata.yaml', 'RUNTIME', 'default suricata configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(2, 'snort.lua', '/opt/configuration_data/uuid1/snort.lua', 'configuration', 'default snort configuartion', 'RUNTIME');
+(2, 'snort.lua', '/opt/runtime_configurations/uuid1/snort.lua', 'RUNTIME', 'default snort configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(3, 'slips.yaml', '/opt/configuration_data/uuid3/slips.yaml', 'configuration', 'default slips configuartion', 'RUNTIME');
+(3, 'slips.yaml', '/opt/runtime_configurations/uuid3/slips.yaml', 'RUNTIME', 'default slips configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(4, 'hamstring_config.yaml', '/opt/configuration_data/uuid7/hamstring_config.yaml', 'configuration', 'default hamstring configuartion', 'RUNTIME');
+(4, 'hamstring_config.yaml', '/opt/runtime_configurations/uuid7/hamstring_config.yaml', 'RUNTIME', 'default hamstring configuartion', 'RUNTIME');
 
 INSERT INTO configuration VALUES
-(5, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'rule-set', 'default et/open rules', 'RULESET');
+(5, 'et-open.rules', '/opt/rulesets/uuid4/suricata-et-open.rules', 'RULESET', 'default et/open rules', 'RULESET');
 INSERT INTO configuration VALUES
-(6, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'rule-set', 'default snort community rules', 'RULESET');
+(6, 'snort-community.rules', '/opt/rulesets/uuid1/snort-community.rules', 'RULESET', 'default snort community rules', 'RULESET');
 INSERT INTO configuration VALUES
-(7, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'rule-set', 'All opensource suricata rules', 'RULESET');
+(7, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'RULESET', 'All opensource suricata rules', 'RULESET');
 INSERT INTO configuration VALUES
-(8, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'rule-set', 'lightspd max detect + community rules', 'RULESET');
+(8, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'RULESET', 'lightspd max detect + community rules', 'RULESET');
 -- Sample CIDS Config
 INSERT INTO configuration VALUES
-(9, 'wazuh-compose.yaml', '/opt/configuration_data/uuid4/wazuh-compose.yaml', 'configuration', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
+(9, 'wazuh-compose.yaml', '/opt/deployment_configurations/uuid4/wazuh-compose.yaml', 'DEPLOYMENT', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
 INSERT INTO configuration VALUES
-(10, 'hamstring-compose.yaml', '/opt/configuration_data/uuid5/hamstring-compose.yaml', 'configuration', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
+(10, 'hamstring-compose.yaml', '/opt/deployment_configurations/uuid5/hamstring-compose.yaml', 'DEPLOYMENT', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
 INSERT INTO configuration VALUES
-(11, 'minimal-compose.yaml', '/opt/configuration_data/uuid6/minimal-compose.yaml', 'configuration', 'Minimal Docker Compose Setup', 'DEPLOYMENT');
+(11, 'minimal-compose.yaml', '/opt/deployment_configurations/uuid6/minimal-compose.yaml', 'DEPLOYMENT', 'Minimal Docker Compose Setup', 'DEPLOYMENT');
 
 INSERT INTO configuration VALUES
-(12, 'hamstring_clickhouse.sql', '/opt/configuration_data/uuid8/hamstring_clickhouse.sql', 'configuration', 'Hamstring Clickhouse tables', 'RUNTIME');
+(12, 'hamstring_clickhouse.sql', '/opt/runtime_configurations/uuid8/hamstring_clickhouse.sql', 'RUNTIME', 'Hamstring Clickhouse tables', 'RUNTIME');

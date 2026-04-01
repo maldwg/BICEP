@@ -13,14 +13,14 @@ RUN mkdir -p /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/
 COPY ./example-configs/sample-data.csv /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.csv
 COPY ./example-configs/sample-data.pcap /opt/sample-data/dc22a2fd-b0a2-4bfa-9038-d0ba3e6fdf29/dataset.pcap
 
-RUN mkdir -p /opt/configuration_data/uuid1
-RUN mkdir -p /opt/configuration_data/uuid2
-RUN mkdir -p /opt/configuration_data/uuid3
-RUN mkdir -p /opt/configuration_data/uuid4
-RUN mkdir -p /opt/configuration_data/uuid5
-RUN mkdir -p /opt/configuration_data/uuid6
-RUN mkdir -p /opt/configuration_data/uuid7
-RUN mkdir -p /opt/configuration_data/uuid8
+RUN mkdir -p /opt/runtime_configurations/uuid1
+RUN mkdir -p /opt/runtime_configurations/uuid2
+RUN mkdir -p /opt/runtime_configurations/uuid3
+RUN mkdir -p /opt/deployment_configurations/uuid4
+RUN mkdir -p /opt/deployment_configurations/uuid5
+RUN mkdir -p /opt/deployment_configurations/uuid6
+RUN mkdir -p /opt/runtime_configurations/uuid7
+RUN mkdir -p /opt/runtime_configurations/uuid8
 
 
 RUN mkdir -p /opt/rulesets/uuid1
@@ -28,14 +28,14 @@ RUN mkdir -p /opt/rulesets/uuid2
 RUN mkdir -p /opt/rulesets/uuid3
 RUN mkdir -p /opt/rulesets/uuid4
 
-COPY ./example-configs/snort.lua /opt/configuration_data/uuid1/snort.lua
-COPY ./example-configs/suricata.yaml /opt/configuration_data/uuid2/suricata.yaml
-COPY ./example-configs/slips.yaml /opt/configuration_data/uuid3/slips.yaml
-COPY ./example-configs/wazuh-compose.yaml /opt/configuration_data/uuid4/wazuh-compose.yaml
-COPY ./example-configs/hamstring-compose.yaml /opt/configuration_data/uuid5/hamstring-compose.yaml
-COPY ./example-configs/minimal-compose.yaml /opt/configuration_data/uuid6/minimal-compose.yaml
-COPY ./example-configs/hamstring_config.yaml /opt/configuration_data/uuid7/hamstring_config.yaml
-COPY ./example-configs/hamstring_clickhouse.sql /opt/configuration_data/uuid8/hamstring_clickhouse.sql
+COPY ./example-configs/snort.lua /opt/runtime_configurations/uuid1/snort.lua
+COPY ./example-configs/suricata.yaml /opt/runtime_configurations/uuid2/suricata.yaml
+COPY ./example-configs/slips.yaml /opt/runtime_configurations/uuid3/slips.yaml
+COPY ./example-configs/wazuh-compose.yaml /opt/deployment_configurations/uuid4/wazuh-compose.yaml
+COPY ./example-configs/hamstring-compose.yaml /opt/deployment_configurations/uuid5/hamstring-compose.yaml
+COPY ./example-configs/minimal-compose.yaml /opt/deployment_configurations/uuid6/minimal-compose.yaml
+COPY ./example-configs/hamstring_config.yaml /opt/runtime_configurations/uuid7/hamstring_config.yaml
+COPY ./example-configs/hamstring_clickhouse.sql /opt/runtime_configurations/uuid8/hamstring_clickhouse.sql
 
 COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
 COPY ./example-configs/snort-all.rules /opt/rulesets/uuid2/snort-all.rules

@@ -49,7 +49,11 @@ export class IdsEditComponent implements OnInit {
     let selectedConfiguration = this.data.configList.filter(c => c.id == this.data.container.configuration_id)[0];
     this.selectedRuleset = this.data.configList.filter(c => c.id == this.data.container.ruleset_id)[0];
 
-    this.configurationList = this.data.configList.filter(c => c.file_type == fileTypes.configuration);
+    if (this.selectedIdsTool.deployment_type === 'SINGLE_CONTAINER') {
+      this.configurationList = this.data.configList.filter(c => c.file_type == fileTypes.runtime);
+    } else {
+      this.configurationList = this.data.configList.filter(c => c.file_type == fileTypes.deployment);
+    }
     this.rulesetList = this.data.configList.filter(r => r.file_type == fileTypes.ruleSet);
 
     this.idsEdit.controls.config.setValue(selectedConfiguration.id.toString());
