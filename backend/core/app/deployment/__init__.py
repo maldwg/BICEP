@@ -6,6 +6,7 @@ from app.deployment.common import (
     is_ids_available,
     normalize_deployment_type,
     teardown_ids,
+    update_ids_components,
     update_ids_config,
     update_ids_ruleset,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "is_ids_available",
     "normalize_deployment_type",
     "teardown_ids",
+    "update_ids_components",
     "update_ids_config",
     "update_ids_ruleset",
 ]

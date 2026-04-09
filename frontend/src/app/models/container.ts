@@ -9,7 +9,10 @@ export interface IdsSystem {
     ids_tool_id: number,
     ruleset_id?: number,
     stream_metric_task_id?: string,
-    type: string  // NIDS, HIDS, CIDS
+    type: string,  // NIDS, HIDS, CIDS
+    runtime_configuration_id?: number,
+    count?: number,
+    components?: any[] // Simplified for now, will be populated if CIDS
 }
 
 // Alias for backward compatibility - prefer using IdsSystem in new code
@@ -48,5 +51,12 @@ export interface ContainerUpdateData {
     id: number,
     configuration_id: number,
     description: string,
-    ruleset_id?: number
+    ruleset_id?: number,
+    components?: ComponentUpdate[]
+}
+
+export interface ComponentUpdate {
+    id: number,
+    runtime_configuration_id?: number | null,
+    count?: number
 }

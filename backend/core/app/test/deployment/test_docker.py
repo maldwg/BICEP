@@ -8,7 +8,8 @@ from app.deployment.deployment_plugins.docker import (
     inject_config,
     inject_ruleset,
     remove_docker_container,
-    check_container_health
+    check_container_health,
+    restart_docker_container,
 )
 
 @pytest.fixture
@@ -122,3 +123,24 @@ async def test_check_container_health(mock_httpx_client, mock_ids_container):
     result = await check_container_health(mock_ids_container)
 
     assert result is True
+
+
+@pytest.mark.asyncio
+@patch("app.deployment.deployment_plugins.docker.get_docker_client")
+async def test_restart_docker_container_calls_docker_api(
+    mock_get_client, mock_container
+):
+    mock_docker_client = MagicMock()
+    mock_docker_client.containers.get.return_value = mock_container
+    mock_get_client.return_value = mock_docker_client
+
+    component = MagicMock()
+    component.name = "sensor"
+    component.host_system = MagicMock()
+
+    await restart_docker_container(component)
+
+    mock_get_client.assert_called_once_with(component.host_system)
+    mock_docker_client.containers.get.assert_called_once_with(component.name)
+    mock_container.restart.assert_called_once_with(timeout=10)
+    mock_docker_client.close.assert_called_once()

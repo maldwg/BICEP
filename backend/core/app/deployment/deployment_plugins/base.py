@@ -59,8 +59,8 @@ class DeploymentPlugin(ABC):
         """Inject a ruleset into the running deployment."""
 
     @abstractmethod
-    async def teardown(self, ids_system, db_session: AsyncSession):
-        """Remove deployment resources and delete the IDS system from the DB."""
+    async def teardown(self, ids_system, db_session: AsyncSession, delete_system: bool = True):
+        """Remove deployment resources and optionally delete the IDS system from the DB."""
 
     @abstractmethod
     async def is_available(self, ids_system) -> bool:
@@ -83,3 +83,8 @@ class DeploymentPlugin(ABC):
         ruleset = await load_configuration(db_session, ruleset_id)
         if ruleset is not None:
             await self.inject_ruleset(ids_system, ruleset)
+
+    async def update_components(
+        self, ids_system, db_session: AsyncSession, components: list
+    ):
+        await self.update_config(ids_system, db_session, ids_system.configuration_id)

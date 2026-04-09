@@ -38,7 +38,7 @@ class ComposeHostOperations:
         await asyncio.to_thread(self._copy_runtime_configs_blocking, deployment)
 
     async def start_project(
-        self, deployment, ids_container, db_session, env_vars=None
+        self, deployment, ids_container, db_session, env_vars=None, services=None
     ) -> None:
         docker_host_url = self.get_docker_host_url(deployment.host_system)
 
@@ -55,15 +55,34 @@ class ComposeHostOperations:
                 env.update(env_vars)
             os.environ.update(env)
 
+            scales = self._build_scale_config(
+                deployment.services,
+                service_filter=set(services) if services else None,
+                include_default_counts=services is not None,
+            )
+            compose_up_kwargs = {
+                "detach": True,
+                "quiet": False,
+                "scales": scales,
+            }
+            if services is not None:
+                compose_up_kwargs["services"] = services
+                # A changed bind-mounted config file does not count as a compose spec
+                # change, so force recreation for targeted service updates.
+                compose_up_kwargs["force_recreate"] = True
+
             await asyncio.to_thread(
-                lambda: client.compose.up(
-                    detach=True,
-                    quiet=False,
-                    scales=self._build_scale_config(deployment.services),
-                )
+                lambda: client.compose.up(**compose_up_kwargs)
             )
 
-            self._register_components(client, ids_container, deployment.host_system, db_session)
+            self._register_components(
+                client,
+                ids_container,
+                deployment.host_system,
+                db_session,
+                deployment=deployment,
+                service_filter=set(services) if services else None,
+            )
         except DockerException as exc:
             raise Exception(
                 f"Docker Compose failed on {deployment.host_system.name}: {exc}"
@@ -207,15 +226,29 @@ class ComposeHostOperations:
 
         return cleanup_ok
 
-    def _build_scale_config(self, services) -> dict[str, int]:
+    def _build_scale_config(
+        self, services, service_filter=None, include_default_counts=False
+    ) -> dict[str, int]:
         scales = {}
         for svc in services:
+            service_name = getattr(svc, "service_name", None)
+            if service_filter and service_name not in service_filter:
+                continue
+
             count = getattr(svc, "count", 1) or 1
-            if count > 1:
-                scales[svc.service_name] = count
+            if include_default_counts or count > 1:
+                scales[service_name] = count
         return scales
 
-    def _register_components(self, client, ids_container, host_system, db_session) -> None:
+    def _register_components(
+        self,
+        client,
+        ids_container,
+        host_system,
+        db_session,
+        deployment=None,
+        service_filter=None,
+    ) -> None:
         containers = client.compose.ps()
 
         for container in containers:
@@ -224,6 +257,11 @@ class ComposeHostOperations:
             labels = getattr(container.config, "labels", None) or getattr(
                 container, "labels", {}
             ) or {}
+            
+            service_name = labels.get("com.docker.compose.service")
+            if service_filter and service_name not in service_filter:
+                continue
+
             role_label = labels.get("bicep.role")
 
             if role_label and role_label.upper() in ["INFRA", "SENSOR", "PIPELINE"]:
@@ -238,12 +276,26 @@ class ComposeHostOperations:
             if role == "SENSOR":
                 exposed_port = ids_container.port
 
+            # Try to find corresponding service config for count and runtime_config_id
+            count = 1
+            runtime_config_id = None
+            if deployment and deployment.services:
+                for svc in deployment.services:
+                    svc_name = getattr(svc, 'service_name', None) or getattr(svc, 'name', None)
+                    if svc_name == service_name:
+                        count = getattr(svc, 'count', 1)
+                        runtime_config_id = getattr(svc, 'runtime_configuration_id', None)
+                        break
+
             component = self._ids_component_cls(
                 ids_id=ids_container.id,
                 name=container.name,
+                service_name=service_name,
                 role=role,
                 port=exposed_port,
                 host_system_id=host_system.id,
+                count=count,
+                runtime_configuration_id=runtime_config_id
             )
             db_session.add(component)
             if (

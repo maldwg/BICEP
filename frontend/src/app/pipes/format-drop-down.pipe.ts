@@ -6,7 +6,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 export class FormatDropDownPipe implements PipeTransform {
 
   transform(value: unknown, ...args: unknown[]): unknown {
-    if (!value) return '';
+    if (!value || value == null) return '';
     return value.toString().toLowerCase().replace(/-/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
   }

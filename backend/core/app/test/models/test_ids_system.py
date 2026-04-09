@@ -218,6 +218,87 @@ def test_ids_system_get_container_http_url_remote_host(mock_remote_host):
     assert url == "http://192.168.5.10:8080"
 
 
+@pytest.mark.asyncio
+async def test_cids_update_attributes_redeploys_only_changed_service(mock_host_system):
+    sensor_1 = IdsComponent(
+        id=31,
+        ids_id=5,
+        name="sensor-1",
+        service_name="sensor",
+        role="SENSOR",
+        port=9090,
+        host_system_id=mock_host_system.id,
+        runtime_configuration_id=1,
+        count=2,
+    )
+    sensor_2 = IdsComponent(
+        id=32,
+        ids_id=5,
+        name="sensor-2",
+        service_name="sensor",
+        role="SENSOR",
+        port=9091,
+        host_system_id=mock_host_system.id,
+        runtime_configuration_id=1,
+        count=2,
+    )
+    aggregator = IdsComponent(
+        id=33,
+        ids_id=5,
+        name="aggregator-1",
+        service_name="aggregator",
+        role="AGGREGATOR",
+        port=9092,
+        host_system_id=mock_host_system.id,
+        runtime_configuration_id=None,
+        count=1,
+    )
+    cids = CidsSystem(
+        id=5,
+        name="CIDS-test",
+        port=8080,
+        status=STATUS.IDLE.value,
+        description="Test CIDS",
+        configuration_id=1,
+        ids_tool_id=3,
+        host_system_id=mock_host_system.id,
+        host_system=mock_host_system,
+        type="CIDS",
+    )
+    cids.components = [sensor_1, sensor_2, aggregator]
+
+    update = IdsContainerUpdate(
+        id=5,
+        description="updated",
+        configuration_id=1,
+        components=[
+            {
+                "id": sensor_1.id,
+                "runtime_configuration_id": 7,
+                "count": 3,
+            }
+        ],
+    )
+
+    with patch(
+        "app.deployment.update_ids_components",
+        new_callable=AsyncMock,
+    ) as mock_update_ids_components:
+        await cids.update_attributes(AsyncMock(), update)
+
+    assert sensor_1.runtime_configuration_id == 7
+    assert sensor_2.runtime_configuration_id == 7
+    assert sensor_1.count == 3
+    assert sensor_2.count == 3
+    assert aggregator.runtime_configuration_id is None
+    assert aggregator.count == 1
+    changed_services = mock_update_ids_components.await_args.args[2]
+    assert len(changed_services) == 1
+    assert changed_services[0].service_name == "sensor"
+    assert changed_services[0].count == 3
+    assert changed_services[0].runtime_configuration_id == 7
+
+
 # ==================== CIDS get_container_http_url ====================
 
 

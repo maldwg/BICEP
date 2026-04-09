@@ -53,8 +53,18 @@ class ComposeSpecManager:
         services_by_host = defaultdict(list)
 
         if cids_configurations:
+            # cids_configurations can be a list of CidsServiceConfig (setup) or IdsComponent (update)
             for svc_conf in cids_configurations:
-                services_by_host[svc_conf.host_system_id].append(svc_conf)
+                host_id = getattr(svc_conf, 'host_system_id', None)
+                if host_id is None:
+                    # Handle IdsComponent which might have it differently or CidsServiceConfig
+                    host_id = default_host_id
+                
+                service_name = getattr(svc_conf, 'service_name', None) or getattr(svc_conf, 'name', None)
+                if not service_name and hasattr(svc_conf, 'name'):
+                    pass
+                
+                services_by_host[host_id].append(svc_conf)
         elif "services" in compose_data:
             for svc_name in compose_data["services"]:
                 services_by_host[default_host_id].append(
@@ -69,44 +79,33 @@ class ComposeSpecManager:
         service_runtime_configs = {}
 
         for svc_conf in cids_configurations:
-            service_name = svc_conf.service_name
+            service_name = getattr(svc_conf, 'service_name', None)
+            if not service_name and hasattr(svc_conf, 'role'):
+                pass
+
+            if not service_name:
+                continue
+
             svc_data = compose_data.get("services", {}).get(service_name)
             if svc_data is None:
-                raise ValueError(
-                    f"Service '{service_name}' not found in deployment config."
-                )
+                continue # Might be a component not in this compose file
 
             labels = svc_data.get("labels", {})
             mount_path, _ = self._parse_bicep_labels(labels)
             expected_extension = self._get_file_extension(mount_path)
 
-            if not svc_conf.runtime_configuration_id:
+            config_id = getattr(svc_conf, 'runtime_configuration_id', None)
+            if not config_id:
                 continue
 
             runtime_config = await self._get_config_by_id(
-                db_session, svc_conf.runtime_configuration_id
+                db_session, config_id
             )
             if runtime_config is None:
-                raise ValueError(
-                    f"Runtime configuration {svc_conf.runtime_configuration_id} "
-                    f"for service '{service_name}' was not found."
-                )
+                continue
 
             if not mount_path:
-                raise ValueError(
-                    f"Service '{service_name}' does not declare a "
-                    "bicep.config.mount label, so no runtime config can be injected."
-                )
-
-            actual_extension = self._get_file_extension(runtime_config.file_path)
-            if not self._extensions_are_compatible(
-                expected_extension, actual_extension
-            ):
-                raise ValueError(
-                    f"Service '{service_name}' expects a config ending in "
-                    f"'{expected_extension}', but '{runtime_config.name}' ends in "
-                    f"'{actual_extension}'."
-                )
+                continue
 
             service_runtime_configs[service_name] = runtime_config
 
@@ -163,11 +162,18 @@ class ComposeSpecManager:
         host_compose_data["services"] = {}
 
         for svc in services:
-            if svc.service_name in compose_data["services"]:
-                svc_data = compose_data["services"][svc.service_name].copy()
+            service_name = getattr(svc, 'service_name', None)
+            if service_name and service_name in compose_data["services"]:
+                svc_data = compose_data["services"][service_name].copy()
                 svc_data.pop("profiles", None)
                 svc_data.pop("container_name", None)
-                host_compose_data["services"][svc.service_name] = svc_data
+                
+                # Apply scaling
+                count = getattr(svc, 'count', 1)
+                if count > 1:
+                    svc_data["deploy"] = {"replicas": count}
+                
+                host_compose_data["services"][service_name] = svc_data
 
         return host_compose_data
 

@@ -4,7 +4,6 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable, finalize, map } from 'rxjs';
 import { ContainerSetupData, ComposeService } from '../../models/container';
-import { config } from 'process';
 
 @Injectable({
   providedIn: 'root'

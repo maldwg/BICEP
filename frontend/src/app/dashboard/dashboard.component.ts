@@ -26,7 +26,6 @@ import { fileTypes } from '../models/acceptedFileTypes';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
 import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
-import { STATUS_CODES } from 'node:http';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
@@ -319,8 +318,8 @@ export class DashboardComponent implements OnInit {
 
   edit(container: Container) {
     const dialogRef = this.idsDialog.open(IdsEditComponent, {
-      height: "50%",
-      width: "50%",
+      height: "70%",
+      width: "60%",
       data: {
         container: container,
         configList: this.configList,
@@ -330,31 +329,23 @@ export class DashboardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(res => {
-      // Ensure there is at least one field that needs an update
       if (res != null) {
-        let configId = parseInt(res.config);
-        let rulesetId = parseInt(res.ruleset);
-        let data: ContainerUpdateData = {
-          id: container.id,
-          description: res.description,
-          configuration_id: configId,
-          ruleset_id: rulesetId.toString() !== '' ? rulesetId : container.ruleset_id
-        }
-        this.idsService.updateContainer(data)
+        // res is the updateData object from IdsEditComponent
+        this.idsService.updateContainer(res)
           .subscribe(backendres => {
+            // Update local state
             container.description = res.description;
-            container.configuration_id = configId;
-            container.ruleset_id = rulesetId;
+            container.configuration_id = res.configuration_id;
+            container.ruleset_id = res.ruleset_id;
+            if (res.components) {
+                container.components = res.components;
+            }
           },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);
             })
-
-
-        // TODO 0: update or refetch the ensembleContainers as well
       }
     })
-
   }
 
   removeEnsemble(ensembleToRemove: Ensemble) {

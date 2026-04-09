@@ -3,7 +3,8 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 """
 
 from http.client import HTTPResponse
-from sqlalchemy import Column, ForeignKey, Integer, String
+from types import SimpleNamespace
+from sqlalchemy import Column, ForeignKey, Integer, String, select
 from sqlalchemy.orm import relationship
 from app.models.ids_tool import get_ids_by_id
 from app.models.ids_component import IdsComponent
@@ -17,8 +18,8 @@ from app.utils import (
 from app.validation.models import IdsContainerUpdate
 from app.database import Base
 from app.logger import LOGGER
-from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 
 class IdsSystem(Base):
@@ -130,6 +131,20 @@ class IdsSystem(Base):
 
         await update_ids_ruleset(self, db, ruleset_id)
 
+    async def update_attributes(self, db: AsyncSession, container_data: IdsContainerUpdate):
+        """Base polymorphic update handler."""
+        old_config_id = self.configuration_id
+        new_config_id = container_data.configuration_id
+        if old_config_id != new_config_id:
+            await self.update_config(db, new_config_id)
+            self.configuration_id = new_config_id
+
+        old_ruleset_id = self.ruleset_id
+        new_ruleset_id = container_data.ruleset_id
+        if old_ruleset_id != new_ruleset_id and new_ruleset_id is not None:
+            await self.update_ruleset(db, new_ruleset_id)
+            self.ruleset_id = new_ruleset_id
+
     # ==================== ANALYSIS METHODS ====================
 
     async def start_static_analysis(self, form_data, dataset):
@@ -229,6 +244,70 @@ class CidsSystem(IdsSystem):
                     return f"http://{host}:{component.port}"
         return super().get_container_http_url()
 
+    async def update_attributes(self, db: AsyncSession, container_data: IdsContainerUpdate):
+        """CIDS-specific update handler for components and scaling."""
+        components_by_id = {component.id: component for component in self.components}
+        desired_service_updates: dict[tuple[int | None, str | None], dict[str, int | None]] = {}
+        requires_full_redeploy = False
+
+        for comp_update in container_data.components or []:
+            component = components_by_id.get(comp_update.id)
+            if component is None:
+                continue
+
+            service_key = (component.host_system_id, component.service_name)
+            if service_key[1] is None:
+                requires_full_redeploy = True
+                continue
+
+            next_runtime_config_id = comp_update.runtime_configuration_id
+            next_count = comp_update.count if comp_update.count is not None else component.count
+
+            if (
+                component.runtime_configuration_id != next_runtime_config_id
+                or component.count != next_count
+            ):
+                desired_service_updates[service_key] = {
+                    "runtime_configuration_id": next_runtime_config_id,
+                    "count": next_count,
+                }
+
+        changed_services = []
+        for (host_system_id, service_name), values in desired_service_updates.items():
+            if service_name is None:
+                requires_full_redeploy = True
+                continue
+
+            for component in self.components:
+                if (
+                    component.host_system_id == host_system_id
+                    and component.service_name == service_name
+                ):
+                    component.runtime_configuration_id = values["runtime_configuration_id"]
+                    component.count = values["count"]
+
+            changed_services.append(
+                SimpleNamespace(
+                    host_system_id=host_system_id or self.host_system_id,
+                    service_name=service_name,
+                    count=values["count"] or 1,
+                    runtime_configuration_id=values["runtime_configuration_id"],
+                )
+            )
+
+        if not changed_services:
+            return
+
+        if requires_full_redeploy:
+            from app.deployment import update_ids_config
+
+            await update_ids_config(self, db, self.configuration_id)
+            return
+
+        from app.deployment import update_ids_components
+
+        await update_ids_components(self, db, changed_services)
+
     async def start_network_analysis(self, data):
         """CIDS network analysis routes to sensor nodes."""
         LOGGER.info(f"Starting CIDS network analysis on {self.name}")
@@ -245,14 +324,14 @@ class CidsSystem(IdsSystem):
 
 async def get_ids_system_by_id(db: AsyncSession, id: int) -> IdsSystem | None:
     """Get an IDS system by ID."""
-    stmt = select(IdsSystem).where(IdsSystem.id == id)
+    stmt = select(IdsSystem).options(selectinload(IdsSystem.components)).where(IdsSystem.id == id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
 async def get_all_container(db: AsyncSession) -> list[IdsSystem]:
     """Get all IDS systems."""
-    stmt = select(IdsSystem)
+    stmt = select(IdsSystem).options(selectinload(IdsSystem.components))
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -265,25 +344,23 @@ async def remove_container_by_id(db: AsyncSession, id: int):
         await db.commit()
 
 
-async def update_container(db: AsyncSession, container: IdsContainerUpdate):
+async def update_container(db: AsyncSession, container_data: IdsContainerUpdate):
     """Update an IDS system's configuration."""
-    stmt = select(IdsSystem).where(IdsSystem.id == container.id)
+    stmt = select(IdsSystem).where(IdsSystem.id == container_data.id)
     result = await db.execute(stmt)
     container_db: IdsSystem = result.scalar_one_or_none()
     if not container_db:
         return None
-    old_config_id = container_db.configuration_id
-    new_config_id = container.configuration_id
-    if old_config_id != new_config_id:
-        await container_db.update_config(db, new_config_id)
-    old_ruleset_id = container_db.ruleset_id
-    new_ruleset_id = container.ruleset_id
-    if old_ruleset_id != new_ruleset_id and new_ruleset_id is not None:
-        await container_db.update_ruleset(db, new_ruleset_id)
-    for key, value in container.model_dump().items():
-        setattr(container_db, key, value)
+
+    # Update generic fields
+    container_db.description = container_data.description
+    
+    # Delegate to polymorphic update method
+    await container_db.update_attributes(db, container_data)
+
     await db.commit()
     await db.refresh(container_db)
+    return container_db
 
 
 async def update_ids_status(

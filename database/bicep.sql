@@ -116,12 +116,16 @@ CREATE TABLE IF NOT EXISTS ids_component(
     id INT AUTO_INCREMENT PRIMARY KEY,
     ids_id INT NOT NULL,
     name VARCHAR(64) NOT NULL,
+    service_name VARCHAR(64),
     role VARCHAR(32) NOT NULL,
     host_system_id INT,
     port INT,
+    runtime_configuration_id INT,
+    count INT DEFAULT 1,
 
     FOREIGN KEY (ids_id) REFERENCES ids_system(id),
-    FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id)
+    FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id),
+    FOREIGN KEY (runtime_configuration_id) REFERENCES configuration(id)
 );
 
 

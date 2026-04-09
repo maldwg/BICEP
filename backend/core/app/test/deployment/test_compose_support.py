@@ -26,6 +26,7 @@ from app.deployment.deployment_plugins.docker_compose_support.spec import (
 from app.models.configuration import Configuration
 from app.models.ids_component import IdsComponent
 from app.models.ids_system import IdsSystem
+import app.models.dataset_types
 
 
 class FakeAsyncClient:
@@ -182,6 +183,62 @@ async def test_compose_plugin_is_available_delegates_to_checker():
     availability_checker.is_available.assert_awaited_once_with(ids_system)
 
 
+@pytest.mark.asyncio
+async def test_compose_plugin_update_components_redeploys_only_changed_services():
+    plugin = DockerComposeDeploymentPlugin()
+    deployment_service = MagicMock()
+    deployment_service.redeploy_services = AsyncMock()
+    ids_system = SimpleNamespace(
+        configuration_id=9,
+        ruleset_id=None,
+        host_system_id=1,
+        components=[
+            SimpleNamespace(
+                host_system_id=1,
+                service_name="sensor",
+                count=3,
+                runtime_configuration_id=5,
+            ),
+            SimpleNamespace(
+                host_system_id=1,
+                service_name="aggregator",
+                count=1,
+                runtime_configuration_id=None,
+            ),
+        ],
+    )
+    db_session = AsyncMock()
+    config = MagicMock()
+
+    with patch(
+        "app.deployment.deployment_plugins.docker_compose._build_compose_services",
+        return_value=(deployment_service, MagicMock()),
+    ), patch(
+        "app.deployment.deployment_plugins.docker_compose.load_configuration",
+        new=AsyncMock(return_value=config),
+    ):
+        await plugin.update_components(
+            ids_system,
+            db_session,
+            [
+                SimpleNamespace(
+                    host_system_id=1,
+                    service_name="sensor",
+                    count=3,
+                    runtime_configuration_id=5,
+                )
+            ],
+        )
+
+    deployment_service.redeploy_services.assert_awaited_once()
+    call_kwargs = deployment_service.redeploy_services.await_args.kwargs
+    assert call_kwargs["changed_service_keys"] == {(1, "sensor")}
+    assert {
+        (svc.host_system_id, svc.service_name)
+        for svc in call_kwargs["cids_configurations"]
+    } == {(1, "sensor"), (1, "aggregator")}
+
+
 def test_spec_manager_prepare_host_deployment_customizes_sensor_service(compose_spec_manager):
     runtime_config = MagicMock()
     runtime_config.file_path = "/tmp/runtime.yml"
@@ -320,16 +377,22 @@ def test_host_operations_copy_runtime_configs_blocking_uploads_archive(tmp_path)
 
 @pytest.mark.asyncio
 async def test_host_operations_start_project_registers_components_and_scales():
+    ids_component_cls = lambda **kwargs: SimpleNamespace(**kwargs)
     client = MagicMock()
     container_sensor = MagicMock()
     container_sensor.name = "sensor"
     container_sensor.network_settings.ports = {"80/tcp": [{"HostPort": "3001"}]}
-    container_sensor.config.labels = {"bicep.role": "SENSOR"}
+    container_sensor.config.labels = {
+        "bicep.role": "SENSOR",
+        "com.docker.compose.service": "sensor",
+    }
 
     container_aggregator = MagicMock()
     container_aggregator.name = "aggregator-1"
     container_aggregator.network_settings.ports = {}
-    container_aggregator.config.labels = {}
+    container_aggregator.config.labels = {
+        "com.docker.compose.service": "aggregator",
+    }
 
     client.compose.ps.return_value = [container_sensor, container_aggregator]
     docker_client_cls = MagicMock(return_value=client)
@@ -340,7 +403,7 @@ async def test_host_operations_start_project_registers_components_and_scales():
     host_operations = ComposeHostOperations(
         docker_client_cls=docker_client_cls,
         docker_sdk_module=MagicMock(),
-        ids_component_cls=IdsComponent,
+        ids_component_cls=ids_component_cls,
         logger=MagicMock(),
         get_core_url=MagicMock(return_value="http://core"),
     )
@@ -384,6 +447,79 @@ async def test_host_operations_start_project_registers_components_and_scales():
     assert db_session.add.call_count == 2
     assert ids_container.components[0].port == 8080
     assert ids_container.components[1].role == "AGGREGATOR"
+
+
+@pytest.mark.asyncio
+async def test_host_operations_start_project_redeploys_only_requested_services():
+    ids_component_cls = lambda **kwargs: SimpleNamespace(**kwargs)
+    client = MagicMock()
+    container_sensor = MagicMock()
+    container_sensor.name = "sensor-1"
+    container_sensor.network_settings.ports = {"80/tcp": [{"HostPort": "3001"}]}
+    container_sensor.config.labels = {
+        "bicep.role": "SENSOR",
+        "com.docker.compose.service": "sensor",
+    }
+
+    container_aggregator = MagicMock()
+    container_aggregator.name = "aggregator-1"
+    container_aggregator.network_settings.ports = {}
+    container_aggregator.config.labels = {
+        "com.docker.compose.service": "aggregator",
+    }
+
+    client.compose.ps.return_value = [container_sensor, container_aggregator]
+    docker_client_cls = MagicMock(return_value=client)
+
+    async def run_to_thread(func):
+        return func()
+
+    host_operations = ComposeHostOperations(
+        docker_client_cls=docker_client_cls,
+        docker_sdk_module=MagicMock(),
+        ids_component_cls=ids_component_cls,
+        logger=MagicMock(),
+        get_core_url=MagicMock(return_value="http://core"),
+    )
+
+    deployment = SimpleNamespace(
+        host_system=SimpleNamespace(
+            name="Remote",
+            id=5,
+            get_host_and_docker_port=lambda: ("10.0.0.5", 2375),
+        ),
+        paths=SimpleNamespace(
+            compose_file_path="/tmp/docker-compose.yaml",
+            project_name="bicep_cids_1_remote",
+        ),
+        services=[
+            SimpleNamespace(service_name="sensor", count=1),
+            SimpleNamespace(service_name="aggregator", count=2),
+        ],
+    )
+    ids_container = SimpleNamespace(id=1, port=8080, components=[])
+    db_session = MagicMock()
+
+    with patch(
+        "app.deployment.deployment_plugins.docker_compose_support.host_operations.asyncio.to_thread",
+        side_effect=run_to_thread,
+    ):
+        await host_operations.start_project(
+            deployment=deployment,
+            ids_container=ids_container,
+            db_session=db_session,
+            services=["sensor"],
+        )
+
+    client.compose.up.assert_called_once_with(
+        services=["sensor"],
+        detach=True,
+        quiet=False,
+        scales={"sensor": 1},
+        force_recreate=True,
+    )
+    assert db_session.add.call_count == 1
+    assert ids_container.components[0].service_name == "sensor"
 
 
 @pytest.mark.asyncio

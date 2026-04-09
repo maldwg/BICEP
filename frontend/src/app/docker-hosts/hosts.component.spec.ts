@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { HostsComponent } from './docker-hosts.component';
+import { DockerHostsComponent } from './docker-hosts.component';
 
-describe('HostsComponent', () => {
-  let component: HostsComponent;
-  let fixture: ComponentFixture<HostsComponent>;
+describe('DockerHostsComponent', () => {
+  let component: DockerHostsComponent;
+  let fixture: ComponentFixture<DockerHostsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HostsComponent]
+      imports: [DockerHostsComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(HostsComponent);
+    fixture = TestBed.createComponent(DockerHostsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

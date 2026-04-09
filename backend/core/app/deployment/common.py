@@ -160,6 +160,11 @@ async def update_ids_ruleset(ids_system, db_session: AsyncSession, ruleset_id: i
     await plugin.update_ruleset(ids_system, db_session, ruleset_id)
 
 
+async def update_ids_components(ids_system, db_session: AsyncSession, components: list):
+    plugin = await get_plugin_for_system(ids_system, db_session=db_session)
+    await plugin.update_components(ids_system, db_session, components)
+
+
 async def is_ids_available(ids_system, db_session: AsyncSession | None = None) -> bool:
     try:
         plugin = await get_plugin_for_system(ids_system, db_session=db_session)

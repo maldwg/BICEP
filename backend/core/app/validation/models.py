@@ -23,15 +23,18 @@ class IdsContainerCreate(BaseModel):
     env_vars: Optional[dict[str, str]] = {}
 
 
-class IdsContainerUpdate(BaseModel):
-    """
-    Class to validate input from the frontend
-    """
+class IdsComponentUpdate(BaseModel):
+    id: int
+    runtime_configuration_id: Optional[int] = None
+    count: Optional[int] = 1
 
+
+class IdsContainerUpdate(BaseModel):
     id: int
     description: str
     configuration_id: int
     ruleset_id: Optional[int] = None
+    components: Optional[list[IdsComponentUpdate]] = []
 
 
 class EnsembleCreate(BaseModel):
