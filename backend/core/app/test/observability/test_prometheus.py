@@ -1,12 +1,18 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from app.prometheus import (
+    RESOURCE_QUERY_MODE_EXACT,
+    RESOURCE_QUERY_MODE_PREFIX,
+    build_resource_metric_query,
+    build_resource_query_spec_for_ids_system,
+    deserialize_resource_query_targets,
     query_average_cpu_usage,
     query_average_memory_usage,
     query_current_cpu_usage,
     query_current_memory_usage,
     query_cpu_usage_series,
     query_memory_usage_series,
+    serialize_resource_query_targets,
 )
 import os
 
@@ -651,7 +657,7 @@ async def test_prom_url_empty_string_memory_series():
 
 @pytest.mark.asyncio
 async def test_query_average_cpu_usage_multiple_results():
-    """When Prometheus returns multiple result series, should average across all."""
+    """When Prometheus returns multiple result series, should sum them per timestamp."""
     with patch("httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client_cls.return_value.__aenter__.return_value = mock_client
@@ -671,5 +677,142 @@ async def test_query_average_cpu_usage_multiple_results():
         start_time = "01-01-2021 00:00:00.000000"
         end_time = "01-01-2021 00:01:00.000000"
         result = await query_average_cpu_usage("test-container", start_time, end_time)
-        # (0.2 + 0.4 + 0.6 + 0.8) / 4 = 0.5
-        assert result == 0.5
+        # Summed series becomes [0.8, 1.2], average = 1.0 cores.
+        assert result == 1.0
+
+
+@pytest.mark.asyncio
+async def test_query_cpu_usage_series_aggregates_multiple_results():
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "status": "success",
+            "data": {
+                "result": [
+                    {"values": [[1, "0.2"], [2, "0.4"]]},
+                    {"values": [[1, "0.6"], [2, "0.8"]]},
+                ]
+            },
+        }
+        mock_client.get.return_value = mock_response
+
+        start_time = "01-01-2021 00:00:00.000000"
+        end_time = "01-01-2021 00:01:00.000000"
+        result = await query_cpu_usage_series("test-container", start_time, end_time)
+
+        assert result == [0.8, 1.2]
+
+
+@pytest.mark.asyncio
+async def test_query_average_cpu_usage_exact_target_uses_exact_label_matcher():
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "status": "success",
+            "data": {"result": [{"values": [[1, "0.2"], [2, "0.4"]]}]},
+        }
+        mock_client.get.return_value = mock_response
+
+        start_time = "01-01-2021 00:00:00.000000"
+        end_time = "01-01-2021 00:01:00.000000"
+        result = await query_average_cpu_usage("Suricata-38667", start_time, end_time)
+
+        assert result == 0.3
+        query = mock_client.get.call_args.kwargs["params"]["query"]
+        assert 'name="Suricata-38667"' in query
+        assert 'name=~' not in query
+
+
+@pytest.mark.asyncio
+async def test_query_average_memory_usage_prefix_targets_builds_sum_query():
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "status": "success",
+            "data": {"result": [{"values": [[1, "256.0"], [2, "512.0"]]}]},
+        }
+        mock_client.get.return_value = mock_response
+
+        start_time = "01-01-2021 00:00:00.000000"
+        end_time = "01-01-2021 00:01:00.000000"
+        result = await query_average_memory_usage(
+            None,
+            start_time,
+            end_time,
+            match_mode=RESOURCE_QUERY_MODE_PREFIX,
+            targets=["bicep_cids_1_core-sensor", "bicep_cids_1_core-aggregator"],
+        )
+
+        assert result == 384.0
+        query = mock_client.get.call_args.kwargs["params"]["query"]
+        assert "sum(container_memory_usage_bytes" in query
+        assert "bicep_cids_1_core-sensor" in query
+        assert "bicep_cids_1_core-aggregator" in query
+        assert "\\-" not in query
+        assert "(?:" not in query
+
+
+def test_serialize_and_deserialize_resource_query_targets():
+    targets = ["sensor-prefix", "aggregator-prefix"]
+
+    serialized = serialize_resource_query_targets(targets)
+
+    assert deserialize_resource_query_targets(serialized) == targets
+
+
+def test_build_resource_query_spec_for_ids_system_uses_component_prefixes():
+    ids_system = MagicMock()
+    ids_system.name = "hamstring-8080"
+    component_one = MagicMock()
+    component_one.name = "bicep_cids_5_core-sensor-1"
+    component_two = MagicMock()
+    component_two.name = "bicep_cids_5_core-aggregator-1"
+    component_three = MagicMock()
+    component_three.name = "bicep_cids_5_remote-sensor-2"
+    ids_system.components = [component_one, component_two, component_three]
+
+    mode, targets = build_resource_query_spec_for_ids_system(ids_system)
+
+    assert mode == RESOURCE_QUERY_MODE_PREFIX
+    assert targets == [
+        "bicep_cids_5_core-aggregator",
+        "bicep_cids_5_core-sensor",
+        "bicep_cids_5_remote-sensor",
+    ]
+
+
+def test_build_resource_query_spec_for_single_container_falls_back_to_exact_name():
+    ids_system = MagicMock()
+    ids_system.name = "suricata-8080"
+    ids_system.components = []
+
+    mode, targets = build_resource_query_spec_for_ids_system(ids_system)
+
+    assert mode == RESOURCE_QUERY_MODE_EXACT
+    assert targets == ["suricata-8080"]
+
+
+def test_build_resource_metric_query_prefix_does_not_escape_hyphen():
+    query = build_resource_metric_query(
+        "container_cpu_usage",
+        match_mode=RESOURCE_QUERY_MODE_PREFIX,
+        targets=[
+            "bicep_cids_4_core-server-detector",
+            "bicep_cids_4_core-server-monitoring-agent",
+        ],
+    )
+
+    assert query is not None
+    assert 'name=~"^(' in query
+    assert "bicep_cids_4_core-server-detector([-_].*)?" in query
+    assert "bicep_cids_4_core-server-monitoring-agent([-_].*)?" in query
+    assert "\\-" not in query

@@ -24,6 +24,7 @@ from app.logger import LOGGER
 from app.models.configuration import get_config_by_id
 from app.models.docker_host_system import get_host_by_id
 from app.models.ids_component import IdsComponent
+from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
 
 
@@ -133,10 +134,10 @@ class DockerComposeDeploymentPlugin(DeploymentPlugin):
 
         for component in list(ids_system.components):
             await db_session.delete(component)
-        
+
         if delete_system:
-            await db_session.delete(ids_system)
-        
+            await mark_container_as_deleted(db_session, ids_system)
+
         await db_session.commit()
 
     async def is_available(self, ids_system) -> bool:

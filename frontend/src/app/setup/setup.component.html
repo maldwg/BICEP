@@ -86,10 +86,13 @@
             <mat-select [formControl]="idsForm.controls.host" required>
               @for (host of hostSystems; track host) {
               <mat-option [disabled]="host.status === hostStatus.unavailable"
-                [ngClass]="{'unavailable-host': host.status === hostStatus.unavailable}" [value]="host.id">
+                [ngClass]="{'unavailable-host': host.status === hostStatus.unavailable}" [value]="host.id"
+                [matTooltip]="host.status === hostStatus.unavailable ? (host.status_message || 'Host unavailable') : ''">
                 <span>
                   {{ host.name }} @if (host.status === hostStatus.unavailable) {
-                  - unavailable
+                  - unavailable @if (host.status_message) {
+                  ({{ host.status_message }})
+                  }
                   }
                 </span>
               </mat-option>

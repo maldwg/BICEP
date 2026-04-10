@@ -51,7 +51,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
         { value: 'prec', viewValue: 'Precision' },
         { value: 'f1_score', viewValue: 'F1 Score' },
         { value: 'runtime', viewValue: 'Runtime' },
-        { value: 'cpu_usage', viewValue: 'CPU Usage (%)' },
+        { value: 'cpu_usage', viewValue: 'CPU Usage (cores)' },
         { value: 'memory_usage', viewValue: 'RAM Usage (MB)' }
     ];
 
@@ -322,7 +322,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
                 },
                 yAxis: {
                     type: 'value',
-                    name: metric === 'cpu_usage' ? '%' : 'MB',
+                    name: metric === 'cpu_usage' ? 'cores' : 'MB',
                     splitArea: {
                         show: true
                     }

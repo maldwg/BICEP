@@ -4,11 +4,12 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 
 from http.client import HTTPResponse
 from types import SimpleNamespace
-from sqlalchemy import Column, ForeignKey, Integer, String, select
+from sqlalchemy import Column, ForeignKey, Integer, String, select, text
 from sqlalchemy.orm import relationship
 from app.models.ids_tool import get_ids_by_id
 from app.models.ids_component import IdsComponent
 from app.utils import (
+    DEPLOYMENT_STATUS,
     STATUS,
     start_network_analysis,
     start_static_analysis,
@@ -16,7 +17,7 @@ from app.utils import (
     get_core_host_ip,
 )
 from app.validation.models import IdsContainerUpdate
-from app.database import Base
+from app.database import Base, engine
 from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -31,6 +32,12 @@ class IdsSystem(Base):
     name = Column(String(64), nullable=False)
     port = Column(Integer, nullable=False)
     status = Column(String(32), nullable=False)
+    deployment_status = Column(
+        String(32),
+        nullable=False,
+        default=DEPLOYMENT_STATUS.DEPLOYED.value,
+        server_default=DEPLOYMENT_STATUS.DEPLOYED.value,
+    )
     description = Column(String(2048))
     configuration_id = Column(Integer, ForeignKey("configuration.id"))
     ids_tool_id = Column(Integer, ForeignKey("ids_tool.id"))
@@ -76,6 +83,7 @@ class IdsSystem(Base):
             runtime_config = await get_config_by_id(db, self.runtime_configuration_id)
 
         self.status = STATUS.SETTING_UP.value
+        self.deployment_status = DEPLOYMENT_STATUS.DEPLOYED.value
         db.add(self)
         await db.commit()
         await db.refresh(self)
@@ -112,7 +120,7 @@ class IdsSystem(Base):
         )
 
     async def teardown(self, db: AsyncSession):
-        """Remove the IDS system and its Docker container."""
+        """Tear down the IDS deployment while keeping the DB row for historical data."""
         from app.deployment import teardown_ids
 
         await teardown_ids(self, db)
@@ -324,29 +332,64 @@ class CidsSystem(IdsSystem):
 
 async def get_ids_system_by_id(db: AsyncSession, id: int) -> IdsSystem | None:
     """Get an IDS system by ID."""
-    stmt = select(IdsSystem).options(selectinload(IdsSystem.components)).where(IdsSystem.id == id)
+    stmt = (
+        select(IdsSystem)
+        .options(
+            selectinload(IdsSystem.components),
+            selectinload(IdsSystem.ensemble_ids),
+        )
+        .where(
+            IdsSystem.id == id,
+            IdsSystem.deployment_status == DEPLOYMENT_STATUS.DEPLOYED.value,
+        )
+    )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 
-async def get_all_container(db: AsyncSession) -> list[IdsSystem]:
+async def get_ids_system_by_id_any_status(
+    db: AsyncSession, id: int
+) -> IdsSystem | None:
+    """Get an IDS system by ID regardless of deployment status."""
+    stmt = (
+        select(IdsSystem)
+        .options(
+            selectinload(IdsSystem.components),
+            selectinload(IdsSystem.ensemble_ids),
+        )
+        .where(IdsSystem.id == id)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_all_container(
+    db: AsyncSession, include_deleted: bool = False
+) -> list[IdsSystem]:
     """Get all IDS systems."""
     stmt = select(IdsSystem).options(selectinload(IdsSystem.components))
+    if not include_deleted:
+        stmt = stmt.where(
+            IdsSystem.deployment_status == DEPLOYMENT_STATUS.DEPLOYED.value
+        )
     result = await db.execute(stmt)
     return result.scalars().all()
 
 
 async def remove_container_by_id(db: AsyncSession, id: int):
     """Remove an IDS system by ID."""
-    container = await get_ids_system_by_id(db, id)
+    container = await get_ids_system_by_id_any_status(db, id)
     if container:
-        await db.delete(container)
+        await mark_container_as_deleted(db, container)
         await db.commit()
 
 
 async def update_container(db: AsyncSession, container_data: IdsContainerUpdate):
     """Update an IDS system's configuration."""
-    stmt = select(IdsSystem).where(IdsSystem.id == container_data.id)
+    stmt = select(IdsSystem).where(
+        IdsSystem.id == container_data.id,
+        IdsSystem.deployment_status == DEPLOYMENT_STATUS.DEPLOYED.value,
+    )
     result = await db.execute(stmt)
     container_db: IdsSystem = result.scalar_one_or_none()
     if not container_db:
@@ -380,3 +423,12 @@ def get_ids_system_model(ids_type: str | None):
         "CIDS": CidsSystem,
     }
     return ids_system_models.get(ids_type_normalized, IdsSystem)
+
+
+async def mark_container_as_deleted(db: AsyncSession, container: IdsSystem):
+    """Mark an IDS system as deleted while preserving historical references."""
+    for ensemble_link in list(getattr(container, "ensemble_ids", []) or []):
+        await db.delete(ensemble_link)
+
+    container.status = STATUS.IDLE.value
+    container.deployment_status = DEPLOYMENT_STATUS.DELETED.value

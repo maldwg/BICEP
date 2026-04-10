@@ -12,6 +12,7 @@ from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset,
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData, IdsToolCreate, IdsToolUpdate
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
+from app.models.metric_service import serialize_metric_service
 from app.logger import LOGGER
 from app.database import get_db
 import uuid
@@ -22,6 +23,27 @@ import yaml
 router = APIRouter(
     prefix="/crud"
 )
+
+
+def serialize_host(host: DockerHostSystem) -> dict:
+    metric_service = serialize_metric_service(getattr(host, "metric_service", None))
+
+    status_message = None
+    if host.status == DOCKER_HOST_STATUS.UNAVAILABLE.value:
+        if metric_service and metric_service.get("status") != DOCKER_HOST_STATUS.AVAILABLE.value:
+            status_message = metric_service.get("status_message")
+        else:
+            status_message = "Docker host is unavailable."
+
+    return {
+        "id": host.id,
+        "name": host.name,
+        "host": host.host,
+        "docker_port": host.docker_port,
+        "status": host.status,
+        "status_message": status_message,
+        "metric_service": metric_service,
+    }
 
 @router.get("/benchmarking-results/all")
 async def get_benchmarking_results(db=Depends(get_db)):
@@ -190,12 +212,12 @@ async def get_all_ids_tools(db=Depends(get_db)):
     return await get_all_tools(db)
 
 @router.get("/container/all")
-async def get_all_ids_container(db=Depends(get_db)):
-    return await get_all_container(db)
+async def get_all_ids_container(include_deleted: bool = False, db=Depends(get_db)):
+    return await get_all_container(db, include_deleted=include_deleted)
 
 @router.get("/container/without/ensemble")
 async def get_all_ids_container_not_assigned_to_an_ensemble(db=Depends(get_db)):
-    container = await get_all_container(db)
+    container = await get_all_container(db, include_deleted=False)
     ensemble_ids = await get_all_ensemble_container(db)
     id_list = [e.ids_system_id for e in ensemble_ids]
     available_container = [ c for c in container if c.id not in id_list ]
@@ -232,7 +254,7 @@ async def patch_ensemble(ensmeble: EnsembleUpdate, db=Depends(get_db)):
 @router.get("/host/all")
 async def return_all_hosts(db=Depends(get_db)):
     hosts = await get_all_hosts(db)
-    return hosts
+    return [serialize_host(host) for host in hosts]
 
 @router.post("/host/add")
 async def create_host(host_data: DockerHostCreationData, db=Depends(get_db)):
@@ -247,7 +269,18 @@ async def create_host(host_data: DockerHostCreationData, db=Depends(get_db)):
 
 @router.delete("/host/delete/{id}")
 async def delete_host(id: int,db=Depends(get_db)):
-    await remove_host(db, id)
+    try:
+        removed = await remove_host(db, id)
+    except RuntimeError as exc:
+        LOGGER.error(f"Failed to delete docker host {id}: {exc}")
+        return JSONResponse(content={"error": str(exc)}, status_code=500)
+
+    if not removed:
+        return JSONResponse(
+            content={"error": f"Docker host with id {id} was not found"},
+            status_code=404,
+        )
+
     return Response(status_code=204)
 
 

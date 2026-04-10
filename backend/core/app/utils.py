@@ -21,9 +21,14 @@ from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from abc import ABC, abstractmethod
+from urllib.parse import urlparse
 from app.metrics import calculate_evaluation_metrics
 from app.models.dataset import get_dataset_by_id
-from app.prometheus import query_average_cpu_usage, query_average_memory_usage
+from app.prometheus import (
+    query_average_cpu_usage,
+    query_average_memory_usage,
+    serialize_resource_query_targets,
+)
 import json
 dataset_addition_tasks = set()
 
@@ -142,6 +147,11 @@ class STATUS(Enum):
     SETTING_UP = "setting-up"
 
 
+class DEPLOYMENT_STATUS(Enum):
+    DEPLOYED = "deployed"
+    DELETED = "deleted"
+
+
 class ANALYSIS_STATUS(Enum):
     LOGS_SENT = "LOGS_SENT"
     PROCESSING = "PROCESSING"
@@ -158,6 +168,13 @@ class FILE_TYPES(Enum):
 class DOCKER_HOST_STATUS(Enum):
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
+
+
+class METRIC_SERVICE_STATUS(Enum):
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
+    DEPLOYING = "deploying"
+    REGISTERING = "registering"
 
 
 def file_type_is_accepted(file_type: str, file_ending: str):
@@ -185,10 +202,38 @@ def get_core_host_ip():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
 
 
+def get_core_external_ip():
+    external_ip = os.getenv("CORE_HOST_IP", "").strip()
+    if external_ip:
+        return external_ip
+    return get_core_host_ip()
+
+
 def get_core_url():
-    core_ip = get_core_host_ip()
+    core_ip = get_core_external_ip()
     port = os.getenv("EXTERNAL_FASTAPI_PORT")
+    print(f"Using core URL with IP {core_ip} and port {port}")
     return f"http://{core_ip}:{port}"
+
+
+def get_prometheus_push_gateway_url():
+    pushgateway_url = os.getenv(
+        "PROMETHEUS_PUSH_GATEWAY_URL", "prometheus-push-gateway:9091"
+    )
+    if not pushgateway_url.startswith("http://") and not pushgateway_url.startswith(
+        "https://"
+    ):
+        pushgateway_url = f"http://{pushgateway_url}"
+    return pushgateway_url
+
+
+def get_external_prometheus_push_gateway_url():
+    parsed = urlparse(get_prometheus_push_gateway_url())
+    path = parsed.path.rstrip("/")
+    port = parsed.port or 9091
+    core_ip = get_core_external_ip()
+    suffix = path if path else ""
+    return f"{parsed.scheme}://{core_ip}:{port}{suffix}"
 
 
 async def deregister_container_from_ensemble(container):
@@ -325,6 +370,8 @@ async def calculate_evaluation_metrics_and_push(
     configuration_name: str = None,
     ruleset_name: str = None,
     ensemble_technique_name: str = None,
+    resource_query_mode: str | None = None,
+    resource_query_targets: list[str] | None = None,
 ):
 
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
@@ -340,20 +387,30 @@ async def calculate_evaluation_metrics_and_push(
     # Query resource usage metrics from Prometheus
     avg_cpu = None
     avg_memory = None
-    if container_name:
+    if container_name or resource_query_targets:
         try:
             avg_cpu = await query_average_cpu_usage(
                 container_name,
                 benchmarking_results.start_time,
                 benchmarking_results.stop_time,
+                match_mode=resource_query_mode,
+                targets=resource_query_targets,
             )
             avg_memory = await query_average_memory_usage(
                 container_name,
                 benchmarking_results.start_time,
                 benchmarking_results.stop_time,
+                match_mode=resource_query_mode,
+                targets=resource_query_targets,
             )
             LOGGER.info(
-                f"Resource metrics for {container_name}: CPU={avg_cpu}%, Memory={avg_memory}MB"
+                "Resource metrics for %s with mode=%s and targets=%s: CPU=%s cores, "
+                "Memory=%sMB",
+                container_name,
+                resource_query_mode,
+                resource_query_targets,
+                avg_cpu,
+                avg_memory,
             )
         except Exception as e:
             LOGGER.error(f"Failed to query resource metrics: {e}")
@@ -376,6 +433,10 @@ async def calculate_evaluation_metrics_and_push(
         f1_score=metrics["F_SCORE"],
         avg_cpu_usage=avg_cpu,
         avg_memory_usage=avg_memory,
+        resource_query_mode=resource_query_mode,
+        resource_query_targets=serialize_resource_query_targets(
+            resource_query_targets
+        ),
     )
     await add_benchmarking_result(db, result)
     await db.close()

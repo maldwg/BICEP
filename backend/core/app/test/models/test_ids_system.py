@@ -13,7 +13,7 @@ from app.models.ids_system import (
     get_ids_system_model,
 )
 from app.models.ids_component import IdsComponent
-from app.utils import STATUS
+from app.utils import DEPLOYMENT_STATUS, STATUS
 from app.test.fixtures import *
 
 
@@ -41,6 +41,7 @@ def nids_system(mock_host_system):
         name="Suricata-8080",
         port=8080,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         description="Test NIDS",
         configuration_id=1,
         ids_tool_id=1,
@@ -57,6 +58,7 @@ def hids_system(mock_host_system):
         name="Wazuh-8081",
         port=8081,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         description="Test HIDS",
         configuration_id=1,
         ids_tool_id=2,
@@ -94,6 +96,7 @@ def cids_system(mock_host_system):
         name="CIDS-8082",
         port=8082,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         description="Test CIDS",
         configuration_id=1,
         ids_tool_id=3,
@@ -174,6 +177,7 @@ def test_ids_system_get_container_http_url_with_sensor_component(mock_host_syste
         name="Test-IDS",
         port=8080,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         host_system=mock_host_system,
     )
     ids.components = [sensor]
@@ -194,6 +198,7 @@ def test_ids_system_get_container_http_url_no_sensor_component(mock_host_system)
         name="Test-IDS",
         port=8080,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         host_system=mock_host_system,
     )
     ids.components = [aggregator]
@@ -210,6 +215,7 @@ def test_ids_system_get_container_http_url_remote_host(mock_remote_host):
         name="Test-IDS",
         port=8080,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         host_system=mock_remote_host,
     )
     ids.components = []
@@ -258,6 +264,7 @@ async def test_cids_update_attributes_redeploys_only_changed_service(mock_host_s
         name="CIDS-test",
         port=8080,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         description="Test CIDS",
         configuration_id=1,
         ids_tool_id=3,
@@ -345,6 +352,7 @@ def test_cids_get_container_http_url_no_components(mock_host_system):
         name="Empty-CIDS",
         port=8082,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         host_system=mock_host_system,
     )
     cids.components = []
@@ -365,6 +373,7 @@ def test_cids_get_container_http_url_no_sensor(mock_host_system):
         name="NoSensor-CIDS",
         port=8082,
         status=STATUS.IDLE.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         host_system=mock_host_system,
     )
     cids.components = [aggregator]
@@ -504,8 +513,10 @@ async def test_remove_container_by_id_existing(
     db_session_fixture: DatabaseSessionFixture,
 ):
     db = await db_session_fixture.get_db_session()
+    container = await db_session_fixture.get_ids_container_model()
     await remove_container_by_id(db, 1)
-    db.delete.assert_awaited()
+    assert container.deployment_status == DEPLOYMENT_STATUS.DELETED.value
+    assert container.status == STATUS.IDLE.value
     db.commit.assert_awaited()
 
 

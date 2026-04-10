@@ -441,7 +441,9 @@ export class SetupComponent implements OnInit {
         name: hostSystem.name,
         host: hostSystem.host,
         docker_port: hostSystem.docker_port,
-        status: hostSystem.status
+        status: hostSystem.status,
+        status_message: hostSystem.status_message,
+        metric_service: hostSystem.metric_service
       }));
     })
   }

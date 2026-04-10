@@ -1,14 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { MonitoringComponent } from './monitoring.component';
+import { MetricsService, HistoricalMetricsData } from '../services/monitoring/metrics.service';
 
 describe('MonitoringComponent', () => {
   let component: MonitoringComponent;
   let fixture: ComponentFixture<MonitoringComponent>;
+  let metricsService: jasmine.SpyObj<MetricsService>;
 
   beforeEach(async () => {
+    metricsService = jasmine.createSpyObj<MetricsService>('MetricsService', [
+      'getCurrentMetrics',
+      'getHistoricalMetrics'
+    ]);
+    metricsService.getCurrentMetrics.and.returnValue(of([]));
+    metricsService.getHistoricalMetrics.and.returnValue(of({}));
+
     await TestBed.configureTestingModule({
-      imports: [MonitoringComponent]
+      imports: [MonitoringComponent],
+      providers: [
+        { provide: MetricsService, useValue: metricsService }
+      ]
     })
       .compileComponents();
 
@@ -24,7 +37,7 @@ describe('MonitoringComponent', () => {
   describe('Timeline Alignment', () => {
     it('should align containers with different start times on common timeline', () => {
       // Container 1 started at t=1000, Container 2 started at t=1030 (30s later)
-      const mockData = {
+      const mockData: HistoricalMetricsData = {
         'container-1': {
           id: 1,
           timestamps: [1000, 1015, 1030, 1045, 1060], // Every 15s
@@ -57,7 +70,7 @@ describe('MonitoringComponent', () => {
     });
 
     it('should handle containers starting at same time', () => {
-      const mockData = {
+      const mockData: HistoricalMetricsData = {
         'container-1': {
           id: 1,
           timestamps: [1000, 1015, 1030],
@@ -83,7 +96,7 @@ describe('MonitoringComponent', () => {
     });
 
     it('should use absolute timestamps for time labels', () => {
-      const mockData = {
+      const mockData: HistoricalMetricsData = {
         'container-1': {
           id: 1,
           timestamps: [1702300000, 1702300015], // Absolute Unix timestamps
@@ -100,7 +113,7 @@ describe('MonitoringComponent', () => {
     });
 
     it('should handle empty data gracefully', () => {
-      const mockData = {};
+      const mockData: HistoricalMetricsData = {};
 
       component.loadHistoricalDataToCharts(mockData);
 
@@ -110,7 +123,7 @@ describe('MonitoringComponent', () => {
     });
 
     it('should fill gaps for containers with missing middle data points', () => {
-      const mockData = {
+      const mockData: HistoricalMetricsData = {
         'container-1': {
           id: 1,
           timestamps: [1000, 1015, 1030, 1045, 1060],
@@ -135,6 +148,65 @@ describe('MonitoringComponent', () => {
       expect(cpu2?.[2]).toBeNull(); // Missing
       expect(cpu2?.[3]).toBeNull(); // Missing
       expect(cpu2?.[4]).toBe(0.5); // Last point
+    });
+
+    it('should keep top-level CIDS separate from expanded component series', () => {
+      const mockData: HistoricalMetricsData = {
+        'Hamstring-39021': {
+          id: 12,
+          timestamps: [1000, 1015],
+          cpu: [1.1, 1.3],
+          memory: [256, 300],
+          type: 'CIDS',
+          is_component: false
+        },
+        'Hamstring-39021 :: detector': {
+          id: 1201,
+          timestamps: [1000, 1015],
+          cpu: [0.4, 0.5],
+          memory: [80, 84],
+          is_component: true,
+          parent_id: 12,
+          parent_name: 'Hamstring-39021',
+          role: 'detector'
+        }
+      };
+
+      component.loadHistoricalDataToCharts(mockData);
+
+      expect(component.topLevelContainers.map(container => container.name)).toEqual(['Hamstring-39021']);
+      expect(component.cidsContainers.map(container => container.name)).toEqual(['Hamstring-39021']);
+      expect(component.containers.map(container => container.name)).toEqual([
+        'Hamstring-39021',
+        'Hamstring-39021 :: detector'
+      ]);
+    });
+
+    it('should request expanded component series when toggling a CIDS', () => {
+      metricsService.getHistoricalMetrics.calls.reset();
+
+      component.toggleCidsComponents({
+        id: 12,
+        name: 'Hamstring-39021',
+        status: 'active',
+        cpu_usage: 0,
+        memory_usage: 0,
+        type: 'CIDS'
+      });
+
+      expect(component.isCidsExpanded(12)).toBeTrue();
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '2s', [12]);
+    });
+
+    it('should collapse all expanded CIDS with one action', () => {
+      component.expandedCidsIds.add(12);
+      component.expandedCidsIds.add(13);
+      metricsService.getHistoricalMetrics.calls.reset();
+
+      component.showOverallOnly();
+
+      expect(component.hasExpandedCids).toBeFalse();
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '2s', []);
     });
   });
 });

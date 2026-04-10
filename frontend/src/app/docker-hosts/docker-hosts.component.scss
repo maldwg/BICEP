@@ -40,3 +40,74 @@
   background-color: rgb(255, 255, 255, 0.25);
   border: none;
 }
+
+.host-title {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  --badge-color: #5f6673;
+  --badge-border: rgba(95, 102, 115, 0.16);
+  --badge-bg-top: rgba(255, 255, 255, 0.78);
+  --badge-bg-bottom: rgba(255, 255, 255, 0.48);
+  --badge-dot-ring: rgba(95, 102, 115, 0.18);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: fit-content;
+  padding: 0.34rem 0.82rem 0.34rem 0.64rem;
+  border-radius: 999px;
+  border: 1px solid var(--badge-border);
+  background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bottom));
+  box-shadow: 0 10px 24px rgba(88, 31, 31, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  color: var(--badge-color);
+  font-size: 0.79rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: default;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.status-badge::before {
+  content: "";
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--badge-color);
+  box-shadow: 0 0 0 0.24rem var(--badge-dot-ring);
+}
+
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(88, 31, 31, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.status-badge--available {
+  --badge-color: #22653f;
+  --badge-border: rgba(34, 101, 63, 0.2);
+  --badge-bg-top: rgba(232, 246, 237, 0.88);
+  --badge-bg-bottom: rgba(222, 241, 229, 0.58);
+  --badge-dot-ring: rgba(34, 101, 63, 0.16);
+}
+
+.status-badge--unavailable {
+  --badge-color: #a33d3d;
+  --badge-border: rgba(163, 61, 61, 0.2);
+  --badge-bg-top: rgba(252, 238, 238, 0.9);
+  --badge-bg-bottom: rgba(248, 225, 225, 0.62);
+  --badge-dot-ring: rgba(163, 61, 61, 0.16);
+}
+
+.status-badge--pending {
+  --badge-color: #9d6707;
+  --badge-border: rgba(157, 103, 7, 0.2);
+  --badge-bg-top: rgba(255, 247, 228, 0.9);
+  --badge-bg-bottom: rgba(250, 237, 198, 0.64);
+  --badge-dot-ring: rgba(157, 103, 7, 0.16);
+}

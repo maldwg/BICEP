@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.dataset_types import DatasetType
 from sqlalchemy.sql.selectable import Select
 from app.models.benchmarking import BenchmarkingIntermediateResult
+from app.utils import DEPLOYMENT_STATUS
 import pytest_asyncio
 
 TESTS_BASE_DIR = Path(__file__).resolve().parent
@@ -105,6 +106,10 @@ async def db_session_fixture():
     mock_docker_host_system = MagicMock(spec=DockerHostSystem)
     mock_docker_host_system.id = 1
     mock_docker_host_system.name = "localhost"
+    mock_docker_host_system.host = "localhost"
+    mock_docker_host_system.docker_port = 2375
+    mock_docker_host_system.status = "available"
+    mock_docker_host_system.metric_service = None
 
     mock_dataset_type = MagicMock(spec=DatasetType)
     mock_dataset_type.id = 1
@@ -165,6 +170,7 @@ async def db_session_fixture():
     mock_ids_container.configuration_id = 1
     mock_ids_container.ruleset_id = 2
     mock_ids_container.description = "Test description"
+    mock_ids_container.deployment_status = DEPLOYMENT_STATUS.DEPLOYED.value
     mock_ids_container.host_system = mock_docker_host_system
     mock_ids_container.is_available = AsyncMock(return_value=True)
     mock_ids_container.is_busy = AsyncMock(return_value=True)
@@ -193,6 +199,9 @@ async def db_session_fixture():
     mock_ids_container_in_ensemble.configuration_id = 1
     mock_ids_container_in_ensemble.ruleset_id = 2
     mock_ids_container_in_ensemble.description = "Test description"
+    mock_ids_container_in_ensemble.deployment_status = (
+        DEPLOYMENT_STATUS.DEPLOYED.value
+    )
     mock_ids_container_in_ensemble.host_system = mock_docker_host_system
     mock_ids_container_in_ensemble.is_available = AsyncMock(return_value=True)
     mock_ids_container_in_ensemble.is_busy = AsyncMock(return_value=True)

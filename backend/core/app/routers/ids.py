@@ -12,6 +12,7 @@ from app.validation.models import (
 from app.models.ids_system import (
     IdsSystem,
     get_ids_system_by_id,
+    get_ids_system_by_id_any_status,
     get_ids_system_model,
     update_ids_status,
 )
@@ -19,6 +20,7 @@ from app.models.configuration import get_config_by_id
 from app.models.dataset import Dataset, get_dataset_by_id
 from app.utils import (
     DOCKER_HOST_STATUS,
+    DEPLOYMENT_STATUS,
     finish_ids_setup,
     create_response_error,
     create_response_message,
@@ -36,6 +38,7 @@ from app.database import get_db
 from datetime import datetime
 from app.models.ids_tool import get_ids_by_id
 from app.models.ensemble import get_ensemble_by_id
+from app.prometheus import build_resource_query_spec_for_ids_system
 
 router = APIRouter(prefix="/ids")
 
@@ -74,6 +77,7 @@ async def setup_ids(
         configuration_id=data.configuration_id,
         ids_tool_id=data.ids_tool_id,
         status=STATUS.SETTING_UP.value,
+        deployment_status=DEPLOYMENT_STATUS.DEPLOYED.value,
         ruleset_id=ruleset_id,
     )
 
@@ -97,7 +101,14 @@ async def setup_ids(
 
 @router.delete("/remove/{container_id}")
 async def remove_container(container_id: int, db=Depends(get_db)):
-    container: IdsSystem = await get_ids_system_by_id(db, container_id)
+    container: IdsSystem = await get_ids_system_by_id_any_status(db, container_id)
+    if container is None:
+        return JSONResponse(
+            {"error": f"container with id {container_id} was not found"},
+            status_code=404,
+        )
+    if container.deployment_status == DEPLOYMENT_STATUS.DELETED.value:
+        return Response(status_code=204)
     try:
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
@@ -114,6 +125,13 @@ async def start_static_container_analysis(
     ids: IdsSystem = await get_ids_system_by_id(
         db, static_analysis_data.container_id
     )
+    if ids is None:
+        return JSONResponse(
+            {
+                "error": f"container with id {static_analysis_data.container_id} was not found"
+            },
+            status_code=404,
+        )
     if ids.ensemble_ids != []:
         return JSONResponse(
             {
@@ -166,6 +184,13 @@ async def start_network_container_analysis(
     ids: IdsSystem = await get_ids_system_by_id(
         db, network_analysis_data.container_id
     )
+    if ids is None:
+        return JSONResponse(
+            {
+                "error": f"container with id {network_analysis_data.container_id} was not found"
+            },
+            status_code=404,
+        )
 
     if ids.ensemble_ids != []:
         return JSONResponse(
@@ -214,6 +239,11 @@ async def start_network_container_analysis(
 @router.post("/analysis/stop")
 async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     container: IdsSystem = await get_ids_system_by_id(db, stop_data.container_id)
+    if container is None:
+        return JSONResponse(
+            {"error": f"container with id {stop_data.container_id} was not found"},
+            status_code=404,
+        )
     # check if container is part of an ensemble to prevent stopping an ensemble container individually
     if container.ensemble_ids != []:
         for ensemble_ids_of_container in container.ensemble_ids:
@@ -238,7 +268,14 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
 async def finished_analysis(
     analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
 ):
-    container = await get_ids_system_by_id(db, analysisFinishedData.container_id)
+    container = await get_ids_system_by_id_any_status(db, analysisFinishedData.container_id)
+    if container is None:
+        return JSONResponse(
+            {
+                "error": f"container with id {analysisFinishedData.container_id} was not found"
+            },
+            status_code=404,
+        )
     await update_ids_status(db, STATUS.IDLE.value, container)
     return JSONResponse(
         {"message": f"Successfully stopped analysis for container {container.name}"},
@@ -250,7 +287,12 @@ async def finished_analysis(
 async def receive_alerts_from_ids(
     alert_data: AlertData, background_tasks: BackgroundTasks, db=Depends(get_db)
 ):
-    container = await get_ids_system_by_id(db, alert_data.container_id)
+    container = await get_ids_system_by_id_any_status(db, alert_data.container_id)
+    if container is None:
+        return JSONResponse(
+            {"error": f"container with id {alert_data.container_id} was not found"},
+            status_code=404,
+        )
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for container {container.name}")
     labels = {
@@ -280,6 +322,9 @@ async def receive_alerts_from_ids(
     LOGGER.debug(f"Created {len(alerts)} alerts")
     background_tasks.add_task(push_alerts_to_loki, alerts, labels)
     if alert_data.analysis_type == "static":
+        resource_query_mode, resource_query_targets = (
+            build_resource_query_spec_for_ids_system(container)
+        )
         # Fetch configuration and ruleset names
         configuration = await get_config_by_id(db, container.configuration_id)
         configuration_name = configuration.name if configuration else None
@@ -301,6 +346,8 @@ async def receive_alerts_from_ids(
             container_name=container.name,
             configuration_name=configuration_name,
             ruleset_name=ruleset_name,
+            resource_query_mode=resource_query_mode,
+            resource_query_targets=resource_query_targets,
         )
     return JSONResponse(
         {"content": f"Successfully pushed alerts and metrics to Loki"}, status_code=200

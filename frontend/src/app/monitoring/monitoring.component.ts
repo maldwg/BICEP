@@ -11,10 +11,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { EChartsOption } from 'echarts';
-import { MetricsService, ContainerMetric } from '../services/monitoring/metrics.service';
+import {
+  MetricsService,
+  ContainerMetric,
+  HistoricalMetricsData,
+  HistoricalMetricSeries
+} from '../services/monitoring/metrics.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
-// ContainerMetric now imported from MetricsService
 
 @Component({
   selector: 'app-monitoring',
@@ -31,7 +34,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class MonitoringComponent implements OnInit, OnDestroy {
   containers: ContainerMetric[] = [];
+  topLevelContainers: ContainerMetric[] = [];
   pollingSubscription?: Subscription;
+  expandedCidsIds = new Set<number>();
 
   // History for each container
   cpuHistory: Map<string, (number | null)[]> = new Map();
@@ -57,6 +62,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   useCustomRange: boolean = false;
 
   constructor(private metricsService: MetricsService) { }
+
+  get cidsContainers(): ContainerMetric[] {
+    return this.topLevelContainers.filter(container => container.type === 'CIDS');
+  }
+
+  get hasExpandedCids(): boolean {
+    return this.expandedCidsIds.size > 0;
+  }
 
   ngOnInit(): void {
     // Load historical data first
@@ -85,6 +98,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     const timeStr = now.toLocaleTimeString();
 
     this.containers = newMetrics;
+    this.topLevelContainers = newMetrics.filter(container => !container.is_component);
     this.timeLabels.push(timeStr);
     if (this.timeLabels.length > this.maxDataPoints) this.timeLabels.shift();
 
@@ -166,7 +180,12 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }
 
     // Use 2s step to capture all container pushes (containers push every ~2s)
-    this.metricsService.getHistoricalMetrics(start, end, '2s').subscribe({
+    this.metricsService.getHistoricalMetrics(
+      start,
+      end,
+      '2s',
+      Array.from(this.expandedCidsIds).sort((a, b) => a - b)
+    ).subscribe({
       next: (data) => {
         this.loadHistoricalDataToCharts(data);
       },
@@ -177,14 +196,16 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadHistoricalDataToCharts(data: any): void {
+  loadHistoricalDataToCharts(data: HistoricalMetricsData): void {
     // Clear existing data
+    this.containers = [];
+    this.topLevelContainers = [];
     this.cpuHistory.clear();
     this.memoryHistory.clear();
     this.timeLabels = [];
 
-    // Extract container names
-    const containerNames = Object.keys(data);
+    const historicalEntries = Object.entries(data);
+    const containerNames = historicalEntries.map(([containerName]) => containerName);
 
     if (containerNames.length === 0) return;
 
@@ -192,8 +213,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     let minTime = Infinity;
     let maxTime = 0;
 
-    for (const containerName of containerNames) {
-      const containerData = data[containerName];
+    for (const [, containerData] of historicalEntries) {
       if (containerData.timestamps && containerData.timestamps.length > 0) {
         minTime = Math.min(minTime, containerData.timestamps[0]);
         maxTime = Math.max(maxTime, containerData.timestamps[containerData.timestamps.length - 1]);
@@ -205,8 +225,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
     // 2. Determine the time step from the first container with data
     let step = 15; // Default 15 seconds
-    for (const containerName of containerNames) {
-      const containerData = data[containerName];
+    for (const [, containerData] of historicalEntries) {
       if (containerData.timestamps && containerData.timestamps.length >= 2) {
         step = containerData.timestamps[1] - containerData.timestamps[0];
         break;
@@ -225,8 +244,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     );
 
     // 5. Map each container's data to the common timeline
-    for (const containerName of containerNames) {
-      const containerData = data[containerName];
+    for (const [containerName, containerData] of historicalEntries) {
       const cpuData: (number | null)[] = [];
       const memData: (number | null)[] = [];
 
@@ -252,19 +270,37 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       this.cpuHistory.set(containerName, cpuData);
       this.memoryHistory.set(containerName, memData);
 
-      // Update containers list if not already present
-      if (!this.containers.find(c => c.name === containerName)) {
-        this.containers.push({
-          id: containerData.id,
-          name: containerName,
-          status: 'active', // Assuming historical data implies active
-          cpu_usage: containerData.cpu?.[containerData.cpu.length - 1] || 0,
-          memory_usage: containerData.memory?.[containerData.memory.length - 1] || 0
-        });
+      const containerMetric = this.buildContainerMetric(containerName, containerData);
+      this.containers.push(containerMetric);
+      if (!containerMetric.is_component) {
+        this.topLevelContainers.push(containerMetric);
       }
     }
 
     this.updateCharts();
+  }
+
+  isCidsExpanded(containerId: number): boolean {
+    return this.expandedCidsIds.has(containerId);
+  }
+
+  toggleCidsComponents(container: ContainerMetric): void {
+    if (this.isCidsExpanded(container.id)) {
+      this.expandedCidsIds.delete(container.id);
+    } else {
+      this.expandedCidsIds.add(container.id);
+    }
+
+    this.loadHistoricalData();
+  }
+
+  showOverallOnly(): void {
+    if (!this.hasExpandedCids) {
+      return;
+    }
+
+    this.expandedCidsIds.clear();
+    this.loadHistoricalData();
   }
 
   updateCharts(): void {
@@ -316,17 +352,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
         trigger: 'axis',
         axisPointer: { type: 'cross' }
       },
-      legend: {
-        data: this.containers.map(c => c.name),
-        bottom: 0,
-        textStyle: { color: 'black', fontFamily: 'Roboto, sans-serif' },
-        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }],
-        selected: Object.keys(cpuSelected).length > 0 ? cpuSelected : undefined
-      },
+      legend: this.buildLegendConfig(cpuSelected),
       grid: {
         left: '3%',
         right: '4%',
-        bottom: '15%',
+        bottom: 110,
         containLabel: true
       },
       xAxis: {
@@ -366,17 +396,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
         trigger: 'axis',
         axisPointer: { type: 'cross' }
       },
-      legend: {
-        data: this.containers.map(c => c.name),
-        bottom: 0,
-        textStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
-        selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }],
-        selected: Object.keys(memSelected).length > 0 ? memSelected : undefined
-      },
+      legend: this.buildLegendConfig(memSelected),
       grid: {
         left: '3%',
         right: '4%',
-        bottom: '15%',
+        bottom: 110,
         containLabel: true
       },
       xAxis: {
@@ -497,5 +521,42 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
   onMemoryChartInit(chartInstance: any): void {
     this.memoryChartInstance = chartInstance;
+  }
+
+  private buildLegendConfig(selectedState: { [key: string]: boolean }): EChartsOption['legend'] {
+    return {
+      type: 'scroll',
+      data: this.containers.map(container => container.name),
+      left: 16,
+      right: 16,
+      bottom: 8,
+      textStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+      selector: [{ type: 'all', title: 'All' }, { type: 'inverse', title: 'Inv' }],
+      selectorPosition: 'end',
+      selectorButtonGap: 12,
+      pageButtonPosition: 'end',
+      pageButtonGap: 10,
+      pageIconColor: '#1565c0',
+      pageIconInactiveColor: '#90a4ae',
+      pageTextStyle: { color: '#000000', fontFamily: 'Roboto, sans-serif' },
+      selected: Object.keys(selectedState).length > 0 ? selectedState : undefined
+    };
+  }
+
+  private buildContainerMetric(containerName: string, containerData: HistoricalMetricSeries): ContainerMetric {
+    return {
+      id: containerData.id,
+      name: containerName,
+      status: 'active',
+      cpu_usage: containerData.cpu?.[containerData.cpu.length - 1] || 0,
+      memory_usage: containerData.memory?.[containerData.memory.length - 1] || 0,
+      type: containerData.type,
+      is_component: containerData.is_component,
+      parent_id: containerData.parent_id,
+      parent_name: containerData.parent_name,
+      role: containerData.role,
+      display_name: containerData.display_name,
+      raw_name: containerData.raw_name
+    };
   }
 }

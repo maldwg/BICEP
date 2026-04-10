@@ -149,7 +149,10 @@ async def test_compose_plugin_teardown_skips_remote_cleanup_when_already_done():
     plugin = DockerComposeDeploymentPlugin()
     ids_system = MagicMock()
     ids_system._deployment_cleanup_done = True
+    ids_system.ensemble_ids = []
     ids_system.components = [MagicMock(), MagicMock()]
+    ids_system.status = "active"
+    ids_system.deployment_status = "deployed"
     db_session = AsyncMock()
 
     deployment_service = MagicMock()
@@ -162,7 +165,9 @@ async def test_compose_plugin_teardown_skips_remote_cleanup_when_already_done():
         await plugin.teardown(ids_system, db_session)
 
     deployment_service.teardown.assert_not_called()
-    assert db_session.delete.await_count == 3
+    assert db_session.delete.await_count == 2
+    assert ids_system.status == "idle"
+    assert ids_system.deployment_status == "deleted"
     db_session.commit.assert_awaited_once()
 
 

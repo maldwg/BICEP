@@ -12,6 +12,7 @@ from app.deployment.common import (
 )
 from app.deployment.deployment_plugins.base import DeploymentContext, DeploymentPlugin
 from app.logger import LOGGER
+from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
 
 
@@ -173,7 +174,7 @@ class SingleContainerDeploymentPlugin(DeploymentPlugin):
             await remove_docker_container(ids_system)
         except Exception as exc:
             LOGGER.error(f"Teardown error: {exc}")
-        await db_session.delete(ids_system)
+        await mark_container_as_deleted(db_session, ids_system)
         await db_session.commit()
 
     async def is_available(self, ids_system) -> bool:

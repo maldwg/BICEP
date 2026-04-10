@@ -222,27 +222,54 @@ def test_file_type_is_accepted_unknown_type():
 
 
 def test_find_free_port():
-    port = find_free_port()
+    mock_socket = MagicMock()
+    mock_socket.getsockname.return_value = ("", 4242)
+
+    with patch("app.utils.socket.socket", return_value=mock_socket):
+        port = find_free_port()
+
     assert isinstance(port, int)
-    assert 1024 <= port <= 65535
+    assert port == 4242
 
 
 def test_find_free_port_returns_different_ports():
-    port1 = find_free_port()
-    port2 = find_free_port()
-    # Ports may or may not be different, but both should be valid
+    first_socket = MagicMock()
+    first_socket.getsockname.return_value = ("", 4242)
+    second_socket = MagicMock()
+    second_socket.getsockname.return_value = ("", 4343)
+
+    with patch("app.utils.socket.socket", side_effect=[first_socket, second_socket]):
+        port1 = find_free_port()
+        port2 = find_free_port()
+
     assert isinstance(port1, int)
     assert isinstance(port2, int)
+    assert port1 == 4242
+    assert port2 == 4343
 
 
 # ==================== get_core_url ====================
 
 
+def test_get_core_external_ip_prefers_env():
+    with patch.dict(os.environ, {"CORE_HOST_IP": "192.168.1.50"}):
+        assert get_core_external_ip() == "192.168.1.50"
+
+
 def test_get_core_url():
-    with patch("app.utils.get_core_host_ip", return_value="172.17.0.1"):
-        with patch.dict(os.environ, {"EXTERNAL_FASTAPI_PORT": "8000"}):
+    with patch("app.utils.get_core_external_ip", return_value="192.168.1.50"):
+        with patch.dict(os.environ, {"EXTERNAL_FASTAPI_PORT": "8000"}, clear=False):
             url = get_core_url()
-            assert url == "http://172.17.0.1:8000"
+            assert url == "http://192.168.1.50:8000"
+
+
+def test_get_external_prometheus_push_gateway_url():
+    with patch("app.utils.get_core_external_ip", return_value="192.168.1.50"):
+        with patch.dict(
+            os.environ, {"PROMETHEUS_PUSH_GATEWAY_URL": "prometheus-push-gateway:9091"}
+        ):
+            url = get_external_prometheus_push_gateway_url()
+            assert url == "http://192.168.1.50:9091"
 
 
 # ==================== create_generic_response_message_for_ensemble ====================
@@ -536,6 +563,13 @@ def test_docker_host_status_enum_values():
     assert DOCKER_HOST_STATUS.UNAVAILABLE.value == "unavailable"
 
 
+def test_metric_service_status_enum_values():
+    assert METRIC_SERVICE_STATUS.AVAILABLE.value == "available"
+    assert METRIC_SERVICE_STATUS.UNAVAILABLE.value == "unavailable"
+    assert METRIC_SERVICE_STATUS.DEPLOYING.value == "deploying"
+    assert METRIC_SERVICE_STATUS.REGISTERING.value == "registering"
+
+
 # ==================== start_network_analysis ====================
 
 
@@ -575,4 +609,3 @@ async def test_stop_analysis():
         response = await utils_stop_analysis(container)
         assert response.status_code == 200
         mock_client.post.assert_awaited_once()
-

@@ -63,6 +63,10 @@ services:
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
       - PRODUCTION=${PRODUCTION:-False}
       - EXTERNAL_FASTAPI_PORT=8000
+      - CORE_HOST_IP=${CORE_HOST_IP}
+      - HOST_AVAILABILITY_CHECK_INTERVAL=15
+      - METRIC_SERVICE_IMAGE_NAME=ghcr.io/bicep-pump/metric-service
+      - METRIC_SERVICE_IMAGE_VERSION=latest
   database:
     build:
       context: ./database
@@ -85,23 +89,9 @@ services:
     environment:
       - LOG_LEVEL=debug
       - TZ=UTC
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    privileged: true
-    ports:
-      - "9092:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    networks:
-      - bicep
 
 networks:
   bicep:
     driver: bridge
     ipam:
       driver: default
-

@@ -26,6 +26,19 @@ CREATE TABLE IF NOT EXISTS docker_host_system(
     status VARCHAR(64) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS metric_service(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    host_system_id INT NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    ip VARCHAR(255),
+    port INT,
+    status VARCHAR(64) NOT NULL,
+    status_message VARCHAR(2048),
+    last_registration_at VARCHAR(128),
+
+    FOREIGN KEY (host_system_id) REFERENCES docker_host_system(id) ON DELETE CASCADE
+);
+
 
 CREATE TABLE IF NOT EXISTS configuration(
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,6 +85,7 @@ CREATE TABLE IF NOT EXISTS ids_system (
     name varchar(64) NOT NULL,
     port INT NOT NULL,
     status VARCHAR(32) NOT NULL,
+    deployment_status VARCHAR(32) NOT NULL DEFAULT 'deployed',
     description VARCHAR(2048) NOT NULL,
     host_system_id INT NOT NULL,
     configuration_id INT NOT NULL,
@@ -147,7 +161,9 @@ CREATE TABLE IF NOT EXISTS benchmarking_result (
     fnr FLOAT,
     fdr FLOAT,
     avg_cpu_usage FLOAT,
-    avg_memory_usage FLOAT
+    avg_memory_usage FLOAT,
+    resource_query_mode VARCHAR(32),
+    resource_query_targets TEXT
 );
 
 CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (

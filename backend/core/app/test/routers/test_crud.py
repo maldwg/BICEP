@@ -437,11 +437,14 @@ async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
     response = await return_all_hosts(db=db_session)
 
     assert len(response) == 1
-    assert response[0] == mock_host
+    assert response[0]["id"] == mock_host.id
+    assert response[0]["name"] == mock_host.name
+    assert response[0]["status"] == mock_host.status
 
 
+@patch("app.routers.crud.add_host_system", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_create_host(db_session_fixture: DatabaseSessionFixture):
+async def test_create_host(mock_add_host_system, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     host_data = DockerHostCreationData(
         name="new-host", host="localhost", docker_port=2375
@@ -450,11 +453,14 @@ async def test_create_host(db_session_fixture: DatabaseSessionFixture):
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {"message": "Successfully created host"}
+    mock_add_host_system.assert_awaited_once()
 
 
+@patch("app.routers.crud.remove_host", new_callable=AsyncMock, return_value=True)
 @pytest.mark.asyncio
-async def test_delete_host(db_session_fixture: DatabaseSessionFixture):
+async def test_delete_host(mock_remove_host, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     host_id = 1
     response = await delete_host(id=host_id, db=db_session)
     assert response.status_code == 204
+    mock_remove_host.assert_awaited_once_with(db_session, host_id)
