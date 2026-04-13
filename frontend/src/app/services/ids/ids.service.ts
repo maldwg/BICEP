@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { IdsTool, IdsToolCreateData, IdsToolUpdateData } from '../../models/ids';
 import { Container, ContainerSetupData, ContainerUpdateData } from '../../models/container';
-import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { __param } from 'tslib';
 import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData } from '../../models/analysis';
 
 @Injectable({
   providedIn: 'root'
 })
 export class IdsService {
+  private allIdsTools$?: Observable<IdsTool[]>;
 
   constructor(
     private http: HttpClient
@@ -27,9 +27,15 @@ export class IdsService {
     return this.http.patch<ContainerUpdateData>(environment.backendUrl + path, container, { observe: 'response' });
   }
 
-  getAllIdsTools(): Observable<IdsTool[]> {
+  getAllIdsTools(forceRefresh = false): Observable<IdsTool[]> {
     let path = "/crud/ids-tool/all";
-    return this.http.get<IdsTool[]>(environment.backendUrl + path);
+
+    if (forceRefresh || !this.allIdsTools$) {
+      this.allIdsTools$ = this.http.get<IdsTool[]>(environment.backendUrl + path)
+        .pipe(shareReplay(1));
+    }
+
+    return this.allIdsTools$;
   }
 
   getAllIdsContainer(): Observable<Container[]> {
@@ -64,16 +70,29 @@ export class IdsService {
 
   addIdsTool(toolData: IdsToolCreateData): Observable<HttpResponse<any>> {
     let path = "/crud/ids-tool/add";
-    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' });
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' })
+      .pipe(
+        tap(() => this.invalidateIdsToolsCache())
+      );
   }
 
   updateIdsTool(toolData: IdsToolUpdateData): Observable<HttpResponse<any>> {
     let path = "/crud/ids-tool";
-    return this.http.patch<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' });
+    return this.http.patch<HttpResponse<any>>(environment.backendUrl + path, toolData, { observe: 'response' })
+      .pipe(
+        tap(() => this.invalidateIdsToolsCache())
+      );
   }
 
   deleteIdsTool(id: number): Observable<HttpResponse<any>> {
     let path = "/crud/ids-tool/delete/";
-    return this.http.delete(environment.backendUrl + path + id, { observe: 'response' });
+    return this.http.delete(environment.backendUrl + path + id, { observe: 'response' })
+      .pipe(
+        tap(() => this.invalidateIdsToolsCache())
+      );
+  }
+
+  invalidateIdsToolsCache(): void {
+    this.allIdsTools$ = undefined;
   }
 }

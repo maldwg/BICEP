@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, discardPeriodicTasks, fakeAsync, tick } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import { MonitoringComponent } from './monitoring.component';
@@ -195,7 +195,7 @@ describe('MonitoringComponent', () => {
       });
 
       expect(component.isCidsExpanded(12)).toBeTrue();
-      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '2s', [12]);
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '5s', [12]);
     });
 
     it('should collapse all expanded CIDS with one action', () => {
@@ -206,7 +206,30 @@ describe('MonitoringComponent', () => {
       component.showOverallOnly();
 
       expect(component.hasExpandedCids).toBeFalse();
-      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '2s', []);
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '5s', []);
     });
+
+    it('should use coarser history steps for larger quick ranges', () => {
+      metricsService.getHistoricalMetrics.calls.reset();
+      component.selectedTimeRange = '1h';
+
+      component.onQuickRangeChange();
+
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('1h', undefined, '30s', []);
+    });
+
+    it('should poll historical data less frequently in the background', fakeAsync(() => {
+      metricsService.getHistoricalMetrics.calls.reset();
+
+      tick(19000);
+      expect(metricsService.getHistoricalMetrics).not.toHaveBeenCalled();
+
+      tick(1000);
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledTimes(1);
+      expect(metricsService.getHistoricalMetrics).toHaveBeenCalledWith('5m', undefined, '5s', []);
+
+      component.ngOnDestroy();
+      discardPeriodicTasks();
+    }));
   });
 });

@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,6 +22,7 @@ import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from '../components/alert-component/alert-component.component';
 import { hostStatus } from '../models/status';
 import { MatIconModule } from '@angular/material/icon';
+import { distinctUntilChanged, map, of, switchMap } from 'rxjs';
 @Component({
   selector: 'app-setup',
   imports: [MatIconModule, AlertComponent, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule, ReactiveFormsModule, MatCardModule, FormsModule, MatButtonModule, CommonModule],
@@ -80,6 +82,7 @@ export class SetupComponent implements OnInit {
     private ensembleService: EnsembleService,
     private router: Router,
     private hostService: DockerHostService,
+    private destroyRef: DestroyRef,
   ) { }
 
 
@@ -91,57 +94,72 @@ export class SetupComponent implements OnInit {
     this.getRuleSets();
     this.getAllHostSystems();
 
-    this.idsForm.controls.idsTool.valueChanges.subscribe((toolId) => {
-      this.selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
-      this.requiresRuleset = this.selectedTool ? this.selectedTool.requires_ruleset : false;
-      this.deploymentType = this.selectedTool?.deployment_type || "SINGLE_CONTAINER";
+    this.idsForm.controls.idsTool.valueChanges
+      .pipe(
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((toolId) => {
+        this.selectedTool = this.idsTools.find(tool => tool.id == parseInt(toolId!));
+        this.requiresRuleset = this.selectedTool ? this.selectedTool.requires_ruleset : false;
+        this.deploymentType = this.selectedTool?.deployment_type || "SINGLE_CONTAINER";
 
-      // Filter configs based on deployment type
-      if (this.deploymentType === 'DOCKER_COMPOSE') {
-        this.filteredConfigs = this.deploymentConfigs;
-      } else {
-        this.filteredConfigs = this.runtimeConfigs;
-      }
-      // Reset config selection when tool changes
-      this.idsForm.controls.config.reset();
+        if (this.deploymentType === 'DOCKER_COMPOSE') {
+          this.filteredConfigs = this.deploymentConfigs;
+        } else {
+          this.filteredConfigs = this.runtimeConfigs;
+        }
 
-      // Reset CIDS state on tool change
-      this.cidsConfigurations = [];
-      this.availableServices = [];
-
-      // Auto-populate mandatory env vars from tool definition
-      this.cidsEnvVars = [];
-      if (this.selectedTool?.required_env_vars) {
-        const vars = this.selectedTool.required_env_vars.split(',').map(v => v.trim()).filter(v => v);
-        this.cidsEnvVars = vars.map(key => ({ key, value: '' }));
-      }
-    });
-
-    // Listen for config changes to fetch services if CIDS
-    this.idsForm.controls.config.valueChanges.subscribe((configId) => {
-      if (this.deploymentType === 'DOCKER_COMPOSE' && configId) {
-        this.configService.getConfigurationServices(parseInt(configId)).subscribe(services => {
-          this.availableServices = services;
-
-          // Auto-assign all services to the best available host (Core server preferred)
-          const defaultHostId = this.getDefaultHostId();
-          if (defaultHostId !== null) {
-            this.cidsConfigurations = services.map(svc => ({
-              host_system_id: defaultHostId,
-              service_name: svc.name,
-              count: 1,
-              runtime_configuration_id: null,
-              is_sensor: svc.is_sensor,
-              config_mount_path: svc.config_mount_path,
-              expected_config_extension: svc.expected_config_extension,
-            }));
-          }
-        });
-      } else if (this.deploymentType === 'DOCKER_COMPOSE') {
-        this.availableServices = [];
+        this.idsForm.controls.config.reset();
         this.cidsConfigurations = [];
-      }
-    });
+        this.availableServices = [];
+
+        this.cidsEnvVars = [];
+        if (this.selectedTool?.required_env_vars) {
+          const vars = this.selectedTool.required_env_vars.split(',').map(v => v.trim()).filter(v => v);
+          this.cidsEnvVars = vars.map(key => ({ key, value: '' }));
+        }
+      });
+
+    this.idsForm.controls.config.valueChanges
+      .pipe(
+        map((configId) => configId ? parseInt(configId, 10) : null),
+        distinctUntilChanged(),
+        switchMap((configId) => {
+          if (this.deploymentType === 'DOCKER_COMPOSE' && configId !== null && !Number.isNaN(configId)) {
+            return this.configService.getConfigurationServices(configId);
+          }
+
+          this.availableServices = [];
+          this.cidsConfigurations = [];
+          return of([] as ComposeService[]);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((services) => {
+        this.availableServices = services;
+
+        if (services.length === 0) {
+          this.cidsConfigurations = [];
+          return;
+        }
+
+        const defaultHostId = this.getDefaultHostId();
+        if (defaultHostId === null) {
+          this.cidsConfigurations = [];
+          return;
+        }
+
+        this.cidsConfigurations = services.map(svc => ({
+          host_system_id: defaultHostId,
+          service_name: svc.name,
+          count: 1,
+          runtime_configuration_id: null,
+          is_sensor: svc.is_sensor,
+          config_mount_path: svc.config_mount_path,
+          expected_config_extension: svc.expected_config_extension,
+        }));
+      });
 
   }
 

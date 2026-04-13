@@ -1,6 +1,6 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { DockerHostSystem, DockerHostSystemCreationData } from '../../models/host';
 import { environment } from '../../../environments/environment';
 
@@ -8,26 +8,42 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class DockerHostService {
+  private allHosts$?: Observable<DockerHostSystem[]>;
 
   constructor(
     private http: HttpClient,
   ) { }
 
 
-getAllHosts(): Observable<DockerHostSystem[]>{
-  let path = "/crud/host/all"
-  return this.http.get<DockerHostSystem[]>(environment.backendUrl + path)
-}
+  getAllHosts(forceRefresh = false): Observable<DockerHostSystem[]> {
+    let path = "/crud/host/all"
 
-addHost(hostData: DockerHostSystemCreationData): Observable<HttpResponse<any>>{
-  let path = "/crud/host/add"
-  return this.http.post<HttpResponse<any>>(environment.backendUrl + path, hostData, { observe: 'response' })
-}
+    if (forceRefresh || !this.allHosts$) {
+      this.allHosts$ = this.http.get<DockerHostSystem[]>(environment.backendUrl + path)
+        .pipe(shareReplay(1));
+    }
 
-removeHost(hostId: number): Observable<HttpResponse<any>>{
-  let path = "/crud/host/delete/"
-  return this.http.delete<HttpResponse<any>>(environment.backendUrl + path + hostId, { observe: 'response' })
-}
+    return this.allHosts$;
+  }
 
+  addHost(hostData: DockerHostSystemCreationData): Observable<HttpResponse<any>> {
+    let path = "/crud/host/add"
+    return this.http.post<HttpResponse<any>>(environment.backendUrl + path, hostData, { observe: 'response' })
+      .pipe(
+        tap(() => this.invalidateHostCache())
+      );
+  }
+
+  removeHost(hostId: number): Observable<HttpResponse<any>> {
+    let path = "/crud/host/delete/"
+    return this.http.delete<HttpResponse<any>>(environment.backendUrl + path + hostId, { observe: 'response' })
+      .pipe(
+        tap(() => this.invalidateHostCache())
+      );
+  }
+
+  invalidateHostCache(): void {
+    this.allHosts$ = undefined;
+  }
 
 }

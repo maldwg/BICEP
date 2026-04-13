@@ -78,7 +78,7 @@ export class DockerHostsComponent implements OnInit{
       if(hostData !== null){
         console.log(hostData)
         	this.hostService.addHost(hostData).subscribe(result => {
-              window.location.reload()
+              this.getAllHostSystems();
             },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);

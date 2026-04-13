@@ -104,7 +104,8 @@ export class ConfigComponent implements OnInit{
  
     dialogRef.afterClosed().subscribe(res => {
       if (res != null) {
-          window.location.reload();
+          this.getAllConfigs();
+          this.getAllDatasets();
       }      
     });
   }

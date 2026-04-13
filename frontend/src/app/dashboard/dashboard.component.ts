@@ -1,22 +1,14 @@
-import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IdsService } from '../services/ids/ids.service';
-import { Container, ContainerUpdateData } from '../models/container';
+import { Container } from '../models/container';
 import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { Ensemble, EnsembleContainer, EnsembleTechnique, EnsembleUpdateData } from '../models/ensemble';
 import { MatExpansionModule } from '@angular/material/expansion';
-import {
-  MatDialog,
-  MAT_DIALOG_DATA,
-  MatDialogRef,
-  MatDialogTitle,
-  MatDialogContent,
-  MatDialogActions,
-  MatDialogClose,
-} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 import { ConfigService } from '../services/config/config.service';
@@ -32,7 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
-import { repeat } from 'rxjs';
+import { interval, startWith, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -59,13 +51,14 @@ export class DashboardComponent implements OnInit {
     private ensembleService: EnsembleService,
     private configService: ConfigService,
     private datasetService: DatasetService,
-    private hostService: DockerHostService
+    private hostService: DockerHostService,
+    private destroyRef: DestroyRef
 
   ) { }
 
   // TODO 5: do not allow analyssis if other container of ensemble is running, so if ensemble is not idle do not allow for executions!
 
-  POLL_DELAY = 5000;
+  readonly pollDelayMs = 10000;
 
   ngOnInit(): void {
     this.getAllContainer();
@@ -79,11 +72,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllContainer(): void {
-    this.idsService.getAllIdsContainer()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.idsService.getAllIdsContainer()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.containerList = data
@@ -119,11 +112,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllEnsembles() {
-    this.ensembleService.getAllEnsembles()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.ensembleService.getAllEnsembles()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.ensembleList = data
@@ -131,11 +124,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllEnsembleContainer() {
-    this.ensembleService.getEnsembleContainers()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.ensembleService.getEnsembleContainers()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.ensembleContainerList = data

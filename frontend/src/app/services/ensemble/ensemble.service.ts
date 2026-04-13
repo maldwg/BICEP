@@ -1,7 +1,7 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { Ensemble, EnsembleContainer, EnsembleSetupData, EnsembleTechnique, EnsembleUpdateData } from '../../models/ensemble';
 import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData } from '../../models/analysis';
 
@@ -9,6 +9,7 @@ import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData } from '../.
   providedIn: 'root'
 })
 export class EnsembleService {
+  private allTechniques$?: Observable<EnsembleTechnique[]>;
 
   constructor(
     private http: HttpClient
@@ -16,9 +17,15 @@ export class EnsembleService {
 
  // TODO 10: update all endpoints to use httpResponse objects instead of the other bullshit
 
-  getAllTechnqiues(): Observable<EnsembleTechnique[]>{
+  getAllTechnqiues(forceRefresh = false): Observable<EnsembleTechnique[]>{
     let path = "/crud/ensemble/technique/all"
-    return this.http.get<EnsembleTechnique[]>(environment.backendUrl+path);
+
+    if (forceRefresh || !this.allTechniques$) {
+      this.allTechniques$ = this.http.get<EnsembleTechnique[]>(environment.backendUrl+path)
+        .pipe(shareReplay(1));
+    }
+
+    return this.allTechniques$;
 
   }
 
@@ -60,6 +67,10 @@ export class EnsembleService {
   stop_analysis(stopData: stop_analysisData): Observable<HttpResponse<any>>{
     let path = "/ensemble/analysis/stop";
     return this.http.post<any>(environment.backendUrl+path, stopData, { observe: 'response' });
+  }
+
+  invalidateTechniquesCache(): void {
+    this.allTechniques$ = undefined;
   }
 
 }

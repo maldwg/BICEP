@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxEchartsModule, NGX_ECHARTS_CONFIG } from 'ngx-echarts';
-import { Subscription, interval } from 'rxjs';
+import { EMPTY, Observable, Subject, Subscription, interval, merge, of } from 'rxjs';
+import { catchError, filter, switchMap } from 'rxjs/operators';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,6 +26,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   imports: [CommonModule, NgxEchartsModule, MatCardModule, MatIconModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatCheckboxModule, FormsModule, MatTooltipModule],
   templateUrl: './monitoring.component.html',
   styleUrl: './monitoring.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NGX_ECHARTS_CONFIG,
@@ -37,6 +39,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   topLevelContainers: ContainerMetric[] = [];
   pollingSubscription?: Subscription;
   expandedCidsIds = new Set<number>();
+  private readonly reloadTrigger$ = new Subject<void>();
 
   // History for each container
   cpuHistory: Map<string, (number | null)[]> = new Map();
@@ -54,14 +57,17 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   // Time range settings
   selectedTimeRange: string = '5m';
   maxDataPoints: number = 60;
-  pollingInterValSeconds = 5;
+  pollingIntervalSeconds = 10;
 
   // Custom time range
   customStartTime: string = '';
   customEndTime: string = '';
   useCustomRange: boolean = false;
 
-  constructor(private metricsService: MetricsService) { }
+  constructor(
+    private metricsService: MetricsService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   get cidsContainers(): ContainerMetric[] {
     return this.topLevelContainers.filter(container => container.type === 'CIDS');
@@ -72,18 +78,22 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Load historical data first
-    this.loadHistoricalData();
+    const automaticRefresh$ = interval(this.pollingIntervalSeconds * 1000)
+      .pipe(filter(() => !this.useCustomRange));
 
-    // Poll every 5 seconds - reload the full historical dataset
-    // This ensures we get all 2s data points without timeline issues
-    this.pollingSubscription = interval(this.pollingInterValSeconds * 1000)
-      .subscribe(() => {
-        if (!this.useCustomRange) {
-          // Simply reload the complete historical data for selected range
-          // This gets all 2s data points that containers pushed
-          this.loadHistoricalData();
-        }
+    this.pollingSubscription = merge(of(void 0), automaticRefresh$, this.reloadTrigger$)
+      .pipe(
+        switchMap(() =>
+          this.buildHistoricalRequest().pipe(
+            catchError((error) => {
+              console.error('Error loading historical data:', error);
+              return EMPTY;
+            })
+          )
+        )
+      )
+      .subscribe((data) => {
+        this.loadHistoricalDataToCharts(data);
       });
   }
 
@@ -91,6 +101,8 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     if (this.pollingSubscription) {
       this.pollingSubscription.unsubscribe();
     }
+
+    this.reloadTrigger$.complete();
   }
 
   updateMetrics(newMetrics: ContainerMetric[]): void {
@@ -121,6 +133,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     });
 
     this.updateCharts();
+    this.cdr.markForCheck();
   }
 
   onQuickRangeChange(): void {
@@ -128,36 +141,29 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     this.customStartTime = '';
     this.customEndTime = '';
 
-    // Update maxDataPoints based on selected time range
-    // With 2s intervals: maxPoints = (minutes * 60) / 2
+    // Keep a reasonable local history budget aligned with the selected window.
     switch (this.selectedTimeRange) {
       case '5m':
-        this.maxDataPoints = (5 * 60) / 2; // 150 points
+        this.maxDataPoints = 60;
         break;
       case '15m':
-        this.maxDataPoints = (15 * 60) / 2; // 450 points
+        this.maxDataPoints = 90;
         break;
       case '30m':
-        this.maxDataPoints = (30 * 60) / 2; // 900 points
+        this.maxDataPoints = 120;
         break;
       case '1h':
-        this.maxDataPoints = (60 * 60) / 2; // 1800 points
+        this.maxDataPoints = 120;
         break;
       case '3h':
-        this.maxDataPoints = (180 * 60) / 2; // 5400 points
+        this.maxDataPoints = 180;
         break;
     }
 
-    // Load fresh historical data for the new range
     this.loadHistoricalData();
   }
 
   onCustomTimeChange(): void {
-    // Support flexible ranges:
-    // - Both start and end: Range query
-    // - Only start: From start to now
-    // - Only end: Ignored (need start)
-    // - Neither: Ignored
     if (this.customStartTime) {
       this.useCustomRange = true;
       this.selectedTimeRange = 'custom';
@@ -166,34 +172,27 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   loadHistoricalData(): void {
+    this.reloadTrigger$.next();
+  }
+
+  private buildHistoricalRequest(): Observable<HistoricalMetricsData> {
     let start: string;
     let end: string | undefined;
 
     if (this.useCustomRange && this.customStartTime) {
-      // Custom range: use provided times
       start = new Date(this.customStartTime).toISOString();
       end = this.customEndTime ? new Date(this.customEndTime).toISOString() : undefined;
     } else {
-      // Quick range: use selected time range
       start = this.selectedTimeRange || '5m';
-      end = undefined; // Backend defaults to 'now'
+      end = undefined;
     }
 
-    // Use 2s step to capture all container pushes (containers push every ~2s)
-    this.metricsService.getHistoricalMetrics(
+    return this.metricsService.getHistoricalMetrics(
       start,
       end,
-      '2s',
+      this.getHistoricalStep(),
       Array.from(this.expandedCidsIds).sort((a, b) => a - b)
-    ).subscribe({
-      next: (data) => {
-        this.loadHistoricalDataToCharts(data);
-      },
-      error: (error) => {
-        console.error('Error loading historical data:', error);
-        // If no historical data, keep monitoring
-      }
-    });
+    );
   }
 
   loadHistoricalDataToCharts(data: HistoricalMetricsData): void {
@@ -207,7 +206,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     const historicalEntries = Object.entries(data);
     const containerNames = historicalEntries.map(([containerName]) => containerName);
 
-    if (containerNames.length === 0) return;
+    if (containerNames.length === 0) {
+      this.updateCharts();
+      this.cdr.markForCheck();
+      return;
+    }
 
     // 1. Find the global time range across ALL containers
     let minTime = Infinity;
@@ -221,7 +224,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }
 
     // If no valid data, return
-    if (minTime === Infinity || maxTime === 0) return;
+    if (minTime === Infinity || maxTime === 0) {
+      this.updateCharts();
+      this.cdr.markForCheck();
+      return;
+    }
 
     // 2. Determine the time step from the first container with data
     let step = 15; // Default 15 seconds
@@ -278,6 +285,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }
 
     this.updateCharts();
+    this.cdr.markForCheck();
   }
 
   isCidsExpanded(containerId: number): boolean {
@@ -558,5 +566,59 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       display_name: containerData.display_name,
       raw_name: containerData.raw_name
     };
+  }
+
+  private getHistoricalStep(): string {
+    if (this.useCustomRange && this.customStartTime) {
+      const startTime = new Date(this.customStartTime).getTime();
+      const endTime = this.customEndTime ? new Date(this.customEndTime).getTime() : Date.now();
+
+      if (!Number.isNaN(startTime) && endTime > startTime) {
+        return this.getStepForDurationMs(endTime - startTime);
+      }
+
+      return '10s';
+    }
+
+    switch (this.selectedTimeRange) {
+      case '5m':
+        return '5s';
+      case '15m':
+        return '10s';
+      case '30m':
+        return '15s';
+      case '1h':
+        return '30s';
+      case '3h':
+        return '60s';
+      default:
+        return '15s';
+    }
+  }
+
+  private getStepForDurationMs(durationMs: number): string {
+    const durationSeconds = durationMs / 1000;
+
+    if (durationSeconds <= 5 * 60) {
+      return '5s';
+    }
+
+    if (durationSeconds <= 15 * 60) {
+      return '10s';
+    }
+
+    if (durationSeconds <= 30 * 60) {
+      return '15s';
+    }
+
+    if (durationSeconds <= 60 * 60) {
+      return '30s';
+    }
+
+    if (durationSeconds <= 3 * 60 * 60) {
+      return '60s';
+    }
+
+    return '120s';
   }
 }
