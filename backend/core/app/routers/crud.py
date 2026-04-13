@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
+from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks, Query
 from fastapi.responses import JSONResponse, Response
 from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
 from app.models.dataset import get_all_datasets, remove_dataset_by_id
@@ -252,8 +252,18 @@ async def patch_ensemble(ensmeble: EnsembleUpdate, db=Depends(get_db)):
             return JSONResponse(content={"messages": "successfully changed ensemble attributes"}, status_code=200)
         
 @router.get("/host/all")
-async def return_all_hosts(db=Depends(get_db)):
+async def return_all_hosts(
+    refresh_status: bool = Query(
+        False,
+        description="Re-check host and metric-service availability before returning hosts.",
+    ),
+    db=Depends(get_db),
+):
     hosts = await get_all_hosts(db)
+    if refresh_status:
+        for host in hosts:
+            await host.update_availability(db)
+        hosts = await get_all_hosts(db)
     return [serialize_host(host) for host in hosts]
 
 @router.post("/host/add")

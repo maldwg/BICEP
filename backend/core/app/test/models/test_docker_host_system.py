@@ -12,7 +12,7 @@ from app.models.docker_host_system import (
     add_host_system,
     remove_host,
 )
-from app.utils import DOCKER_HOST_STATUS
+from app.utils import DOCKER_HOST_STATUS, METRIC_SERVICE_STATUS
 from app.test.fixtures import *
 
 
@@ -328,6 +328,54 @@ async def test_check_host_health_exception(core_host: DockerHostSystem):
     ):
         result = await core_host.check_host_health(AsyncMock())
         assert result == DOCKER_HOST_STATUS.UNAVAILABLE.value
+
+
+@pytest.mark.asyncio
+async def test_check_metric_service_health_restarts_stuck_registration(
+    remote_host: DockerHostSystem,
+):
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    metric_service = MagicMock()
+    metric_service.ip = None
+    metric_service.port = 21002
+    metric_service.status = METRIC_SERVICE_STATUS.REGISTERING.value
+
+    mock_container = MagicMock()
+    mock_container.attrs = {
+        "State": {
+            "Running": True,
+            "StartedAt": "2000-01-01T00:00:00Z",
+        }
+    }
+
+    mock_client = MagicMock()
+    mock_client.containers.get.return_value = mock_container
+    mock_client.close = MagicMock()
+
+    with patch(
+        "app.models.docker_host_system.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=metric_service),
+    ), patch(
+        "app.models.docker_host_system.get_docker_client",
+        return_value=mock_client,
+    ), patch(
+        "app.models.docker_host_system.update_metric_service",
+        new=AsyncMock(),
+    ) as mock_update, patch(
+        "app.models.docker_host_system.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        result = await remote_host._check_metric_service_health(AsyncMock())
+
+    assert result is False
+    mock_container.restart.assert_called_once_with(timeout=10)
+    assert any(
+        call.kwargs.get("status") == METRIC_SERVICE_STATUS.REGISTERING.value
+        and call.kwargs.get("clear_registration") is True
+        for call in mock_update.await_args_list
+    )
 
 
 # ==================== is_host_reachable ====================

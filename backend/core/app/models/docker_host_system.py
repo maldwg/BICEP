@@ -24,6 +24,7 @@ import httpx
 import os
 import random
 import socket
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 import docker as docker_sdk
 from app.models.metric_service import (
@@ -38,6 +39,9 @@ METRIC_SERVICE_DEFAULT_SCRAPE_INTERVAL = "5"
 METRIC_SERVICE_DEFAULT_BATCH_SIZE = "10"
 METRIC_SERVICE_DEFAULT_EXPORT_MODE = "prometheus"
 METRIC_SERVICE_HEALTHCHECK_PATH = "/health"
+METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS = int(
+    os.getenv("METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS", "45")
+)
 METRIC_SERVICE_PORT_RANGE_START = 20000
 METRIC_SERVICE_PORT_RANGE_END = 60000
 METRIC_SERVICE_PORT_SELECTION_ATTEMPTS = 25
@@ -295,6 +299,58 @@ class DockerHostSystem(Base):
         except Exception:
             return False
 
+    def _get_metric_service_started_at(self, state: dict) -> datetime | None:
+        started_at = state.get("StartedAt")
+        if not started_at or started_at.startswith("0001-01-01"):
+            return None
+
+        try:
+            return datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        except ValueError:
+            LOGGER.warning(
+                "Could not parse metric service StartedAt timestamp for host %s: %s",
+                self.name,
+                started_at,
+            )
+            return None
+
+    def _is_metric_service_registration_stuck(self, state: dict) -> bool:
+        started_at = self._get_metric_service_started_at(state)
+        if started_at is None:
+            return False
+
+        runtime_seconds = (
+            datetime.now(timezone.utc) - started_at.astimezone(timezone.utc)
+        ).total_seconds()
+        return (
+            runtime_seconds >= METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS
+        )
+
+    async def _restart_metric_service_container(
+        self,
+        db: AsyncSession,
+        metric_service,
+        *,
+        reason: str,
+    ) -> None:
+        client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
+        try:
+            container = await asyncio.to_thread(
+                client.containers.get,
+                self.get_metric_service_container_name(),
+            )
+            await asyncio.to_thread(container.restart, timeout=10)
+        finally:
+            client.close()
+
+        await update_metric_service(
+            db,
+            metric_service,
+            status=METRIC_SERVICE_STATUS.REGISTERING.value,
+            status_message=reason,
+            clear_registration=True,
+        )
+
     async def _check_metric_service_health(self, db: AsyncSession) -> bool:
 
 
@@ -330,6 +386,17 @@ class DockerHostSystem(Base):
                 return False
 
             if not metric_service.ip or not metric_service.port:
+                if self._is_metric_service_registration_stuck(state):
+                    await self._restart_metric_service_container(
+                        db,
+                        metric_service,
+                        reason=(
+                            "Metric service registration is stuck. Restarting the "
+                            "metric service."
+                        ),
+                    )
+                    return False
+
                 await update_metric_service(
                     db,
                     metric_service,

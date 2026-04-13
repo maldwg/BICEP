@@ -442,6 +442,20 @@ async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
     assert response[0]["status"] == mock_host.status
 
 
+@pytest.mark.asyncio
+async def test_return_all_hosts_refreshes_statuses(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    db_session = await db_session_fixture.get_db_session()
+    mock_host = await db_session_fixture.get_docker_host_system_model()
+    mock_host.update_availability = AsyncMock()
+
+    response = await return_all_hosts(refresh_status=True, db=db_session)
+
+    mock_host.update_availability.assert_awaited_once_with(db_session)
+    assert len(response) == 1
+
+
 @patch("app.routers.crud.add_host_system", new_callable=AsyncMock)
 @pytest.mark.asyncio
 async def test_create_host(mock_add_host_system, db_session_fixture: DatabaseSessionFixture):
