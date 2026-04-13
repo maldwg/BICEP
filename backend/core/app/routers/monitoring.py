@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from app.database import get_db
@@ -176,15 +178,23 @@ async def get_monitoring_metrics(db=Depends(get_db)):
 
 @router.get("/metrics/historical")
 async def get_historical_metrics(
-    start: str = Query(
-        ..., description="Start time in ISO format or relative (e.g., '1h')"
-    ),
-    end: str = Query(None, description="End time in ISO format (default: now)"),
-    step: str = Query("15s", description="Step interval"),
-    expanded_ids: list[int] | None = Query(
-        None,
-        description="IDS ids whose CIDS components should be returned as individual series.",
-    ),
+    start: Annotated[
+        str,
+        Query(description="Start time in ISO format or relative (e.g., '1h')"),
+    ],
+    end: Annotated[
+        str | None,
+        Query(description="End time in ISO format (default: now)"),
+    ] = None,
+    step: Annotated[str, Query(description="Step interval")] = "15s",
+    expanded_ids: Annotated[
+        list[int] | None,
+        Query(
+            description=(
+                "IDS ids whose CIDS components should be returned as individual series."
+            )
+        ),
+    ] = None,
     db=Depends(get_db),
 ):
     """
@@ -209,7 +219,10 @@ async def get_historical_metrics(
     else:
         end_timestamp = datetime.now().timestamp()
 
-    expanded_id_set = set(expanded_ids or [])
+    expanded_id_set = {
+        int(container_id)
+        for container_id in (expanded_ids or [])
+    }
     container_metrics = {}
 
     async with httpx.AsyncClient() as client:

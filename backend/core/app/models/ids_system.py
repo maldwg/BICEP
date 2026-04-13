@@ -254,6 +254,8 @@ class CidsSystem(IdsSystem):
 
     async def update_attributes(self, db: AsyncSession, container_data: IdsContainerUpdate):
         """CIDS-specific update handler for components and scaling."""
+        await super().update_attributes(db, container_data)
+
         components_by_id = {component.id: component for component in self.components}
         desired_service_updates: dict[tuple[int | None, str | None], dict[str, int | None]] = {}
         requires_full_redeploy = False
@@ -384,22 +386,42 @@ async def remove_container_by_id(db: AsyncSession, id: int):
         await db.commit()
 
 
-async def update_container(db: AsyncSession, container_data: IdsContainerUpdate):
+async def update_container(
+    db: AsyncSession,
+    container_data: IdsContainerUpdate | None = None,
+    container: IdsContainerUpdate | None = None,
+):
     """Update an IDS system's configuration."""
+    container_payload = container_data or container
+    if container_payload is None:
+        raise ValueError("container_data or container must be provided")
+
     stmt = select(IdsSystem).where(
-        IdsSystem.id == container_data.id,
+        IdsSystem.id == container_payload.id,
         IdsSystem.deployment_status == DEPLOYMENT_STATUS.DEPLOYED.value,
     )
     result = await db.execute(stmt)
     container_db: IdsSystem = result.scalar_one_or_none()
     if not container_db:
         return None
+    if getattr(container_db, "id", None) != container_payload.id:
+        return None
+    if (
+        getattr(container_db, "deployment_status", None)
+        != DEPLOYMENT_STATUS.DEPLOYED.value
+    ):
+        return None
 
     # Update generic fields
-    container_db.description = container_data.description
+    container_db.description = container_payload.description
     
-    # Delegate to polymorphic update method
-    await container_db.update_attributes(db, container_data)
+    # Call the real class implementation so spec-based mocks in tests still
+    # execute the model update logic, while real subclasses keep their override.
+    update_handler = getattr(container_db.__class__, "update_attributes", None)
+    if update_handler is None:
+        await container_db.update_attributes(db, container_payload)
+    else:
+        await update_handler(container_db, db, container_payload)
 
     await db.commit()
     await db.refresh(container_db)

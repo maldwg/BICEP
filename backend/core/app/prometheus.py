@@ -215,7 +215,7 @@ async def _query_range_series(
                 )
 
         return [
-            aggregated_by_timestamp[timestamp]
+            round(aggregated_by_timestamp[timestamp], 10)
             for timestamp in sorted(aggregated_by_timestamp)
         ]
 

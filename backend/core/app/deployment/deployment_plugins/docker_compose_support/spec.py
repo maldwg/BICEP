@@ -90,22 +90,38 @@ class ComposeSpecManager:
             if svc_data is None:
                 continue # Might be a component not in this compose file
 
-            labels = svc_data.get("labels", {})
-            mount_path, _ = self._parse_bicep_labels(labels)
-            expected_extension = self._get_file_extension(mount_path)
-
             config_id = getattr(svc_conf, 'runtime_configuration_id', None)
             if not config_id:
                 continue
 
+            labels = svc_data.get("labels", {})
+            mount_path, _ = self._parse_bicep_labels(labels)
+            if not mount_path:
+                raise ValueError(
+                    f"Service '{service_name}' requires a "
+                    "bicep.config.mount label for runtime configurations."
+                )
+
+            expected_extension = self._get_file_extension(mount_path)
             runtime_config = await self._get_config_by_id(
                 db_session, config_id
             )
             if runtime_config is None:
                 continue
 
-            if not mount_path:
-                continue
+            runtime_config_path = (
+                getattr(runtime_config, "file_path", None)
+                or getattr(runtime_config, "name", None)
+            )
+            actual_extension = self._get_file_extension(runtime_config_path)
+            if not self._extensions_are_compatible(
+                expected_extension,
+                actual_extension,
+            ):
+                raise ValueError(
+                    f"Service '{service_name}' expects a config ending in "
+                    f"'{expected_extension}' but got '{actual_extension}'."
+                )
 
             service_runtime_configs[service_name] = runtime_config
 
