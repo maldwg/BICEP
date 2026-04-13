@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+import os
 import time
 import docker as docker_sdk
 import httpx
@@ -15,12 +16,34 @@ from app.logger import LOGGER
 from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
 
+DOCKER_DEPLOYMENT_CLIENT_TIMEOUT = int(
+    os.getenv("DOCKER_DEPLOYMENT_CLIENT_TIMEOUT_SECONDS", "600")
+)
+DOCKER_CONTROL_CLIENT_TIMEOUT = int(
+    os.getenv("DOCKER_CONTROL_CLIENT_TIMEOUT_SECONDS", "10")
+)
 
-def get_docker_client(host_system):
+
+def _split_image_reference(image_reference: str) -> tuple[str, str | None]:
+    if "@" in image_reference:
+        return image_reference, None
+
+    last_slash = image_reference.rfind("/")
+    last_colon = image_reference.rfind(":")
+    if last_colon > last_slash:
+        return image_reference[:last_colon], image_reference[last_colon + 1 :]
+
+    return image_reference, None
+
+
+def get_docker_client(host_system, timeout: int | None = None):
     host, docker_port = host_system.get_host_and_docker_port()
     host_url = f"tcp://{host}:{docker_port}"
     try:
-        client = docker_sdk.DockerClient(base_url=host_url, timeout=3)
+        client = docker_sdk.DockerClient(
+            base_url=host_url,
+            timeout=timeout or DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+        )
     except Exception as exc:
         LOGGER.error(exc)
         raise Exception(
@@ -44,12 +67,45 @@ async def start_docker_container(
     await plugin.deploy(context)
 
 
+def image_exists_blocking(client, image_name):
+    try:
+        client.images.get(image_name)
+        return True
+    except docker_sdk.errors.ImageNotFound:
+        return False
+    except Exception:
+        return any(image_name in image.tags for image in client.images.list())
+
+
+def pull_image_blocking(client, image_name):
+    repository, tag = _split_image_reference(image_name)
+    if tag is None:
+        return client.images.pull(repository)
+    return client.images.pull(repository=repository, tag=tag)
+
+
+def ensure_image_present_blocking(client, image_name):
+    try:
+        pull_image_blocking(client, image_name)
+    except Exception as exc:
+        if image_exists_blocking(client, image_name):
+            LOGGER.warning(
+                "Image pull failed for %s, using existing local image instead: %s",
+                image_name,
+                exc,
+            )
+            return
+        raise Exception(f"Could not pull required image {image_name}: {exc}") from exc
+
+
+async def ensure_image_present(client, image_name):
+    await asyncio.to_thread(ensure_image_present_blocking, client, image_name)
+
+
 async def run_container_async(client, ids_tool, container, url):
     image_name_and_version = f"{ids_tool.image_name}:{ids_tool.image_tag}"
 
-    if not await image_exists(client, image_name_and_version):
-        LOGGER.info(f"Image {image_name_and_version} not found, pulling...")
-        await asyncio.to_thread(client.images.pull, image_name_and_version)
+    await ensure_image_present(client, image_name_and_version)
 
     docker_container = await asyncio.to_thread(
         client.containers.create,
@@ -64,7 +120,7 @@ async def run_container_async(client, ids_tool, container, url):
 
 
 async def image_exists(client, image_name):
-    return any(image_name in image.tags for image in client.images.list())
+    return await asyncio.to_thread(image_exists_blocking, client, image_name)
 
 
 
@@ -94,7 +150,10 @@ async def inject_ruleset(ids_container, ruleset):
 
 
 async def remove_docker_container(ids_container):
-    client = get_docker_client(ids_container.host_system)
+    client = get_docker_client(
+        ids_container.host_system,
+        timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+    )
     try:
         container = client.containers.get(container_id=ids_container.name)
         container.stop()
@@ -129,7 +188,10 @@ async def check_container_health(ids_container, timeout=90, cleanup_on_failure=T
 
 
 async def restart_docker_container(component):
-    client = get_docker_client(component.host_system)
+    client = get_docker_client(
+        component.host_system,
+        timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+    )
     try:
         container = client.containers.get(component.name)
         container.restart(timeout=10)

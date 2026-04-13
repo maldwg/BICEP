@@ -8,6 +8,15 @@ import tarfile
 from collections import defaultdict
 from python_on_whales.exceptions import DockerException
 
+from app.deployment.deployment_plugins.docker import (
+    DOCKER_CONTROL_CLIENT_TIMEOUT,
+    DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+    ensure_image_present_blocking,
+)
+
+
+HELPER_CONTAINER_IMAGE = "alpine:latest"
+
 
 class ComposeHostOperations:
     def __init__(
@@ -41,8 +50,15 @@ class ComposeHostOperations:
         self, deployment, ids_container, db_session, env_vars=None, services=None
     ) -> None:
         docker_host_url = self.get_docker_host_url(deployment.host_system)
+        service_filter = set(services) if services else None
 
         try:
+            await asyncio.to_thread(
+                self._pull_deployment_images_blocking,
+                deployment,
+                service_filter,
+            )
+
             client = self._docker_client_cls(
                 host=docker_host_url,
                 compose_files=[deployment.paths.compose_file_path],
@@ -57,7 +73,7 @@ class ComposeHostOperations:
 
             scales = self._build_scale_config(
                 deployment.services,
-                service_filter=set(services) if services else None,
+                service_filter=service_filter,
                 include_default_counts=services is not None,
             )
             compose_up_kwargs = {
@@ -81,7 +97,7 @@ class ComposeHostOperations:
                 deployment.host_system,
                 db_session,
                 deployment=deployment,
-                service_filter=set(services) if services else None,
+                service_filter=service_filter,
             )
         except DockerException as exc:
             raise Exception(
@@ -99,7 +115,10 @@ class ComposeHostOperations:
         return remote_cleanup_ok
 
     def _cleanup_compose_resources_blocking(self, docker_host_url, project_name) -> None:
-        client = self._docker_sdk.DockerClient(base_url=docker_host_url)
+        client = self._docker_sdk.DockerClient(
+            base_url=docker_host_url,
+            timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+        )
         label_filter = {"label": [f"com.docker.compose.project={project_name}"]}
         try:
             for container in client.containers.list(all=True, filters=label_filter):
@@ -126,11 +145,15 @@ class ComposeHostOperations:
         if not work_dir.startswith("/tmp/bicep_cids_"):
             return
 
-        host_docker = self._docker_sdk.DockerClient(base_url=docker_host_url)
+        host_docker = self._docker_sdk.DockerClient(
+            base_url=docker_host_url,
+            timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+        )
         cleanup_container = None
         try:
+            ensure_image_present_blocking(host_docker, HELPER_CONTAINER_IMAGE)
             cleanup_container = host_docker.containers.create(
-                "alpine",
+                HELPER_CONTAINER_IMAGE,
                 ["rm", "-rf", work_dir],
                 volumes={"/tmp": {"bind": "/tmp", "mode": "rw"}},
             )
@@ -154,12 +177,14 @@ class ComposeHostOperations:
 
     def _copy_runtime_configs_blocking(self, deployment) -> None:
         host_docker = self._docker_sdk.DockerClient(
-            base_url=self.get_docker_host_url(deployment.host_system)
+            base_url=self.get_docker_host_url(deployment.host_system),
+            timeout=DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
         )
         tmp_container = None
         try:
+            ensure_image_present_blocking(host_docker, HELPER_CONTAINER_IMAGE)
             tmp_container = host_docker.containers.create(
-                "alpine",
+                HELPER_CONTAINER_IMAGE,
                 "true",
                 volumes={"/tmp": {"bind": "/tmp", "mode": "rw"}},
             )
@@ -168,7 +193,7 @@ class ComposeHostOperations:
             tmp_container.remove()
 
             tmp_container = host_docker.containers.create(
-                "alpine",
+                HELPER_CONTAINER_IMAGE,
                 ["mkdir", "-p", deployment.paths.work_dir],
                 volumes={"/tmp": {"bind": "/tmp", "mode": "rw"}},
             )
@@ -191,6 +216,28 @@ class ComposeHostOperations:
                     pass
             host_docker.close()
 
+    def _pull_deployment_images_blocking(
+        self, deployment, service_filter=None
+    ) -> None:
+        host_docker = self._docker_sdk.DockerClient(
+            base_url=self.get_docker_host_url(deployment.host_system),
+            timeout=DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+        )
+        try:
+            for service_name, service_data in deployment.compose_data.get(
+                "services", {}
+            ).items():
+                if service_filter and service_name not in service_filter:
+                    continue
+
+                image_name = service_data.get("image")
+                if not image_name:
+                    continue
+
+                ensure_image_present_blocking(host_docker, image_name)
+        finally:
+            host_docker.close()
+
     def _teardown_remote_project_blocking(self, host_system, components, paths) -> bool:
         docker_host_url = self.get_docker_host_url(host_system)
         cleanup_ok = True
@@ -203,7 +250,10 @@ class ComposeHostOperations:
             try:
                 client.compose.down(volumes=True, timeout=15)
             except DockerException:
-                docker_client = self._docker_sdk.DockerClient(base_url=docker_host_url)
+                docker_client = self._docker_sdk.DockerClient(
+                    base_url=docker_host_url,
+                    timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+                )
                 try:
                     for component in components:
                         try:

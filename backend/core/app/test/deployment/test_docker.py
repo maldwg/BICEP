@@ -3,6 +3,8 @@ from docker import DockerClient
 from app.test.fixtures import *
 from unittest.mock import patch, MagicMock, AsyncMock
 from app.deployment.deployment_plugins.docker import (
+    DOCKER_CONTROL_CLIENT_TIMEOUT,
+    ensure_image_present_blocking,
     get_docker_client,
     start_docker_container,
     inject_config,
@@ -10,6 +12,7 @@ from app.deployment.deployment_plugins.docker import (
     remove_docker_container,
     check_container_health,
     restart_docker_container,
+    run_container_async,
 )
 
 @pytest.fixture
@@ -140,7 +143,55 @@ async def test_restart_docker_container_calls_docker_api(
 
     await restart_docker_container(component)
 
-    mock_get_client.assert_called_once_with(component.host_system)
+    mock_get_client.assert_called_once_with(
+        component.host_system,
+        timeout=DOCKER_CONTROL_CLIENT_TIMEOUT,
+    )
     mock_docker_client.containers.get.assert_called_once_with(component.name)
     mock_container.restart.assert_called_once_with(timeout=10)
     mock_docker_client.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_container_async_pulls_image_before_create():
+    client = MagicMock()
+    created_container = MagicMock()
+    client.containers.create.return_value = created_container
+
+    ids_tool = MagicMock()
+    ids_tool.image_name = "ghcr.io/example/ids"
+    ids_tool.image_tag = "1.2.3"
+
+    container = MagicMock()
+    container.name = "ids-1"
+    container.port = 8080
+
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    with patch(
+        "app.deployment.deployment_plugins.docker.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        await run_container_async(client, ids_tool, container, "http://core")
+
+    client.images.pull.assert_called_once_with(
+        repository="ghcr.io/example/ids",
+        tag="1.2.3",
+    )
+    client.containers.create.assert_called_once()
+    created_container.start.assert_called_once()
+
+
+def test_ensure_image_present_blocking_uses_local_image_if_pull_fails():
+    client = MagicMock()
+    client.images.pull.side_effect = Exception("registry down")
+    client.images.get.return_value = MagicMock()
+
+    ensure_image_present_blocking(client, "ghcr.io/example/ids:1.2.3")
+
+    client.images.pull.assert_called_once_with(
+        repository="ghcr.io/example/ids",
+        tag="1.2.3",
+    )
+    client.images.get.assert_called_once_with("ghcr.io/example/ids:1.2.3")

@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from python_on_whales.exceptions import DockerException
@@ -375,6 +375,10 @@ def test_host_operations_copy_runtime_configs_blocking_uploads_archive(tmp_path)
 
     host_operations._copy_runtime_configs_blocking(deployment)
 
+    host_docker.images.pull.assert_called_once_with(
+        repository="alpine",
+        tag="latest",
+    )
     assert host_docker.containers.create.call_count == 2
     second_container.put_archive.assert_called_once()
     host_docker.close.assert_called_once()
@@ -384,6 +388,9 @@ def test_host_operations_copy_runtime_configs_blocking_uploads_archive(tmp_path)
 async def test_host_operations_start_project_registers_components_and_scales():
     ids_component_cls = lambda **kwargs: SimpleNamespace(**kwargs)
     client = MagicMock()
+    docker_sdk_module = MagicMock()
+    host_docker = MagicMock()
+    docker_sdk_module.DockerClient.return_value = host_docker
     container_sensor = MagicMock()
     container_sensor.name = "sensor"
     container_sensor.network_settings.ports = {"80/tcp": [{"HostPort": "3001"}]}
@@ -402,12 +409,12 @@ async def test_host_operations_start_project_registers_components_and_scales():
     client.compose.ps.return_value = [container_sensor, container_aggregator]
     docker_client_cls = MagicMock(return_value=client)
 
-    async def run_to_thread(func):
-        return func()
+    async def run_to_thread(func, *args, **kwargs):
+        return func(*args, **kwargs)
 
     host_operations = ComposeHostOperations(
         docker_client_cls=docker_client_cls,
-        docker_sdk_module=MagicMock(),
+        docker_sdk_module=docker_sdk_module,
         ids_component_cls=ids_component_cls,
         logger=MagicMock(),
         get_core_url=MagicMock(return_value="http://core"),
@@ -424,6 +431,12 @@ async def test_host_operations_start_project_registers_components_and_scales():
             project_name="bicep_cids_1_remote",
         ),
         services=[SimpleNamespace(service_name="sensor", count=2)],
+        compose_data={
+            "services": {
+                "sensor": {"image": "ghcr.io/example/sensor:1.0.0"},
+                "aggregator": {"image": "ghcr.io/example/aggregator:2.0.0"},
+            }
+        },
     )
     ids_container = SimpleNamespace(id=1, port=8080, components=[])
     db_session = MagicMock()
@@ -449,6 +462,10 @@ async def test_host_operations_start_project_registers_components_and_scales():
         quiet=False,
         scales={"sensor": 2},
     )
+    assert host_docker.images.pull.call_args_list == [
+        call(repository="ghcr.io/example/sensor", tag="1.0.0"),
+        call(repository="ghcr.io/example/aggregator", tag="2.0.0"),
+    ]
     assert db_session.add.call_count == 2
     assert ids_container.components[0].port == 8080
     assert ids_container.components[1].role == "AGGREGATOR"
@@ -458,6 +475,9 @@ async def test_host_operations_start_project_registers_components_and_scales():
 async def test_host_operations_start_project_redeploys_only_requested_services():
     ids_component_cls = lambda **kwargs: SimpleNamespace(**kwargs)
     client = MagicMock()
+    docker_sdk_module = MagicMock()
+    host_docker = MagicMock()
+    docker_sdk_module.DockerClient.return_value = host_docker
     container_sensor = MagicMock()
     container_sensor.name = "sensor-1"
     container_sensor.network_settings.ports = {"80/tcp": [{"HostPort": "3001"}]}
@@ -476,12 +496,12 @@ async def test_host_operations_start_project_redeploys_only_requested_services()
     client.compose.ps.return_value = [container_sensor, container_aggregator]
     docker_client_cls = MagicMock(return_value=client)
 
-    async def run_to_thread(func):
-        return func()
+    async def run_to_thread(func, *args, **kwargs):
+        return func(*args, **kwargs)
 
     host_operations = ComposeHostOperations(
         docker_client_cls=docker_client_cls,
-        docker_sdk_module=MagicMock(),
+        docker_sdk_module=docker_sdk_module,
         ids_component_cls=ids_component_cls,
         logger=MagicMock(),
         get_core_url=MagicMock(return_value="http://core"),
@@ -501,6 +521,12 @@ async def test_host_operations_start_project_redeploys_only_requested_services()
             SimpleNamespace(service_name="sensor", count=1),
             SimpleNamespace(service_name="aggregator", count=2),
         ],
+        compose_data={
+            "services": {
+                "sensor": {"image": "ghcr.io/example/sensor:1.0.0"},
+                "aggregator": {"image": "ghcr.io/example/aggregator:2.0.0"},
+            }
+        },
     )
     ids_container = SimpleNamespace(id=1, port=8080, components=[])
     db_session = MagicMock()
@@ -523,6 +549,10 @@ async def test_host_operations_start_project_redeploys_only_requested_services()
         scales={"sensor": 1},
         force_recreate=True,
     )
+    host_docker.images.pull.assert_called_once_with(
+        repository="ghcr.io/example/sensor",
+        tag="1.0.0",
+    )
     assert db_session.add.call_count == 1
     assert ids_container.components[0].service_name == "sensor"
 
@@ -532,8 +562,8 @@ async def test_host_operations_start_project_wraps_compose_errors():
     client = MagicMock()
     client.compose.up.side_effect = DockerException("boom", 1)
 
-    async def run_to_thread(func):
-        return func()
+    async def run_to_thread(func, *args, **kwargs):
+        return func(*args, **kwargs)
 
     host_operations = ComposeHostOperations(
         docker_client_cls=MagicMock(return_value=client),
@@ -552,6 +582,7 @@ async def test_host_operations_start_project_wraps_compose_errors():
             project_name="bicep_cids_1_remote",
         ),
         services=[],
+        compose_data={"services": {}},
     )
 
     with patch(

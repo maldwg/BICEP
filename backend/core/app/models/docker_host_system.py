@@ -12,7 +12,12 @@ from app.utils import (
     get_core_url,
     get_prometheus_push_gateway_url,
 )
-from app.deployment.deployment_plugins.docker import get_docker_client
+from app.deployment.deployment_plugins.docker import (
+    DOCKER_CONTROL_CLIENT_TIMEOUT,
+    DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+    ensure_image_present,
+    get_docker_client,
+)
 from app.logger import LOGGER
 import asyncio
 import httpx
@@ -186,12 +191,13 @@ class DockerHostSystem(Base):
             status_message="Metric service missing. Deploying it now.",
         )
 
-        client = get_docker_client(self)
+        client = get_docker_client(
+            self,
+            timeout=DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+        )
         try:
             image_name = self.get_metric_service_image()
-            existing_images = await asyncio.to_thread(client.images.list)
-            if not any(image_name in image.tags for image in existing_images):
-                await asyncio.to_thread(client.images.pull, image_name)
+            await ensure_image_present(client, image_name)
 
             selected_port = await self.choose_metric_service_port()
             await update_metric_service(
@@ -302,7 +308,7 @@ class DockerHostSystem(Base):
                 status_message="Metric service has not been deployed yet.",
             )
 
-        client = get_docker_client(self)
+        client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
         try:
             try:
                 container = await asyncio.to_thread(
@@ -374,7 +380,7 @@ class DockerHostSystem(Base):
         try:
             if await self.is_host_reachable():
                 LOGGER.debug(f"host {self.name} is reachable")
-                client = get_docker_client(self)
+                client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
                 try:
                     version = await asyncio.to_thread(client.version)
                 finally:

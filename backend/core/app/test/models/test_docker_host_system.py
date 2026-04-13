@@ -1,6 +1,9 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 import docker as docker_sdk
+from app.deployment.deployment_plugins.docker import (
+    DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+)
 from app.models.docker_host_system import (
     DockerHostSystem,
     set_host_status,
@@ -175,6 +178,50 @@ async def test_choose_metric_service_port_returns_first_available(
         port = await remote_host.choose_metric_service_port()
 
     assert port == 21002
+
+
+@pytest.mark.asyncio
+async def test_deploy_metric_service_uses_deployment_timeout(
+    remote_host: DockerHostSystem,
+):
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    metric_service = MagicMock()
+    mock_client = MagicMock()
+    mock_client.close = MagicMock()
+    mock_container = MagicMock()
+    mock_client.containers.create.return_value = mock_container
+    remote_host.choose_metric_service_port = AsyncMock(return_value=21002)
+
+    with patch(
+        "app.models.docker_host_system.get_or_create_metric_service",
+        new=AsyncMock(return_value=metric_service),
+    ), patch(
+        "app.models.docker_host_system.update_metric_service",
+        new=AsyncMock(),
+    ), patch(
+        "app.models.docker_host_system.get_docker_client",
+        return_value=mock_client,
+    ) as mock_get_client, patch(
+        "app.models.docker_host_system.ensure_image_present",
+        new=AsyncMock(),
+    ) as mock_ensure_image_present, patch(
+        "app.models.docker_host_system.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        await remote_host._deploy_metric_service(AsyncMock())
+
+    mock_get_client.assert_called_once_with(
+        remote_host,
+        timeout=DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
+    )
+    mock_ensure_image_present.assert_awaited_once_with(
+        mock_client,
+        remote_host.get_metric_service_image(),
+    )
+    mock_container.start.assert_called_once()
+    mock_client.close.assert_called_once()
 
 
 @pytest.mark.asyncio
