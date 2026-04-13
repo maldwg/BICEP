@@ -116,7 +116,7 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
 
   logserver:
-    image: hamstring-logserver:latest
+    image: ghcr.io/hamstring-ndr/hamstring-logserver:latest
     restart: "unless-stopped"
     networks:
       - hamstring
@@ -136,7 +136,7 @@ services:
         condition: service_healthy
 
   logcollector:
-    image: hamstring-logcollector:latest
+    image: ghcr.io/hamstring-ndr/hamstring-logcollector:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=PIPELINE"
@@ -154,7 +154,7 @@ services:
         condition: service_healthy
 
   prefilter:
-    image: hamstring-prefilter:latest
+    image: ghcr.io/hamstring-ndr/hamstring-prefilter:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=PIPELINE"
@@ -175,7 +175,7 @@ services:
         condition: service_healthy
 
   inspector:
-    image: hamstring-inspector:latest
+    image: ghcr.io/hamstring-ndr/hamstring-inspector:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=PIPELINE"
@@ -204,7 +204,7 @@ services:
         condition: service_healthy
 
   detector:
-    image: hamstring-detector:latest
+    image: ghcr.io/hamstring-ndr/hamstring-detector:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=PIPELINE"
@@ -225,7 +225,7 @@ services:
         condition: service_healthy
 
   alerter:
-    image: hamstring-alerter:latest
+    image: ghcr.io/hamstring-ndr/hamstring-alerter:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=PIPELINE"
@@ -279,7 +279,7 @@ services:
         - hamstring
 
   monitoring-agent:
-    image: hamstring-monitoring:latest
+    image: ghcr.io/hamstring-ndr/hamstring-monitoring:latest
     restart: "unless-stopped"
     labels:
       - "bicep.role=INFRA"
