@@ -181,7 +181,6 @@ INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_n
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest', 'SINGLE_CONTAINER', '');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Snort', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-snort', 'latest', 'SINGLE_CONTAINER', '');
 -- Sample CIDS Tool
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Wazuh', 'HIDS', 'Log-based', false, 'wazuh/wazuh', '4.7.2', 'DOCKER_COMPOSE', '');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Hamstring', 'CIDS', 'ML-based', false, 'hamstring/hamstring', 'latest', 'DOCKER_COMPOSE', 'HOST_IP,MOUNT_PATH');
 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
@@ -208,11 +207,6 @@ INSERT INTO configuration VALUES
 (8, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'RULESET', 'lightspd max detect + community rules', 'RULESET');
 -- Sample CIDS Config
 INSERT INTO configuration VALUES
-(9, 'wazuh-compose.yaml', '/opt/deployment_configurations/uuid4/wazuh-compose.yaml', 'DEPLOYMENT', 'Wazuh Docker Compose Setup', 'DEPLOYMENT');
-INSERT INTO configuration VALUES
 (10, 'hamstring-compose.yaml', '/opt/deployment_configurations/uuid5/hamstring-compose.yaml', 'DEPLOYMENT', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
-INSERT INTO configuration VALUES
-(11, 'minimal-compose.yaml', '/opt/deployment_configurations/uuid6/minimal-compose.yaml', 'DEPLOYMENT', 'Minimal Docker Compose Setup', 'DEPLOYMENT');
-
 INSERT INTO configuration VALUES
 (12, 'hamstring_clickhouse.sql', '/opt/runtime_configurations/uuid8/hamstring_clickhouse.sql', 'RUNTIME', 'Hamstring Clickhouse tables', 'RUNTIME');

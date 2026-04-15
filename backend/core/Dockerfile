@@ -31,9 +31,7 @@ RUN mkdir -p /opt/rulesets/uuid4
 COPY ./example-configs/snort.lua /opt/runtime_configurations/uuid1/snort.lua
 COPY ./example-configs/suricata.yaml /opt/runtime_configurations/uuid2/suricata.yaml
 COPY ./example-configs/slips.yaml /opt/runtime_configurations/uuid3/slips.yaml
-COPY ./example-configs/wazuh-compose.yaml /opt/deployment_configurations/uuid4/wazuh-compose.yaml
 COPY ./example-configs/hamstring-compose.yaml /opt/deployment_configurations/uuid5/hamstring-compose.yaml
-COPY ./example-configs/minimal-compose.yaml /opt/deployment_configurations/uuid6/minimal-compose.yaml
 COPY ./example-configs/hamstring_config.yaml /opt/runtime_configurations/uuid7/hamstring_config.yaml
 COPY ./example-configs/hamstring_clickhouse.sql /opt/runtime_configurations/uuid8/hamstring_clickhouse.sql
 
