@@ -46,7 +46,11 @@ This fetches the newest version of the submodule for the backend code and is nec
 > [!IMPORTANT]
 > In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#distributed-setup)
 
-The project can be started by running ```PRODUCTION=FALSE CORE_HOST_IP=127.0.0.1 docker compose up```. This will spin up all containers in development mode. To run the stack in production mode, simply set `PRODUCTION` to `TRUE`. 
+The project can be started by running 
+```
+PRODUCTION=FALSE CORE_HOST_IP=127.0.0.1 docker compose up
+```
+. This will spin up all containers in development mode. To run the stack in production mode, simply set `PRODUCTION` to `TRUE`. 
 
 
 ## Use The Framework
