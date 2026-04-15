@@ -4,70 +4,74 @@
 }
 
 :host {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: block;
 }
 
+.setup-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
 
+.setup-summary-card {
+  min-height: 8rem;
+  color: var(--app-text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 249, 246, 0.74));
+  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  box-shadow: var(--app-shadow-soft);
+}
 
+.setup-summary-card .summary-card__label {
+  color: var(--app-text-muted);
+}
 
+.setup-summary-card .summary-card__value {
+  color: var(--app-accent-strong);
+}
+
+.setup-summary-card .summary-card__hint {
+  color: var(--app-text-muted);
+}
 
 .submit-button-div {
-  padding-top: 10%;
-  margin: auto;
+  padding-top: 1.5rem;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
-
-}
-
-.custom-button {
-  border-radius: 20px;
 }
 
 .expansion-panel-flexbox-container-setup-choice {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  column-gap: 10%;
-  justify-content: center;
-  margin: auto;
-
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1.25rem;
+  width: 100%;
 }
 
 .flexbox-setup-choice-div {
-  justify-content: center;
-  text-align: center;
-  padding: 1%;
-  flex: 1 1 0px;
-  margin: auto;
+  width: 100%;
 }
 
 .flexbox-setup-choice-button {
-  width: 300px;
-  height: 300px;
-  font-size: 1.5rem;
-  font-weight: 800;
-  border-radius: 16px;
-  color: white;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
-  box-shadow: var(--mat-sys-level3) !important;
-  border: none;
-  background-color: rgb(255, 255, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
 }
 
+.flexbox-setup-choice-button mat-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 1.7rem;
+}
+
+.flexbox-setup-choice-button span {
+  display: block;
+}
 
 .cids-card {
-  max-width: 100rem;
-  max-height: 100rem;
-  height: 100%;
   width: 100%;
-  min-height: 25rem;
-  min-width: 25rem;
-
 }
-
 
 .ng-touched,
 .ng-dirty,
@@ -76,119 +80,155 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  ;
-
-
 }
 
-// CIDS Assignment rows
+.cids-assignments-heading {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--app-heading);
+}
+
 .cids-assignment-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 1rem;
-  padding: 8px 16px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.56);
+  backdrop-filter: blur(0.4rem);
+  border: 0.0625rem solid rgba(143, 29, 37, 0.08);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
+.cids-assignment-row:hover {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(143, 29, 37, 0.16);
 }
 
 .cids-assignment-service {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.6rem;
+  flex: 0 1 18rem;
   max-width: 40%;
-  min-width: 35%;
+  min-width: 16rem;
 }
 
 .cids-service-icon {
-  font-size: 20px;
-  opacity: 0.7;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.76;
 }
 
 .cids-service-name {
   font-weight: 600;
   font-size: 0.95rem;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.01em;
 }
 
 .cids-arrow-icon {
-  font-size: 24px;
+  font-size: 1.4rem;
+  width: 1.4rem;
+  height: 1.4rem;
   color: rgba(76, 175, 80, 0.9);
   flex-shrink: 0;
 }
 
+.cids-assignment-fields {
+  display: flex;
+  flex-direction: row;
+  column-gap: 1rem;
+  row-gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1 1 20rem;
+  min-width: 14rem;
+}
+
 .cids-host-select {
-  flex: 1;
-  margin-top: 5%;
+  flex: 1 1 14rem;
+  margin-top: 0.4rem;
   max-width: 100%;
-  min-width: 40%;
 }
 
 .cids-card {
-  margin-top: 5%;
-}
-
-.cids-assignments-heading {
-  margin-top: 3%;
-  margin-bottom: 3%;
+  margin-top: 1rem;
 }
 
 .cids-add-row {
   border-style: dashed;
-  margin-top: 2%;
+  align-items: flex-end;
 }
 
 .cids-add-service-select {
-  min-width: 7rem;
-  margin-top: 5%;
+  flex: 1 1 14rem;
+  min-width: 12rem;
+  margin-top: 0.4rem;
 }
 
 .cids-replicas-input {
-  max-width: 70px;
-  margin-top: 5%;
+  flex: 0 0 5rem;
+  max-width: 5rem;
+  margin-top: 0.4rem;
   text-align: center;
 }
 
 .cids-sensor-badge {
   background-color: #3f51b5;
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-left: 8px;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999rem;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .cids-env-key {
   font-weight: 600;
-  font-family: monospace;
+  font-family: var(--app-font-mono);
   font-size: 0.95rem;
-  min-width: 100px;
+  min-width: 6rem;
 }
 
 .cids-env-equals {
   font-weight: 700;
   font-size: 1.1rem;
   opacity: 0.6;
-  padding: 0 4px;
-}
-
-.cids-env-value {
-  font-family: monospace;
-  font-size: 0.95rem;
-  flex: 1;
+  padding: 0 0.25rem;
 }
 
 .cids-env-field {
   flex: 1;
-  margin-top: 5%;
+  margin-top: 0.4rem;
+}
+
+.cids-assignment-row > button {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.cids-add-row > button {
+  margin-left: auto;
+}
+
+@media (max-width: 60rem) {
+  .cids-assignment-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cids-assignment-service,
+  .cids-assignment-fields,
+  .cids-add-service-select,
+  .cids-host-select,
+  .cids-replicas-input {
+    max-width: 100%;
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .cids-add-row > button {
+    margin-left: 0;
+  }
 }

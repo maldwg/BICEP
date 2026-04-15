@@ -1,64 +1,175 @@
-.anchor {
-  text-align: center;
-  text-decoration: none;
-  color: black;
-  margin-right: 2%;
-  padding: 0.75%;
-  // for the maticon
+:host {
+  display: block;
+}
+
+.navbar-shell {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  padding: 1rem var(--app-shell-gutter) 0;
+}
+
+.navbar {
+  width: min(100%, var(--app-shell-max-width));
+  min-height: var(--app-nav-height);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.85rem 1rem 0.85rem 1.1rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.58);
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 252, 250, 0.76));
+  box-shadow: var(--app-shadow-soft);
+  backdrop-filter: blur(1rem);
+  -webkit-backdrop-filter: blur(1rem);
+}
+
+.navbar__brand {
   display: inline-flex;
   align-items: center;
-
+  gap: 0.9rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
-::ng-deep .mat-mdc-menu-panel {
-  overflow-x: hidden !important;
-}
-
-.navbar-button-div {
-  padding: 8px; 
-  border-radius: 5px; 
-  margin-right: 10px;
-}
-
-.navbar-button-div:hover {
-  background-color: rgba(255,255,255,0.5);
-  box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.2);
-
-}
-
-.active-div{
-    background-color: rgba(255,255,255,0.5);
-   box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.2);
-
-}
-
-.navbar-right {
-  display: flex;
+.navbar__brand-mark {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(180deg, rgba(255, 244, 242, 0.92), rgba(255, 233, 228, 0.88));
+  box-shadow: inset 0 0 0 0.08rem rgba(143, 29, 37, 0.1);
+  flex: 0 0 auto;
 }
 
-.navbar-left {
-  display: flex;
-  gap: 16px;    
-}
 .toolbar-icon {
-  width: 90px;                      /* adjust size as needed */
-  height: 90px;
-  padding: 20% 0px 0px 0px;
+  width: 2.5rem;
+  height: 2.5rem;
 }
-.navbar{
 
+.navbar__brand-copy {
   display: flex;
-  justify-content: space-between;  /* left / right spacing */
-  align-items: center;
-  padding: 0 16px;      
-
-  box-shadow: var(--mat-sys-level3);
-  position: fixed;
-  z-index: 1000;
-  background-color: rgba(255, 255, 255, 0);  /* fully transparent */
-  backdrop-filter: blur(12px);               /* optional frosted effect */
-  -webkit-backdrop-filter: blur(12px);       /* Safari support */
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
+.navbar__brand-kicker {
+  color: var(--app-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 
+.navbar__brand-title {
+  color: var(--app-heading);
+  font-family: var(--app-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.navbar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.navbar__item {
+  display: flex;
+  align-items: center;
+  border-radius: 999rem;
+}
+
+.navbar__item--active {
+  background: rgba(143, 29, 37, 0.1);
+  box-shadow: inset 0 0 0 0.08rem rgba(143, 29, 37, 0.12);
+}
+
+.navbar__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.85rem;
+  padding: 0.75rem 0.95rem;
+  border: none;
+  border-radius: 999rem;
+  background: transparent;
+  color: var(--app-text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.navbar__link:hover {
+  background: rgba(143, 29, 37, 0.08);
+  color: var(--app-accent-strong);
+  transform: translateY(-0.08rem);
+}
+
+.navbar__item--active .navbar__link {
+  color: var(--app-accent-strong);
+}
+
+.navbar__link mat-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1.15rem;
+}
+
+.navbar__link--menu {
+  appearance: none;
+}
+
+.navbar__caret {
+  opacity: 0.7;
+}
+
+@media (max-width: 75rem) {
+  .navbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .navbar__nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 42rem) {
+  .navbar-shell {
+    padding-top: 0.75rem;
+  }
+
+  .navbar {
+    padding: 0.9rem;
+    border-radius: 1.4rem;
+  }
+
+  .navbar__brand {
+    width: 100%;
+  }
+
+  .navbar__nav {
+    gap: 0.35rem;
+  }
+
+  .navbar__link {
+    flex: 1 1 calc(50% - 0.35rem);
+    justify-content: flex-start;
+  }
+}

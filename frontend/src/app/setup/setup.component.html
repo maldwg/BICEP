@@ -1,34 +1,74 @@
 <app-alert-component></app-alert-component>
-<div class="component-header-div">
-  @if (userChoice !== '') {
-  <div class="expansion-panel-flexbox-container-setup-choice">
-    <button matFab extended class="back-button" (click)="setUserChoice('')">
-      <mat-icon>arrow_back</mat-icon>
-      Back
-    </button>
-  </div>
-  }
-  @if (userChoice === '') {
-  <div class="expansion-panel-flexbox-container-setup-choice">
-    <div class="flexbox-setup-choice-div">
-      <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ensemble')" matButton>
-        New Ensemble
-      </button>
-    </div>
-    <div class="flexbox-setup-choice-div">
-      <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ids')" matButton>
-        New IDS
-      </button>
-    </div>
-  </div>
-  }
-</div>
 
-@if (userChoice === 'ensemble') {
-<div class="form-dialog-container">
-  <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()" novalidate>
-    <mat-card>
-      <mat-card-content>
+<section class="page-shell">
+  <header class="page-hero">
+    <div class="page-hero__copy">
+      <span class="page-kicker">Provisioning</span>
+      <h1 class="page-title">Deployment Setup Studio</h1>
+      <p class="page-subtitle">
+        Launch new IDS and ensemble systems with a guided setup flow that keeps infrastructure, configs, and runtime assignments aligned.
+      </p>
+    </div>
+    <div class="page-hero__actions">
+      @if (userChoice !== '') {
+        <button matFab extended class="back-button" (click)="setUserChoice('')">
+          <mat-icon>arrow_back</mat-icon>
+          Back
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="page-summary-grid setup-summary-grid">
+    <article class="summary-card setup-summary-card">
+      <span class="summary-card__label">Docker Hosts</span>
+      <span class="summary-card__value">{{ hostSystems.length }}</span>
+      <span class="summary-card__hint">Deployment targets currently registered</span>
+    </article>
+    <article class="summary-card setup-summary-card">
+      <span class="summary-card__label">IDS Tools</span>
+      <span class="summary-card__value">{{ idsTools.length }}</span>
+      <span class="summary-card__hint">Catalog entries available for provisioning</span>
+    </article>
+    <article class="summary-card setup-summary-card">
+      <span class="summary-card__label">Existing Containers</span>
+      <span class="summary-card__value">{{ containers.length }}</span>
+      <span class="summary-card__hint">Runtime systems that can be orchestrated into ensembles</span>
+    </article>
+  </div>
+
+  @if (userChoice === '') {
+    <div class="expansion-panel-flexbox-container-setup-choice">
+      <div class="flexbox-setup-choice-div">
+        <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ensemble')" matButton>
+          <mat-icon>hub</mat-icon>
+          <span>New Ensemble</span>
+        </button>
+      </div>
+      <div class="flexbox-setup-choice-div">
+        <button class="flexbox-setup-choice-button moving-hover-button" (click)="setUserChoice('ids')" matButton>
+          <mat-icon>shield</mat-icon>
+          <span>New IDS</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (userChoice === 'ensemble') {
+  <div class="form-dialog-container">
+    <form [formGroup]="ensembleForm" (ngSubmit)="onEnsembleSubmit()" novalidate>
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <div class="card-title-row">
+              <div class="card-title-group">
+                <span class="card-title-eyebrow">Ensemble Setup</span>
+                <span class="mat-card-title-text">Define Ensemble Metadata</span>
+              </div>
+            </div>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
         <div class="form-item">
           <mat-form-field class="form-field">
             <mat-label>Name</mat-label>
@@ -63,23 +103,33 @@
             <textarea matInput [formControl]="ensembleForm.controls.description" required></textarea>
           </mat-form-field>
         </div>
-      </mat-card-content>
-    </mat-card>
-    <div class="submit-button-div">
-      <button matFab extended type="submit" class="submit-button">
-        Submit
-        <mat-icon>send</mat-icon>
-      </button>
-    </div>
-  </form>
-</div>
-}
+        </mat-card-content>
+      </mat-card>
+      <div class="submit-button-div">
+        <button matFab extended type="submit" class="submit-button">
+          Submit
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+    </form>
+  </div>
+  }
 
-@if (userChoice === 'ids') {
-<div class="form-dialog-container">
-  <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
-    <mat-card class="form-mat-card">
-      <mat-card-content>
+  @if (userChoice === 'ids') {
+  <div class="form-dialog-container">
+    <form [formGroup]="idsForm" (ngSubmit)="onSubmit()">
+      <mat-card class="form-mat-card">
+        <mat-card-header>
+          <mat-card-title>
+            <div class="card-title-row">
+              <div class="card-title-group">
+                <span class="card-title-eyebrow">IDS Setup</span>
+                <span class="mat-card-title-text">Core Deployment Configuration</span>
+              </div>
+            </div>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
         <div class="form-item">
           <mat-form-field class="form-field">
             <mat-label>Host System</mat-label>
@@ -140,16 +190,23 @@
             <textarea matInput [formControl]="idsForm.controls.description" required></textarea>
           </mat-form-field>
         </div>
-      </mat-card-content>
-    </mat-card>
+        </mat-card-content>
+      </mat-card>
 
-    <!-- CIDS Configuration Section -->
-    @if (deploymentType === 'DOCKER_COMPOSE') {
-    <mat-card class="form-mat-card cids-card">
-      <mat-card-header>
-        <mat-card-title>CIDS Service Deployment</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
+      <!-- CIDS Configuration Section -->
+      @if (deploymentType === 'DOCKER_COMPOSE') {
+      <mat-card class="form-mat-card cids-card">
+        <mat-card-header>
+          <mat-card-title>
+            <div class="card-title-row">
+              <div class="card-title-group">
+                <span class="card-title-eyebrow">CIDS</span>
+                <span class="mat-card-title-text">CIDS Service Deployment</span>
+              </div>
+            </div>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
         <!-- Service Assignments (auto-populated, editable inline) -->
         @if (cidsConfigurations.length > 0) {
         <h3 class="cids-assignments-heading">Service Assignments</h3>
@@ -165,7 +222,7 @@
             }
           </div>
           <mat-icon class="cids-arrow-icon">arrow_forward</mat-icon>
-          <div class="" style="display: flex; flex-direction: row; column-gap: 1rem; flex-wrap: wrap;">
+          <div class="cids-assignment-fields">
             <mat-form-field class="cids-host-select">
               <mat-label>Target Host</mat-label>
               <mat-select [value]="config.host_system_id" (selectionChange)="updateCidsHostAssignment(i, $event.value)">
@@ -259,16 +316,17 @@
             <mat-icon>add</mat-icon>
           </button>
         </div>
-      </mat-card-content>
-    </mat-card>
-    }
+        </mat-card-content>
+      </mat-card>
+      }
 
-    <div class="submit-button-div">
-      <button matFab extended type="submit" class="submit-button">
-        Submit
-        <mat-icon>send</mat-icon>
-      </button>
-    </div>
-  </form>
-</div>
-}
+      <div class="submit-button-div">
+        <button matFab extended type="submit" class="submit-button">
+          Submit
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+</section>

@@ -1,47 +1,64 @@
-.mat-success {
-    background-color: green;
-    color: #fff;
+:host {
+    display: block;
 }
 
 .component-edit-section {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(0,0,0,0.12);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 0.08rem solid rgba(143, 29, 37, 0.12);
+}
 
-    h3 {
-        font-size: 1.1rem;
-        font-weight: 500;
-        margin-bottom: 16px;
-        color: #3f51b5;
-    }
+.component-edit-section h3 {
+    margin-bottom: 1rem;
+    color: var(--app-accent-strong);
+}
+
+.component-edit-empty-state {
+    padding: 0.8rem 1rem;
+    color: var(--app-text-muted);
+    font-style: italic;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .component-edit-row {
-    display: flex; 
-    gap: 16px; 
-    align-items: center; 
-    margin-bottom: 12px;
-    padding: 8px 12px;
-    background: rgba(0,0,0,0.03);
-    border-radius: 8px;
-    transition: background 0.2s;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(255, 255, 255, 0.48);
+    border-radius: 1rem;
+    transition: background 0.2s ease;
+}
 
-    &:hover {
-        background: rgba(0,0,0,0.05);
+.component-edit-row:hover {
+    background: rgba(255, 255, 255, 0.68);
+}
+
+.component-edit-row .service-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: capitalize;
+}
+
+.component-edit-row .config-select {
+    flex: 2;
+}
+
+.component-edit-row .count-input {
+    width: 6rem;
+}
+
+@media (max-width: 60rem) {
+    .component-edit-row {
+        align-items: stretch;
+        flex-direction: column;
     }
 
-    .service-name {
-        flex: 1; 
-        font-weight: 500;
-        font-size: 0.95rem;
-        text-transform: capitalize;
-    }
-
-    .config-select {
-        flex: 2;
-    }
-
-    .count-input {
-        width: 100px;
+    .component-edit-row .config-select,
+    .component-edit-row .count-input {
+        width: 100%;
     }
 }

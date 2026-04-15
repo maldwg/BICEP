@@ -1,64 +1,63 @@
 :host {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: block;
   font-family: inherit !important;
-
-  }
-
-.component-header-div {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
-.action-button{
-  margin: 1%;
-  border-radius: 20px;
+.host-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
 }
 
-
-
-.config-button-div{
-  margin: auto;
-  padding-bottom: 5%;
+.host-summary-card {
+  min-height: 8rem;
+  color: var(--app-text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 249, 246, 0.74));
+  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  box-shadow: var(--app-shadow-soft);
 }
 
-.new-config-button{
-  width: 180px;
-  height: 75px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border-radius: 16px;
-  text-transform: capitalize;
-  transition: all 0.3s ease;
-  box-shadow: var(--mat-sys-level3) !important;
-  background-color: rgb(255, 255, 255, 0.25);
-  border: none;
+.host-summary-card .summary-card__label {
+  color: var(--app-text-muted);
 }
 
-.host-title {
-  display: flex;
+.host-summary-card .summary-card__value {
+  color: var(--app-accent-strong);
+}
+
+.host-summary-card .summary-card__hint {
+  color: var(--app-text-muted);
+}
+
+.host-grid {
+  justify-content: stretch;
+}
+
+.host-title-icon {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.95rem;
+  background: rgba(143, 29, 37, 0.1);
+  color: var(--app-accent-strong);
 }
 
 .status-badge {
   --badge-color: #5f6673;
   --badge-border: rgba(95, 102, 115, 0.16);
-  --badge-bg-top: rgba(255, 255, 255, 0.78);
-  --badge-bg-bottom: rgba(255, 255, 255, 0.48);
+  --badge-bg-top: rgba(255, 255, 255, 0.92);
+  --badge-bg-bottom: rgba(255, 255, 255, 0.62);
   --badge-dot-ring: rgba(95, 102, 115, 0.18);
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-width: fit-content;
-  padding: 0.34rem 0.82rem 0.34rem 0.64rem;
-  border-radius: 999px;
-  border: 1px solid var(--badge-border);
+  width: fit-content;
+  padding: 0.38rem 0.82rem 0.38rem 0.64rem;
+  border-radius: 999rem;
+  border: 0.0625rem solid var(--badge-border);
   background: linear-gradient(180deg, var(--badge-bg-top), var(--badge-bg-bottom));
-  box-shadow: 0 10px 24px rgba(88, 31, 31, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0.06rem 0 rgba(255, 255, 255, 0.72);
   color: var(--badge-color);
   font-size: 0.79rem;
   font-weight: 600;
@@ -66,13 +65,13 @@
   line-height: 1;
   white-space: nowrap;
   cursor: default;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(0.8rem);
+  -webkit-backdrop-filter: blur(0.8rem);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .status-badge::before {
-  content: "";
+  content: '';
   width: 0.48rem;
   height: 0.48rem;
   border-radius: 50%;
@@ -82,30 +81,29 @@
 }
 
 .status-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(88, 31, 31, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-0.06rem);
 }
 
 .status-badge--available {
   --badge-color: #22653f;
   --badge-border: rgba(34, 101, 63, 0.2);
-  --badge-bg-top: rgba(232, 246, 237, 0.88);
-  --badge-bg-bottom: rgba(222, 241, 229, 0.58);
+  --badge-bg-top: rgba(232, 246, 237, 0.94);
+  --badge-bg-bottom: rgba(222, 241, 229, 0.7);
   --badge-dot-ring: rgba(34, 101, 63, 0.16);
 }
 
 .status-badge--unavailable {
   --badge-color: #a33d3d;
   --badge-border: rgba(163, 61, 61, 0.2);
-  --badge-bg-top: rgba(252, 238, 238, 0.9);
-  --badge-bg-bottom: rgba(248, 225, 225, 0.62);
+  --badge-bg-top: rgba(252, 238, 238, 0.96);
+  --badge-bg-bottom: rgba(248, 225, 225, 0.72);
   --badge-dot-ring: rgba(163, 61, 61, 0.16);
 }
 
 .status-badge--pending {
   --badge-color: #9d6707;
   --badge-border: rgba(157, 103, 7, 0.2);
-  --badge-bg-top: rgba(255, 247, 228, 0.9);
-  --badge-bg-bottom: rgba(250, 237, 198, 0.64);
+  --badge-bg-top: rgba(255, 247, 228, 0.94);
+  --badge-bg-bottom: rgba(250, 237, 198, 0.74);
   --badge-dot-ring: rgba(157, 103, 7, 0.16);
 }

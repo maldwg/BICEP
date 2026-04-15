@@ -1,10 +1,9 @@
 <div class="errors-container">
   @for (error of errors; track error) {
     <div class="error-popup">
-      <div>
-        <span>{{ error.message }}</span>
-        <br>
-          <span style="padding-top: 200px;"> Status Code: {{ error.statusCode }}</span>
+      <div class="error-popup__copy">
+        <span class="error-popup__message">{{ error.message }}</span>
+        <span class="error-popup__status">Status Code: {{ error.statusCode }}</span>
         </div>
         <mat-icon aria-hidden="true" class="red-icon" fontIcon="cancel" (click)="removeError(error)"></mat-icon>
       </div>

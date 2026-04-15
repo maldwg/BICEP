@@ -1,7 +1,10 @@
-<div style="margin-top: 5%; width: 100%;">
-    <h2 mat-dialog-title>Add new Host</h2>
+<div class="dialog-shell">
+    <div class="dialog-title-block">
+      <h2 mat-dialog-title class="dialog-title">Add New Host</h2>
+      <p class="dialog-subtitle">Register a Docker node so BICEP can deploy systems and manage its metric service.</p>
+    </div>
     <mat-dialog-content>
-        <form [formGroup]="hostForm">
+        <form [formGroup]="hostForm" class="dialog-form">
           <div class="form-item">
             <mat-form-field>
               <mat-label>Name</mat-label>
@@ -22,16 +25,14 @@
           </div>
         </form>
     </mat-dialog-content>
-    <mat-dialog-actions >
+    <mat-dialog-actions>
       <div class="dialog-actions-div">
-        <button class="start-button" matFab (click)="save()" >
+        <button class="start-button" matFab (click)="save()">
             <mat-icon>save</mat-icon>
-        </button>   
-        <button class="cancel-button" matFab (click)="exit()" >
+        </button>
+        <button class="cancel-button" matFab (click)="exit()">
           <mat-icon>cancel</mat-icon>
         </button>
       </div>
     </mat-dialog-actions>
 </div>
-  
-  

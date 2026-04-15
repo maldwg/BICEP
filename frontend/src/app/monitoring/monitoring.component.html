@@ -1,4 +1,32 @@
-<div class="monitoring-container">
+<section class="page-shell monitoring-container">
+    <header class="page-hero page-hero--compact">
+        <div class="page-hero__copy">
+            <span class="page-kicker">Observability</span>
+            <h1 class="page-title">Historical Resource Monitoring</h1>
+            <p class="page-subtitle">
+                Inspect CPU and RAM trends across deployed IDS systems, with optional CIDS component breakdowns when deeper analysis is needed.
+            </p>
+        </div>
+    </header>
+
+    <div class="page-summary-grid monitoring-summary-grid">
+        <article class="summary-card monitoring-summary-card">
+            <span class="summary-card__label">Tracked Systems</span>
+            <span class="summary-card__value">{{ containers.length }}</span>
+            <span class="summary-card__hint">Series currently available for historical monitoring</span>
+        </article>
+        <article class="summary-card monitoring-summary-card">
+            <span class="summary-card__label">CIDS Views</span>
+            <span class="summary-card__value">{{ cidsContainers.length }}</span>
+            <span class="summary-card__hint">Multi-component systems that can be expanded</span>
+        </article>
+        <article class="summary-card monitoring-summary-card">
+            <span class="summary-card__label">Selected Window</span>
+            <span class="summary-card__value">{{ selectedTimeRange === 'custom' ? 'Custom' : selectedTimeRange }}</span>
+            <span class="summary-card__hint">Quick-range or absolute time interval in use</span>
+        </article>
+    </div>
+
     <div class="header">
         <div class="controls">
             <mat-form-field appearance="outline" class="time-selector">
@@ -13,7 +41,6 @@
                 </mat-select>
             </mat-form-field>
 
-            <!-- Only show when Custom Range selected -->
             <div *ngIf="selectedTimeRange === 'custom'" class="custom-time-inputs">
                 <mat-form-field appearance="outline" class="datetime-picker">
                     <mat-label>From (optional)</mat-label>
@@ -27,12 +54,11 @@
             </div>
 
             <button matTooltip="Export selected containers to CSV" mat-fab extended (click)="exportCSV()"
-                style="margin-top: 0px;" *ngIf="containers.length > 0" class="export-fab download-button">
+                *ngIf="containers.length > 0" class="export-fab download-button">
                 <mat-icon>download</mat-icon>
                 Export
             </button>
         </div>
-
     </div>
 
     <div class="charts-wrapper" *ngIf="containers.length > 0; else noContainers">
@@ -68,21 +94,19 @@
             </div>
         </div>
 
-        <!-- CPU Chart -->
         <div class="chart-container">
             <div echarts [options]="cpuChartOption" (chartInit)="onCpuChartInit($event)" class="chart"></div>
         </div>
 
-        <!-- Memory Chart -->
         <div class="chart-container">
             <div echarts [options]="memoryChartOption" (chartInit)="onMemoryChartInit($event)" class="chart"></div>
         </div>
     </div>
 
     <ng-template #noContainers>
-        <div class="no-data">
+        <div class="no-data no-state-card">
             <mat-icon>info</mat-icon>
             <p>No active IDS containers found.</p>
         </div>
     </ng-template>
-</div>
+</section>
