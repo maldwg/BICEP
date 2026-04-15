@@ -23,7 +23,7 @@
     "@angular/router": "^20.3.1",
     "@coreui/angular": "~5.5.14",
     "@coreui/coreui": "^5.4.3",
-    "@coreui/icons-angular": "~5.5.14",
+    "@coreui/icons-angular": "~5.6.21",
     "@material/theme": "^15.0.0-canary.7f224ddd4.0",
     "@popperjs/core": "~2.11.8",
     "echarts": "^6.0.0",
