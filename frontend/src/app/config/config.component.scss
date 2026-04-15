@@ -1,35 +1,34 @@
 :host {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-
-.action-button{
-  margin: 1%;
-  border-radius: 20px;
+  display: block;
 }
 
-
-.panel-flexbox-div{
+.panel-flexbox-div {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  margin: auto;
-  padding: 0;
-  width: 80%;
+  gap: 1.25rem;
 }
 
-.new-config-button{
-  width: 180px;
-  height: 75px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border-radius: 16px;
-  text-transform: capitalize;
-  transition: all 0.3s ease;
-  box-shadow: var(--mat-sys-level3) !important;
-  background-color: rgb(255, 255, 255, 0.25);
-  border: none;
+.config-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
 
+.config-summary-card {
+  min-height: 8rem;
+  color: var(--app-text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 249, 246, 0.74));
+  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.config-summary-card .summary-card__label {
+  color: var(--app-text-muted);
+}
+
+.config-summary-card .summary-card__value {
+  color: var(--app-accent-strong);
+}
+
+.config-summary-card .summary-card__hint {
+  color: var(--app-text-muted);
 }

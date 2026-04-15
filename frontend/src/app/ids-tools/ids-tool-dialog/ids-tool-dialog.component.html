@@ -1,7 +1,10 @@
-<div style="margin-top: 5%; width: 100%;">
-    <h2 mat-dialog-title>{{ isEditMode ? 'Edit IDS Tool' : 'Add New IDS Tool' }}</h2>
+<div class="dialog-shell">
+    <div class="dialog-title-block">
+        <h2 mat-dialog-title class="dialog-title">{{ isEditMode ? 'Edit IDS Tool' : 'Add New IDS Tool' }}</h2>
+        <p class="dialog-subtitle">Define how a tool is deployed, what it requires, and which image metadata BICEP should track.</p>
+    </div>
     <mat-dialog-content>
-        <form [formGroup]="toolForm">
+        <form [formGroup]="toolForm" class="dialog-form">
             <div class="form-item">
                 <mat-form-field>
                     <mat-label>Name</mat-label>

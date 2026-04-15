@@ -1,7 +1,10 @@
-
-<div >
+<div class="dialog-shell">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Edit Deployment</h2>
+    <p class="dialog-subtitle">Adjust configuration, rulesets, and component-level CIDS assignments without leaving the dashboard.</p>
+  </div>
   <mat-dialog-content>
-    <form [formGroup]="idsEdit">
+    <form [formGroup]="idsEdit" class="dialog-form">
       <div class="form-item">
         <mat-form-field>
           <mat-label>Name</mat-label>
@@ -61,7 +64,7 @@
         <div class="component-edit-section">
             <h3>Components Configuration</h3>
             @if (!data.container.components || data.container.components.length === 0) {
-                <div class="info-row" style="padding: 10px; color: #666; font-style: italic;">
+                <div class="component-edit-empty-state">
                     No components found or they are still being deployed... (Current type: {{data.container.type}}, Tool type: {{selectedIdsTool.ids_type}})
                 </div>
             }

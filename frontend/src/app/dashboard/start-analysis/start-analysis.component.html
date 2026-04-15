@@ -1,7 +1,13 @@
-<div class="form-dialog-container">
-  <h2 mat-dialog-title>Start Analysis / Benchmarking</h2>
-  <form [formGroup]="analysisForm" (ngSubmit)="startAnalysis()">
-    <mat-dialog-content>
+<div class="dialog-shell start-analysis-dialog">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Start Analysis</h2>
+    <p class="dialog-subtitle">
+      Choose the analysis mode for this IDS. Static runs require a dataset, while network mode starts immediately.
+    </p>
+  </div>
+
+  <form [formGroup]="analysisForm" (ngSubmit)="startAnalysis()" class="dialog-form">
+    <mat-dialog-content class="start-analysis-dialog__content">
       <div class="form-item">
         <mat-form-field>
           <mat-label>Analysis Type</mat-label>
@@ -12,6 +18,7 @@
           </mat-select>
         </mat-form-field>
       </div>
+
       @if (analysisForm.controls.type.value == testDataType) {
         <div class="form-item">
           <mat-form-field>
@@ -25,6 +32,7 @@
         </div>
       }
     </mat-dialog-content>
+
     <mat-dialog-actions>
       <div class="dialog-actions-div">
         <button type="submit" class="start-button" matFab extended>
