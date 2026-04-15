@@ -16,7 +16,6 @@ import {
   MatDialogActions,
   MatDialogClose,
 } from '@angular/material/dialog';
-import { ReadVResult } from 'fs';
 import { Router } from '@angular/router';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
@@ -105,7 +104,8 @@ export class ConfigComponent implements OnInit{
  
     dialogRef.afterClosed().subscribe(res => {
       if (res != null) {
-          window.location.reload();
+          this.getAllConfigs();
+          this.getAllDatasets();
       }      
     });
   }

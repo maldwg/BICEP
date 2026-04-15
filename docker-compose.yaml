@@ -51,8 +51,9 @@ services:
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
-      - DATASET_BASE_PATH=/opt
-      - CONFIGURATION_STORE_BASE_PATH=/opt/configuration_data
+      - DATASET_BASE_PATH=/opt/datasets
+      - RUNTIME_STORE_BASE_PATH=/opt/runtime_configurations
+      - DEPLOYMENT_STORE_BASE_PATH=/opt/deployment_configurations
       - RULESET_STORE_BASE_PATH=/opt/rulesets
       - PROMETHEUS_PUSH_GATEWAY_URL=prometheus-push-gateway:9091
       - PROMETHEUS_URL=prometheus:9090
@@ -62,6 +63,10 @@ services:
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
       - PRODUCTION=${PRODUCTION:-False}
       - EXTERNAL_FASTAPI_PORT=8000
+      - CORE_HOST_IP=${CORE_HOST_IP}
+      - HOST_AVAILABILITY_CHECK_INTERVAL=15
+      - METRIC_SERVICE_IMAGE_NAME=ghcr.io/bicep-pump/metric-service
+      - METRIC_SERVICE_IMAGE_VERSION=0.0.5-dev
   database:
     build:
       context: ./database
@@ -84,23 +89,9 @@ services:
     environment:
       - LOG_LEVEL=debug
       - TZ=UTC
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    privileged: true
-    ports:
-      - "9092:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    networks:
-      - bicep
 
 networks:
   bicep:
     driver: bridge
     ipam:
       driver: default
-

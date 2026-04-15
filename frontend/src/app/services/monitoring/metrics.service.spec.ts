@@ -104,5 +104,17 @@ describe('MetricsService', () => {
             );
             req.flush({ content: {} });
         });
+
+        it('should include expanded CIDS ids when requesting component series', () => {
+            service.getHistoricalMetrics('1h', undefined, '2s', [4, 9]).subscribe();
+
+            const req = httpMock.expectOne(req =>
+                req.url === `${environment.backendUrl}/monitoring/metrics/historical` &&
+                req.params.getAll('expanded_ids')?.join(',') === '4,9'
+            );
+
+            expect(req.request.method).toBe('GET');
+            req.flush({ content: {} });
+        });
     });
 });

@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { HostService } from './host.service';
+import { DockerHostService } from './host.service';
 
-describe('HostService', () => {
-  let service: HostService;
+describe('DockerHostService', () => {
+  let service: DockerHostService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(HostService);
+    service = TestBed.inject(DockerHostService);
   });
 
   it('should be created', () => {

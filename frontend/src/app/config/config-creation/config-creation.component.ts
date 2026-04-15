@@ -19,6 +19,7 @@ import { DatasetService } from '../../services/dataset/dataset.service';
 import { AlertComponent } from '../../components/alert-component/alert-component.component';
 import { DatasetTypesService } from '../../services/dataset-type/dataset-type.service';
 import { DatasetType } from '../../models/datasetType';
+import { FormatDropDownPipe } from '../../pipes/format-drop-down.pipe'; // ← your path
 @Component({
     selector: 'app-config-creation',
     imports: [
@@ -34,7 +35,9 @@ import { DatasetType } from '../../models/datasetType';
     MatDialogActions,
     MatDialogModule,
     MatIconModule,
-    AlertComponent
+    AlertComponent,
+    FormatDropDownPipe
+
 ], templateUrl: './config-creation.component.html',
     styleUrl: './config-creation.component.scss'
 })
@@ -83,7 +86,7 @@ export class ConfigCreationComponent implements OnInit{
       }
     }
     if (this.configForm.valid){
-      if(this.configForm.value.fileType === fileTypes.testData){
+      if(this.configForm.value.fileType === fileTypes.dataset){
         let newDataset: DatasetSetupData = {
           name: this.configForm.value.name!,
           description: this.configForm.value.description!,
@@ -136,12 +139,12 @@ export class ConfigCreationComponent implements OnInit{
   }
 
   check_if_necessary_files_are_attached(fileType: string): boolean{
-    if(this.configForm.value.fileType === fileTypes.testData){
+    if(this.configForm.value.fileType === fileTypes.dataset){
       if(this.configForm.value.dataFile && this.configForm.value.labelsFile){
         return true;
       }
     }
-    else if(this.configForm.value.fileType === fileTypes.configuration || this.configForm.value.fileType === fileTypes.ruleSet){
+    else if(this.configForm.value.fileType === fileTypes.runtime || this.configForm.value.fileType === fileTypes.deployment || this.configForm.value.fileType === fileTypes.ruleSet){
       if(this.configForm.value.configurationFile){
         return true;
       }

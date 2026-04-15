@@ -1,7 +1,6 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-import os 
+import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 
 database_url = os.environ.get("DATABASE_URL")
 database_name = os.environ.get("DATABASE_NAME")

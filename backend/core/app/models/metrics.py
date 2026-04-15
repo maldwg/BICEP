@@ -1,10 +1,9 @@
 from pydantic import BaseModel
 
 
-class MetricPushRequest(BaseModel):
-    """Schema for metrics pushed from IDS containers"""
+class MetricServiceRegistrationRequest(BaseModel):
+    """Schema used by the host metric service to register itself."""
 
-    container_id: int
-    container_name: str
-    cpu_usage: float
-    memory_usage: float
+    ip: str
+    name: str
+    port: int

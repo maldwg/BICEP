@@ -98,8 +98,7 @@ Please note that this illustration represents the sequence of actions at a high 
 As depicted, the Core handles input from the frontend using the Docker SDK to spin up or tear down the container. After a successful start, 
 the Core checks whether the container is ready to receive requests by calling the health check endpoint. If a status code of 200 is returned, the Core injects the main configuration file and, if necessary, 
 the ruleset into the container. Subsequently, the container status is updated and set to **IDLE**, allowing the user to receive visual feedback in the frontend indicating that the container is ready for requests. 
-After this initial setup, the Core creates a background loop to collect metrics and push them to the Prometheus Pushgateway. 
-These metrics are then used by Grafana to create a CPU and RAM dashboard, which is embedded in the frontend. 
+After this initial setup, BICEP ensures that a metric-service is running on the respective Docker host. This host-local service collects CPU and RAM metrics for the containers on that host and pushes each scrape directly to the Prometheus Pushgateway. These metrics are then used by Grafana to create a CPU and RAM dashboard, which is embedded in the frontend. 
 
 
 **Single Container Analyses**
@@ -160,4 +159,3 @@ This status indicates that the IDS has completed its round and is analysing the 
 all previous alerts of the round are gathered from Loki and combined into ensemble alerts using the configured ensembling technique. The resulting alerts are then pushed to Loki again. 
 A new round begins by updating the status of all containers in the ensemble in the **ensemble_ids** table back to **PROCESSING** and generating a new UUID, 
 which is assigned as the value for the ensemble's **current_analysis_id**.
-

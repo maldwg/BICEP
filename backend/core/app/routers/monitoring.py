@@ -1,7 +1,14 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from app.database import get_db
-from app.models.ids_system import get_all_container, IdsSystem
+from app.models.ids_system import get_all_container
+from app.prometheus import (
+    RESOURCE_QUERY_MODE_EXACT,
+    build_resource_metric_query,
+    build_resource_query_spec_for_ids_system,
+)
 from app.utils import STATUS
 from app.logger import LOGGER
 import httpx
@@ -11,20 +18,88 @@ from datetime import datetime, timedelta
 router = APIRouter(prefix="/monitoring")
 
 
-@router.get("/metrics")
-async def get_monitoring_metrics(db=Depends(get_db)):
-    """
-    Get real-time metrics for all active IDS containers.
-    """
-    containers = await get_all_container(db)
-    metrics_data = []
-
-    # Query Prometheus (not pushgateway) - pushgateway doesn't have query API
+def _get_prometheus_url() -> str:
     prometheus_url = os.environ.get("PROMETHEUS_URL", "prometheus:9090")
     if not prometheus_url.startswith("http://") and not prometheus_url.startswith(
         "https://"
     ):
         prometheus_url = f"http://{prometheus_url}"
+    return prometheus_url
+
+
+async def _query_range_series(
+    client: httpx.AsyncClient,
+    prometheus_url: str,
+    query: str | None,
+    start_timestamp: float,
+    end_timestamp: float,
+    step: str,
+) -> tuple[list[float], list[float]]:
+    if not query:
+        return [], []
+
+    response = await client.get(
+        f"{prometheus_url}/api/v1/query_range",
+        params={
+            "query": query,
+            "start": start_timestamp,
+            "end": end_timestamp,
+            "step": step,
+        },
+        timeout=10.0,
+    )
+
+    if response.status_code != 200:
+        return [], []
+
+    data = response.json()
+    results = data.get("data", {}).get("result", [])
+    if not results:
+        return [], []
+
+    values = results[0].get("values", [])
+    return [float(ts) for ts, _ in values], [float(val) for _, val in values]
+
+
+def _build_historical_entry(
+    *,
+    entry_id: int,
+    name: str,
+    timestamps: list[float],
+    cpu_values: list[float],
+    memory_values: list[float],
+    entry_type: str | None,
+    is_component: bool,
+    parent_id: int | None = None,
+    parent_name: str | None = None,
+    role: str | None = None,
+    raw_name: str | None = None,
+) -> dict:
+    return {
+        "id": entry_id,
+        "name": name,
+        "display_name": name,
+        "raw_name": raw_name or name,
+        "timestamps": timestamps,
+        "cpu": cpu_values,
+        "memory": memory_values,
+        "type": entry_type,
+        "is_component": is_component,
+        "parent_id": parent_id,
+        "parent_name": parent_name,
+        "role": role,
+    }
+
+
+@router.get("/metrics")
+async def get_monitoring_metrics(db=Depends(get_db)):
+    """
+    Get real-time metrics for all active IDS containers.
+    """
+    containers = await get_all_container(db, include_deleted=False)
+    metrics_data = []
+
+    prometheus_url = _get_prometheus_url()
 
     for container in containers:
         # Only fetch metrics for active containers or those setting up
@@ -34,17 +109,28 @@ async def get_monitoring_metrics(db=Depends(get_db)):
             STATUS.IDLE.value,
         ]:
             try:
+                resource_query_mode, resource_query_targets = (
+                    build_resource_query_spec_for_ids_system(container)
+                )
+                cpu_query = build_resource_metric_query(
+                    "container_cpu_usage",
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                )
+                mem_query = build_resource_metric_query(
+                    "container_memory_usage_bytes",
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                    convert_to_mb=True,
+                )
+
                 async with httpx.AsyncClient() as client:
-                    # Query CPU
-                    cpu_query = f'container_cpu_usage{{name="{container.name}"}}'
                     cpu_response = await client.get(
                         f"{prometheus_url}/api/v1/query",
                         params={"query": cpu_query},
                         timeout=5.0,
                     )
 
-                    # Query Memory
-                    mem_query = f'container_memory_usage_bytes{{name="{container.name}"}} / 1024 / 1024'
                     mem_response = await client.get(
                         f"{prometheus_url}/api/v1/query",
                         params={"query": mem_query},
@@ -92,22 +178,30 @@ async def get_monitoring_metrics(db=Depends(get_db)):
 
 @router.get("/metrics/historical")
 async def get_historical_metrics(
-    start: str = Query(
-        ..., description="Start time in ISO format or relative (e.g., '1h')"
-    ),
-    end: str = Query(None, description="End time in ISO format (default: now)"),
-    step: str = Query("15s", description="Step interval"),
+    start: Annotated[
+        str,
+        Query(description="Start time in ISO format or relative (e.g., '1h')"),
+    ],
+    end: Annotated[
+        str | None,
+        Query(description="End time in ISO format (default: now)"),
+    ] = None,
+    step: Annotated[str, Query(description="Step interval")] = "15s",
+    expanded_ids: Annotated[
+        list[int] | None,
+        Query(
+            description=(
+                "IDS ids whose CIDS components should be returned as individual series."
+            )
+        ),
+    ] = None,
     db=Depends(get_db),
 ):
     """
     Get historical metrics for all IDS containers within a time range.
     """
-    containers = await get_all_container(db)
-    prometheus_url = os.environ.get("PROMETHEUS_URL", "prometheus:9090")
-    if not prometheus_url.startswith("http://") and not prometheus_url.startswith(
-        "https://"
-    ):
-        prometheus_url = f"http://{prometheus_url}"
+    containers = await get_all_container(db, include_deleted=True)
+    prometheus_url = _get_prometheus_url()
 
     # Parse start time (support relative like "1h" or absolute timestamps)
     if start.endswith("m") or start.endswith("h") or start.endswith("d"):
@@ -125,72 +219,140 @@ async def get_historical_metrics(
     else:
         end_timestamp = datetime.now().timestamp()
 
+    expanded_id_set = {
+        int(container_id)
+        for container_id in (expanded_ids or [])
+    }
     container_metrics = {}
 
-    for container in containers:
-        if container.status in [
-            STATUS.ACTIVE.value,
-            STATUS.SETTING_UP.value,
-            STATUS.IDLE.value,
-        ]:
+    async with httpx.AsyncClient() as client:
+        for container in containers:
+            if container.status not in [
+                STATUS.ACTIVE.value,
+                STATUS.SETTING_UP.value,
+                STATUS.IDLE.value,
+            ]:
+                continue
+
             try:
-                async with httpx.AsyncClient() as client:
-                    # Query CPU range
-                    cpu_query = f'container_cpu_usage{{name="{container.name}"}}'
-                    cpu_response = await client.get(
-                        f"{prometheus_url}/api/v1/query_range",
-                        params={
-                            "query": cpu_query,
-                            "start": start_timestamp,
-                            "end": end_timestamp,
-                            "step": step,
-                        },
-                        timeout=10.0,
+                resource_query_mode, resource_query_targets = (
+                    build_resource_query_spec_for_ids_system(container)
+                )
+                cpu_query = build_resource_metric_query(
+                    "container_cpu_usage",
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                )
+                mem_query = build_resource_metric_query(
+                    "container_memory_usage_bytes",
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                    convert_to_mb=True,
+                )
+
+                cpu_timestamps, cpu_values = await _query_range_series(
+                    client,
+                    prometheus_url,
+                    cpu_query,
+                    start_timestamp,
+                    end_timestamp,
+                    step,
+                )
+                mem_timestamps, mem_values = await _query_range_series(
+                    client,
+                    prometheus_url,
+                    mem_query,
+                    start_timestamp,
+                    end_timestamp,
+                    step,
+                )
+
+                timestamps = cpu_timestamps or mem_timestamps
+                if timestamps:
+                    if not cpu_values:
+                        cpu_values = [0.0] * len(timestamps)
+                    if not mem_values:
+                        mem_values = [0.0] * len(timestamps)
+
+                    container_metrics[container.name] = _build_historical_entry(
+                        entry_id=container.id,
+                        name=container.name,
+                        raw_name=container.name,
+                        timestamps=timestamps,
+                        cpu_values=cpu_values,
+                        memory_values=mem_values,
+                        entry_type=getattr(container, "type", None),
+                        is_component=False,
                     )
 
-                    # Query Memory range
-                    mem_query = f'container_memory_usage_bytes{{name="{container.name}"}} / 1024 / 1024'
-                    mem_response = await client.get(
-                        f"{prometheus_url}/api/v1/query_range",
-                        params={
-                            "query": mem_query,
-                            "start": start_timestamp,
-                            "end": end_timestamp,
-                            "step": step,
-                        },
-                        timeout=10.0,
-                    )
+                if (
+                    getattr(container, "type", None) == "CIDS"
+                    and container.id in expanded_id_set
+                ):
+                    for component in getattr(container, "components", []) or []:
+                        component_display_name = (
+                            f"{container.name} :: "
+                            f"{component.service_name or component.role or component.name}"
+                        )
+                        component_cpu_query = build_resource_metric_query(
+                            "container_cpu_usage",
+                            match_mode=RESOURCE_QUERY_MODE_EXACT,
+                            targets=[component.name],
+                        )
+                        component_mem_query = build_resource_metric_query(
+                            "container_memory_usage_bytes",
+                            match_mode=RESOURCE_QUERY_MODE_EXACT,
+                            targets=[component.name],
+                            convert_to_mb=True,
+                        )
 
-                    cpu_values = []
-                    mem_values = []
-                    timestamps = []
+                        component_cpu_timestamps, component_cpu_values = (
+                            await _query_range_series(
+                                client,
+                                prometheus_url,
+                                component_cpu_query,
+                                start_timestamp,
+                                end_timestamp,
+                                step,
+                            )
+                        )
+                        component_mem_timestamps, component_mem_values = (
+                            await _query_range_series(
+                                client,
+                                prometheus_url,
+                                component_mem_query,
+                                start_timestamp,
+                                end_timestamp,
+                                step,
+                            )
+                        )
 
-                    if cpu_response.status_code == 200:
-                        cpu_data = cpu_response.json()
-                        cpu_results = cpu_data.get("data", {}).get("result", [])
-                        if cpu_results:
-                            values = cpu_results[0].get("values", [])
-                            for ts, val in values:
-                                if not timestamps or ts not in [
-                                    t[0] for t in zip(timestamps, cpu_values)
-                                ]:
-                                    timestamps.append(ts)
-                                    cpu_values.append(float(val))
+                        component_timestamps = (
+                            component_cpu_timestamps or component_mem_timestamps
+                        )
+                        if not component_timestamps:
+                            continue
 
-                    if mem_response.status_code == 200:
-                        mem_data = mem_response.json()
-                        mem_results = mem_data.get("data", {}).get("result", [])
-                        if mem_results:
-                            values = mem_results[0].get("values", [])
-                            mem_values = [float(val) for ts, val in values]
+                        if not component_cpu_values:
+                            component_cpu_values = [0.0] * len(component_timestamps)
+                        if not component_mem_values:
+                            component_mem_values = [0.0] * len(component_timestamps)
 
-                    container_metrics[container.name] = {
-                        "id": container.id,
-                        "name": container.name,
-                        "timestamps": timestamps,
-                        "cpu": cpu_values,
-                        "memory": mem_values,
-                    }
+                        container_metrics[component_display_name] = (
+                            _build_historical_entry(
+                                entry_id=component.id,
+                                name=component_display_name,
+                                raw_name=component.name,
+                                timestamps=component_timestamps,
+                                cpu_values=component_cpu_values,
+                                memory_values=component_mem_values,
+                                entry_type="COMPONENT",
+                                is_component=True,
+                                parent_id=container.id,
+                                parent_name=container.name,
+                                role=getattr(component, "role", None),
+                            )
+                        )
             except Exception as e:
                 LOGGER.error(
                     f"Error fetching historical metrics for {container.name}: {e}"

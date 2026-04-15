@@ -10,7 +10,6 @@ from app.logger import LOGGER
 import csv
 from app.utils import HourPrecision, MinutePrecision, SecondPrecision, MilisecondPrecision, get_precision_by_name, normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict, Precision
 from app.bicep_utils.models.ids_base import Alert
-from datetime import timedelta
 from dateutil import parser
 import random
 

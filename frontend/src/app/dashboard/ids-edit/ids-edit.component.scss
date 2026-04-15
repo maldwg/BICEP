@@ -1,4 +1,47 @@
 .mat-success {
     background-color: green;
     color: #fff;
-  }
+}
+
+.component-edit-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,0,0,0.12);
+
+    h3 {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 16px;
+        color: #3f51b5;
+    }
+}
+
+.component-edit-row {
+    display: flex; 
+    gap: 16px; 
+    align-items: center; 
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    transition: background 0.2s;
+
+    &:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    .service-name {
+        flex: 1; 
+        font-weight: 500;
+        font-size: 0.95rem;
+        text-transform: capitalize;
+    }
+
+    .config-select {
+        flex: 2;
+    }
+
+    .count-input {
+        width: 100px;
+    }
+}

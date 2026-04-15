@@ -32,9 +32,42 @@
                 Export
             </button>
         </div>
+
     </div>
 
     <div class="charts-wrapper" *ngIf="containers.length > 0; else noContainers">
+        <div class="component-toolbar" *ngIf="cidsContainers.length > 0">
+            <div class="component-controls-header">
+                <div class="component-controls-copy">
+                    <span class="component-controls-label">CIDS Components</span>
+                    <span class="component-controls-hint">Overlay individual component series for any CIDS, then collapse back to the overall view.</span>
+                </div>
+
+                <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    class="component-reset-button"
+                    *ngIf="hasExpandedCids"
+                    (click)="showOverallOnly()"
+                >
+                    Show overall only
+                </button>
+            </div>
+
+            <div class="component-controls-actions">
+                <button
+                    mat-stroked-button
+                    type="button"
+                    class="component-toggle-button"
+                    *ngFor="let container of cidsContainers"
+                    (click)="toggleCidsComponents(container)"
+                >
+                    {{ isCidsExpanded(container.id) ? 'Hide' : 'Show' }} {{ container.name }} components
+                </button>
+            </div>
+        </div>
+
         <!-- CPU Chart -->
         <div class="chart-container">
             <div echarts [options]="cpuChartOption" (chartInit)="onCpuChartInit($event)" class="chart"></div>

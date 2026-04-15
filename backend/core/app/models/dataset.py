@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import Session, relationship, selectinload
+from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession

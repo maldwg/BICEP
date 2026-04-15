@@ -1,22 +1,14 @@
-import { Component, ViewChild, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IdsService } from '../services/ids/ids.service';
-import { Container, ContainerUpdateData } from '../models/container';
+import { Container } from '../models/container';
 import { MatCardModule } from '@angular/material/card';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { EnsembleService } from '../services/ensemble/ensemble.service';
 import { Ensemble, EnsembleContainer, EnsembleTechnique, EnsembleUpdateData } from '../models/ensemble';
 import { MatExpansionModule } from '@angular/material/expansion';
-import {
-  MatDialog,
-  MAT_DIALOG_DATA,
-  MatDialogRef,
-  MatDialogTitle,
-  MatDialogContent,
-  MatDialogActions,
-  MatDialogClose,
-} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { IdsEditComponent } from './ids-edit/ids-edit.component';
 import { EnsembleEditComponent } from './ensemble-edit/ensemble-edit.component';
 import { ConfigService } from '../services/config/config.service';
@@ -26,14 +18,13 @@ import { fileTypes } from '../models/acceptedFileTypes';
 import { StartAnalysisComponent } from './start-analysis/start-analysis.component';
 import { NetworkAnalysisData, StaticAnalysisData, stop_analysisData, analysisTypes } from '../models/analysis';
 import { statusTypes } from '../models/status';
-import { STATUS_CODES } from 'node:http';
 import { DatasetService } from '../services/dataset/dataset.service';
 import { Dataset } from '../models/dataset';
 import { MatIconModule } from '@angular/material/icon';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem } from '../models/host';
 import { AlertComponent } from "../components/alert-component/alert-component.component";
-import { repeat } from 'rxjs';
+import { interval, startWith, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -60,13 +51,14 @@ export class DashboardComponent implements OnInit {
     private ensembleService: EnsembleService,
     private configService: ConfigService,
     private datasetService: DatasetService,
-    private hostService: DockerHostService
+    private hostService: DockerHostService,
+    private destroyRef: DestroyRef
 
   ) { }
 
   // TODO 5: do not allow analyssis if other container of ensemble is running, so if ensemble is not idle do not allow for executions!
 
-  POLL_DELAY = 5000;
+  readonly pollDelayMs = 10000;
 
   ngOnInit(): void {
     this.getAllContainer();
@@ -80,11 +72,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllContainer(): void {
-    this.idsService.getAllIdsContainer()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.idsService.getAllIdsContainer()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.containerList = data
@@ -120,11 +112,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllEnsembles() {
-    this.ensembleService.getAllEnsembles()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.ensembleService.getAllEnsembles()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.ensembleList = data
@@ -132,11 +124,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getAllEnsembleContainer() {
-    this.ensembleService.getEnsembleContainers()
+    interval(this.pollDelayMs)
       .pipe(
-        repeat({
-          delay: this.POLL_DELAY
-        })
+        startWith(0),
+        switchMap(() => this.ensembleService.getEnsembleContainers()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(data => {
         this.ensembleContainerList = data
@@ -319,8 +311,8 @@ export class DashboardComponent implements OnInit {
 
   edit(container: Container) {
     const dialogRef = this.idsDialog.open(IdsEditComponent, {
-      height: "50%",
-      width: "50%",
+      height: "70%",
+      width: "60%",
       data: {
         container: container,
         configList: this.configList,
@@ -330,31 +322,23 @@ export class DashboardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(res => {
-      // Ensure there is at least one field that needs an update
       if (res != null) {
-        let configId = parseInt(res.config);
-        let rulesetId = parseInt(res.ruleset);
-        let data: ContainerUpdateData = {
-          id: container.id,
-          description: res.description,
-          configuration_id: configId,
-          ruleset_id: rulesetId.toString() !== '' ? rulesetId : container.ruleset_id
-        }
-        this.idsService.updateContainer(data)
+        // res is the updateData object from IdsEditComponent
+        this.idsService.updateContainer(res)
           .subscribe(backendres => {
+            // Update local state
             container.description = res.description;
-            container.configuration_id = configId;
-            container.ruleset_id = rulesetId;
+            container.configuration_id = res.configuration_id;
+            container.ruleset_id = res.ruleset_id;
+            if (res.components) {
+                container.components = res.components;
+            }
           },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);
             })
-
-
-        // TODO 0: update or refetch the ensembleContainers as well
       }
     })
-
   }
 
   removeEnsemble(ensembleToRemove: Ensemble) {
@@ -369,6 +353,14 @@ export class DashboardComponent implements OnInit {
   }
 
   remove(containerToRemove: Container) {
+    if (this.containerIsSettingUp(containerToRemove)) {
+      this.errorPopup.showError(
+        'An IDS that is still setting up cannot be deleted yet.',
+        409
+      );
+      return;
+    }
+
     this.idsService.removeContainerById(containerToRemove.id)
       .subscribe(backendres => {
         this.containerList = this.containerList.filter(container => container !== containerToRemove);
@@ -423,6 +415,10 @@ export class DashboardComponent implements OnInit {
     else {
       return true;
     }
+  }
+
+  containerCanBeDeleted(container: Container) {
+    return !this.containerIsSettingUp(container);
   }
 
   ensembleIsIdle(ensemble: Ensemble) {

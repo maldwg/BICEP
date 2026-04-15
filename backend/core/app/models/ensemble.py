@@ -11,7 +11,7 @@ from app.utils import (
     parse_response_for_triggered_analysis,
 )
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Session, selectinload
+from sqlalchemy.orm import relationship, selectinload
 from app.models.ensemble_ids import EnsembleIds, get_ensemble_ids_by_ids
 from app.database import Base
 from app.models.ids_system import IdsSystem, update_ids_status
@@ -20,7 +20,8 @@ import httpx
 from sqlalchemy.future import select
 from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.models.ids_system import IdsSystem, get_ids_system_by_id
+from app.models.dataset import get_dataset_by_id
 
 class Ensemble(Base):
     __tablename__ = "ensemble"
@@ -38,7 +39,6 @@ class Ensemble(Base):
     )
 
     async def add_container(self, db: AsyncSession, container_id: int):
-        from app.models.ids_system import IdsSystem, get_ids_system_by_id
 
         ensemble_ids = EnsembleIds(
             ensemble_id=self.id,
@@ -56,7 +56,6 @@ class Ensemble(Base):
         return response
 
     async def remove_container(self, db: AsyncSession, container_id: int):
-        from app.models.ids_system import IdsSystem, get_ids_system_by_id
 
         ensemble_ids = await get_ensemble_ids_by_ids(db, self.id, container_id)
         container: IdsSystem = await get_ids_system_by_id(db, container_id)
@@ -72,7 +71,6 @@ class Ensemble(Base):
         return result.scalars().all()
 
     async def get_assigned_containers(self, db: AsyncSession):
-        from app.models.ids_system import IdsSystem
 
         ensemble_ids = await self.get_ensemble_ids(db)
         id_list = [e_ids.ids_system_id for e_ids in ensemble_ids]
@@ -81,8 +79,6 @@ class Ensemble(Base):
         return container_result.scalars().all()
 
     async def start_static_analysis(self, db: AsyncSession, dataset_id: int):
-        from app.models.ids_system import IdsSystem
-        from app.models.dataset import get_dataset_by_id
 
         LOGGER.debug(f"{dataset_id}")
         dataset = await get_dataset_by_id(db, dataset_id)
@@ -128,7 +124,7 @@ class Ensemble(Base):
             return False
 
     async def start_network_analysis(self, db: AsyncSession, network_analysis_data):
-        from app.models.ids_system import IdsSystem
+
 
         containers: list[IdsSystem] = await self.get_assigned_containers(db)
         responses = []

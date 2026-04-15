@@ -63,7 +63,7 @@
         <td mat-cell *matCellDef="let row">{{ row.ruleset_name || '-' }}</td>
       </ng-container>
       <ng-container matColumnDef="avg_cpu_usage">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Avg CPU (%)</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Avg CPU (cores)</th>
         <td mat-cell *matCellDef="let row">{{ row.avg_cpu_usage ? (row.avg_cpu_usage | number:'1.2-2') : '-' }}</td>
       </ng-container>
       <ng-container matColumnDef="avg_memory_usage">

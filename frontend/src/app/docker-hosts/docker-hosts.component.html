@@ -9,15 +9,8 @@
       <mat-card class="mat-card">
         <mat-card-header>
           <mat-card-title>
-            <div style="display: flex; align-items: center;">
-              <span class="mat-card-title-text">{{hostSystem.name}} </span>
-              @if (hostSystem.status === hostStatus.available) {
-                <span><mat-icon style="padding-left: 50%; color: green;">circle</mat-icon></span>
-              } @else {
-                @if (hostSystem.status === hostStatus.unavailable) {
-                 <span><mat-icon style="padding-left: 50%; color: red;">circle</mat-icon></span>
-                }
-              }
+            <div class="host-title">
+              <span class="mat-card-title-text">{{hostSystem.name}}</span>
             </div>
           </mat-card-title>
         </mat-card-header>
@@ -32,8 +25,38 @@
             <strong>Docker Port:</strong> <span>{{ hostSystem.docker_port }}</span>
           </div>
           <div class="info-row">
-            <strong>Status:</strong> <span>{{ hostSystem.status }}</span>
+            <strong>Docker Host Health:</strong>
+            <span
+              class="status-badge"
+              [class.status-badge--available]="hostSystem.status === hostStatus.available"
+              [class.status-badge--unavailable]="hostSystem.status === hostStatus.unavailable"
+              [matTooltip]="getHostStatusTooltip(hostSystem)"
+              [matTooltipDisabled]="hostSystem.status === hostStatus.available"
+              matTooltipPosition="above"
+            >
+              {{ formatStatusLabel(hostSystem.status) }}
+            </span>
           </div>
+          @if (hostSystem.metric_service) {
+          <div class="info-row">
+            <strong>Metric Service Health:</strong>
+            <span
+              class="status-badge"
+              [class.status-badge--available]="hostSystem.metric_service.status === hostStatus.available"
+              [class.status-badge--unavailable]="hostSystem.metric_service.status === hostStatus.unavailable"
+              [class.status-badge--pending]="hostSystem.metric_service.status !== hostStatus.available && hostSystem.metric_service.status !== hostStatus.unavailable"
+              [matTooltip]="getMetricServiceStatusTooltip(hostSystem.metric_service)"
+              [matTooltipDisabled]="hostSystem.metric_service.status === hostStatus.available"
+              matTooltipPosition="above"
+            >
+              {{ formatStatusLabel(hostSystem.metric_service.status) }}
+            </span>
+          </div>
+          <div class="info-row">
+            <strong>Metric Endpoint:</strong>
+            <span>{{ hostSystem.metric_service.ip || '-' }}:{{ hostSystem.metric_service.port || '-' }}</span>
+          </div>
+          }
         </mat-card-content>
         <mat-card-actions>
           <button class="edit-button" matFab>
@@ -47,4 +70,3 @@
     </div>
   }
 </div>
-

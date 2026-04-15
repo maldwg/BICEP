@@ -207,7 +207,7 @@
         {
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "rate(container_cpu_usage_seconds_total{name != \"\", name !~\"bicep.*\", name !~\"cadvisor\"}[$__range])",
+          "expr": "container_cpu_usage{name != \"\", name !~\"bicep.*\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "{{name}}",

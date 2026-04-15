@@ -1,15 +1,11 @@
 import pytest
 from fastapi import BackgroundTasks
-from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock, patch
-from app.main import app
-from app.database import get_db
+from unittest.mock import AsyncMock, patch
 from app.routers.ids import *
 from app.validation.models import *
-from app.models.docker_host_system import DockerHostSystem
 from http.client import HTTPResponse
 from app.test.fixtures import *
-
+import json
 
 @pytest.mark.asyncio
 async def test_setup_ids(db_session_fixture: DatabaseSessionFixture):
@@ -40,6 +36,26 @@ async def test_remove_container(db_session_fixture: DatabaseSessionFixture):
     container_id = 1
     response = await remove_container(container_id=container_id, db=db_session)
     assert response.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_remove_container_rejects_setting_up_container(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    db_session = await db_session_fixture.get_db_session()
+    container = await db_session_fixture.get_ids_container_model()
+    container.status = STATUS.SETTING_UP.value
+
+    response = await remove_container(container_id=container.id, db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 409
+    assert response_json == {
+        "error": (
+            f"container with id {container.id} is still setting up and cannot be "
+            "deleted yet"
+        )
+    }
 
 
 @pytest.mark.asyncio

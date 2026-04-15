@@ -1,8 +1,6 @@
 import asyncio
-import base64
 import aiofiles
 from http.client import HTTPResponse
-import io
 import socket
 from contextlib import closing
 from enum import Enum
@@ -14,22 +12,26 @@ from app.models.benchmarking import (
 )
 import httpx
 from fastapi import Response, Request
-import pandas as pd
-import csv
-from app.models.dataset import Dataset
+from app.models.dataset import Dataset, add_dataset
 from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
-import uuid
 import shutil
+from app.database import SessionLocal
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.logger import LOGGER
 from abc import ABC, abstractmethod
-
+from urllib.parse import urlparse
+from app.metrics import calculate_evaluation_metrics
+from app.models.dataset import get_dataset_by_id
+from app.prometheus import (
+    query_average_cpu_usage,
+    query_average_memory_usage,
+    serialize_resource_query_targets,
+)
+import json
 dataset_addition_tasks = set()
 
-
-# TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 class Precision(ABC):
     @property
     @abstractmethod
@@ -145,6 +147,11 @@ class STATUS(Enum):
     SETTING_UP = "setting-up"
 
 
+class DEPLOYMENT_STATUS(Enum):
+    DEPLOYED = "deployed"
+    DELETED = "deleted"
+
+
 class ANALYSIS_STATUS(Enum):
     LOGS_SENT = "LOGS_SENT"
     PROCESSING = "PROCESSING"
@@ -152,9 +159,10 @@ class ANALYSIS_STATUS(Enum):
 
 
 class FILE_TYPES(Enum):
-    CONFIG = "configuration"
-    TEST_DATA = "test-data"
-    RULE_SET = "rule-set"
+    RUNTIME = "RUNTIME"
+    DEPLOYMENT = "DEPLOYMENT"
+    DATASET = "DATASET"
+    RULESET = "RULESET"
 
 
 class DOCKER_HOST_STATUS(Enum):
@@ -162,13 +170,22 @@ class DOCKER_HOST_STATUS(Enum):
     UNAVAILABLE = "unavailable"
 
 
+class METRIC_SERVICE_STATUS(Enum):
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
+    DEPLOYING = "deploying"
+    REGISTERING = "registering"
+
+
 def file_type_is_accepted(file_type: str, file_ending: str):
     match file_type:
-        case FILE_TYPES.CONFIG.value:
-            return True if file_ending in ["lua", "yaml", "xml", "conf"] else False
-        case FILE_TYPES.TEST_DATA.value:
-            return True if file_ending in ["pcap", "csv"] else False
-        case FILE_TYPES.RULE_SET.value:
+        case FILE_TYPES.RUNTIME.value:
+            return True if file_ending in ["lua", "yaml", "xml", "conf", "json", "sql"] else False
+        case FILE_TYPES.DEPLOYMENT.value:
+            return True if file_ending in ["yaml", "yml"] else False
+        case FILE_TYPES.DATASET.value:
+            return True if file_ending in ["pcap", "csv", "pcap_ISX", "pcapng"] else False
+        case FILE_TYPES.RULESET.value:
             return True if file_ending in ["rules"] else False
     return False
 
@@ -185,10 +202,38 @@ def get_core_host_ip():
     return os.popen("/sbin/ip route|awk '/default/ { print $3 }'").read().strip()
 
 
+def get_core_external_ip():
+    external_ip = os.getenv("CORE_HOST_IP", "").strip()
+    if external_ip:
+        return external_ip
+    return get_core_host_ip()
+
+
 def get_core_url():
-    core_ip = get_core_host_ip()
+    core_ip = get_core_external_ip()
     port = os.getenv("EXTERNAL_FASTAPI_PORT")
+    print(f"Using core URL with IP {core_ip} and port {port}")
     return f"http://{core_ip}:{port}"
+
+
+def get_prometheus_push_gateway_url():
+    pushgateway_url = os.getenv(
+        "PROMETHEUS_PUSH_GATEWAY_URL", "prometheus-push-gateway:9091"
+    )
+    if not pushgateway_url.startswith("http://") and not pushgateway_url.startswith(
+        "https://"
+    ):
+        pushgateway_url = f"http://{pushgateway_url}"
+    return pushgateway_url
+
+
+def get_external_prometheus_push_gateway_url():
+    parsed = urlparse(get_prometheus_push_gateway_url())
+    path = parsed.path.rstrip("/")
+    port = parsed.port or 9091
+    core_ip = get_core_external_ip()
+    suffix = path if path else ""
+    return f"{parsed.scheme}://{core_ip}:{port}{suffix}"
 
 
 async def deregister_container_from_ensemble(container):
@@ -239,8 +284,9 @@ async def start_static_analysis(container, form_data, dataset):
 async def start_network_analysis(container, data):
     endpoint = "/analysis/network"
     container_url = container.get_container_http_url()
+    LOGGER.debug(f"Sending network analysis request to {container_url + endpoint} with data: {data}")
     async with httpx.AsyncClient() as client:
-        response = await client.post(container_url + endpoint, data=data)
+        response = await client.post(container_url + endpoint, json=data)
     return response
 
 
@@ -271,8 +317,6 @@ async def parse_response_for_triggered_analysis(
 async def calculate_and_add_dataset(
     data_file_path, labels_file_path, name, description, dataset_type, db
 ):
-    from .models.dataset import Dataset, add_dataset
-
     benign, malicious = await dataset_type.get_benign_and_malicious_counts(
         labels_file_path
     )
@@ -326,10 +370,9 @@ async def calculate_evaluation_metrics_and_push(
     configuration_name: str = None,
     ruleset_name: str = None,
     ensemble_technique_name: str = None,
+    resource_query_mode: str | None = None,
+    resource_query_targets: list[str] | None = None,
 ):
-    from .metrics import calculate_evaluation_metrics
-    from .models.dataset import get_dataset_by_id
-    from .prometheus import query_average_cpu_usage, query_average_memory_usage
 
     # necessary to only pass the id here, as otherwise the db context will be closed on the next function call
     # and an error will be thrown
@@ -344,20 +387,30 @@ async def calculate_evaluation_metrics_and_push(
     # Query resource usage metrics from Prometheus
     avg_cpu = None
     avg_memory = None
-    if container_name:
+    if container_name or resource_query_targets:
         try:
             avg_cpu = await query_average_cpu_usage(
                 container_name,
                 benchmarking_results.start_time,
                 benchmarking_results.stop_time,
+                match_mode=resource_query_mode,
+                targets=resource_query_targets,
             )
             avg_memory = await query_average_memory_usage(
                 container_name,
                 benchmarking_results.start_time,
                 benchmarking_results.stop_time,
+                match_mode=resource_query_mode,
+                targets=resource_query_targets,
             )
             LOGGER.info(
-                f"Resource metrics for {container_name}: CPU={avg_cpu}%, Memory={avg_memory}MB"
+                "Resource metrics for %s with mode=%s and targets=%s: CPU=%s cores, "
+                "Memory=%sMB",
+                container_name,
+                resource_query_mode,
+                resource_query_targets,
+                avg_cpu,
+                avg_memory,
             )
         except Exception as e:
             LOGGER.error(f"Failed to query resource metrics: {e}")
@@ -380,6 +433,10 @@ async def calculate_evaluation_metrics_and_push(
         f1_score=metrics["F_SCORE"],
         avg_cpu_usage=avg_cpu,
         avg_memory_usage=avg_memory,
+        resource_query_mode=resource_query_mode,
+        resource_query_targets=serialize_resource_query_targets(
+            resource_query_targets
+        ),
     )
     await add_benchmarking_result(db, result)
     await db.close()
@@ -429,3 +486,23 @@ def directory_is_empty(path):
         return True if len(os.listdir(path)) == 0 else False
     else:
         return True
+
+
+async def finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) -> None:
+    # local import to avoid circular imports
+    from app.models.ids_system import get_ids_system_by_id
+    
+    async with SessionLocal() as db:
+        ids_system = await get_ids_system_by_id(db, ids_system_id)
+        if ids_system is None:
+            LOGGER.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
+            return
+
+        try:
+            await ids_system.setup(
+                db,
+                cids_configurations=cids_configurations,
+                env_vars=env_vars,
+            )
+        except Exception as exc:
+            LOGGER.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")

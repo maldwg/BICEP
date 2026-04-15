@@ -1,7 +1,17 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from app.cids_deployment import deploy_docker_compose
-from app.docker import start_docker_container
+from app.deployment import deploy_ids
+from app.deployment.deployment_plugins.docker import start_docker_container
+from app.deployment.deployment_plugins.docker_compose import deploy_docker_compose
+from app.deployment.deployment_plugins.docker_compose_support.host_operations import (
+    ComposeHostOperations,
+)
+from app.deployment.deployment_plugins.docker_compose_support.deployment import (
+    ComposeDeploymentService,
+)
+from app.deployment.deployment_plugins.docker_compose_support.spec import (
+    ComposeProjectPaths,
+)
 from app.models.ids_system import IdsSystem, CidsSystem
 from app.models.ids_tool import IdsTool
 from app.models.ids_component import IdsComponent
@@ -58,7 +68,7 @@ async def test_deploy_docker_compose(
 ):
     with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
         # Mock DockerClient and its compose attribute
-        with patch("app.cids_deployment.DockerClient") as MockDockerClient:
+        with patch("app.deployment.deployment_plugins.docker_compose.DockerClient") as MockDockerClient:
             mock_client = MagicMock()
             MockDockerClient.return_value = mock_client
 
@@ -82,7 +92,10 @@ async def test_deploy_docker_compose(
                 host.get_host_and_docker_port.return_value = ("localhost", 2375)
                 return host
 
-            with patch("app.cids_deployment.get_host_by_id", side_effect=get_host_mock):
+            with patch(
+                "app.deployment.deployment_plugins.docker_compose.get_host_by_id",
+                side_effect=get_host_mock,
+            ):
                 await deploy_docker_compose(
                     mock_ids_container,
                     mock_ids_tool,
@@ -103,18 +116,114 @@ async def test_deploy_docker_compose(
 
 
 @pytest.mark.asyncio
-async def test_start_docker_container_routing(
+async def test_deploy_ids_routes_to_compose_plugin(
     mock_ids_container, mock_ids_tool, mock_config, mock_db_session
 ):
-    # Patch the function where it is DEFINED, so that when docker.py imports it, it gets the mock
-    with patch("app.cids_deployment.start_cids_deployment") as mock_cids_deploy:
-        mock_cids_deploy.return_value = None
+    with patch("app.deployment.common.get_deployment_plugin") as mock_get_plugin:
+        mock_plugin = MagicMock()
+        mock_plugin.deploy = AsyncMock()
+        mock_get_plugin.return_value = mock_plugin
 
-        await start_docker_container(
-            mock_ids_container, mock_ids_tool, mock_config, None, mock_db_session
+        await deploy_ids(
+            mock_ids_container,
+            mock_ids_tool,
+            mock_config,
+            None,
+            mock_db_session,
         )
 
-        mock_cids_deploy.assert_awaited_once()
+        mock_get_plugin.assert_called_once_with(mock_ids_tool.deployment_type)
+        mock_plugin.deploy.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_compose_teardown_project_offloads_blocking_work():
+    host_operations = ComposeHostOperations(
+        docker_client_cls=MagicMock(),
+        docker_sdk_module=MagicMock(),
+        ids_component_cls=IdsComponent,
+        logger=MagicMock(),
+        get_core_url=MagicMock(return_value="http://core"),
+    )
+    host_system = MagicMock(spec=DockerHostSystem)
+    paths = ComposeProjectPaths(container_id=1, host_name="localhost")
+
+    with patch(
+        "app.deployment.deployment_plugins.docker_compose_support.host_operations.asyncio.to_thread",
+        new_callable=AsyncMock,
+    ) as mock_to_thread:
+        with patch.object(
+            host_operations,
+            "_remove_local_work_dir",
+            new_callable=AsyncMock,
+        ) as mock_remove_local_work_dir:
+            await host_operations.teardown_project(
+                host_system=host_system,
+                components=[],
+                paths=paths,
+            )
+
+    mock_to_thread.assert_awaited_once()
+    assert mock_to_thread.await_args.args[1:] == (host_system, [], paths)
+    mock_remove_local_work_dir.assert_awaited_once_with(paths.work_dir)
+
+
+@pytest.mark.asyncio
+async def test_compose_deploy_cleans_up_partial_deployment_on_start_failure():
+    host_system = MagicMock(spec=DockerHostSystem)
+    host_system.id = 1
+    host_system.name = "localhost"
+
+    deployment = MagicMock()
+    deployment.host_system = host_system
+    deployment.paths = ComposeProjectPaths(container_id=1, host_name="localhost")
+    deployment.runtime_config_files = {}
+
+    ids_container = MagicMock(spec=IdsSystem)
+    ids_container.id = 1
+    ids_container.host_system = MagicMock()
+    ids_container.host_system.id = 1
+    ids_container.components = []
+
+    config = MagicMock(spec=Configuration)
+    config.read_content = AsyncMock(return_value=b"services:\n  sensor:\n    image: im")
+
+    db_session = AsyncMock()
+
+    spec_manager = MagicMock()
+    spec_manager.load_compose_data.return_value = {"services": {"sensor": {"image": "im"}}}
+    spec_manager.resolve_service_runtime_configs = AsyncMock(return_value={})
+    spec_manager.group_services_by_host.return_value = {1: [MagicMock(service_name="sensor", count=1)]}
+    spec_manager.prepare_host_deployment.return_value = deployment
+    spec_manager.write_deployment_files = AsyncMock()
+
+    host_operations = MagicMock()
+    host_operations.start_project = AsyncMock(side_effect=Exception("compose up failed"))
+    host_operations.copy_runtime_configs = AsyncMock()
+    host_operations.group_components_by_host.return_value = {}
+    host_operations.teardown_project = AsyncMock(return_value=True)
+
+    service = ComposeDeploymentService(
+        get_host_by_id=AsyncMock(return_value=host_system),
+        spec_manager=spec_manager,
+        host_operations=host_operations,
+    )
+
+    with pytest.raises(Exception, match="compose up failed"):
+        await service.deploy(
+            ids_container=ids_container,
+            config=config,
+            ruleset=None,
+            db_session=db_session,
+            cids_configurations=None,
+        )
+
+    host_operations.teardown_project.assert_awaited_once_with(
+        host_system=host_system,
+        components=[],
+        paths=deployment.paths,
+    )
+    assert getattr(ids_container, "_deployment_cleanup_done", False) is True
 
 
 @pytest.mark.asyncio
@@ -126,13 +235,13 @@ async def test_start_docker_container_normal(
     normal_tool.image_name = "test"
     normal_tool.image_tag = "latest"
 
-    with patch("app.docker.get_docker_client") as mock_get_client:
+    with patch("app.deployment.deployment_plugins.docker.get_docker_client") as mock_get_client:
         mock_get_client.return_value = MagicMock()
-        with patch("app.docker.run_container_async") as mock_run:
+        with patch("app.deployment.deployment_plugins.docker.run_container_async") as mock_run:
             mock_run.return_value = None
-            with patch("app.docker.check_container_health") as mock_health:
+            with patch("app.deployment.deployment_plugins.docker.check_container_health") as mock_health:
                 mock_health.return_value = True
-                with patch("app.docker.inject_config") as mock_inject:
+                with patch("app.deployment.deployment_plugins.docker.inject_config") as mock_inject:
 
                     await start_docker_container(
                         mock_ids_container, normal_tool, mock_config, None, mock_db_session
@@ -197,9 +306,12 @@ async def test_split_deployment(
         host.get_host_and_docker_port.return_value = (host.host, 2375)
         return host
 
-    with patch("app.cids_deployment.get_host_by_id", side_effect=get_host_side_effect):
+    with patch(
+        "app.deployment.deployment_plugins.docker_compose.get_host_by_id",
+        side_effect=get_host_side_effect,
+    ):
         with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
-            with patch("app.cids_deployment.DockerClient") as MockDockerClient:
+            with patch("app.deployment.deployment_plugins.docker_compose.DockerClient") as MockDockerClient:
                 mock_client = MagicMock()
                 mock_client.compose.ps.return_value = []
                 # Return same client for simplicity, or different ones based on call args
@@ -259,7 +371,10 @@ services:
         )
     ]
 
-    with patch("app.cids_deployment.get_config_by_id", AsyncMock(return_value=runtime_config)):
+    with patch(
+        "app.deployment.deployment_plugins.docker_compose.get_config_by_id",
+        AsyncMock(return_value=runtime_config),
+    ):
         with pytest.raises(ValueError, match="expects a config ending in '.yaml'"):
             await deploy_docker_compose(
                 mock_ids_container,

@@ -1,29 +1,17 @@
-import asyncio
 from http.client import HTTPResponse
-import json
-
-from app.metrics import calculate_evaluation_metrics
 from app.bicep_utils.models.ids_base import Alert
 from app.models.ensemble_ids import (
     get_all_ensemble_container,
     EnsembleIds,
-    get_ensemble_ids_by_ids,
     update_sendig_logs_status,
     last_container_sending_logs,
 )
-from app.models.configuration import Configuration, get_config_by_id
 from app.models.ids_system import (
     IdsSystem,
     get_ids_system_by_id,
     update_ids_status,
 )
-from app.models.ensemble_technique import (
-    EnsembleTechnique,
-    get_ensemble_technique_by_id,
-)
-from fastapi import APIRouter, Depends, Response, BackgroundTasks
-from fastapi.encoders import jsonable_encoder
-import uuid
+from fastapi import APIRouter, Depends, BackgroundTasks
 from app.validation.models import (
     AlertData,
     EnsembleCreate,
@@ -33,7 +21,6 @@ from app.validation.models import (
     AnalysisFinishedData,
 )
 from app.models.ensemble import (
-    get_all_ensembles,
     Ensemble,
     add_ensemble,
     get_ensemble_by_id,
@@ -41,16 +28,13 @@ from app.models.ensemble import (
     update_ensemble_status,
 )
 from app.models.ids_system import IdsSystem
-from app.models.dataset import Dataset, get_dataset_by_id
-import httpx
+from app.models.dataset import get_dataset_by_id
 from app.utils import (
     calculate_evaluation_metrics_and_push,
     deregister_container_from_ensemble,
-    find_free_port,
     STATUS,
     ANALYSIS_STATUS,
     create_response_error,
-    create_response_message,
     create_generic_response_message_for_ensemble,
 )
 from fastapi.responses import JSONResponse
@@ -137,7 +121,7 @@ async def start_static_ensemble_analysis(
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             message = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(message, status_code=500)
         await update_sendig_logs_status(
@@ -174,7 +158,7 @@ async def start_network_ensemble_analysis(
                 status_code=500,
             )
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             content = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(content, status_code=500)
         await update_sendig_logs_status(

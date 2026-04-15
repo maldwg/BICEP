@@ -10,7 +10,7 @@
 
 .header {
   width: 80%;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .header h1 {
@@ -49,6 +49,58 @@
   gap: 15px;
 }
 
+.component-toolbar {
+  width: 100%;
+  background-color: var(--mat-sys-background);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+}
+
+.component-controls-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.component-controls-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.component-controls-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.component-controls-label {
+  color: #222;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.component-controls-hint {
+  color: #666;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.component-toggle-button {
+  white-space: normal;
+  text-align: left;
+}
+
+.component-reset-button {
+  flex-shrink: 0;
+}
+
 .charts-wrapper {
   width: 80%;
   display: flex;
@@ -66,7 +118,7 @@
 }
 
 .chart {
-  height: 400px;
+  height: 450px;
   width: 100%;
 }
 
@@ -90,4 +142,35 @@
 .export-fab {
   margin-top: 0px;
   margin-left: auto;
+}
+
+@media (max-width: 960px) {
+  .header,
+  .charts-wrapper {
+    width: 100%;
+  }
+
+  .custom-time-inputs {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .component-controls-header {
+    flex-direction: column;
+  }
+
+  .component-controls-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .datetime-picker,
+  .time-selector {
+    width: 100%;
+  }
+
+  .component-toggle-button,
+  .component-reset-button {
+    width: 100%;
+  }
 }

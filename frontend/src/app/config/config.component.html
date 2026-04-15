@@ -7,16 +7,16 @@
   <mat-expansion-panel>
     <mat-expansion-panel-header>
       <mat-panel-title>
-        Configurations
+        Runtime Configurations
       </mat-panel-title>
       <mat-panel-description>
-        Configurations for the IDS
+        Configurations for the IDS runtime
       </mat-panel-description>
     </mat-expansion-panel-header>
     <div class="expansion-panel-flexbox-container" >
       @for (configuration of configurationList; track configuration) {
         <div class="flexbox-item">
-          @if (configuration.file_type === fileTypeDict.configuration) {
+          @if (configuration.file_type === fileTypeDict.runtime) {
             <mat-card class="mat-card">
               <mat-card-header>
                 <mat-card-title>
@@ -31,7 +31,53 @@
                   <strong>Description:</strong> <span>{{configuration.description}}</span>
                 </div>
                 <div class="info-row">
-                  <strong>File Type:</strong> <span>{{configuration.file_type}}</span>
+                  <strong>File Type:</strong> <span style="text-transform: capitalize;">{{configuration.file_type}}</span>
+                </div>
+              </mat-card-content>
+              <mat-card-actions>
+                <button class="edit-button" matFab>
+                  <mat-icon>edit_document</mat-icon>
+                </button>
+                <button class="delete-button"  (click)="removeConfiguration(configuration)"  matFab>
+                  <mat-icon>delete</mat-icon>
+                </button>                
+              </mat-card-actions>
+            </mat-card>
+          }
+        </div>
+      }
+    </div>
+  </mat-expansion-panel>
+  </div>
+  <div class ="expansion-panel">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Deployment Configurations
+      </mat-panel-title>
+      <mat-panel-description>
+        Docker-compose or other deployment configurations
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <div class="expansion-panel-flexbox-container" >
+      @for (configuration of configurationList; track configuration) {
+        <div class="flexbox-item">
+          @if (configuration.file_type === fileTypeDict.deployment) {
+            <mat-card class="mat-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <span class="mat-card-title-text">{{configuration.name}}</span>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-row">
+                  <strong>ID:</strong> <span>{{configuration.id}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>Description:</strong> <span>{{configuration.description}}</span>
+                </div>
+                <div class="info-row">
+                  <strong>File Type:</strong> <span style="text-transform: capitalize;">{{configuration.file_type}}</span>
                 </div>
               </mat-card-content>
               <mat-card-actions>
@@ -77,7 +123,7 @@
                   <strong>Description:</strong> <span>{{configuration.description}}</span>
                 </div>
                 <div class="info-row">
-                  <strong>File Type:</strong> <span>{{configuration.file_type}}</span>
+                  <strong>File Type:</strong> <span style="text-transform: capitalize;">{{configuration.file_type}}</span>
                 </div>
               </mat-card-content>
               <mat-card-actions>
