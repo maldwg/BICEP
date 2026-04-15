@@ -67,9 +67,52 @@
         </a>
       </div>
     </nav>
+
+    <button
+      type="button"
+      class="navbar__toggle"
+      aria-label="Open navigation menu"
+      [matMenuTriggerFor]="mobileNavMenu">
+      <mat-icon>menu</mat-icon>
+    </button>
   </mat-toolbar>
 
   @if (isMenuOpen) {
     <div class="navbar__overlay" (click)="closeMenu()"></div>
   }
 </header>
+
+<mat-menu #mobileNavMenu="matMenu" panelClass="navbar-mobile-menu" xPosition="before" yPosition="below">
+  <button mat-menu-item routerLink="/">
+    <mat-icon>dashboard</mat-icon>
+    <span>Dashboard</span>
+  </button>
+  <button mat-menu-item routerLink="/monitoring">
+    <mat-icon>timeline</mat-icon>
+    <span>Monitoring</span>
+  </button>
+  <button mat-menu-item routerLink="/benchmarking/start">
+    <mat-icon>analytics</mat-icon>
+    <span>Benchmarking Start</span>
+  </button>
+  <button mat-menu-item routerLink="/benchmarking/results">
+    <mat-icon>bar_chart</mat-icon>
+    <span>Benchmarking Results</span>
+  </button>
+  <button mat-menu-item routerLink="/setup">
+    <mat-icon>tune</mat-icon>
+    <span>Setup</span>
+  </button>
+  <button mat-menu-item routerLink="/upload">
+    <mat-icon>folder_open</mat-icon>
+    <span>Uploads</span>
+  </button>
+  <button mat-menu-item routerLink="/hosts">
+    <mat-icon>dns</mat-icon>
+    <span>Docker Hosts</span>
+  </button>
+  <button mat-menu-item routerLink="/ids-tools">
+    <mat-icon>security</mat-icon>
+    <span>IDS Tools</span>
+  </button>
+</mat-menu>
