@@ -1,26 +1,41 @@
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import Optional
-from app.bicep_utils.models.ids_base import Alert
+
+
+class CidsServiceConfig(BaseModel):
+    service_name: str
+    host_system_id: int
+    count: int = 1
+    runtime_configuration_id: Optional[int] = None
+
 
 class IdsContainerCreate(BaseModel):
     """
-        Class to validate input from the frontend
+    Class to validate input from the frontend
     """
+
     host_system_id: int
     description: str
     configuration_id: int
     ids_tool_id: int
     ruleset_id: Optional[int] = None
+    cids_configurations: Optional[list[CidsServiceConfig]] = []
+    env_vars: Optional[dict[str, str]] = {}
+
+
+class IdsComponentUpdate(BaseModel):
+    id: int
+    runtime_configuration_id: Optional[int] = None
+    count: Optional[int] = 1
+
 
 class IdsContainerUpdate(BaseModel):
-    """
-        Class to validate input from the frontend
-    """
     id: int
     description: str
     configuration_id: int
     ruleset_id: Optional[int] = None
+    components: Optional[list[IdsComponentUpdate]] = []
+
 
 class EnsembleCreate(BaseModel):
     """
@@ -32,10 +47,12 @@ class EnsembleCreate(BaseModel):
     technique: int
     container_ids: list[int]
 
+
 class EnsembleUpdate(BaseModel):
     """
     Class to validate input for Ensemble creation
     """
+
     id: int
     name: str
     description: str
@@ -44,26 +61,26 @@ class EnsembleUpdate(BaseModel):
 
 
 class StaticAnalysisData(BaseModel):
-    """
+    """ """
 
-    """
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
     dataset_id: int
 
-class NetworkAnalysisData(BaseModel):
-    """
 
-    """
+class NetworkAnalysisData(BaseModel):
+    """ """
+
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
+
 
 class stop_analysisData(BaseModel):
-    """
-    
-    """
+    """ """
+
     container_id: Optional[int] = None
     ensemble_id: Optional[int] = None
+
 
 class AlertModel(BaseModel):
     time: str
@@ -73,7 +90,8 @@ class AlertModel(BaseModel):
     destination_port: str
     severity: Optional[float] = None
     type: str
-    message: str    
+    message: str
+
 
 class AlertData(BaseModel):
     alerts: list[AlertModel]
@@ -95,3 +113,26 @@ class DockerHostCreationData(BaseModel):
     host: str
     # Default Port instead of None
     docker_port: Optional[int] = 2375
+
+
+class IdsToolCreate(BaseModel):
+    name: str
+    ids_type: str
+    analysis_method: str
+    requires_ruleset: bool
+    image_name: str
+    image_tag: str
+    deployment_type: str = "SINGLE_CONTAINER"
+    required_env_vars: Optional[str] = ""
+
+
+class IdsToolUpdate(BaseModel):
+    id: int
+    name: str
+    ids_type: str
+    analysis_method: str
+    requires_ruleset: bool
+    image_name: str
+    image_tag: str
+    deployment_type: str
+    required_env_vars: Optional[str] = ""

@@ -1,8 +1,11 @@
 <app-alert-component></app-alert-component>
-<div style="width: 100%;">
-  <h2 mat-dialog-title>Create new Configuration</h2>
+<div class="dialog-shell">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Create New Configuration</h2>
+    <p class="dialog-subtitle">Add a new runtime file, deployment manifest, ruleset, or dataset artifact to the shared library.</p>
+  </div>
   <mat-dialog-content>
-    <form [formGroup]="configForm">
+    <form [formGroup]="configForm" class="dialog-form">
       <div class="form-item">
         <mat-form-field>
           <mat-label>Name</mat-label>
@@ -20,13 +23,13 @@
           <mat-label>File type</mat-label>
           <mat-select [formControl]="configForm.controls.fileType" required>
             @for (type of fileTypeList; track type) {
-              <mat-option value={{type}}>{{type}}</mat-option>
+              <mat-option value={{type}}>{{type | formatDropDown}}</mat-option>
             }
           </mat-select>
         </mat-form-field>
       </div>
       <!-- If the upload is a ruleset or configuration -->
-      @if (configForm.controls.fileType.value != 'test-data') {
+      @if (configForm.controls.fileType.value != 'DATASET') {
         <div class="form-item">
           <mat-form-field appearance="outline">
             <mat-label>Configuration or Ruleset </mat-label>
@@ -44,7 +47,7 @@
         </div>
       }
       <!-- If the upload is a dataset -->
-      @if (configForm.controls.fileType.value == 'test-data') {
+      @if (configForm.controls.fileType.value == 'DATASET') {
         <div class="form-item">
           <mat-form-field>
             <mat-label>Dataset type</mat-label>
@@ -56,7 +59,7 @@
           </mat-form-field>
         </div>
       }
-      @if (configForm.controls.fileType.value == 'test-data') {
+      @if (configForm.controls.fileType.value == 'DATASET') {
         <div class="form-item">
           <div>
             <mat-form-field appearance="outline">
@@ -89,7 +92,7 @@
   </mat-dialog-content>
   <mat-dialog-actions>
     <div class="dialog-actions-div">
-      <button class="start-button" matFab (click)="save()"  cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">
+      <button class="start-button" matFab (click)="save()" cdkFocusInitial [disabled]="uploadProgress > 0 && uploadProgress < 100">
         <mat-icon>save</mat-icon>
       </button>
       <button class="cancel-button" matFab (click)="exit()">
@@ -98,4 +101,3 @@
     </div>
   </mat-dialog-actions>
 </div>
-

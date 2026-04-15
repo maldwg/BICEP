@@ -10,15 +10,31 @@ export interface ContainerMetric {
     status: string;
     cpu_usage: number;
     memory_usage: number;
+    type?: string | null;
+    is_component?: boolean;
+    parent_id?: number | null;
+    parent_name?: string | null;
+    role?: string | null;
+    display_name?: string;
+    raw_name?: string;
+}
+
+export interface HistoricalMetricSeries {
+    id: number;
+    timestamps: number[];
+    cpu: number[];
+    memory: number[];
+    type?: string | null;
+    is_component?: boolean;
+    parent_id?: number | null;
+    parent_name?: string | null;
+    role?: string | null;
+    display_name?: string;
+    raw_name?: string;
 }
 
 export interface HistoricalMetricsData {
-    [containerName: string]: {
-        id: number;
-        timestamps: number[];
-        cpu: number[];
-        memory: number[];
-    };
+    [containerName: string]: HistoricalMetricSeries;
 }
 
 @Injectable({
@@ -48,7 +64,8 @@ export class MetricsService {
     getHistoricalMetrics(
         start: string,
         end?: string,
-        step: string = '15s'
+        step: string = '15s',
+        expandedIds: number[] = []
     ): Observable<HistoricalMetricsData> {
         let params = new HttpParams()
             .set('start', start)
@@ -56,6 +73,10 @@ export class MetricsService {
 
         if (end) {
             params = params.set('end', end);
+        }
+
+        for (const expandedId of expandedIds) {
+            params = params.append('expanded_ids', expandedId);
         }
 
         return this.http.get<{ content: HistoricalMetricsData }>(

@@ -1,11 +1,11 @@
-
-
-
-.action-button-div{
-
+:host {
+  display: block;
 }
 
-.mat-success {
-    background-color: green;
-    color: #fff;
-  }
+.start-analysis-dialog {
+  width: min(100%, 30rem);
+}
+
+.start-analysis-dialog__content {
+  padding-top: 0.25rem;
+}

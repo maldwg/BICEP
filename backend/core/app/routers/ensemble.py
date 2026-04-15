@@ -1,29 +1,17 @@
-import asyncio
 from http.client import HTTPResponse
-import json
-
-from app.metrics import calculate_evaluation_metrics
 from app.bicep_utils.models.ids_base import Alert
 from app.models.ensemble_ids import (
     get_all_ensemble_container,
     EnsembleIds,
-    get_ensemble_ids_by_ids,
     update_sendig_logs_status,
     last_container_sending_logs,
 )
-from app.models.configuration import Configuration, get_config_by_id
-from app.models.ids_container import (
-    IdsContainer,
-    get_container_by_id,
-    update_container_status,
+from app.models.ids_system import (
+    IdsSystem,
+    get_ids_system_by_id,
+    update_ids_status,
 )
-from app.models.ensemble_technique import (
-    EnsembleTechnique,
-    get_ensemble_technique_by_id,
-)
-from fastapi import APIRouter, Depends, Response, BackgroundTasks
-from fastapi.encoders import jsonable_encoder
-import uuid
+from fastapi import APIRouter, Depends, BackgroundTasks
 from app.validation.models import (
     AlertData,
     EnsembleCreate,
@@ -33,24 +21,20 @@ from app.validation.models import (
     AnalysisFinishedData,
 )
 from app.models.ensemble import (
-    get_all_ensembles,
     Ensemble,
     add_ensemble,
     get_ensemble_by_id,
     remove_ensemble,
     update_ensemble_status,
 )
-from app.models.ids_container import IdsContainer
-from app.models.dataset import Dataset, get_dataset_by_id
-import httpx
+from app.models.ids_system import IdsSystem
+from app.models.dataset import get_dataset_by_id
 from app.utils import (
     calculate_evaluation_metrics_and_push,
     deregister_container_from_ensemble,
-    find_free_port,
     STATUS,
     ANALYSIS_STATUS,
     create_response_error,
-    create_response_message,
     create_generic_response_message_for_ensemble,
 )
 from fastapi.responses import JSONResponse
@@ -102,12 +86,12 @@ async def remove_ensemble_endpoint(ensemble_id: int, db=Depends(get_db)):
     ensemble: Ensemble = await get_ensemble_by_id(db, ensemble_id)
     ids_ensembles: list[EnsembleIds] = await get_all_ensemble_container(db)
     container_id_list = [
-        ids_ensemble.ids_container_id
+        ids_ensemble.ids_system_id
         for ids_ensemble in ids_ensembles
         if ids_ensemble.ensemble_id == ensemble_id
     ]
-    container_list: list[IdsContainer] = [
-        await get_container_by_id(db=db, id=id) for id in container_id_list
+    container_list: list[IdsSystem] = [
+        await get_ids_system_by_id(db=db, id=id) for id in container_id_list
     ]
     responses = []
     for container in container_list:
@@ -131,13 +115,13 @@ async def start_static_ensemble_analysis(
     static_analysis_data: StaticAnalysisData, db=Depends(get_db)
 ):
     ensemble: Ensemble = await get_ensemble_by_id(db, static_analysis_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
     for container in containers:
         if container.status != STATUS.IDLE.value:
             message = f"container with id {container.id} is not Idle!, aborting"
             return create_response_error(message, 500)
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             message = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(message, status_code=500)
         await update_sendig_logs_status(
@@ -165,7 +149,7 @@ async def start_network_ensemble_analysis(
     network_analysis_data: NetworkAnalysisData, db=Depends(get_db)
 ):
     ensemble: Ensemble = await get_ensemble_by_id(db, network_analysis_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
 
     for container in containers:
         if container.status != STATUS.IDLE.value:
@@ -174,7 +158,7 @@ async def start_network_ensemble_analysis(
                 status_code=500,
             )
 
-        if not await container.is_available():
+        if not await container.is_available(db):
             content = f"container with id {container.id} is not available! Check if it should be deleted"
             return create_response_error(content, status_code=500)
         await update_sendig_logs_status(
@@ -200,7 +184,7 @@ async def start_network_ensemble_analysis(
 @router.post("/analysis/stop")
 async def stop_ensemble_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
     ensemble: Ensemble = await get_ensemble_by_id(db, stop_data.ensemble_id)
-    containers: list[IdsContainer] = await ensemble.get_assigned_containers(db)
+    containers: list[IdsSystem] = await ensemble.get_assigned_containers(db)
 
     responses = []
 
@@ -228,14 +212,14 @@ async def stop_ensemble_analysis(stop_data: stop_analysisData, db=Depends(get_db
 async def finished_ensemble_analysis(
     analysisFinishedData: AnalysisFinishedData, db=Depends(get_db)
 ):
-    container: IdsContainer = await get_container_by_id(
+    container: IdsSystem = await get_ids_system_by_id(
         db, analysisFinishedData.container_id
     )
     ensemble: Ensemble = await get_ensemble_by_id(db, analysisFinishedData.ensemble_id)
     await update_sendig_logs_status(
         db=db, container=container, ensemble=ensemble, status=ANALYSIS_STATUS.IDLE.value
     )
-    await update_container_status(db, STATUS.IDLE.value, container)
+    await update_ids_status(db, STATUS.IDLE.value, container)
     if await ensemble.container_is_last_one_running(db=db, container=container):
         await update_ensemble_status(db, STATUS.IDLE.value, ensemble)
         await ensemble.unset_analysis_id(db)
@@ -251,9 +235,7 @@ async def finished_ensemble_analysis(
 async def receive_alerts_from_ids_for_ensemble(
     alert_data: AlertData, backgroundtasks: BackgroundTasks, db=Depends(get_db)
 ):
-    container: IdsContainer = await get_container_by_id(
-        db=db, id=alert_data.container_id
-    )
+    container: IdsSystem = await get_ids_system_by_id(db=db, id=alert_data.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
     LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
     LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")

@@ -51,7 +51,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
         { value: 'prec', viewValue: 'Precision' },
         { value: 'f1_score', viewValue: 'F1 Score' },
         { value: 'runtime', viewValue: 'Runtime' },
-        { value: 'cpu_usage', viewValue: 'CPU Usage (%)' },
+        { value: 'cpu_usage', viewValue: 'CPU Usage (cores)' },
         { value: 'memory_usage', viewValue: 'RAM Usage (MB)' }
     ];
 
@@ -263,6 +263,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
 
         // Check if we have resource metrics mixed with standard metrics
         const resourceMetrics = metrics.filter(m => m === 'cpu_usage' || m === 'memory_usage');
+        const groupedDistributionMetrics = metrics.filter(m => m === 'runtime');
         const standardMetrics = metrics.filter(m => m !== 'cpu_usage' && m !== 'memory_usage');
 
         // Priority: If resource metrics are present, visualize them. 
@@ -322,7 +323,85 @@ export class ComparisonComponent implements OnInit, OnChanges {
                 },
                 yAxis: {
                     type: 'value',
-                    name: metric === 'cpu_usage' ? '%' : 'MB',
+                    name: metric === 'cpu_usage' ? 'cores' : 'MB',
+                    splitArea: {
+                        show: true
+                    }
+                },
+                series: [
+                    {
+                        name: 'boxplot',
+                        type: 'boxplot',
+                        datasetIndex: 1
+                    },
+                    {
+                        name: 'outlier',
+                        type: 'scatter',
+                        datasetIndex: 2
+                    }
+                ]
+            };
+
+        } else if (groupedDistributionMetrics.length > 0) {
+            const metric = groupedDistributionMetrics[0];
+            const groupedRuns = this.items.reduce((acc, item) => {
+                if (!acc[item.ids_name]) {
+                    acc[item.ids_name] = [];
+                }
+
+                acc[item.ids_name].push(Number(item.runtime));
+                return acc;
+            }, {} as { [key: string]: number[] });
+
+            const axisData = Object.keys(groupedRuns);
+            const sourceData = axisData.map(idsName => groupedRuns[idsName]);
+
+            this.chartOption = {
+                title: [
+                    {
+                        text: `${this.getMetricLabel(metric)} Distribution`,
+                        left: 'center',
+                    }
+                ],
+                dataset: [
+                    {
+                        source: sourceData
+                    },
+                    {
+                        transform: {
+                            type: 'boxplot',
+                            config: { itemNameFormatter: (params: any) => axisData[params.value] }
+                        }
+                    },
+                    {
+                        fromDatasetIndex: 1,
+                        fromTransformResult: 1
+                    }
+                ],
+                tooltip: {
+                    trigger: 'item',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: true,
+                    nameGap: 30,
+                    splitArea: {
+                        show: false
+                    },
+                    splitLine: {
+                        show: false
+                    }
+                },
+                yAxis: {
+                    type: 'value',
                     splitArea: {
                         show: true
                     }
@@ -346,8 +425,9 @@ export class ComparisonComponent implements OnInit, OnChanges {
             let sourceData: any[] = [];
             let axisData: string[] = [];
 
-            sourceData = metrics.map(metric => items.map(item => Number(item[metric])));
-            axisData = metrics.map(m => this.getMetricLabel(m));
+            const scalarMetrics = standardMetrics.filter(metric => metric !== 'runtime');
+            sourceData = scalarMetrics.map(metric => items.map(item => Number(item[metric])));
+            axisData = scalarMetrics.map(m => this.getMetricLabel(m));
 
             this.chartOption = {
                 title: [

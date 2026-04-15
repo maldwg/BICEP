@@ -10,14 +10,14 @@ import { Container } from '../../models/container';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-    selector: 'app-ensemble-edit',
-    imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule,MatIconModule],
-    templateUrl: './ensemble-edit.component.html',
-    styleUrl: './ensemble-edit.component.scss'
+  selector: 'app-ensemble-edit',
+  imports: [ReactiveFormsModule, FormsModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule, MatIconModule],
+  templateUrl: './ensemble-edit.component.html',
+  styleUrl: './ensemble-edit.component.scss'
 })
 export class EnsembleEditComponent {
 
-  
+
 
   ngOnInit(): void {
     let selectedTechnique = this.getTechnique(this.data.ensemble.technique_id);
@@ -27,7 +27,7 @@ export class EnsembleEditComponent {
     ensembleContainers = this.data.ensembleContainerList.filter(ensembleContainer => ensembleContainer.ensemble_id == this.data.ensemble.id);
     let selectedContainers = this.getSelectedContainers(ensembleContainers).map(String);
     this.data.containerList = this.addCurrentEnsembleContainers(availableContainers, ensembleContainers);
-    
+
     this.ensembleEdit.controls.ensembleTechnique.setValue(selectedTechnique.id.toString());
     this.ensembleEdit.controls.idsContainer.setValue(selectedContainers);
   }
@@ -47,43 +47,43 @@ export class EnsembleEditComponent {
 
   constructor(
     public dialogRef: MatDialogRef<EnsembleEditComponent>,
-    @Inject (MAT_DIALOG_DATA) public data: {
+    @Inject(MAT_DIALOG_DATA) public data: {
       ensemble: Ensemble,
       containerList: Container[],
       ensembleTechniqueList: EnsembleTechnique[],
       ensembleContainerList: EnsembleContainer[],
     }
-  ) {}
+  ) { }
 
-  exit(): void{
+  exit(): void {
     this.dialogRef.close(null);
   }
 
-  save(): void{
-    if(this.ensembleEdit.valid){
+  save(): void {
+    if (this.ensembleEdit.valid) {
       this.dialogRef.close(this.ensembleEdit.value);
     }
   }
 
-  getTechnique(techniqueId: number){
+  getTechnique(techniqueId: number) {
     return this.data.ensembleTechniqueList.filter(t => t.id == techniqueId)[0];
   }
 
-  getSelectedContainers(ensembleContainerList: EnsembleContainer[]){
+  getSelectedContainers(ensembleContainerList: EnsembleContainer[]) {
     let containerId: number[] = [];
-    for(var idx in ensembleContainerList){
-       containerId.push(this.data.containerList.filter(container => container.id == ensembleContainerList[idx].ids_container_id)[0].id)
+    for (var idx in ensembleContainerList) {
+      containerId.push(this.data.containerList.filter(container => container.id == ensembleContainerList[idx].ids_system_id)[0].id)
     }
     return containerId;
   }
 
-  getAvailableContainers(){
-    let ensembleContainerIdList = this.data.ensembleContainerList.map(container => container.ids_container_id);
+  getAvailableContainers() {
+    let ensembleContainerIdList = this.data.ensembleContainerList.map(container => container.ids_system_id);
     return this.data.containerList.filter(container => !ensembleContainerIdList.includes(container.id));
   }
 
-  addCurrentEnsembleContainers(availableContainers: Container[], ensembleContainers: EnsembleContainer[]){
-    let idList = ensembleContainers.map(container => container.ids_container_id);
+  addCurrentEnsembleContainers(availableContainers: Container[], ensembleContainers: EnsembleContainer[]) {
+    let idList = ensembleContainers.map(container => container.ids_system_id);
     let currentContainers: Container[] = this.data.containerList.filter(container => idList.includes(container.id));
 
     return currentContainers.concat(availableContainers);

@@ -1,50 +1,111 @@
 <app-alert-component></app-alert-component>
-<div class="component-header-div">
-  <button matButton class="new-config-button moving-hover-button" (click)="newHost()">Add New Host</button>
-</div>
 
-<div class="expansion-panel-flexbox-container" style="justify-content: center;" >
-  @for (hostSystem of hostSystemList; track hostSystem) {
-    <div class="flexbox-item">
-      <mat-card class="mat-card">
-        <mat-card-header>
-          <mat-card-title>
-            <div style="display: flex; align-items: center;">
-              <span class="mat-card-title-text">{{hostSystem.name}} </span>
-              @if (hostSystem.status === hostStatus.available) {
-                <span><mat-icon style="padding-left: 50%; color: green;">circle</mat-icon></span>
-              } @else {
-                @if (hostSystem.status === hostStatus.unavailable) {
-                 <span><mat-icon style="padding-left: 50%; color: red;">circle</mat-icon></span>
-                }
-              }
-            </div>
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="info-row">
-            <strong>ID:</strong> <span>{{ hostSystem.id }}</span>
-          </div>
-          <div class="info-row">
-            <strong>Host:</strong> <span>{{ hostSystem.host }}</span>
-          </div>
-          <div class="info-row">
-            <strong>Docker Port:</strong> <span>{{ hostSystem.docker_port }}</span>
-          </div>
-          <div class="info-row">
-            <strong>Status:</strong> <span>{{ hostSystem.status }}</span>
-          </div>
-        </mat-card-content>
-        <mat-card-actions>
-          <button class="edit-button" matFab>
-            <mat-icon>edit_document</mat-icon>
-          </button>
-          <button class="delete-button" (click)="removeHost(hostSystem)"  matFab>
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-card-actions>
-      </mat-card>
+<section class="page-shell">
+  <header class="page-hero">
+    <div class="page-hero__copy">
+      <span class="page-kicker">Infrastructure</span>
+      <h1 class="page-title">Docker Host Fleet</h1>
+      <p class="page-subtitle">
+        Manage local and remote nodes, track Docker availability, and keep metric-service health visible across the fleet.
+      </p>
     </div>
-  }
-</div>
+    <div class="page-hero__actions">
+      <button matButton class="new-config-button moving-hover-button" (click)="newHost()">
+        <mat-icon>add</mat-icon>
+        Add New Host
+      </button>
+    </div>
+  </header>
 
+  <div class="page-summary-grid host-summary-grid">
+    <article class="summary-card host-summary-card">
+      <span class="summary-card__label">Managed Hosts</span>
+      <span class="summary-card__value">{{ hostSystemList.length }}</span>
+      <span class="summary-card__hint">Registered nodes available for deployment</span>
+    </article>
+    <article class="summary-card host-summary-card">
+      <span class="summary-card__label">Status Refresh</span>
+      <span class="summary-card__value">5s</span>
+      <span class="summary-card__hint">Automatic availability updates while this page is open</span>
+    </article>
+    <article class="summary-card host-summary-card">
+      <span class="summary-card__label">Recovery Mode</span>
+      <span class="summary-card__value">Auto</span>
+      <span class="summary-card__hint">Metric-service issues are monitored and recovered in the background</span>
+    </article>
+  </div>
+
+  <div class="expansion-panel-flexbox-container host-grid">
+    @for (hostSystem of hostSystemList; track hostSystem) {
+      <div class="flexbox-item">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <div class="card-title-row">
+                <div class="card-title-group">
+                  <span class="card-title-eyebrow">Docker Host</span>
+                  <span class="mat-card-title-text">{{ hostSystem.name }}</span>
+                </div>
+                <span class="host-title-icon">
+                  <mat-icon>dns</mat-icon>
+                </span>
+              </div>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="info-row">
+              <strong>ID:</strong> <span>{{ hostSystem.id }}</span>
+            </div>
+            <div class="info-row">
+              <strong>Host:</strong> <span>{{ hostSystem.host }}</span>
+            </div>
+            <div class="info-row">
+              <strong>Docker Port:</strong> <span>{{ hostSystem.docker_port }}</span>
+            </div>
+            <div class="info-row">
+              <strong>Docker Host Health:</strong>
+              <span
+                class="status-badge"
+                [class.status-badge--available]="hostSystem.status === hostStatus.available"
+                [class.status-badge--unavailable]="hostSystem.status === hostStatus.unavailable"
+                [matTooltip]="getHostStatusTooltip(hostSystem)"
+                [matTooltipDisabled]="hostSystem.status === hostStatus.available"
+                matTooltipPosition="above"
+              >
+                {{ formatStatusLabel(hostSystem.status) }}
+              </span>
+            </div>
+            @if (hostSystem.metric_service) {
+              <div class="info-row">
+                <strong>Metric Service Health:</strong>
+                <span
+                  class="status-badge"
+                  [class.status-badge--available]="hostSystem.metric_service.status === hostStatus.available"
+                  [class.status-badge--unavailable]="hostSystem.metric_service.status === hostStatus.unavailable"
+                  [class.status-badge--pending]="hostSystem.metric_service.status !== hostStatus.available && hostSystem.metric_service.status !== hostStatus.unavailable"
+                  [matTooltip]="getMetricServiceStatusTooltip(hostSystem.metric_service)"
+                  [matTooltipDisabled]="hostSystem.metric_service.status === hostStatus.available"
+                  matTooltipPosition="above"
+                >
+                  {{ formatStatusLabel(hostSystem.metric_service.status) }}
+                </span>
+              </div>
+              <div class="info-row">
+                <strong>Metric Endpoint:</strong>
+                <span>{{ hostSystem.metric_service.ip || '-' }}:{{ hostSystem.metric_service.port || '-' }}</span>
+              </div>
+            }
+          </mat-card-content>
+          <mat-card-actions>
+            <button class="edit-button" matFab>
+              <mat-icon>edit_document</mat-icon>
+            </button>
+            <button class="delete-button" (click)="removeHost(hostSystem)" matFab>
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    }
+  </div>
+</section>

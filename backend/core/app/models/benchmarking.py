@@ -1,7 +1,6 @@
 from datetime import datetime
 from app.bicep_utils.models.ids_base import Alert
-from sqlalchemy import Column, ForeignKey, Integer, String, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Float, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import Base
 from sqlalchemy.future import select
@@ -58,6 +57,8 @@ class BenchmarkingResult(Base):
     fdr = Column(Float)
     avg_cpu_usage = Column(Float)
     avg_memory_usage = Column(Float)
+    resource_query_mode = Column(String(32))
+    resource_query_targets = Column(Text)
 
 async def add_benchmarking_result(db: AsyncSession, result: BenchmarkingResult):
     db.add(result)
@@ -68,3 +69,9 @@ async def get_all_benchmarking_results(db: AsyncSession):
     stmt = select(BenchmarkingResult)
     result = await db.execute(stmt)
     return result.scalars().all()  
+
+
+async def get_benchmarking_result_by_id(db: AsyncSession, result_id: int):
+    stmt = select(BenchmarkingResult).where(BenchmarkingResult.id == result_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()

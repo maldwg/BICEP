@@ -10,14 +10,14 @@ export interface Ensemble {
 }
 
 
-export interface EnsembleTechnique{
+export interface EnsembleTechnique {
     id: number,
     name: string,
     description: string,
     function_name: string
 }
 
-export interface EnsembleSetupData{
+export interface EnsembleSetupData {
     name: string,
     description: string,
     technique: number,
@@ -27,7 +27,7 @@ export interface EnsembleSetupData{
 
 
 
-export interface EnsembleUpdateData{
+export interface EnsembleUpdateData {
     id: number,
     name: string,
     description: string,
@@ -35,8 +35,8 @@ export interface EnsembleUpdateData{
     container_ids: number[],
 }
 
-export interface EnsembleContainer{
+export interface EnsembleContainer {
     id: number,
     ensemble_id: number,
-    ids_container_id: number
+    ids_system_id: number
 }

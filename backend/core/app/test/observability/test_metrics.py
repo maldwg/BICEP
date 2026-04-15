@@ -1,11 +1,12 @@
 import pytest
 from datetime import datetime
+from pathlib import Path
 from app.metrics import calculate_evaluation_metrics
 from app.models.dataset import Dataset
 from app.bicep_utils.models.ids_base import Alert
-from .fixtures import *
+from app.test.fixtures import *
 
-TESTS_BASE_DIR = "./backend/core/app/test"
+TESTS_BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
@@ -50,4 +51,3 @@ async def test_calculate_evaluation_metrics(sample_alerts, db_session_fixture: D
     }
     
     assert metrics == correct_metrics
-

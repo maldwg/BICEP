@@ -1,12 +1,15 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 import os
+from pathlib import Path
 import shutil
 import pytest
 from app.utils import *
+from app.utils import stop_analysis as utils_stop_analysis
+from app.utils import start_network_analysis as utils_start_network_analysis
 from app.bicep_utils.models.ids_base import Alert
 from app.test.fixtures import *
 
-TESTS_BASE_DIR = "./backend/core/app/test"
+TESTS_BASE_DIR = Path(__file__).resolve().parent
 TEST_DIR = '/tmp/test_datasets'
 
 
@@ -174,3 +177,435 @@ def test_check_directory_is_empty_with_filled_dir():
     assert is_directory_empty == False
     shutil.rmtree(path)
 
+
+# ==================== file_type_is_accepted ====================
+
+
+def test_file_type_is_accepted_runtime_valid():
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "lua") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "yaml") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "xml") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "conf") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "json") is True
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "sql") is True
+
+def test_file_type_is_accepted_runtime_invalid():
+    assert file_type_is_accepted(FILE_TYPES.RUNTIME.value, "txt") is False
+
+def test_file_type_is_accepted_deployment_valid():
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "yaml") is True
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "yml") is True
+
+def test_file_type_is_accepted_deployment_invalid():
+    assert file_type_is_accepted(FILE_TYPES.DEPLOYMENT.value, "txt") is False
+
+def test_file_type_is_accepted_dataset_valid():
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcap") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "csv") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcapng") is True
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "pcap_ISX") is True
+
+def test_file_type_is_accepted_dataset_invalid():
+    assert file_type_is_accepted(FILE_TYPES.DATASET.value, "json") is False
+
+def test_file_type_is_accepted_ruleset_rules():
+    assert file_type_is_accepted(FILE_TYPES.RULESET.value, "rules") is True
+
+def test_file_type_is_accepted_ruleset_invalid():
+    assert file_type_is_accepted(FILE_TYPES.RULESET.value, "txt") is False
+
+def test_file_type_is_accepted_unknown_type():
+    assert file_type_is_accepted("unknown-type", "txt") is False
+
+
+# ==================== find_free_port ====================
+
+
+def test_find_free_port():
+    mock_socket = MagicMock()
+    mock_socket.getsockname.return_value = ("", 4242)
+
+    with patch("app.utils.socket.socket", return_value=mock_socket):
+        port = find_free_port()
+
+    assert isinstance(port, int)
+    assert port == 4242
+
+
+def test_find_free_port_returns_different_ports():
+    first_socket = MagicMock()
+    first_socket.getsockname.return_value = ("", 4242)
+    second_socket = MagicMock()
+    second_socket.getsockname.return_value = ("", 4343)
+
+    with patch("app.utils.socket.socket", side_effect=[first_socket, second_socket]):
+        port1 = find_free_port()
+        port2 = find_free_port()
+
+    assert isinstance(port1, int)
+    assert isinstance(port2, int)
+    assert port1 == 4242
+    assert port2 == 4343
+
+
+# ==================== get_core_url ====================
+
+
+def test_get_core_external_ip_prefers_env():
+    with patch.dict(os.environ, {"CORE_HOST_IP": "192.168.1.50"}):
+        assert get_core_external_ip() == "192.168.1.50"
+
+
+def test_get_core_url():
+    with patch("app.utils.get_core_external_ip", return_value="192.168.1.50"):
+        with patch.dict(os.environ, {"EXTERNAL_FASTAPI_PORT": "8000"}, clear=False):
+            url = get_core_url()
+            assert url == "http://192.168.1.50:8000"
+
+
+def test_get_external_prometheus_push_gateway_url():
+    with patch("app.utils.get_core_external_ip", return_value="192.168.1.50"):
+        with patch.dict(
+            os.environ, {"PROMETHEUS_PUSH_GATEWAY_URL": "prometheus-push-gateway:9091"}
+        ):
+            url = get_external_prometheus_push_gateway_url()
+            assert url == "http://192.168.1.50:9091"
+
+
+# ==================== create_generic_response_message_for_ensemble ====================
+
+
+def test_create_generic_response_message_for_ensemble():
+    result = create_generic_response_message_for_ensemble("Test message", 200)
+    assert result == {"content": "Test message", "status_code": 200}
+
+
+def test_create_generic_response_message_for_ensemble_error():
+    result = create_generic_response_message_for_ensemble("Error occurred", 500)
+    assert result == {"content": "Error occurred", "status_code": 500}
+
+
+# ==================== parse_response_for_triggered_analysis ====================
+
+
+@pytest.mark.asyncio
+async def test_parse_response_for_triggered_analysis_success():
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_container = MagicMock()
+    mock_container.id = 1
+
+    result = await parse_response_for_triggered_analysis(
+        mock_response, mock_container, "static"
+    )
+    assert result.status_code == 200
+    assert b"analysis triggered" in result.body
+
+
+@pytest.mark.asyncio
+async def test_parse_response_for_triggered_analysis_failure():
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_container = MagicMock()
+    mock_container.id = 1
+
+    result = await parse_response_for_triggered_analysis(
+        mock_response, mock_container, "static"
+    )
+    assert result.status_code == 500
+    assert b"could not be triggered" in result.body
+
+
+@pytest.mark.asyncio
+async def test_parse_response_for_triggered_analysis_success_with_ensemble():
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_container = MagicMock()
+    mock_container.id = 1
+
+    result = await parse_response_for_triggered_analysis(
+        mock_response, mock_container, "network", ensemble_id=5
+    )
+    assert result.status_code == 200
+    assert b"for ensemble 5" in result.body
+    assert b"triggered" in result.body
+
+
+@pytest.mark.asyncio
+async def test_parse_response_for_triggered_analysis_failure_with_ensemble():
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_container = MagicMock()
+    mock_container.id = 2
+
+    result = await parse_response_for_triggered_analysis(
+        mock_response, mock_container, "network", ensemble_id=3
+    )
+    assert result.status_code == 500
+    assert b"for ensemble 3" in result.body
+    assert b"could not be triggered" in result.body
+
+
+# ==================== remove_directory ====================
+
+
+@pytest.mark.asyncio
+async def test_remove_directory_existing():
+    path = "/tmp/test-remove-dir-utils"
+    os.makedirs(path, exist_ok=True)
+    open(path + "/test-file.txt", "a").close()
+    assert os.path.exists(path)
+
+    await remove_directory(path)
+    assert not os.path.exists(path)
+
+
+@pytest.mark.asyncio
+async def test_remove_directory_nonexistent():
+    """Should not raise when directory doesn't exist (exception is logged)."""
+    path = "/tmp/test-nonexistent-dir-to-remove"
+    # Should not raise
+    await remove_directory(path)
+
+
+# ==================== create_directory ====================
+
+
+@pytest.mark.asyncio
+async def test_create_directory_new():
+    path = "/tmp/test-create-new-dir-utils"
+    if os.path.exists(path):
+        shutil.rmtree(path)
+
+    await create_directory(path)
+    assert os.path.exists(path)
+    shutil.rmtree(path)
+
+
+@pytest.mark.asyncio
+async def test_create_directory_existing():
+    """Should not raise when directory already exists."""
+    path = "/tmp/test-create-existing-dir-utils"
+    os.makedirs(path, exist_ok=True)
+
+    await create_directory(path)
+    assert os.path.exists(path)
+    shutil.rmtree(path)
+
+
+# ==================== get_length_of_nested_dict ====================
+
+
+def test_get_length_of_nested_dict():
+    nested = {
+        "key1": {"container1": [1, 2, 3], "container2": [4, 5]},
+        "key2": {"container3": [6]},
+    }
+    assert get_length_of_nested_dict(nested) == 6
+
+
+def test_get_length_of_nested_dict_empty():
+    assert get_length_of_nested_dict({}) == 0
+
+
+def test_get_length_of_nested_dict_empty_inner():
+    nested = {"key1": {"container1": []}}
+    assert get_length_of_nested_dict(nested) == 0
+
+
+# ==================== directory_is_empty - edge cases ====================
+
+
+def test_directory_is_empty_nonexistent_path():
+    """Non-existent path should return True."""
+    assert directory_is_empty("/tmp/this-path-does-not-exist-12345") is True
+
+
+# ==================== get_precision_by_name ====================
+
+
+def test_get_precision_by_name_hour():
+    p = get_precision_by_name("hour")
+    assert isinstance(p, HourPrecision)
+
+
+def test_get_precision_by_name_minute():
+    p = get_precision_by_name("minute")
+    assert isinstance(p, MinutePrecision)
+
+
+def test_get_precision_by_name_second():
+    p = get_precision_by_name("second")
+    assert isinstance(p, SecondPrecision)
+
+
+def test_get_precision_by_name_milisecond():
+    p = get_precision_by_name("milisecond")
+    assert isinstance(p, MilisecondPrecision)
+
+
+def test_get_precision_by_name_unknown():
+    assert get_precision_by_name("nanosecond") is None
+
+
+def test_get_precision_by_name_empty():
+    assert get_precision_by_name("") is None
+
+
+# ==================== Precision classes - tolerance calculations ====================
+
+
+def test_hour_precision_tolerance():
+    from datetime import datetime
+    p = HourPrecision()
+    ts = datetime(2025, 1, 1, 12, 30, 45)
+    results = p.calculate_timestamps_with_tolerance(ts, tolerance_unit=1)
+    assert len(results) == 3
+    # Should be 12:29, 12:30, 12:31 (seconds and microseconds zeroed)
+    assert results[0].minute == 29
+    assert results[1].minute == 30
+    assert results[2].minute == 31
+
+
+def test_minute_precision_tolerance():
+    from datetime import datetime
+    p = MinutePrecision()
+    ts = datetime(2025, 1, 1, 12, 30, 45)
+    results = p.calculate_timestamps_with_tolerance(ts, tolerance_unit=2)
+    assert len(results) == 5
+    # Should span 12:28 to 12:32
+    assert results[0].minute == 28
+    assert results[4].minute == 32
+
+
+def test_second_precision_tolerance():
+    from datetime import datetime
+    p = SecondPrecision()
+    ts = datetime(2025, 1, 1, 12, 30, 45, 500000)
+    results = p.calculate_timestamps_with_tolerance(ts, tolerance_unit=1)
+    assert len(results) == 3
+    assert results[0].second == 44
+    assert results[1].second == 45
+    assert results[2].second == 46
+
+
+def test_milisecond_precision_tolerance():
+    from datetime import datetime
+    p = MilisecondPrecision()
+    ts = datetime(2025, 1, 1, 12, 30, 45, 500000)
+    results = p.calculate_timestamps_with_tolerance(ts, tolerance_unit=1)
+    assert len(results) == 3
+    # Milisecond precision downsamples to seconds
+    assert results[0].second == 44
+    assert results[1].second == 45
+    assert results[2].second == 46
+
+
+# ==================== Precision classes - replace and format ====================
+
+
+def test_hour_precision_trim_datetime_to_str():
+    from datetime import datetime
+    p = HourPrecision()
+    ts = datetime(2025, 6, 15, 14, 35, 22, 123456)
+    result = p.trim_datetime_timestamp_to_str(ts)
+    assert result == "2025-06-15T14:35"
+
+
+def test_minute_precision_trim_datetime_to_str():
+    from datetime import datetime
+    p = MinutePrecision()
+    ts = datetime(2025, 6, 15, 14, 35, 22, 123456)
+    result = p.trim_datetime_timestamp_to_str(ts)
+    assert result == "2025-06-15T14:35"
+
+
+def test_second_precision_trim_datetime_to_str():
+    from datetime import datetime
+    p = SecondPrecision()
+    ts = datetime(2025, 6, 15, 14, 35, 22, 123456)
+    result = p.trim_datetime_timestamp_to_str(ts)
+    assert result == "2025-06-15T14:35:22"
+
+
+def test_milisecond_precision_trim_datetime_to_str():
+    from datetime import datetime
+    p = MilisecondPrecision()
+    ts = datetime(2025, 6, 15, 14, 35, 22, 123456)
+    result = p.trim_datetime_timestamp_to_str(ts)
+    assert result == "2025-06-15T14:35:22"
+
+
+# ==================== STATUS / ANALYSIS_STATUS / FILE_TYPES / DOCKER_HOST_STATUS Enums ====================
+
+
+def test_status_enum_values():
+    assert STATUS.ACTIVE.value == "active"
+    assert STATUS.IDLE.value == "idle"
+    assert STATUS.SETTING_UP.value == "setting-up"
+
+
+def test_analysis_status_enum_values():
+    assert ANALYSIS_STATUS.LOGS_SENT.value == "LOGS_SENT"
+    assert ANALYSIS_STATUS.PROCESSING.value == "PROCESSING"
+    assert ANALYSIS_STATUS.IDLE.value == "IDLE"
+
+
+def test_file_types_enum_values():
+    assert FILE_TYPES.RUNTIME.value == "RUNTIME"
+    assert FILE_TYPES.DEPLOYMENT.value == "DEPLOYMENT"
+    assert FILE_TYPES.DATASET.value == "DATASET"
+    assert FILE_TYPES.RULESET.value == "RULESET"
+
+
+def test_docker_host_status_enum_values():
+    assert DOCKER_HOST_STATUS.AVAILABLE.value == "available"
+    assert DOCKER_HOST_STATUS.UNAVAILABLE.value == "unavailable"
+
+
+def test_metric_service_status_enum_values():
+    assert METRIC_SERVICE_STATUS.AVAILABLE.value == "available"
+    assert METRIC_SERVICE_STATUS.UNAVAILABLE.value == "unavailable"
+    assert METRIC_SERVICE_STATUS.DEPLOYING.value == "deploying"
+    assert METRIC_SERVICE_STATUS.REGISTERING.value == "registering"
+
+
+# ==================== start_network_analysis ====================
+
+
+@pytest.mark.asyncio
+async def test_start_network_analysis():
+    container = MagicMock()
+    container.get_container_http_url.return_value = "http://test-container"
+    data = {"interface": "eth0"}
+
+    with patch("app.utils.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_client.post.return_value = mock_response
+
+        response = await utils_start_network_analysis(container, data)
+        assert response.status_code == 200
+        mock_client.post.assert_awaited_once()
+
+
+# ==================== stop_analysis ====================
+
+
+@pytest.mark.asyncio
+async def test_stop_analysis():
+    container = MagicMock()
+    container.get_container_http_url.return_value = "http://test-container"
+
+    with patch("app.utils.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_client.post.return_value = mock_response
+
+        response = await utils_stop_analysis(container)
+        assert response.status_code == 200
+        mock_client.post.assert_awaited_once()

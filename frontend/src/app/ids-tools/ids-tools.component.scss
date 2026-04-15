@@ -1,0 +1,40 @@
+:host {
+    display: block;
+    font-family: inherit !important;
+}
+
+.tool-summary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.tool-summary-card {
+    min-height: 8rem;
+    color: var(--app-text);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 249, 246, 0.74));
+    border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+    box-shadow: var(--app-shadow-soft);
+}
+
+.tool-summary-card .summary-card__label {
+    color: var(--app-text-muted);
+}
+
+.tool-summary-card .summary-card__value {
+    color: var(--app-accent-strong);
+}
+
+.tool-summary-card .summary-card__hint {
+    color: var(--app-text-muted);
+}
+
+.tool-title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.95rem;
+    background: rgba(143, 29, 37, 0.1);
+    color: var(--app-accent-strong);
+}

@@ -23,9 +23,9 @@
 
 BICEP presents an evaluation platform to benchmark arbitrary IDS solutions like Suricata, Snort, Zeek or Slips, in order to achieve comparability amongst IDS tools and novel apporaches. Practically every (D)IDS or (C)IDS can be added to the system via its plugin capability. 
 
-Currently only Suricata and Slips modules are implemented and supported in terms of setup, configuration, lifecycle management and benchmarking.
+Currently Suricata, Snort, and Slips modules are featured IDS.
 
-The project is still under development and breaking changes are likely to occur. 
+We presented this framework at the 9th CSNet. If you are interested, take a look at our paper [here](https://doi.org/10.1109/CSNet64211.2024.10851475)!
 
 ## Supported Systems 
 
@@ -46,7 +46,7 @@ This fetches the newest version of the submodule for the backend code and is nec
 > [!IMPORTANT]
 > In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#distributed-setup)
 
-The project can be started by running running ```docker compose --env-file environments/dev up```. This will spin up all containers in development mode. To run the stack in production mode, simply use the production env file like so: ```docker compose --env-file environments/prod up```
+The project can be started by running ```PRODUCTION=FALSE CORE_HOST_IP=127.0.0.1 docker compose up```. This will spin up all containers in development mode. To run the stack in production mode, simply set `PRODUCTION` to `TRUE`. 
 
 
 ## Use The Framework
