@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import app.routers.metric_services as metric_services_router
 from app.models.metrics import MetricServiceRegistrationRequest
 from app.routers.metric_services import (
     register_metric_service,
@@ -10,6 +11,9 @@ from app.routers.metric_services import (
 
 @pytest.mark.asyncio
 async def test_register_metric_service_success():
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
     host = MagicMock()
     host.id = 1
     host.status = "unavailable"
@@ -47,11 +51,24 @@ async def test_register_metric_service_success():
             ) as mock_update:
                 mock_update.return_value = metric_service
 
-                db = AsyncMock()
-                response = await register_metric_service(payload, db=db)
-                assert response.status_code == 200
-                assert b"registered successfully" in response.body
-                assert host.status == "available"
+                with patch(
+                    "app.routers.metric_services.asyncio.to_thread",
+                    new=AsyncMock(side_effect=run_immediately),
+                ) as mock_to_thread:
+                    db = AsyncMock()
+                    response = await register_metric_service(payload, db=db)
+                    assert response.status_code == 200
+                    assert b"registered successfully" in response.body
+                    assert host.status == "available"
+                    assert any(
+                        call.args
+                        and call.args[0] is metric_services_router._normalize_aliases
+                        for call in mock_to_thread.await_args_list
+                    )
+                    assert any(
+                        call.args and call.args[0] is host.resolve_host_aliases
+                        for call in mock_to_thread.await_args_list
+                    )
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import socket
 
 from fastapi import APIRouter, Depends
@@ -45,12 +46,19 @@ def _registration_mismatch_response() -> JSONResponse:
     )
 
 
+async def _normalize_aliases_async(*values: str | None) -> set[str]:
+    return await asyncio.to_thread(_normalize_aliases, *values)
+
+
 async def _resolve_host_for_registration(db, registration: MetricServiceRegistrationRequest):
-    reported_aliases = _normalize_aliases(registration.name, registration.ip)
+    reported_aliases = await _normalize_aliases_async(
+        registration.name, registration.ip
+    )
     hosts = await get_all_hosts(db)
 
     for host in hosts:
-        if reported_aliases.intersection(host.resolve_host_aliases()):
+        expected_aliases = await asyncio.to_thread(host.resolve_host_aliases)
+        if reported_aliases.intersection(expected_aliases):
             return host
 
     return None
@@ -135,8 +143,10 @@ async def register_metric_service_for_host(
             status_code=404,
         )
 
-    expected_aliases = host.resolve_host_aliases()
-    reported_aliases = _normalize_aliases(registration.name, registration.ip)
+    expected_aliases, reported_aliases = await asyncio.gather(
+        asyncio.to_thread(host.resolve_host_aliases),
+        _normalize_aliases_async(registration.name, registration.ip),
+    )
     if not reported_aliases.intersection(expected_aliases):
         return _registration_mismatch_response()
 

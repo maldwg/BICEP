@@ -1,4 +1,4 @@
-from app.database import Base
+from app.database import Base, SessionLocal
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.future import select
@@ -42,9 +42,18 @@ METRIC_SERVICE_HEALTHCHECK_PATH = "/health"
 METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS = int(
     os.getenv("METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS", "45")
 )
+METRIC_SERVICE_REDEPLOY_TIMEOUT_SECONDS = int(
+    os.getenv("METRIC_SERVICE_REDEPLOY_TIMEOUT_SECONDS", "120")
+)
 METRIC_SERVICE_PORT_RANGE_START = 20000
 METRIC_SERVICE_PORT_RANGE_END = 60000
 METRIC_SERVICE_PORT_SELECTION_ATTEMPTS = 25
+METRIC_SERVICE_DEPLOYMENT_SCHEDULED = "scheduled"
+METRIC_SERVICE_DEPLOYMENT_ALREADY_RUNNING = "already_running"
+METRIC_SERVICE_DEPLOYMENT_FAILED = "failed"
+
+_metric_service_deployment_tasks: dict[int, asyncio.Task] = {}
+_metric_service_unhealthy_since: dict[int, datetime] = {}
 
 
 class DockerHostSystem(Base):
@@ -152,6 +161,9 @@ class DockerHostSystem(Base):
 
         return accessible_host
 
+    async def get_metric_service_registration_ip_async(self) -> str:
+        return await asyncio.to_thread(self.get_metric_service_registration_ip)
+
     def get_metric_service_registration_endpoint(self) -> str:
         base_endpoint = f"{self.get_metric_service_core_base_url()}/metric-services/register"
         if self.id is None:
@@ -204,6 +216,7 @@ class DockerHostSystem(Base):
             await ensure_image_present(client, image_name)
 
             selected_port = await self.choose_metric_service_port()
+            registration_ip = await self.get_metric_service_registration_ip_async()
             await update_metric_service(
                 db,
                 metric_service,
@@ -245,7 +258,7 @@ class DockerHostSystem(Base):
                     "BATCH_SIZE": METRIC_SERVICE_DEFAULT_BATCH_SIZE,
                     "SERVICE_NAME": METRIC_SERVICE_DEFAULT_NAME,
                     "SERVICE_PORT": str(selected_port),
-                    "SERVICE_IP": self.get_metric_service_registration_ip(),
+                    "SERVICE_IP": registration_ip,
                 },
             )
             await asyncio.to_thread(container.start)
@@ -268,6 +281,48 @@ class DockerHostSystem(Base):
             LOGGER.error(f"Failed to deploy metric service on {self.name}: {exc}")
         finally:
             client.close()
+
+    def _ensure_metric_service_deployment_task(self) -> str:
+        if self.id is None or SessionLocal is None:
+            LOGGER.error(
+                "Could not schedule metric service deployment for host %s.",
+                self.name,
+            )
+            return METRIC_SERVICE_DEPLOYMENT_FAILED
+
+        existing_task = _metric_service_deployment_tasks.get(self.id)
+        if existing_task is not None:
+            if not existing_task.done():
+                return METRIC_SERVICE_DEPLOYMENT_ALREADY_RUNNING
+            _metric_service_deployment_tasks.pop(self.id, None)
+
+        host_snapshot = DockerHostSystem(
+            id=self.id,
+            name=self.name,
+            host=self.host,
+            docker_port=self.docker_port,
+            status=self.status,
+        )
+
+        async def run_deployment() -> None:
+            db = SessionLocal()
+            try:
+                await host_snapshot._deploy_metric_service(db)
+            except Exception as exc:
+                LOGGER.error(
+                    "Background metric service deployment failed on %s: %s",
+                    self.name,
+                    exc,
+                )
+            finally:
+                await db.close()
+                _metric_service_deployment_tasks.pop(self.id, None)
+
+        _metric_service_deployment_tasks[self.id] = asyncio.create_task(
+            run_deployment(),
+            name=f"metric-service-deploy-{self.id}",
+        )
+        return METRIC_SERVICE_DEPLOYMENT_SCHEDULED
 
     async def _mark_metric_service_unavailable(
         self, db: AsyncSession | None, message: str
@@ -326,30 +381,93 @@ class DockerHostSystem(Base):
             runtime_seconds >= METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS
         )
 
-    async def _restart_metric_service_container(
+    def _should_redeploy_metric_service(self, state: dict, metric_service) -> bool:
+        if metric_service.last_registration_at:
+            return False
+
+        started_at = self._get_metric_service_started_at(state)
+        if started_at is None:
+            return False
+
+        runtime_seconds = (
+            datetime.now(timezone.utc) - started_at.astimezone(timezone.utc)
+        ).total_seconds()
+        return runtime_seconds >= METRIC_SERVICE_REDEPLOY_TIMEOUT_SECONDS
+
+    def _clear_metric_service_unhealthy_tracker(self) -> None:
+        if self.id is None:
+            return
+        _metric_service_unhealthy_since.pop(self.id, None)
+
+    def _should_redeploy_unhealthy_metric_service(self) -> bool:
+        if self.id is None:
+            return False
+
+        now = datetime.now(timezone.utc)
+        unhealthy_since = _metric_service_unhealthy_since.get(self.id)
+        if unhealthy_since is None:
+            _metric_service_unhealthy_since[self.id] = now
+            return False
+
+        return (
+            now - unhealthy_since.astimezone(timezone.utc)
+        ).total_seconds() >= METRIC_SERVICE_REDEPLOY_TIMEOUT_SECONDS
+
+    async def _redeploy_metric_service_container(
         self,
         db: AsyncSession,
         metric_service,
         *,
         reason: str,
     ) -> None:
-        client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
+        self._clear_metric_service_unhealthy_tracker()
         try:
-            container = await asyncio.to_thread(
-                client.containers.get,
-                self.get_metric_service_container_name(),
+            await self.remove_metric_service_container()
+        except Exception as exc:
+            LOGGER.error(
+                "Failed to remove metric service container from host %s before redeploy: %s",
+                self.name,
+                exc,
             )
-            await asyncio.to_thread(container.restart, timeout=10)
-        finally:
-            client.close()
+            await update_metric_service(
+                db,
+                metric_service,
+                status=METRIC_SERVICE_STATUS.UNAVAILABLE.value,
+                status_message=(
+                    f"{reason} Automatic cleanup before redeploy failed: {exc}"
+                ),
+                clear_registration=True,
+            )
+            return
 
-        await update_metric_service(
-            db,
-            metric_service,
-            status=METRIC_SERVICE_STATUS.REGISTERING.value,
-            status_message=reason,
-            clear_registration=True,
-        )
+        deployment_state = self._ensure_metric_service_deployment_task()
+        if deployment_state == METRIC_SERVICE_DEPLOYMENT_SCHEDULED:
+            await update_metric_service(
+                db,
+                metric_service,
+                status=METRIC_SERVICE_STATUS.DEPLOYING.value,
+                status_message=reason,
+                clear_registration=True,
+            )
+        elif deployment_state == METRIC_SERVICE_DEPLOYMENT_ALREADY_RUNNING:
+            await update_metric_service(
+                db,
+                metric_service,
+                status=METRIC_SERVICE_STATUS.DEPLOYING.value,
+                status_message="Metric service redeployment is already in progress.",
+                clear_registration=True,
+            )
+        else:
+            await update_metric_service(
+                db,
+                metric_service,
+                status=METRIC_SERVICE_STATUS.UNAVAILABLE.value,
+                status_message=(
+                    "Metric service cleanup finished, but automatic redeployment "
+                    "could not be scheduled."
+                ),
+                clear_registration=True,
+            )
 
     async def _check_metric_service_health(self, db: AsyncSession) -> bool:
 
@@ -371,12 +489,48 @@ class DockerHostSystem(Base):
                     client.containers.get, self.get_metric_service_container_name()
                 )
             except docker_sdk.errors.NotFound:
-                await self._deploy_metric_service(db)
+                deployment_state = self._ensure_metric_service_deployment_task()
+                if deployment_state == METRIC_SERVICE_DEPLOYMENT_SCHEDULED:
+                    await update_metric_service(
+                        db,
+                        metric_service,
+                        status=METRIC_SERVICE_STATUS.DEPLOYING.value,
+                        status_message="Metric service missing. Deploying it now.",
+                        clear_registration=True,
+                    )
+                elif deployment_state == METRIC_SERVICE_DEPLOYMENT_ALREADY_RUNNING:
+                    await update_metric_service(
+                        db,
+                        metric_service,
+                        status=METRIC_SERVICE_STATUS.DEPLOYING.value,
+                        status_message="Metric service deployment is already in progress.",
+                    )
+                else:
+                    await update_metric_service(
+                        db,
+                        metric_service,
+                        status=METRIC_SERVICE_STATUS.UNAVAILABLE.value,
+                        status_message=(
+                            "Metric service is missing and could not be redeployed "
+                            "automatically."
+                        ),
+                    )
                 return False
 
             await asyncio.to_thread(container.reload)
             state = container.attrs.get("State", {})
             if not state.get("Running"):
+                if self._should_redeploy_unhealthy_metric_service():
+                    await self._redeploy_metric_service_container(
+                        db,
+                        metric_service,
+                        reason=(
+                            "Metric service container stayed unavailable. Removing "
+                            "and redeploying it."
+                        ),
+                    )
+                    return False
+
                 await update_metric_service(
                     db,
                     metric_service,
@@ -386,12 +540,24 @@ class DockerHostSystem(Base):
                 return False
 
             if not metric_service.ip or not metric_service.port:
-                if self._is_metric_service_registration_stuck(state):
-                    await self._restart_metric_service_container(
+                self._clear_metric_service_unhealthy_tracker()
+                if self._should_redeploy_metric_service(state, metric_service):
+                    await self._redeploy_metric_service_container(
                         db,
                         metric_service,
                         reason=(
-                            "Metric service registration is stuck. Restarting the "
+                            "Metric service did not register in time. Removing and "
+                            "redeploying it."
+                        ),
+                    )
+                    return False
+
+                if self._is_metric_service_registration_stuck(state):
+                    await self._redeploy_metric_service_container(
+                        db,
+                        metric_service,
+                        reason=(
+                            "Metric service registration is stuck. Removing and redeploying the "
                             "metric service."
                         ),
                     )
@@ -408,6 +574,19 @@ class DockerHostSystem(Base):
             is_healthy = await self._metric_service_healthcheck(
                 metric_service.ip, metric_service.port
             )
+            if is_healthy:
+                self._clear_metric_service_unhealthy_tracker()
+            elif self._should_redeploy_unhealthy_metric_service():
+                await self._redeploy_metric_service_container(
+                    db,
+                    metric_service,
+                    reason=(
+                        "Metric service healthcheck kept failing. Removing and "
+                        "redeploying it."
+                    ),
+                )
+                return False
+
             await update_metric_service(
                 db,
                 metric_service,
@@ -430,7 +609,7 @@ class DockerHostSystem(Base):
         if self.id is None:
             return
 
-        client = get_docker_client(self)
+        client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
         try:
             try:
                 container = await asyncio.to_thread(
@@ -461,11 +640,13 @@ class DockerHostSystem(Base):
                         return DOCKER_HOST_STATUS.AVAILABLE.value
                     return DOCKER_HOST_STATUS.UNAVAILABLE.value
             else:
+                self._clear_metric_service_unhealthy_tracker()
                 LOGGER.info(f"host {self.name} is not reachable")
                 await self._mark_metric_service_unavailable(
                     db, "Docker host is not reachable."
                 )
         except Exception as e:
+            self._clear_metric_service_unhealthy_tracker()
             LOGGER.error(e)
             await self._mark_metric_service_unavailable(
                 db, f"Docker host healthcheck failed: {e}"

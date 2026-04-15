@@ -163,9 +163,11 @@
                       <button (click)="edit(container)"  class="edit-button" matFab>
                         <mat-icon>edit_document</mat-icon>
                       </button>
-                      <button (click)="remove(container)" class="delete-button" matFab>
-                        <mat-icon>delete</mat-icon>
-                      </button>
+                      @if (containerCanBeDeleted(container)) {
+                        <button (click)="remove(container)" class="delete-button" matFab>
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      }
                     </div>
                   </div>
 

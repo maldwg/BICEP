@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DockerHostService } from '../services/host/host.service';
 import { DockerHostSystem, RegisteredMetricService } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
@@ -9,6 +10,7 @@ import { AlertComponent } from "../components/alert-component/alert-component.co
 import { hostStatus } from '../models/status';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { EMPTY, catchError, interval, startWith, switchMap } from 'rxjs';
 
 @Component({
     selector: 'app-hosts',
@@ -26,33 +28,61 @@ export class DockerHostsComponent implements OnInit{
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
   constructor (
     private hostService: DockerHostService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private destroyRef: DestroyRef,
   ) {}
 
 
   hostSystemList: DockerHostSystem[] = []
   hostStatus = hostStatus
+  readonly pollDelayMs = 5000
 
   ngOnInit(): void {
-    this.getAllHostSystems()
-
+    interval(this.pollDelayMs)
+      .pipe(
+        startWith(0),
+        switchMap(() =>
+          this.hostService.getAllHosts(true).pipe(
+            catchError((err) => {
+              console.error('Could not refresh docker host status.', err)
+              return EMPTY
+            }),
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((hostSystems) => {
+        this.applyHostSystems(hostSystems)
+      })
   }
 
 
-  getAllHostSystems(){
-    this.hostService.getAllHosts().subscribe(
-      hostSystems => {
-        this.hostSystemList = hostSystems.map(hostSystem => ({
-          id: hostSystem.id,
-          name: hostSystem.name,
-          host: hostSystem.host,
-          docker_port: hostSystem.docker_port,
-          status: hostSystem.status,
-          status_message: hostSystem.status_message,
-          metric_service: hostSystem.metric_service
-        }))
-      }
-    )
+  private applyHostSystems(hostSystems: DockerHostSystem[]): void {
+    this.hostSystemList = hostSystems.map(hostSystem => ({
+      id: hostSystem.id,
+      name: hostSystem.name,
+      host: hostSystem.host,
+      docker_port: hostSystem.docker_port,
+      status: hostSystem.status,
+      status_message: hostSystem.status_message,
+      metric_service: hostSystem.metric_service
+    }))
+  }
+
+  private reloadHostSystems(showError = false): void {
+    this.hostService.getAllHosts(true).subscribe({
+      next: (hostSystems) => {
+        this.applyHostSystems(hostSystems)
+      },
+      error: (err) => {
+        if (showError) {
+          this.errorPopup?.showError(
+            err.error?.["error"] || "Could not refresh host status.",
+            err.status,
+          )
+        }
+      },
+    })
   }
 
 
@@ -78,7 +108,7 @@ export class DockerHostsComponent implements OnInit{
       if(hostData !== null){
         console.log(hostData)
         	this.hostService.addHost(hostData).subscribe(result => {
-              this.getAllHostSystems();
+              this.reloadHostSystems(true);
             },
             err => {
               this.errorPopup.showError(err.error["error"], err.status);

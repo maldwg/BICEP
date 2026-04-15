@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from app.models.docker_host_system import get_all_hosts
 
 HOST_AVAILABILITY_CHECK_INTERVAL_SECONDS = int(
-    os.getenv("HOST_AVAILABILITY_CHECK_INTERVAL", "60")
+    os.getenv("HOST_AVAILABILITY_CHECK_INTERVAL", "5")
 )
 availability_update_lock = asyncio.Lock()
 

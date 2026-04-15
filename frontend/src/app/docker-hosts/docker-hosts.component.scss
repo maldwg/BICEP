@@ -6,6 +6,14 @@
 
   }
 
+.component-header-div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .action-button{
   margin: 1%;
   border-radius: 20px;
@@ -16,16 +24,6 @@
 .config-button-div{
   margin: auto;
   padding-bottom: 5%;
-}
-
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.spinning {
-  animation: spin 3s linear infinite;
 }
 
 .new-config-button{

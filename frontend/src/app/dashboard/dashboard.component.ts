@@ -353,6 +353,14 @@ export class DashboardComponent implements OnInit {
   }
 
   remove(containerToRemove: Container) {
+    if (this.containerIsSettingUp(containerToRemove)) {
+      this.errorPopup.showError(
+        'An IDS that is still setting up cannot be deleted yet.',
+        409
+      );
+      return;
+    }
+
     this.idsService.removeContainerById(containerToRemove.id)
       .subscribe(backendres => {
         this.containerList = this.containerList.filter(container => container !== containerToRemove);
@@ -407,6 +415,10 @@ export class DashboardComponent implements OnInit {
     else {
       return true;
     }
+  }
+
+  containerCanBeDeleted(container: Container) {
+    return !this.containerIsSettingUp(container);
   }
 
   ensembleIsIdle(ensemble: Ensemble) {

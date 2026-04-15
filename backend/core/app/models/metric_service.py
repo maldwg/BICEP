@@ -120,6 +120,7 @@ async def update_metric_service(
 ) -> MetricService:
     if clear_registration:
         metric_service.ip = None
+        metric_service.port = None
         metric_service.last_registration_at = None
 
     if name is not None:

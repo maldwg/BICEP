@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
+from datetime import datetime, timedelta, timezone
 import docker as docker_sdk
+import app.models.docker_host_system as docker_host_system_module
 from app.deployment.deployment_plugins.docker import (
     DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
 )
@@ -35,6 +37,15 @@ def remote_host():
         docker_port=2376,
         status="available",
     )
+
+
+@pytest.fixture(autouse=True)
+def clear_metric_service_health_trackers():
+    docker_host_system_module._metric_service_unhealthy_since.clear()
+    docker_host_system_module._metric_service_deployment_tasks.clear()
+    yield
+    docker_host_system_module._metric_service_unhealthy_since.clear()
+    docker_host_system_module._metric_service_deployment_tasks.clear()
 
 
 # ==================== get_host_and_docker_port ====================
@@ -193,6 +204,9 @@ async def test_deploy_metric_service_uses_deployment_timeout(
     mock_container = MagicMock()
     mock_client.containers.create.return_value = mock_container
     remote_host.choose_metric_service_port = AsyncMock(return_value=21002)
+    remote_host.get_metric_service_registration_ip = MagicMock(
+        return_value="192.168.1.100"
+    )
 
     with patch(
         "app.models.docker_host_system.get_or_create_metric_service",
@@ -209,7 +223,7 @@ async def test_deploy_metric_service_uses_deployment_timeout(
     ) as mock_ensure_image_present, patch(
         "app.models.docker_host_system.asyncio.to_thread",
         new=AsyncMock(side_effect=run_immediately),
-    ):
+    ) as mock_to_thread:
         await remote_host._deploy_metric_service(AsyncMock())
 
     mock_get_client.assert_called_once_with(
@@ -219,6 +233,10 @@ async def test_deploy_metric_service_uses_deployment_timeout(
     mock_ensure_image_present.assert_awaited_once_with(
         mock_client,
         remote_host.get_metric_service_image(),
+    )
+    assert any(
+        call.args and call.args[0] is remote_host.get_metric_service_registration_ip
+        for call in mock_to_thread.await_args_list
     )
     mock_container.start.assert_called_once()
     mock_client.close.assert_called_once()
@@ -331,7 +349,7 @@ async def test_check_host_health_exception(core_host: DockerHostSystem):
 
 
 @pytest.mark.asyncio
-async def test_check_metric_service_health_restarts_stuck_registration(
+async def test_check_metric_service_health_redeploys_stuck_registration(
     remote_host: DockerHostSystem,
 ):
     async def run_immediately(func, *args, **kwargs):
@@ -346,7 +364,9 @@ async def test_check_metric_service_health_restarts_stuck_registration(
     mock_container.attrs = {
         "State": {
             "Running": True,
-            "StartedAt": "2000-01-01T00:00:00Z",
+            "StartedAt": (
+                datetime.now(timezone.utc) - timedelta(seconds=60)
+            ).isoformat().replace("+00:00", "Z"),
         }
     }
 
@@ -360,6 +380,146 @@ async def test_check_metric_service_health_restarts_stuck_registration(
     ), patch(
         "app.models.docker_host_system.get_docker_client",
         return_value=mock_client,
+    ), patch.object(
+        remote_host,
+        "remove_metric_service_container",
+        new=AsyncMock(),
+    ) as mock_remove, patch.object(
+        remote_host,
+        "_ensure_metric_service_deployment_task",
+        return_value="scheduled",
+    ) as mock_schedule, patch(
+        "app.models.docker_host_system.update_metric_service",
+        new=AsyncMock(),
+    ) as mock_update, patch(
+        "app.models.docker_host_system.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        result = await remote_host._check_metric_service_health(AsyncMock())
+
+    assert result is False
+    mock_remove.assert_awaited_once()
+    mock_schedule.assert_called_once_with()
+    assert any(
+        call.kwargs.get("status") == METRIC_SERVICE_STATUS.DEPLOYING.value
+        and call.kwargs.get("clear_registration") is True
+        and call.kwargs.get("status_message")
+        == "Metric service registration is stuck. Removing and redeploying the metric service."
+        for call in mock_update.await_args_list
+    )
+
+
+@pytest.mark.asyncio
+async def test_check_metric_service_health_redeploys_after_registration_timeout(
+    remote_host: DockerHostSystem,
+):
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    metric_service = MagicMock()
+    metric_service.ip = None
+    metric_service.port = 21002
+    metric_service.status = METRIC_SERVICE_STATUS.REGISTERING.value
+    metric_service.last_registration_at = None
+
+    mock_container = MagicMock()
+    mock_container.attrs = {
+        "State": {
+            "Running": True,
+            "StartedAt": (
+                datetime.now(timezone.utc) - timedelta(seconds=180)
+            ).isoformat().replace("+00:00", "Z"),
+        }
+    }
+
+    mock_client = MagicMock()
+    mock_client.containers.get.return_value = mock_container
+    mock_client.close = MagicMock()
+
+    with patch(
+        "app.models.docker_host_system.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=metric_service),
+    ), patch(
+        "app.models.docker_host_system.get_docker_client",
+        return_value=mock_client,
+    ), patch.object(
+        remote_host,
+        "remove_metric_service_container",
+        new=AsyncMock(),
+    ) as mock_remove, patch.object(
+        remote_host,
+        "_ensure_metric_service_deployment_task",
+        return_value="scheduled",
+    ) as mock_schedule, patch(
+        "app.models.docker_host_system.update_metric_service",
+        new=AsyncMock(),
+    ) as mock_update, patch(
+        "app.models.docker_host_system.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        result = await remote_host._check_metric_service_health(AsyncMock())
+
+    assert result is False
+    mock_remove.assert_awaited_once()
+    mock_schedule.assert_called_once_with()
+    assert any(
+        call.kwargs.get("status") == METRIC_SERVICE_STATUS.DEPLOYING.value
+        and call.kwargs.get("clear_registration") is True
+        and call.kwargs.get("status_message")
+        == "Metric service did not register in time. Removing and redeploying it."
+        for call in mock_update.await_args_list
+    )
+
+
+@pytest.mark.asyncio
+async def test_check_metric_service_health_redeploys_after_persistent_healthcheck_failure(
+    remote_host: DockerHostSystem,
+):
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    metric_service = MagicMock()
+    metric_service.ip = "192.168.1.100"
+    metric_service.port = 21002
+    metric_service.status = METRIC_SERVICE_STATUS.AVAILABLE.value
+    metric_service.last_registration_at = "2026-01-01T00:00:00"
+
+    docker_host_system_module._metric_service_unhealthy_since[remote_host.id] = (
+        datetime.now(timezone.utc) - timedelta(seconds=180)
+    )
+
+    mock_container = MagicMock()
+    mock_container.attrs = {
+        "State": {
+            "Running": True,
+            "StartedAt": (
+                datetime.now(timezone.utc) - timedelta(seconds=300)
+            ).isoformat().replace("+00:00", "Z"),
+        }
+    }
+
+    mock_client = MagicMock()
+    mock_client.containers.get.return_value = mock_container
+    mock_client.close = MagicMock()
+
+    with patch(
+        "app.models.docker_host_system.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=metric_service),
+    ), patch(
+        "app.models.docker_host_system.get_docker_client",
+        return_value=mock_client,
+    ), patch.object(
+        remote_host,
+        "remove_metric_service_container",
+        new=AsyncMock(),
+    ) as mock_remove, patch.object(
+        remote_host,
+        "_ensure_metric_service_deployment_task",
+        return_value="scheduled",
+    ) as mock_schedule, patch.object(
+        remote_host,
+        "_metric_service_healthcheck",
+        new=AsyncMock(return_value=False),
     ), patch(
         "app.models.docker_host_system.update_metric_service",
         new=AsyncMock(),
@@ -370,10 +530,58 @@ async def test_check_metric_service_health_restarts_stuck_registration(
         result = await remote_host._check_metric_service_health(AsyncMock())
 
     assert result is False
-    mock_container.restart.assert_called_once_with(timeout=10)
+    mock_remove.assert_awaited_once()
+    mock_schedule.assert_called_once_with()
     assert any(
-        call.kwargs.get("status") == METRIC_SERVICE_STATUS.REGISTERING.value
+        call.kwargs.get("status") == METRIC_SERVICE_STATUS.DEPLOYING.value
         and call.kwargs.get("clear_registration") is True
+        and call.kwargs.get("status_message")
+        == "Metric service healthcheck kept failing. Removing and redeploying it."
+        for call in mock_update.await_args_list
+    )
+
+
+@pytest.mark.asyncio
+async def test_check_metric_service_health_schedules_background_deploy_when_missing(
+    remote_host: DockerHostSystem,
+):
+    async def run_immediately(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    metric_service = MagicMock()
+    metric_service.ip = None
+    metric_service.port = None
+
+    mock_client = MagicMock()
+    mock_client.containers.get.side_effect = docker_sdk.errors.NotFound("missing")
+    mock_client.close = MagicMock()
+
+    with patch(
+        "app.models.docker_host_system.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=metric_service),
+    ), patch(
+        "app.models.docker_host_system.get_docker_client",
+        return_value=mock_client,
+    ), patch.object(
+        remote_host,
+        "_ensure_metric_service_deployment_task",
+        return_value="scheduled",
+    ) as mock_schedule, patch(
+        "app.models.docker_host_system.update_metric_service",
+        new=AsyncMock(),
+    ) as mock_update, patch(
+        "app.models.docker_host_system.asyncio.to_thread",
+        new=AsyncMock(side_effect=run_immediately),
+    ):
+        result = await remote_host._check_metric_service_health(AsyncMock())
+
+    assert result is False
+    mock_schedule.assert_called_once_with()
+    assert any(
+        call.kwargs.get("status") == METRIC_SERVICE_STATUS.DEPLOYING.value
+        and call.kwargs.get("clear_registration") is True
+        and call.kwargs.get("status_message")
+        == "Metric service missing. Deploying it now."
         for call in mock_update.await_args_list
     )
 

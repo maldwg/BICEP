@@ -107,6 +107,16 @@ async def remove_container(container_id: int, db=Depends(get_db)):
             {"error": f"container with id {container_id} was not found"},
             status_code=404,
         )
+    if container.status == STATUS.SETTING_UP.value:
+        return JSONResponse(
+            {
+                "error": (
+                    f"container with id {container_id} is still setting up and "
+                    "cannot be deleted yet"
+                )
+            },
+            status_code=409,
+        )
     if container.deployment_status == DEPLOYMENT_STATUS.DELETED.value:
         return Response(status_code=204)
     try:

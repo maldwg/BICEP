@@ -15,11 +15,15 @@ export class DockerHostService {
   ) { }
 
 
-  getAllHosts(forceRefresh = false): Observable<DockerHostSystem[]> {
-    let path = "/crud/host/all"
+  getAllHosts(
+    forceRefresh = false,
+  ): Observable<DockerHostSystem[]> {
+    const path = '/crud/host/all';
 
     if (forceRefresh || !this.allHosts$) {
-      this.allHosts$ = this.http.get<DockerHostSystem[]>(environment.backendUrl + path)
+      this.allHosts$ = this.http.get<DockerHostSystem[]>(
+        environment.backendUrl + path,
+      )
         .pipe(shareReplay(1));
     }
 

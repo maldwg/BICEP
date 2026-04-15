@@ -39,6 +39,26 @@ async def test_remove_container(db_session_fixture: DatabaseSessionFixture):
 
 
 @pytest.mark.asyncio
+async def test_remove_container_rejects_setting_up_container(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    db_session = await db_session_fixture.get_db_session()
+    container = await db_session_fixture.get_ids_container_model()
+    container.status = STATUS.SETTING_UP.value
+
+    response = await remove_container(container_id=container.id, db=db_session)
+    response_json = json.loads(response.body.decode())
+
+    assert response.status_code == 409
+    assert response_json == {
+        "error": (
+            f"container with id {container.id} is still setting up and cannot be "
+            "deleted yet"
+        )
+    }
+
+
+@pytest.mark.asyncio
 async def test_start_static_container_analysis_from_idle_container(
     db_session_fixture: DatabaseSessionFixture,
 ):
