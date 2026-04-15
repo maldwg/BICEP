@@ -554,7 +554,7 @@ p {
 .new-config-button {
   min-width: 11rem;
   min-height: 3rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 245, 242, 0.88));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 245, 242, 0.88)) !important;
   color: var(--app-accent-strong);
   border: 0.0625rem solid rgba(255, 255, 255, 0.5);
 }
