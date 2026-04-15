@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 from app.validation.models import (
     EnsembleCreate,
     StaticAnalysisData,
@@ -10,8 +10,7 @@ from app.validation.models import (
 )
 from app.routers.ensemble import *
 from app.test.fixtures import *
-from fastapi.responses import JSONResponse
-
+import json
 
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
@@ -543,7 +542,7 @@ async def test_receive_alerts_from_ids_static_analysis_not_last_container(
     }
 
 
-@patch("app.routers.ensemble.calculate_evaluation_metrics")
+@patch("app.routers.ensemble.calculate_evaluation_metrics_and_push")
 @patch("app.routers.ensemble.clean_up_alerts_in_loki")
 @patch("app.routers.ensemble.get_all_alerts_for_ensemble_from_analysis_id")
 @patch("app.routers.ensemble.push_alerts_to_loki")

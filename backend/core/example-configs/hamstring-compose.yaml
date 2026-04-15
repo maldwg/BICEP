@@ -1,0 +1,310 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.9.3
+    container_name: zookeeper
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    labels:
+      - "bicep.role=INFRA"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s localhost:8080/commands | grep ruok"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka1
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    labels:
+      - "bicep.role=INFRA"
+    ports:
+      - "8097:8097"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19092"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://${HOST_IP}:8097
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:8097
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka2
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    labels:
+      - "bicep.role=INFRA"
+    ports:
+      - "8098:8098"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19093"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:19093,EXTERNAL://${HOST_IP}:8098
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19093,EXTERNAL://0.0.0.0:8098
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.9.3
+    container_name: kafka3
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    labels:
+      - "bicep.role=INFRA"
+    ports:
+      - "8099:8099"
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 19094"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:19094,EXTERNAL://${HOST_IP}:8099
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19094,EXTERNAL://0.0.0.0:8099
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+
+  logserver:
+    image: ghcr.io/hamstring-ndr/hamstring-logserver:latest
+    restart: "unless-stopped"
+    networks:
+      - hamstring
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    volumes:
+      - "${MOUNT_PATH:?MOUNT_PATH not set}:/opt/file.txt"
+    environment:
+      - GROUP_ID=log_storage
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  logcollector:
+    image: ghcr.io/hamstring-ndr/hamstring-logcollector:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    networks:
+      - hamstring
+    environment:
+      - GROUP_ID=log_collection
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  prefilter:
+    image: ghcr.io/hamstring-ndr/hamstring-prefilter:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: ${PREFILTER_SCALE:-1}
+    environment:
+      - GROUP_ID=log_filtering
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  inspector:
+    image: ghcr.io/hamstring-ndr/hamstring-inspector:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: ${INSPECTOR_SCALE:-1}
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512m
+        reservations:
+          cpus: '1'
+          memory: 256m
+    environment:
+      - GROUP_ID=data_inspection
+      - NUMBER_OF_INSTANCES=1
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  detector:
+    image: ghcr.io/hamstring-ndr/hamstring-detector:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    networks:
+      - hamstring
+    deploy:
+      mode: "replicated"
+      replicas: ${DETECTOR_SCALE:-1}
+    environment:
+      - GROUP_ID=data_analysis
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  alerter:
+    image: ghcr.io/hamstring-ndr/hamstring-alerter:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=PIPELINE"
+      - "bicep.config.mount=/app/config.yaml"
+    deploy:
+      mode: "replicated"
+      replicas: ${ALERTER_SCALE:-1}
+    environment:
+      - GROUP_ID=data_alerting
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    networks:
+        - hamstring
+  zeek: 
+    image: ghcr.io/maldwg/bicep-hamstring:1.0.0
+    labels: 
+      - "bicep.role=SENSOR"
+      - "bicep.sensor=true"
+      - "bicep.config.mount=/app/config.yaml"
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    deploy:
+      mode: "replicated"
+      replicas: ${ZEEK_SCALE:-1}
+    network_mode: host
+    environment:
+      - CONTAINER_NAME=zeek
+
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:24.3.12.75-alpine
+    container_name: clickhouse-server
+    labels: 
+      - "bicep.role=INFRA"
+      - "bicep.config.mount=/docker-entrypoint-initdb.d/init_tables.sql"
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 8123" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+        - hamstring
+
+  monitoring-agent:
+    image: ghcr.io/hamstring-ndr/hamstring-monitoring:latest
+    restart: "unless-stopped"
+    labels:
+      - "bicep.role=INFRA"
+      - "bicep.config.mount=/app/config.yaml"
+    deploy:
+      mode: "replicated"
+      replicas: ${MONITORING_SCALE:-1}
+    environment:
+      - GROUP_ID=monitoring_agent
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+      clickhouse-server:
+        condition: service_healthy
+    networks:
+        - hamstring
+
+
+networks:
+  hamstring:
+    driver: bridge
+    ipam:
+      driver: default
+

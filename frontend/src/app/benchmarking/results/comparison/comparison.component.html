@@ -1,10 +1,20 @@
-<div class="comparison-container">
-    <div class="header">
-        <button class="back-button" (click)="close.emit()" matFab extended>
-            <mat-icon>arrow_left</mat-icon>
-            Back
-        </button>
-    </div>
+<section class="page-shell comparison-container">
+    <header class="page-hero">
+        <div class="page-hero__copy">
+            <span class="page-kicker">Benchmarking</span>
+            <h1 class="page-title">Comparison Workspace</h1>
+            <p class="page-subtitle">
+                Switch chart views, refine aggregation, and export the final comparison once the benchmark set is aligned.
+            </p>
+        </div>
+        <div class="page-hero__actions">
+            <button class="back-button" (click)="close.emit()" matFab extended>
+                <mat-icon>arrow_left</mat-icon>
+                Back
+            </button>
+        </div>
+    </header>
+
     <mat-card>
         <mat-card-content>
             <div class="config-panel">
@@ -37,7 +47,7 @@
                     </mat-form-field>
                 </div>
 
-                <button class="download-button" style="margin-top: 2%;" (click)="downloadChart()" matFab extended>
+                <button class="download-button comparison-download-button" (click)="downloadChart()" matFab extended>
                     <mat-icon>download</mat-icon> Download SVG
                 </button>
             </div>
@@ -47,4 +57,4 @@
             </div>
         </mat-card-content>
     </mat-card>
-</div>
+</section>

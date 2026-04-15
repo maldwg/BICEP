@@ -1,18 +1,39 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
-import { HostsComponent } from './docker-hosts.component';
+import { DockerHostsComponent } from './docker-hosts.component';
+import { DockerHostService } from '../services/host/host.service';
 
-describe('HostsComponent', () => {
-  let component: HostsComponent;
-  let fixture: ComponentFixture<HostsComponent>;
+describe('DockerHostsComponent', () => {
+  let component: DockerHostsComponent;
+  let fixture: ComponentFixture<DockerHostsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HostsComponent]
+      imports: [DockerHostsComponent],
+      providers: [
+        {
+          provide: DockerHostService,
+          useValue: {
+            getAllHosts: () => of([]),
+            addHost: () => of(null),
+            removeHost: () => of(null),
+          },
+        },
+        {
+          provide: MatDialog,
+          useValue: {
+            open: () => ({
+              afterClosed: () => of(null),
+            }),
+          },
+        },
+      ],
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(HostsComponent);
+    fixture = TestBed.createComponent(DockerHostsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

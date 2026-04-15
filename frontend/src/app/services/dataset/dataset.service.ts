@@ -1,6 +1,7 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, finalize, map } from 'rxjs';
+import { HttpEvent, HttpEventType } from '@angular/common/http';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { Dataset, DatasetSetupData } from '../../models/dataset';
 import { environment } from '../../../environments/environment';
 
@@ -8,6 +9,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class DatasetService {
+  private allDatasets$?: Observable<Dataset[]>;
 
   constructor(
     private http: HttpClient,
@@ -15,18 +17,26 @@ export class DatasetService {
   ) { }
 
 
-
-  getAllDatasets(): Observable<Dataset[]> {
+  getAllDatasets(forceRefresh = false): Observable<Dataset[]> {
     let path = "/crud/dataset/all";
-    return this.http.get<Dataset[]>(environment.backendUrl + path);
+
+    if (forceRefresh || !this.allDatasets$) {
+      this.allDatasets$ = this.http.get<Dataset[]>(environment.backendUrl + path)
+        .pipe(shareReplay(1));
+    }
+
+    return this.allDatasets$;
   }
 
   removeDataset(id: number): Observable<HttpResponse<any>> {
     let path = "/crud/dataset/";
-    return this.http.delete<HttpResponse<any>>(environment.backendUrl+path+id, {observe: "response"});
+    return this.http.delete<HttpResponse<any>>(environment.backendUrl+path+id, {observe: "response"})
+      .pipe(
+        tap(() => this.invalidateDatasetsCache())
+      );
   }
 
-  addDataset(dataset: DatasetSetupData){
+  addDataset(dataset: DatasetSetupData): Observable<HttpEvent<any>>{
     let path = "/crud/dataset/add"
     const formData = new FormData();
     formData.append("name", dataset.name);
@@ -38,6 +48,16 @@ export class DatasetService {
     return this.http.post(environment.backendUrl+path, formData, {
       reportProgress: true,
       observe: "events"
-    });
+    }).pipe(
+      tap((event) => {
+        if (event.type === HttpEventType.Response) {
+          this.invalidateDatasetsCache();
+        }
+      })
+    );
+  }
+
+  invalidateDatasetsCache(): void {
+    this.allDatasets$ = undefined;
   }
 }

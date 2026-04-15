@@ -1,4 +1,64 @@
-.mat-success {
-    background-color: green;
-    color: #fff;
-  }
+:host {
+    display: block;
+}
+
+.component-edit-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 0.08rem solid rgba(143, 29, 37, 0.12);
+}
+
+.component-edit-section h3 {
+    margin-bottom: 1rem;
+    color: var(--app-accent-strong);
+}
+
+.component-edit-empty-state {
+    padding: 0.8rem 1rem;
+    color: var(--app-text-muted);
+    font-style: italic;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.component-edit-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(255, 255, 255, 0.48);
+    border-radius: 1rem;
+    transition: background 0.2s ease;
+}
+
+.component-edit-row:hover {
+    background: rgba(255, 255, 255, 0.68);
+}
+
+.component-edit-row .service-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: capitalize;
+}
+
+.component-edit-row .config-select {
+    flex: 2;
+}
+
+.component-edit-row .count-input {
+    width: 6rem;
+}
+
+@media (max-width: 60rem) {
+    .component-edit-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .component-edit-row .config-select,
+    .component-edit-row .count-input {
+        width: 100%;
+    }
+}

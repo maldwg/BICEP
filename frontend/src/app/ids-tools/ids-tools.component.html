@@ -1,0 +1,90 @@
+<app-alert-component></app-alert-component>
+
+<section class="page-shell">
+    <header class="page-hero">
+        <div class="page-hero__copy">
+            <span class="page-kicker">Catalog</span>
+            <h1 class="page-title">IDS Tool Registry</h1>
+            <p class="page-subtitle">
+                Maintain the deployment-ready IDS tool catalog, including analysis capabilities, image metadata, and runtime requirements.
+            </p>
+        </div>
+        <div class="page-hero__actions">
+            <button matButton class="new-config-button moving-hover-button" (click)="newTool()">
+                <mat-icon>add</mat-icon>
+                Add New Tool
+            </button>
+        </div>
+    </header>
+
+    <div class="page-summary-grid tool-summary-grid">
+        <article class="summary-card tool-summary-card">
+            <span class="summary-card__label">Tooling Catalog</span>
+            <span class="summary-card__value">{{ toolList.length }}</span>
+            <span class="summary-card__hint">Deployable IDS integrations managed in BICEP</span>
+        </article>
+        <article class="summary-card tool-summary-card">
+            <span class="summary-card__label">Coverage</span>
+            <span class="summary-card__value">IDS</span>
+            <span class="summary-card__hint">Signature, anomaly, and compose-based system definitions</span>
+        </article>
+        <article class="summary-card tool-summary-card">
+            <span class="summary-card__label">Image Discipline</span>
+            <span class="summary-card__value">Tracked</span>
+            <span class="summary-card__hint">Image name, tag, and deployment mode documented per tool</span>
+        </article>
+    </div>
+
+    <div class="expansion-panel-flexbox-container">
+        @for (tool of toolList; track tool) {
+        <div class="flexbox-item">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>
+                        <div class="card-title-row">
+                            <div class="card-title-group">
+                                <span class="card-title-eyebrow">IDS Tool</span>
+                                <span class="mat-card-title-text">{{ tool.name }}</span>
+                            </div>
+                            <span class="tool-title-icon">
+                                <mat-icon>security</mat-icon>
+                            </span>
+                        </div>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="info-row">
+                        <strong>ID:</strong> <span>{{ tool.id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Type:</strong> <span>{{ tool.ids_type }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Analysis:</strong> <span>{{ tool.analysis_method }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Requires Ruleset:</strong> <span>{{ tool.requires_ruleset ? 'Yes' : 'No' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Image:</strong> <span>{{ tool.image_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Tag:</strong> <span>{{ tool.image_tag }}</span>
+                    </div>
+                    <div class="info-row">
+                        <strong>Deployment:</strong> <span>{{ getDeploymentLabel(tool.deployment_type) }}</span>
+                    </div>
+                </mat-card-content>
+                <mat-card-actions>
+                    <button class="edit-button" matFab (click)="editTool(tool)">
+                        <mat-icon>edit_document</mat-icon>
+                    </button>
+                    <button class="delete-button" matFab (click)="removeTool(tool)">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </mat-card-actions>
+            </mat-card>
+        </div>
+        }
+    </div>
+</section>

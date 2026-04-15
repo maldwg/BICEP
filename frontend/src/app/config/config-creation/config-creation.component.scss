@@ -1,27 +1,11 @@
-
-.action-button{
-  margin: 1%;
-  border-radius: 20px;
-}
-
-
 :host {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: block;
 }
-
-
-.mat-success {
-  background-color: green;
-  color: #fff;
-}
-
 
 .file-input {
   display: none;
 }
 
-.progress-div{
-  padding-top: 10%;
+.progress-div {
+  padding-top: 1rem;
 }

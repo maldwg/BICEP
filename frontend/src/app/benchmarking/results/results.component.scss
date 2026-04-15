@@ -1,109 +1,131 @@
 @use '@angular/material' as mat;
 
-
 .table-container {
-  width: 100%;
+  width: calc(100vw - (var(--app-shell-gutter) * 2));
+  max-width: 112rem;
+  margin-left: calc(50% - 50vw + var(--app-shell-gutter));
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
+  gap: 1rem;
+}
+
+.results-summary-grid {
+  width: 100%;
 }
 
 .flex-container-search-and-download {
-  margin: auto;
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: flex-start;
-  flex-direction: row;
-  gap: 2%;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  padding: 1.15rem 1.25rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 248, 0.72));
+  box-shadow: var(--app-shadow-soft);
 }
 
 .flex-container {
-  margin: auto;
   width: 100%;
   display: flex;
   justify-content: center;
   flex-direction: column;
+  padding: 1rem 1rem 0.5rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 248, 0.76));
+  box-shadow: var(--app-shadow-soft);
+  overflow: hidden;
 }
 
 .mat-mdc-table {
-  backdrop-filter: blur(5px);
-  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  overflow: hidden;
 }
 
-.mat-mdc-header-cell {
-  font-size: 16px;
-  color: white !important;
-  font-weight: 600;
+.results-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 1rem;
 }
 
-
-// TODO: values are hardcoded here because shades from theme could not be applied directly
-.mat-mdc-header-row {
-  background-color: rgba(211, 47, 47, 0.3); // Material red 700
+.results-table {
+  width: max-content;
+  min-width: 100%;
 }
 
-
-.mat-mdc-row:nth-child(even) {
-  backdrop-filter: blur(5px);
-  background-color: rgba(255, 205, 210, 0.3); // Material red 100
+.results-table .mat-mdc-header-row {
+  background: linear-gradient(90deg, rgba(128, 71, 76, 0.9), rgba(163, 104, 109, 0.86));
 }
 
-.mat-mdc-row:nth-child(odd) {
-  backdrop-filter: blur(5px);
-  background-color: rgba(255, 235, 238, 0.2); // Material red 50
+.results-table .mat-mdc-header-cell {
+  color: #fffdfc !important;
+  text-shadow: none;
 }
 
-.mat-mdc-row:hover {
-  background-color: rgba(239, 154, 154, 0.5); // Material red 200
+.results-table .mat-mdc-cell,
+.results-table .mat-mdc-header-cell {
+  padding-inline: 0.9rem;
+  white-space: nowrap;
 }
 
 .mat-mdc-paginator {
-  background-color: rgba(255, 255, 255, 0.0);
-  margin: auto;
-  margin-top: 2%;
+  margin-top: 1rem;
 }
 
-
 .search {
-  width: 400px;
-  margin-bottom: 2%;
+  width: min(100%, 24rem);
 }
 
 .table-wrap {
   overflow: auto;
 }
 
-.delete-button {
-  background-color: rgba(244, 67, 54, 0.9);
-  color: white;
-  border-radius: 8px;
-  margin-right: 5px;
-  border-color: rgba(244, 67, 54, 0.9);
+.download-button {
+  padding: 0 1.2rem !important;
+  height: 3rem !important;
+  font-weight: 600 !important;
 }
 
-.download-button {
-  background-color: rgba(33, 150, 243, 0.9) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  padding: 0 20px !important;
-  height: 48px !important;
-  font-weight: 500 !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+.compare-button {
+  padding: 0 1.2rem !important;
+  height: 3rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, #8f1d25, #b43c3c) !important;
+  color: #fff !important;
+}
 
-  &:hover {
-    background-color: rgba(33, 150, 243, 1) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-    transform: translateY(-2px);
-  }
+.compare-button mat-icon {
+  color: #fff !important;
+}
 
-  mat-icon {
-    margin-right: 8px;
-  }
+.spinner-container {
+  margin-top: 2rem;
 }
 
 ::ng-deep .mdc-text-field--outlined {
   background-color: white !important;
+}
+
+@media (max-width: 60rem) {
+  .table-container {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .flex-container-search-and-download {
+    align-items: stretch;
+  }
+
+  .search,
+  .download-button,
+  .compare-button {
+    width: 100%;
+  }
 }

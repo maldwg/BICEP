@@ -1,43 +1,55 @@
 .monitoring-container {
-  padding: 20px;
-  min-height: 100vh;
-  box-sizing: border-box;
-  color: #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  min-height: 100%;
+}
+
+.monitoring-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.monitoring-summary-card {
+  min-height: 8rem;
+  color: var(--app-text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 249, 246, 0.74));
+  border: 0.0625rem solid rgba(255, 255, 255, 0.54);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.monitoring-summary-card .summary-card__label {
+  color: var(--app-text-muted);
+}
+
+.monitoring-summary-card .summary-card__value {
+  color: var(--app-accent-strong);
+}
+
+.monitoring-summary-card .summary-card__hint {
+  color: var(--app-text-muted);
 }
 
 .header {
-  width: 80%;
-  margin-bottom: 30px;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 500;
-}
-
-.header p {
-  margin: 5px 0 15px;
-  color: #aaa;
+  width: 100%;
+  padding: 1.15rem 1.25rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 248, 0.72));
+  box-shadow: var(--app-shadow-soft);
 }
 
 .controls {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 15px;
 }
 
 .time-selector {
-  width: 200px;
+  width: 13rem;
 }
 
 .datetime-picker {
-  width: 240px;
+  width: 15rem;
 }
 
 .datetime-picker input {
@@ -46,48 +58,130 @@
 
 .custom-time-inputs {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.component-toolbar {
+  width: 100%;
+  padding: 1.2rem 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 250, 248, 0.72));
+  box-shadow: var(--app-shadow-soft);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  box-sizing: border-box;
+}
+
+.component-controls-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.component-controls-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.component-controls-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.component-controls-label {
+  color: var(--app-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.component-controls-hint {
+  color: var(--app-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.component-toggle-button {
+  white-space: normal;
+  text-align: left;
+  border-radius: 999rem;
+}
+
+.component-reset-button {
+  flex-shrink: 0;
+  border-radius: 999rem;
 }
 
 .charts-wrapper {
-  width: 80%;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 1.5rem;
 }
 
 .chart-container {
   width: 100%;
-  background-color: var(--mat-sys-background);
-  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 248, 0.74));
+  box-shadow: var(--app-shadow-soft);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  padding: 1.25rem;
 }
 
 .chart {
-  height: 400px;
+  height: 28rem;
   width: 100%;
 }
 
 .no-data {
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
   align-items: center;
   justify-content: center;
-  height: 400px;
-  color: #aaa;
+  min-height: 18rem;
 }
 
 .no-data mat-icon {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 10px;
+  font-size: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--app-text-muted);
 }
 
-/* Export FAB Button */
 .export-fab {
-  margin-top: 0px;
   margin-left: auto;
+}
+
+@media (max-width: 60rem) {
+  .custom-time-inputs {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .component-controls-header {
+    flex-direction: column;
+  }
+
+  .component-controls-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .datetime-picker,
+  .time-selector,
+  .component-toggle-button,
+  .component-reset-button {
+    width: 100%;
+  }
+
+  .export-fab {
+    margin-left: 0;
+  }
 }

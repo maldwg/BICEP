@@ -1,7 +1,10 @@
-
-<div >
+<div class="dialog-shell">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Edit Deployment</h2>
+    <p class="dialog-subtitle">Adjust configuration, rulesets, and component-level CIDS assignments without leaving the dashboard.</p>
+  </div>
   <mat-dialog-content>
-    <form [formGroup]="idsEdit">
+    <form [formGroup]="idsEdit" class="dialog-form">
       <div class="form-item">
         <mat-form-field>
           <mat-label>Name</mat-label>
@@ -20,16 +23,18 @@
           <input matInput value={{data.container.port}} readonly="" disabled>
         </mat-form-field>
       </div>
-      <div class="form-item">
-        <mat-form-field>
-          <mat-label>Configuration</mat-label>
-          <mat-select [formControl]="idsEdit.controls.config" required>
-            @for (c of configurationList; track c) {
-              <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
+      @if (data.container.type !== 'CIDS') {
+        <div class="form-item">
+            <mat-form-field>
+            <mat-label>Configuration</mat-label>
+            <mat-select [formControl]="idsEdit.controls.config" required>
+                @for (c of configurationList; track c) {
+                <mat-option value={{c.id}}>ID: {{c.id}} - {{c.name}}</mat-option>
+                }
+            </mat-select>
+            </mat-form-field>
+        </div>
+      }
       @if (selectedRuleset) {
         <div class="form-item">
           <mat-form-field>
@@ -54,6 +59,43 @@
           <textarea matInput [formControl]="idsEdit.controls.description" required></textarea>
         </mat-form-field>
       </div>
+
+      @if (data.container.type.toUpperCase() === 'CIDS' || selectedIdsTool.ids_type.toUpperCase() === 'CIDS') {
+        <div class="component-edit-section">
+            <h3>Components Configuration</h3>
+            @if (!data.container.components || data.container.components.length === 0) {
+                <div class="component-edit-empty-state">
+                    No components found or they are still being deployed... (Current type: {{data.container.type}}, Tool type: {{selectedIdsTool.ids_type}})
+                </div>
+            }
+            @for (comp of data.container.components; track comp.id) {
+                <div class="component-edit-row">
+                    <span class="service-name">{{comp.service_name || comp.name}}</span>
+
+                    @if (canEditRuntimeConfig(comp)) {
+                        <mat-form-field class="config-select">
+                            <mat-label>Runtime Config</mat-label>
+                            <mat-select [(value)]="comp.runtime_configuration_id">
+                                <mat-option [value]="null">None</mat-option>
+                                @for (config of runtimeConfigList; track config.id) {
+                                    <mat-option [value]="config.id">{{config.name}}</mat-option>
+                                }
+                            </mat-select>
+                            <mat-hint>{{ getRuntimeConfigHint(comp) }}</mat-hint>
+                        </mat-form-field>
+                    }
+                    @else {
+                        <span class="service-name">{{ getRuntimeConfigHint(comp) }}</span>
+                    }
+
+                    <mat-form-field class="count-input">
+                        <mat-label>Count</mat-label>
+                        <input matInput type="number" [(ngModel)]="comp.count" [ngModelOptions]="{standalone: true}" min="1">
+                    </mat-form-field>
+                </div>
+            }
+        </div>
+      }
     </form>
   </mat-dialog-content>
   <mat-dialog-actions>

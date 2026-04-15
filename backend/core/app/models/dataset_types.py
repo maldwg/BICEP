@@ -1,9 +1,8 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship
 from app.database import Base
 from app.models.dataset_types_implementation import *
 import asyncio
-from app.bicep_utils.models.ids_base import Alert
 from app.logger import LOGGER
 import importlib
 from sqlalchemy.future import select

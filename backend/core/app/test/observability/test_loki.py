@@ -1,5 +1,5 @@
 import pytest
-from ..loki import get_chunk_of_values
+from app.loki import get_chunk_of_values
 
 
 @pytest.mark.asyncio

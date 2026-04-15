@@ -1,61 +1,99 @@
 <app-alert-component></app-alert-component>
-<div class="panel-flexbox-div">
-  <div class="expansion-panel">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          Ensembles
-        </mat-panel-title>
-        <mat-panel-description>
-          Overview on current Ensembles
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-      <div class="expansion-panel-flexbox-container">
-        @for (ensemble of ensembleList; track ensemble) {
-          <div class="flexbox-item">
-            <mat-card >
-              <mat-card-header>
-                <mat-card-title >
-                  <div style="display: flex; align-items: center;">
-                    <span class="mat-card-title-text">{{ensemble.name}}</span>
-                    @if (ensemble.status === 'active') {
-                      <span ><mat-icon class='spinning' style="padding-left: 50%; color: orange" >settings</mat-icon></span>
-                    } @else {
-                      @if (ensemble.status === 'idle') {
-                        <span><mat-icon style="padding-left: 50%; color: orangered" >pause_circle</mat-icon></span>
+
+<section class="page-shell">
+  <header class="page-hero">
+    <div class="page-hero__copy">
+      <span class="page-kicker">Operations</span>
+      <h1 class="page-title">Live Deployment Dashboard</h1>
+      <p class="page-subtitle">
+        Review every IDS and ensemble deployment, monitor readiness, and jump straight into control actions from a single operational surface.
+      </p>
+    </div>
+    <div class="page-summary-grid">
+      <article class="summary-card">
+        <span class="summary-card__label">IDS Containers</span>
+        <span class="summary-card__value">{{ containerList.length }}</span>
+        <span class="summary-card__hint">Active and setup-phase systems in scope</span>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Ensembles</span>
+        <span class="summary-card__value">{{ ensembleList.length }}</span>
+        <span class="summary-card__hint">Composite deployments available for orchestration</span>
+      </article>
+      <article class="summary-card">
+        <span class="summary-card__label">Managed Assets</span>
+        <span class="summary-card__value">{{ containerList.length + ensembleList.length }}</span>
+        <span class="summary-card__hint">Total runtime entities under control</span>
+      </article>
+    </div>
+  </header>
+
+  <div class="panel-flexbox-div">
+    <div class="expansion-panel">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="section-heading">
+              <span class="section-heading__eyebrow">Coordination</span>
+              <span class="section-heading__title">Ensembles</span>
+            </div>
+          </mat-panel-title>
+          <mat-panel-description>
+            <span class="section-heading__description">Overview on current ensembles</span>
+            <span class="metric-pill">{{ ensembleList.length }}</span>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="expansion-panel-flexbox-container">
+          @for (ensemble of ensembleList; track ensemble) {
+            <div class="flexbox-item">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <div class="card-title-row">
+                      <div class="card-title-group">
+                        <span class="card-title-eyebrow">Ensemble</span>
+                        <span class="mat-card-title-text">{{ ensemble.name }}</span>
+                      </div>
+                      @if (ensemble.status === 'active') {
+                        <span class="card-title-status card-title-status--active">
+                          <mat-icon class="spinning">settings</mat-icon>
+                        </span>
+                      } @else if (ensemble.status === 'idle') {
+                        <span class="card-title-status card-title-status--idle">
+                          <mat-icon>pause_circle</mat-icon>
+                        </span>
                       }
-                    }
+                    </div>
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="info-row">
+                    <strong>ID:</strong> <span>{{ ensemble.id }}</span>
                   </div>
-                </mat-card-title>
-              </mat-card-header>
-              <mat-card-content >
-                <div class="info-row">
-                  <strong>ID:</strong> <span>{{ensemble.id}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Ensemble Technique:</strong> <span>{{getEnsembleTechniqueName(ensemble.technique_id)}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Description:</strong> <span>{{ensemble.description}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Status:</strong> <span>{{ensemble.status}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Containers:</strong> <span>{{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }}</span>
-                </div>
-                @if (!checkEnsembleContainersAreIdleByEnsembleId(ensemble)) {
-                  <div class="info-message">
-                    Warning: At least one container from this ensemble is not idle. Stop it before trying to analyze the ensemble
+                  <div class="info-row">
+                    <strong>Ensemble Technique:</strong> <span>{{ getEnsembleTechniqueName(ensemble.technique_id) }}</span>
                   </div>
-                }
-              </mat-card-content>
-              <mat-card-actions>
+                  <div class="info-row">
+                    <strong>Description:</strong> <span>{{ ensemble.description }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>Status:</strong> <span class="text-capitalize">{{ ensemble.status }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>Containers:</strong> <span>{{ getEnsembleContainerNamesFromEnsembleId(ensemble.id) }}</span>
+                  </div>
+                  @if (!checkEnsembleContainersAreIdleByEnsembleId(ensemble)) {
+                    <div class="info-message">
+                      Warning: At least one container from this ensemble is not idle. Stop it before trying to analyze the ensemble.
+                    </div>
+                  }
+                </mat-card-content>
+                <mat-card-actions>
                   <div class="ids-action-button-container">
                     <div>
                       @if (ensembleIsIdle(ensemble) && checkEnsembleContainersAreIdleByEnsembleId(ensemble)) {
                         <button (click)="startEnsembleAnalysis(ensemble)" class="start-button" matFab>
-                          <mat-icon>play_arrow</mat-icon> 
+                          <mat-icon>play_arrow</mat-icon>
                         </button>
                       }
                       @if (!ensembleIsIdle(ensemble)) {
@@ -63,10 +101,9 @@
                           <mat-icon>pause</mat-icon>
                         </button>
                       }
-
                     </div>
                     <div class="ids-edit-and-delete-spacer">
-                      <button (click)="editEnsemble(ensemble)"  class="edit-button" matFab>
+                      <button (click)="editEnsemble(ensemble)" class="edit-button" matFab>
                         <mat-icon>edit_document</mat-icon>
                       </button>
                       <button (click)="removeEnsemble(ensemble)" class="delete-button" matFab>
@@ -74,74 +111,81 @@
                       </button>
                     </div>
                   </div>
-              </mat-card-actions>
-            </mat-card>
-          </div>
-        }
-      </div>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          }
+        </div>
+      </mat-expansion-panel>
+    </div>
 
-    </mat-expansion-panel>
-  </div>
-  <div class="expansion-panel">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          Containers
-        </mat-panel-title>
-        <mat-panel-description>
-          Overview on current Containers
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-      <div class="expansion-panel-flexbox-container">
-        @for (container of containerList; track container) {
-          <div class="flexbox-item"  [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title>
-                  <div style="display: flex; align-items: center;">
-                    <span class="mat-card-title-text">{{container.name}}</span>
-                    @if (container.status === 'active') {
-                      <span ><mat-icon class='spinning' style="padding-left: 50%; color: orange" >settings</mat-icon></span>
-                    }
-                    @if (container.status === 'idle') {
-                      <span><mat-icon style="padding-left: 50%; color: orangered" >pause_circle</mat-icon></span>
-                    }
-                  </div>
-                </mat-card-title>
-              </mat-card-header>
-              <mat-card-content >
-
-                <div class="info-row">
-                  <strong>ID:</strong> <span>{{container.id}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Host:</strong> <span>{{getHostName(container.host_system_id)}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Port:</strong> <span>{{container.port}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>IDS Tool:</strong> <span>{{getIdsToolName(container.ids_tool_id)}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Configuration:</strong> <span>{{getConfigName(container.configuration_id)}}</span>
-                </div>
-                @if (container.ruleset_id) {
+    <div class="expansion-panel">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="section-heading">
+              <span class="section-heading__eyebrow">Runtime</span>
+              <span class="section-heading__title">Containers</span>
+            </div>
+          </mat-panel-title>
+          <mat-panel-description>
+            <span class="section-heading__description">Overview on current containers</span>
+            <span class="metric-pill">{{ containerList.length }}</span>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="expansion-panel-flexbox-container">
+          @for (container of containerList; track container) {
+            <div class="flexbox-item" [ngClass]="{'container-setting-up-status': containerIsSettingUp(container)}">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <div class="card-title-row">
+                      <div class="card-title-group">
+                        <span class="card-title-eyebrow">IDS Container</span>
+                        <span class="mat-card-title-text">{{ container.name }}</span>
+                      </div>
+                      @if (container.status === 'active') {
+                        <span class="card-title-status card-title-status--active">
+                          <mat-icon class="spinning">settings</mat-icon>
+                        </span>
+                      }
+                      @if (container.status === 'idle') {
+                        <span class="card-title-status card-title-status--idle">
+                          <mat-icon>pause_circle</mat-icon>
+                        </span>
+                      }
+                    </div>
+                  </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
                   <div class="info-row">
-                    <strong>Ruleset:</strong> <span>{{getConfigName(container.ruleset_id)}}</span>
+                    <strong>ID:</strong> <span>{{ container.id }}</span>
                   </div>
-                }
-                <div class="info-row">
-                  <strong>Description:</strong> <span>{{container.description}}</span>
-                </div>
-                <div class="info-row">
-                  <strong>Status:</strong> <span>{{container.status}}</span>
-                </div>
-                @if (!container.ruleset_id) {
-                  <div></div>
-                  }<br>
+                  <div class="info-row">
+                    <strong>Host:</strong> <span>{{ getHostName(container.host_system_id) }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>Port:</strong> <span>{{ container.port }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>IDS Tool:</strong> <span>{{ getIdsToolName(container.ids_tool_id) }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>Configuration:</strong> <span>{{ getConfigName(container.configuration_id) }}</span>
+                  </div>
+                  @if (container.ruleset_id) {
+                    <div class="info-row">
+                      <strong>Ruleset:</strong> <span>{{ getConfigName(container.ruleset_id) }}</span>
+                    </div>
+                  }
+                  <div class="info-row">
+                    <strong>Description:</strong> <span>{{ container.description }}</span>
+                  </div>
+                  <div class="info-row">
+                    <strong>Status:</strong> <span class="text-capitalize">{{ container.status }}</span>
+                  </div>
                   @if (containerIsSettingUp(container)) {
-                    <div class="info-message">Info: Container Image is getting pulled, please wait</div>
+                    <div class="info-message">Info: Container image is getting pulled, please wait.</div>
                   }
                 </mat-card-content>
                 <mat-card-actions>
@@ -149,7 +193,7 @@
                     <div>
                       @if (containerIsIdle(container)) {
                         <button (click)="startAnalysis(container)" class="start-button" matFab>
-                          <mat-icon>play_arrow</mat-icon> 
+                          <mat-icon>play_arrow</mat-icon>
                         </button>
                       }
                       @if (containerIsActive(container)) {
@@ -157,18 +201,18 @@
                           <mat-icon>pause</mat-icon>
                         </button>
                       }
-
                     </div>
                     <div class="ids-edit-and-delete-spacer">
-                      <button (click)="edit(container)"  class="edit-button" matFab>
+                      <button (click)="edit(container)" class="edit-button" matFab>
                         <mat-icon>edit_document</mat-icon>
                       </button>
-                      <button (click)="remove(container)" class="delete-button" matFab>
-                        <mat-icon>delete</mat-icon>
-                      </button>
+                      @if (containerCanBeDeleted(container)) {
+                        <button (click)="remove(container)" class="delete-button" matFab>
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      }
                     </div>
                   </div>
-
                 </mat-card-actions>
               </mat-card>
             </div>
@@ -177,3 +221,4 @@
       </mat-expansion-panel>
     </div>
   </div>
+</section>

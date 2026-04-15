@@ -1,41 +1,63 @@
-<div style="padding-bottom: 5%">
-        <mat-toolbar class="navbar">
-                <div class="navbar-left">
-                        <div class="navbar-button-div" routerLinkActive="active-div"
-                                [routerLinkActiveOptions]="{ exact: true }">
-                                <a class="anchor" routerLink="/">Dashboard</a>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div">
-                                <a class="anchor" routerLink="/metrics">Metrics</a>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div">
-                                <a class="anchor" routerLink="/monitoring">Monitoring</a>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div"
-                                [matMenuTriggerFor]="benchmarkingMenu">
-                                <a class="anchor">Benchmarking <mat-icon>arrow_drop_down</mat-icon> </a>
-                                <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown"
-                                        yPosition="below" xPosition="after">
-                                        <button mat-menu-item routerLink="/benchmarking/start">
-                                                Start
-                                        </button>
-                                        <button mat-menu-item routerLink="/benchmarking/results">
-                                                Results
-                                        </button>
-                                </mat-menu>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div">
-                                <a class="anchor" routerLink="/setup">Setup</a>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div">
-                                <a class="anchor" routerLink="/upload">Uploads</a>
-                        </div>
-                        <div class="navbar-button-div" routerLinkActive="active-div">
-                                <a class="anchor" routerLink="/hosts">Docker Hosts</a>
-                        </div>
-                </div>
-                <div class="navbar-right">
-                        <img src="../../../assets/Biceps_logo.svg" alt="Logo" class="toolbar-icon">
-                </div>
-        </mat-toolbar>
-</div>
+<header class="navbar-shell">
+  <mat-toolbar class="navbar">
+    <a class="navbar__brand" routerLink="/">
+      <span class="navbar__brand-mark">
+        <img src="../../../assets/Biceps_logo.svg" alt="BICEP logo" class="toolbar-icon">
+      </span>
+      <span class="navbar__brand-copy">
+        <span class="navbar__brand-kicker">IDS Benchmarking</span>
+        <span class="navbar__brand-title">BICEP</span>
+      </span>
+    </a>
+
+    <nav class="navbar__nav" aria-label="Primary navigation">
+      <div class="navbar__item" routerLinkActive="navbar__item--active" [routerLinkActiveOptions]="{ exact: true }">
+        <a class="navbar__link" routerLink="/">
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </a>
+      </div>
+      <div class="navbar__item" routerLinkActive="navbar__item--active">
+        <a class="navbar__link" routerLink="/monitoring">
+          <mat-icon>timeline</mat-icon>
+          <span>Monitoring</span>
+        </a>
+      </div>
+      <div class="navbar__item">
+        <button type="button" class="navbar__link navbar__link--menu" [matMenuTriggerFor]="benchmarkingMenu">
+          <mat-icon>analytics</mat-icon>
+          <span>Benchmarking</span>
+          <mat-icon class="navbar__caret">expand_more</mat-icon>
+        </button>
+        <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown" yPosition="below" xPosition="after">
+          <button mat-menu-item routerLink="/benchmarking/start">Start</button>
+          <button mat-menu-item routerLink="/benchmarking/results">Results</button>
+        </mat-menu>
+      </div>
+      <div class="navbar__item" routerLinkActive="navbar__item--active">
+        <a class="navbar__link" routerLink="/setup">
+          <mat-icon>tune</mat-icon>
+          <span>Setup</span>
+        </a>
+      </div>
+      <div class="navbar__item" routerLinkActive="navbar__item--active">
+        <a class="navbar__link" routerLink="/upload">
+          <mat-icon>folder_open</mat-icon>
+          <span>Uploads</span>
+        </a>
+      </div>
+      <div class="navbar__item" routerLinkActive="navbar__item--active">
+        <a class="navbar__link" routerLink="/hosts">
+          <mat-icon>dns</mat-icon>
+          <span>Docker Hosts</span>
+        </a>
+      </div>
+      <div class="navbar__item" routerLinkActive="navbar__item--active">
+        <a class="navbar__link" routerLink="/ids-tools">
+          <mat-icon>security</mat-icon>
+          <span>IDS Tools</span>
+        </a>
+      </div>
+    </nav>
+  </mat-toolbar>
+</header>

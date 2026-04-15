@@ -10,11 +10,12 @@ from starlette.datastructures import UploadFile
 from fastapi.responses import JSONResponse
 import json
 from app.models.ids_tool import IdsTool
-from app.models.ids_container import IdsContainer
+from app.models.ids_system import IdsSystem
 from app.test.fixtures import *
 import shutil
 import os
 import pathlib
+
 
 @pytest.mark.asyncio
 async def test_get_all_ds_types(db_session_fixture: DatabaseSessionFixture):
@@ -23,20 +24,27 @@ async def test_get_all_ds_types(db_session_fixture: DatabaseSessionFixture):
     returned_types = await get_all_ds_types(db_session)
     assert returned_types[0].name == awaited_dataset_types[0].name
 
+
 @patch("shutil.copyfileobj")
 @pytest.mark.asyncio
-async def test_add_new_dataset(copy_mock, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_new_dataset(
+    copy_mock, db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     pcap_mock_file = MagicMock(spec=UploadFile)
     pcap_mock_file.filename = "data.pcap"
-    pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
+    pcap_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap", "rb")
+    )
     pcap_mock_file.file = None
-    
+
     labels_mock_file = MagicMock(spec=UploadFile)
     labels_mock_file.filename = "labels.csv"
-    labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
+    labels_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv", "rb")
+    )
     labels_mock_file.file = None
-    
+
     response = await add_new_dataset(
         data_file=pcap_mock_file,
         labels_file=labels_mock_file,
@@ -47,21 +55,29 @@ async def test_add_new_dataset(copy_mock, db_session_fixture: DatabaseSessionFix
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
-    
+
     assert response.status_code == 200
     assert response_json == {"message": "configuration added successfully"}
 
     shutil.rmtree("./None")
+
+
 @pytest.mark.asyncio
-async def test_add_new_dataset_unaccepeted_labels_file_type(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_new_dataset_unaccepeted_labels_file_type(
+    db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     pcap_mock_file = MagicMock(spec=UploadFile)
     pcap_mock_file.filename = "data.pcap"
-    pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
+    pcap_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap", "rb")
+    )
 
     labels_mock_file = MagicMock(spec=UploadFile)
     labels_mock_file.filename = "labels.unaccepted_type"
-    labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
+    labels_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv", "rb")
+    )
 
     response = await add_new_dataset(
         data_file=pcap_mock_file,
@@ -73,21 +89,29 @@ async def test_add_new_dataset_unaccepeted_labels_file_type(db_session_fixture: 
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
-    
+
     assert response.status_code == 500
-    assert response_json == {"error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.TEST_DATA.value} "}
+    assert response_json == {
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.DATASET.value} "
+    }
 
 
 @pytest.mark.asyncio
-async def test_add_new_dataset_unaccepeted_data_file_type(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_new_dataset_unaccepeted_data_file_type(
+    db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     pcap_mock_file = MagicMock(spec=UploadFile)
     pcap_mock_file.filename = "data.unaccepted_type"
-    pcap_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap","rb"))
+    pcap_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.pcap", "rb")
+    )
 
     labels_mock_file = MagicMock(spec=UploadFile)
     labels_mock_file.filename = "labels.csv"
-    labels_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv","rb"))
+    labels_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/sample_data.csv", "rb")
+    )
 
     response = await add_new_dataset(
         data_file=pcap_mock_file,
@@ -99,17 +123,24 @@ async def test_add_new_dataset_unaccepeted_data_file_type(db_session_fixture: Da
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
-    
+
     assert response.status_code == 500
-    assert response_json == {"error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.TEST_DATA.value} "}
+    assert response_json == {
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.DATASET.value} "
+    }
+
 
 @patch("shutil.copyfileobj")
 @pytest.mark.asyncio
-async def test_add_configuration(_, db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_configuration(
+    _, db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     config_mock_file = MagicMock(spec=UploadFile)
     config_mock_file.filename = "config.yaml"
-    config_mock_file.read_content = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
+    config_mock_file.read_content = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    )
     config_mock_file.file = None
     # Prepare mock inputs
     mock_file = config_mock_file
@@ -120,7 +151,7 @@ async def test_add_configuration(_, db_session_fixture: DatabaseSessionFixture, 
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.CONFIG.value,
+        file_type=FILE_TYPES.RUNTIME.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
@@ -130,13 +161,16 @@ async def test_add_configuration(_, db_session_fixture: DatabaseSessionFixture, 
     shutil.rmtree("./None")
 
 
-
 @pytest.mark.asyncio
-async def test_add_configuration_invalid_filetype(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_configuration_invalid_filetype(
+    db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     config_mock_file = MagicMock(spec=UploadFile)
     config_mock_file.filename = "config.unaccepted_type"
-    config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
+    config_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    )
 
     # Prepare mock inputs
     mock_file = config_mock_file
@@ -147,21 +181,27 @@ async def test_add_configuration_invalid_filetype(db_session_fixture: DatabaseSe
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.CONFIG.value,
+        file_type=FILE_TYPES.RUNTIME.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
     assert response.status_code == 500
-    assert response_json == {"error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.CONFIG.value}"}
+    assert response_json == {
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RUNTIME.value}"
+    }
 
 
 @pytest.mark.asyncio
-async def test_add_ruleset_invalid_filetype(db_session_fixture: DatabaseSessionFixture, mock_background_tasks):
+async def test_add_ruleset_invalid_filetype(
+    db_session_fixture: DatabaseSessionFixture, mock_background_tasks
+):
     db_session = await db_session_fixture.get_db_session()
     config_mock_file = MagicMock(spec=UploadFile)
     config_mock_file.filename = "ruleset.unaccepted_type"
-    config_mock_file.read = AsyncMock(return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml","rb").read())
+    config_mock_file.read = AsyncMock(
+        return_value=open(f"{TESTS_BASE_DIR}/testfiles/test-config.yaml", "rb").read()
+    )
 
     # Prepare mock inputs
     mock_file = config_mock_file
@@ -172,15 +212,16 @@ async def test_add_ruleset_invalid_filetype(db_session_fixture: DatabaseSessionF
         configuration=mock_file,
         name=name,
         description=description,
-        file_type=FILE_TYPES.RULE_SET.value,
+        file_type=FILE_TYPES.RULESET.value,
         db=db_session,
         background_tasks=mock_background_tasks,
     )
     response_json = json.loads(response.body.decode())
     assert response.status_code == 500
     print(response_json)
-    assert response_json == {"error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RULE_SET.value}"}
-
+    assert response_json == {
+        "error": f"file in unaccepted_type format is not accepted as {FILE_TYPES.RULESET.value}"
+    }
 
 
 @pytest.mark.asyncio
@@ -190,15 +231,18 @@ async def test_get_all_configurations(db_session_fixture: DatabaseSessionFixture
 
     assert len(result) == 2
     assert result[0].name == "test-config 1"
-    assert result[1].file_type == "rule-set"
+    assert result[1].file_type == "RULESET"
+
 
 @patch("app.routers.crud.get_all_configurations_by_type")
 @pytest.mark.asyncio
-async def test_get_all_configs_of_a_filetype(all_configs_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_get_all_configs_of_a_filetype(
+    all_configs_mock, db_session_fixture: DatabaseSessionFixture
+):
     db_session = await db_session_fixture.get_db_session()
     mock_ruleset = await db_session_fixture.get_ruleset_model()
     all_configs_mock.return_value = [mock_ruleset]
-    file_type = "rule-set" 
+    file_type = "RULESET"
     response = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     mock_configuration_ruleset = await db_session_fixture.get_ruleset_model()
     assert len(response) == 1
@@ -206,12 +250,15 @@ async def test_get_all_configs_of_a_filetype(all_configs_mock, db_session_fixtur
 
 
 @pytest.mark.asyncio
-async def test_get_all_configs_of_an_invalid_filetype(db_session_fixture: DatabaseSessionFixture):
+async def test_get_all_configs_of_an_invalid_filetype(
+    db_session_fixture: DatabaseSessionFixture,
+):
     db_session = await db_session_fixture.get_db_session()
     file_type = "invalid_type"
     expected_response = {"error": "wrong file type"}
     result = await get_all_configs_of_a_filetype(file_type=file_type, db=db_session)
     assert result == expected_response
+
 
 @patch("app.routers.crud.remove_directory")
 @pytest.mark.asyncio
@@ -230,7 +277,8 @@ async def test_get_all_datasets(db_session_fixture: DatabaseSessionFixture):
     assert len(response) == 2
     assert response[0].name == "TestDataset"
     assert response[1].name == "Test Dataset 2"
-    
+
+
 @patch("app.utils.remove_directory")
 @pytest.mark.asyncio
 async def test_remove_dataset(remove_mock, db_session_fixture: DatabaseSessionFixture):
@@ -238,6 +286,7 @@ async def test_remove_dataset(remove_mock, db_session_fixture: DatabaseSessionFi
     dataset_id = 1
     result = await remove_dataset(id=dataset_id, db=db_session)
     assert result.status_code == 204
+
 
 @pytest.mark.asyncio
 async def test_get_all_ids_tools(db_session_fixture: DatabaseSessionFixture):
@@ -260,36 +309,41 @@ async def test_get_all_ids_container(db_session_fixture: DatabaseSessionFixture)
     assert response[0].description == "Test description"
 
 
-
 @pytest.mark.asyncio
-async def test_get_all_ids_container_not_assigned_to_an_ensemble(db_session_fixture: DatabaseSessionFixture):
+async def test_get_all_ids_container_not_assigned_to_an_ensemble(
+    db_session_fixture: DatabaseSessionFixture,
+):
     db_session = await db_session_fixture.get_db_session()
     mock_container = await db_session_fixture.get_ids_container_model()
-    available_mock_container = AsyncMock(spec=IdsContainer)
+    available_mock_container = AsyncMock(spec=IdsSystem)
     available_mock_container.id = 2
     available_mock_container.status = STATUS.IDLE.value
     available_mock_container.ids_tool_id = 1
     available_mock_container.description = "Test description 2"
 
-    with patch("app.routers.crud.get_all_container", new_callable=AsyncMock,return_value=[mock_container,available_mock_container]):
-        response = await get_all_ids_container_not_assigned_to_an_ensemble(db=db_session)
+    with patch(
+        "app.routers.crud.get_all_container",
+        new_callable=AsyncMock,
+        return_value=[mock_container, available_mock_container],
+    ):
+        response = await get_all_ids_container_not_assigned_to_an_ensemble(
+            db=db_session
+        )
 
     assert len(response) == 2
     assert response[1] == available_mock_container
+
 
 @pytest.mark.asyncio
 async def test_patch_container(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     container_update_data: IdsContainerUpdate = IdsContainerUpdate(
-        id= 1,
-        description= "new",
-        configuration_id = 3,
-        ruleset_id=2
+        id=1, description="new", configuration_id=3, ruleset_id=2
     )
     response = await patch_container(container=container_update_data, db=db_session)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
-    assert response_json == {'message': 'updated container successfully'}
+    assert response_json == {"message": "updated container successfully"}
 
 
 @pytest.mark.asyncio
@@ -311,19 +365,24 @@ async def test_get_ensembles(db_session_fixture: DatabaseSessionFixture):
     assert len(response) == 1
     assert response[0] == mock_ensemble_ids
 
+
 @patch("app.models.ensemble.Ensemble.remove_container")
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
-async def test_patch_ensemble_add_and_remove_container(add_container_mock, remove_container_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_patch_ensemble_add_and_remove_container(
+    add_container_mock,
+    remove_container_mock,
+    db_session_fixture: DatabaseSessionFixture,
+):
     db_session = await db_session_fixture.get_db_session()
     ensemble_update = EnsembleUpdate(
-        id= 1,
+        id=1,
         name="new-name",
-        description= "new-description",
-        technique_id= 1,
-        container_ids= [2]
+        description="new-description",
+        technique_id=1,
+        container_ids=[2],
     )
-    
+
     mock_response_remove = AsyncMock()
     mock_response_remove.status_code = 200
     mock_response_add = AsyncMock()
@@ -342,16 +401,20 @@ async def test_patch_ensemble_add_and_remove_container(add_container_mock, remov
 @patch("app.models.ensemble.Ensemble.remove_container")
 @patch("app.models.ensemble.Ensemble.add_container")
 @pytest.mark.asyncio
-async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mock, remove_container_mock, db_session_fixture: DatabaseSessionFixture):
+async def test_patch_ensemble_add_and_remove_container_failiure(
+    add_container_mock,
+    remove_container_mock,
+    db_session_fixture: DatabaseSessionFixture,
+):
     db_session = await db_session_fixture.get_db_session()
     ensemble_update = EnsembleUpdate(
-        id= 1,
+        id=1,
         name="new-name",
-        description= "new-description",
-        technique_id= 1,
-        container_ids= [2]
+        description="new-description",
+        technique_id=1,
+        container_ids=[2],
     )
-    
+
     mock_response_remove = AsyncMock()
     mock_response_remove.status_code = 500
     mock_response_add = AsyncMock()
@@ -366,6 +429,7 @@ async def test_patch_ensemble_add_and_remove_container_failiure(add_container_mo
     assert response.status_code == 500
     assert response_json == {"error": "Failed to change ensemble attributes"}
 
+
 @pytest.mark.asyncio
 async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
@@ -373,26 +437,30 @@ async def test_return_all_hosts(db_session_fixture: DatabaseSessionFixture):
     response = await return_all_hosts(db=db_session)
 
     assert len(response) == 1
-    assert response[0] == mock_host
+    assert response[0]["id"] == mock_host.id
+    assert response[0]["name"] == mock_host.name
+    assert response[0]["status"] == mock_host.status
 
 
+@patch("app.routers.crud.add_host_system", new_callable=AsyncMock)
 @pytest.mark.asyncio
-async def test_create_host(db_session_fixture: DatabaseSessionFixture):
+async def test_create_host(mock_add_host_system, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     host_data = DockerHostCreationData(
-        name="new-host",
-        host="localhost",
-        docker_port=2375
+        name="new-host", host="localhost", docker_port=2375
     )
     response = await create_host(host_data=host_data, db=db_session)
     response_json = json.loads(response.body.decode())
     assert response.status_code == 200
     assert response_json == {"message": "Successfully created host"}
+    mock_add_host_system.assert_awaited_once()
 
 
+@patch("app.routers.crud.remove_host", new_callable=AsyncMock, return_value=True)
 @pytest.mark.asyncio
-async def test_delete_host(db_session_fixture: DatabaseSessionFixture):
+async def test_delete_host(mock_remove_host, db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     host_id = 1
     response = await delete_host(id=host_id, db=db_session)
     assert response.status_code == 204
+    mock_remove_host.assert_awaited_once_with(db_session, host_id)

@@ -1,0 +1,80 @@
+<div class="dialog-shell">
+    <div class="dialog-title-block">
+        <h2 mat-dialog-title class="dialog-title">{{ isEditMode ? 'Edit IDS Tool' : 'Add New IDS Tool' }}</h2>
+        <p class="dialog-subtitle">Define how a tool is deployed, what it requires, and which image metadata BICEP should track.</p>
+    </div>
+    <mat-dialog-content>
+        <form [formGroup]="toolForm" class="dialog-form">
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Name</mat-label>
+                    <input matInput required [formControl]="nameControl">
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>IDS Type</mat-label>
+                    <mat-select required [formControl]="idsTypeControl">
+                        @for (type of idsTypes; track type) {
+                        <mat-option [value]="type">{{ type }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Analysis Method</mat-label>
+                    <mat-select required [formControl]="analysisMethodControl">
+                        @for (method of analysisMethods; track method) {
+                        <mat-option [value]="method">{{ method }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-checkbox [formControl]="requiresRulesetControl">
+                    Requires Ruleset
+                </mat-checkbox>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Image Name</mat-label>
+                    <input matInput required [formControl]="imageNameControl" placeholder="e.g. snort3/snort3">
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Image Tag</mat-label>
+                    <input matInput required [formControl]="imageTagControl" placeholder="e.g. latest">
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Deployment Type</mat-label>
+                    <mat-select required [formControl]="deploymentTypeControl">
+                        @for (dtype of deploymentTypes; track dtype) {
+                        <mat-option [value]="dtype">{{ dtype }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="form-item">
+                <mat-form-field>
+                    <mat-label>Required Env Vars</mat-label>
+                    <input matInput [formControl]="requiredEnvVarsControl" placeholder="e.g. HOST_IP,MOUNT_PATH">
+                    <mat-hint>Comma-separated list of mandatory environment variable names</mat-hint>
+                </mat-form-field>
+            </div>
+        </form>
+    </mat-dialog-content>
+    <mat-dialog-actions>
+        <div class="dialog-actions-div">
+            <button class="start-button" matFab (click)="save()">
+                <mat-icon>save</mat-icon>
+            </button>
+            <button class="cancel-button" matFab (click)="exit()">
+                <mat-icon>cancel</mat-icon>
+            </button>
+        </div>
+    </mat-dialog-actions>
+</div>

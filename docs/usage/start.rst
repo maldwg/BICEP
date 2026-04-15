@@ -5,31 +5,33 @@ You can start the framework by running:
 
 .. code-block:: console
 
-    docker compose --env-file environments/dev up
+    PRODUCTION=FALSE CORE_HOST_IP=127.0.0.1 docker compose up
 
 Alternatively you can start the framework in production mode by running:
 
 .. code-block:: console
 
-    docker compose --env-file environments/prod up
+   PRODUCTION=TRUE CORE_HOST_IP=127.0.0.1 docker compose up
 
 The framework can then be accessed via ``http://localhost:8080`` on development mode or ``http://<your-ip-ord-dns>:8080``
 
 .. warning::
     If you plan to switch between the modes, make sure to build the angular container from scratch using the respective env file
     For instance run: 
-    ``docker compose --env-file environments/prod build angular``
+    ``PRODUCTION=TRUE CORE_HOST_IP=127.0.0.1 docker compose build angular``
 
+.. warning::
+    For a multinode setup it is required that you are setting the CORE_HOST_IP to the IP of the machine hosting the framework, otherwise the IDS and metric services won't be able to reach the core and the app won't work!
 
 Differences Between Production and Development Mode
 ---------------------------------------------------
 
 The main difference between the two modes is how the Frontend connects to the backend. In development mode, it tries to reach out via "localhost". 
-In Production mode, it uses the host name property to reach out to the services. This allows an user to connect to the fronten remotely i.e. BICEP can be deployed on a remote machine.
-If Porduction mode has not been enabled in such a setup, the frontend tries to reach the backend services on the localhost of the client, which is false. The development mode is assumed as default.
+In Production mode, it uses the host name property to reach out to the services. This allows an user to connect to the frontend remotely i.e. BICEP can be deployed on a remote machine.
+If Production mode has not been enabled in such a setup, the frontend tries to reach the backend services on the localhost of the client, which is false. The development mode is assumed as default.
 
 .. warning::
-    The production mode currently does not support a distributed setup of the system, i.e. the different services of BICEP NEED to run on the same machine.
+    The production mode currently does not support a distributed setup of the (core) system, i.e. the different services of BICEP NEED to run on the same machine.
 
 
 .. _distributed_setup:
@@ -75,5 +77,5 @@ In your engine configuration or docker.json
 
 Deactivating Containerd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-Containerd needs to be deactivated, otherwise cadvisor will be running into issues later on. 
+Containerd needs to be deactivated, otherwise the Docker-based observability components may run into issues later on. 
 To do so, go into the docker desktop ``settings > general`` and deactivate ``Use containerd for pulling and storing images``.
