@@ -58,6 +58,7 @@ normalizer = { }
 pop = { }
 rpc_decode = { }
 sip = { }
+socks = { }
 ssh = { }
 ssl = { }
 telnet = { }
@@ -67,6 +68,7 @@ dnp3 = { }
 iec104 = { }
 mms = { }
 modbus = { }
+opcua = { }
 s7commplus = { }
 
 dce_smb = { }
@@ -88,7 +90,7 @@ http_inspect = { }
 http2_inspect = { }
 
 -- see file_magic.rules for file id rules
-file_id = { rules_file = 'file_magic.rules' }
+file_inspect = { rules_file = 'file_magic.rules' }
 file_policy = { }
 
 js_norm = default_js_norm
@@ -128,6 +130,7 @@ binder =
     { when = { proto = 'tcp', ports = '2123 2152 3386', role='server' }, use = { type = 'gtp_inspect' } },
     { when = { proto = 'tcp', ports = '2404', role='server' }, use = { type = 'iec104' } },
     { when = { proto = 'udp', ports = '2222', role = 'server' }, use = { type = 'cip' } },
+    { when = { proto = 'tcp', ports = '4840', role = 'server' }, use = { type = 'opcua' } },
     { when = { proto = 'tcp', ports = '44818', role = 'server' }, use = { type = 'cip' } },
 
     { when = { proto = 'tcp', service = 'dcerpc' },  use = { type = 'dce_tcp' } },
@@ -150,10 +153,12 @@ binder =
     { when = { service = 'iec104' },           use = { type = 'iec104' } },
     { when = { service = 'mms' },              use = { type = 'mms' } },
     { when = { service = 'modbus' },           use = { type = 'modbus' } },
+    { when = { service = 'opcua' },            use = { type = 'opcua' } },
     { when = { service = 'pop3' },             use = { type = 'pop' } },
     { when = { service = 'ssh' },              use = { type = 'ssh' } },
     { when = { service = 'sip' },              use = { type = 'sip' } },
     { when = { service = 'smtp' },             use = { type = 'smtp' } },
+    { when = { service = 'socks' },            use = { type = 'socks' } },
     { when = { service = 'ssl' },              use = { type = 'ssl' } },
     { when = { service = 'sunrpc' },           use = { type = 'rpc_decode' } },
     { when = { service = 's7commplus' },       use = { type = 's7commplus' } },
@@ -183,15 +188,13 @@ classifications = default_classifications
 ips =
 {
     -- use this to enable decoder and inspector alerts
-    enable_builtin_rules = true,
+    --enable_builtin_rules = true,
 
     -- use include for rules files; be sure to set your path
     -- note that rules files can include other rules files
     -- (see also related path vars at the top of snort_defaults.lua)
 
-    variables = default_variables,
-    -- include = RULE_PATH .. "/pulledpork.rules"
-
+    variables = default_variables
 }
 
 -- use these to configure additional rule actions
@@ -252,16 +255,16 @@ rate_filter =
 -- you can enable with defaults from the command line with -A <alert_type>
 -- uncomment below to set non-default configs
 --alert_csv = { }
-output = {show_year=true }
-alert_fast = {
-    file=true,
-    limit=10000 -- size in MB before roll over (~10GB)
- }
+--alert_fast = { }
 --alert_full = { }
 --alert_sfsocket = { }
 --alert_syslog = { }
 --unified2 = { }
-
+output = {show_year=true }
+alert_fast = {
+    file=true,
+    limit=10000
+ }
 -- packet logging
 -- you can enable with defaults from the command line with -L <log_type>
 --log_codecs = { }
@@ -275,8 +278,6 @@ alert_fast = {
 ---------------------------------------------------------------------------
 -- 8. configure tweaks
 ---------------------------------------------------------------------------
-
-
 
 if ( tweaks ~= nil ) then
     include(tweaks .. '.lua')

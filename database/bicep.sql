@@ -204,7 +204,7 @@ INSERT INTO configuration VALUES
 INSERT INTO configuration VALUES
 (7, 'suricata-all.rules', '/opt/rulesets/uuid3/suricata-all.rules', 'RULESET', 'All opensource suricata rules', 'RULESET');
 INSERT INTO configuration VALUES
-(8, 'snort-all.rules', '/opt/rulesets/uuid2/snort-all.rules', 'RULESET', 'lightspd max detect + community rules', 'RULESET');
+(8, 'snort-max-detect.rules', '/opt/rulesets/uuid2/snort-max-detect.rules', 'RULESET', 'lightspd max detect + community rules', 'RULESET');
 -- Sample CIDS Config
 INSERT INTO configuration VALUES
 (10, 'hamstring-compose.yaml', '/opt/deployment_configurations/uuid5/hamstring-compose.yaml', 'DEPLOYMENT', 'Hamstring Docker Compose Setup', 'DEPLOYMENT');
