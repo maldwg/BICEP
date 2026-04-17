@@ -40,25 +40,19 @@ async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
     """
     Transforms a dictionary that holds alerts for each IDS in the ensemble into a structured format.
 
-    The returned dictionary maps a key composed of `timestamp`, `source_ip`, `source_port`, 
-    `destination_ip`, and `destination_port` to another dictionary. This inner dictionary 
+    The returned dictionary maps a key composed of `timestamp`, `source_ip`, `source_port`,
+    `destination_ip`, and `destination_port` to another dictionary. This inner dictionary
     contains IDS names as keys and lists of `Alert` objects as values.
 
-    Example output format:
-    
-        {
-            "<timestamp>-<source_ip>-<source_port>-<destination_ip>-<destination_port>": {
-                "ids1": [Alert, Alert, ...],
-                "ids2": [Alert, Alert, ...]
-            }
-        }
-
-    Parameters:
-        alerts_dict (dict): A dictionary where each key is an IDS name and 
-                            the value is a list of `Alert` objects.
+    Args:
+        alerts_dict (dict): A dictionary where each key is an IDS name and the
+            value is a list of `Alert` objects.
 
     Returns:
-        dict: A dictionary grouping alerts by their common attributes.
+        dict: A dictionary grouping alerts by their common attributes. Each key
+        is a tuple containing `(timestamp, source_ip, source_port,
+        destination_ip, destination_port)`, and each value maps IDS names to
+        lists of matching alerts.
     """
     common_alerts = {}
     for container_name, alerts in alerts_dict.items():
@@ -67,4 +61,3 @@ async def combine_alerts_for_ids_in_alert_dict(alerts_dict: dict) -> dict:
             key = (timestamp, source_ip, source_port, destination_ip, destination_port)
             common_alerts.setdefault(key, {}).setdefault(container_name, []).extend([alert])
     return common_alerts
-

@@ -1,7 +1,7 @@
 models package
 ==============
 
-.. automodule:: models
+.. automodule:: app.models
    :members:
    :show-inheritance:
    :undoc-members:
@@ -21,7 +21,7 @@ Submodules
 models.configuration module
 ---------------------------
 
-.. automodule:: models.configuration
+.. automodule:: app.models.configuration
    :members:
    :show-inheritance:
    :undoc-members:
@@ -29,7 +29,7 @@ models.configuration module
 models.dataset module
 ---------------------
 
-.. automodule:: models.dataset
+.. automodule:: app.models.dataset
    :members:
    :show-inheritance:
    :undoc-members:
@@ -37,7 +37,7 @@ models.dataset module
 models.dataset\_types module
 ----------------------------
 
-.. automodule:: models.dataset_types
+.. automodule:: app.models.dataset_types
    :members:
    :show-inheritance:
    :undoc-members:
@@ -45,7 +45,7 @@ models.dataset\_types module
 models.docker\_host\_system module
 ----------------------------------
 
-.. automodule:: models.docker_host_system
+.. automodule:: app.models.docker_host_system
    :members:
    :show-inheritance:
    :undoc-members:
@@ -53,7 +53,7 @@ models.docker\_host\_system module
 models.ensemble module
 ----------------------
 
-.. automodule:: models.ensemble
+.. automodule:: app.models.ensemble
    :members:
    :show-inheritance:
    :undoc-members:
@@ -61,7 +61,7 @@ models.ensemble module
 models.ensemble\_ids module
 ---------------------------
 
-.. automodule:: models.ensemble_ids
+.. automodule:: app.models.ensemble_ids
    :members:
    :show-inheritance:
    :undoc-members:
@@ -69,7 +69,7 @@ models.ensemble\_ids module
 models.ensemble\_technique module
 ---------------------------------
 
-.. automodule:: models.ensemble_technique
+.. automodule:: app.models.ensemble_technique
    :members:
    :show-inheritance:
    :undoc-members:
@@ -77,7 +77,7 @@ models.ensemble\_technique module
 models.ids\_container module
 ----------------------------
 
-.. automodule:: models.ids_component
+.. automodule:: app.models.ids_component
    :members:
    :show-inheritance:
    :undoc-members:
@@ -85,7 +85,7 @@ models.ids\_container module
 models.ids\_tool module
 -----------------------
 
-.. automodule:: models.ids_tool
+.. automodule:: app.models.ids_tool
    :members:
    :show-inheritance:
    :undoc-members:

@@ -2,6 +2,7 @@ Extend the framework
 =====================
 
 .. _add_new_dataset:
+
 How to add a new dataset type
 -----------------------------
 
@@ -13,6 +14,7 @@ Each entry should look like this:
 .. code-block:: sql
 
     INSERT INTO dataset_type (name, description, function_prefix) VALUES ('Network Analysis Data', 'Network traffic data in form of PCAPs. The labels are in CSV file format', 'network_traffic_data');
+
 The ``function_prefix`` determines how your python file has to be named and what the prefix for the functions you will need to implemented is.
 
 BICEP is designed to automatically look for the appropriate dataset types listed in the DB. Your code to handle the new type needs to be located in
@@ -25,6 +27,7 @@ This ensures that the system can find these. The documentation for these methods
 Afterwards, feel free to create a pull request to contribute to the framework.
 
 .. _add_new_ensembling_technique:
+
 How to add a new ensembling technique
 --------------------------------------
 
@@ -46,4 +49,3 @@ Then you will need to implement 2 functions which **NEED TO ADHERE** to the foll
 ``<your_dataset_type_name>_get_positives_and_negatives_from_dataset``
 This ensures that the system can find these. The documentation for these methods can be found in :doc:`Ensembling Technique Implementation </design/models.ensemble_techniques_implementation>`
 Afterwards, feel free to create a pull request to contribute to the framework.
-

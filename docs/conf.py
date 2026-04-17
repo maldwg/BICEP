@@ -2,14 +2,14 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-
-
 import os
 import sys
+import importlib
 
 sys.path.insert(0, os.path.abspath("../backend/core/"))
-sys.path.insert(0, os.path.abspath("../backend/core/app/"))
+
+
+sys.modules["BICEP_Utils"] = importlib.import_module("app.bicep_utils")
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -44,6 +44,15 @@ napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = False
+autosummary_generate = False
+autodoc_mock_imports = [
+    "aiofiles",
+    "asyncmy",
+    "docker",
+    "fastapi",
+    "httpx",
+    "psutil",
+]
 
 pygments_style = "friendly"
 
@@ -52,7 +61,8 @@ pygments_style = "friendly"
 
 html_theme = "furo"
 html_theme_options = {
-    "use_repository_button": True,
-    "repository_url": "https://github.com/maldwg/BICEP",
+    "source_repository": "https://github.com/maldwg/BICEP/",
+    "source_branch": "main",
+    "source_directory": "docs/",
 }
 html_logo = "../assets/Biceps_logo.png"
