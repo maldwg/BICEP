@@ -22,9 +22,6 @@ jobs:
         run: |
           pip install -r docs/requirements.txt
 
-      - name: Generate Doxygen XML
-        run: doxygen Doxyfile.rtd
-
       - name: Build Sphinx documentation
         run: |
           cd docs
