@@ -21,6 +21,7 @@ Relevant Repositories
 - `Snort Image Repository <https://github.com/maldwg/BICEP-snort-image>`_
 - `Slips Image Repository <https://github.com/maldwg/BICEP-slips-image>`_
 - `Suricata Image Repository <https://github.com/maldwg/BICEP-suricata-image>`_
+- `Hamstring Image Repository <https://github.com/maldwg/BICEP-Hamstring>`_
 
 Content
 -------

@@ -22,10 +22,15 @@ Currently the following IDS are supported and registered with the framework to b
      - `Snort-Image <https://hub.docker.com/r/maxldwg/bicep-snort>`_ 
      - `Snort implementation <https://github.com/maldwg/BICEP-snort-image>`_
      - ✅ Available
+   * - Hamstring
+     - `Hamstring-Image <ghcr.io/maldwg/bicep-hamstring:latest>`_
+     - `Hamstring implementation <https://github.com/maldwg/BICEP-Hamstring>`_
+     - ✅ Available
 
 
 
 .. _add_new_ids:
+
 How to add a new IDS
 --------------------
 If you did not find the IDS you desired to run and evaluate in the currently supported IDS, or if you want to register your own system to the framework, you can follow these steps to include it:
