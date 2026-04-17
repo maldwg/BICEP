@@ -35,6 +35,7 @@ If Production mode has not been enabled in such a setup, the frontend tries to r
 
 
 .. _distributed_setup:
+
 Distributed Setup
 -----------------
 
@@ -60,6 +61,7 @@ This refreshs the daemon for docker. You can now use the web GUI to add the new 
 per default, the localhost (the machine where the framework is running), is already added and can be used. Any other node needs to be added via the GUI or DB.
 
 .. _mac_support:
+
 Mac Support
 -----------
 If you are using an apple device, you might want to configure the docker deamon in the toolbox, by adding 

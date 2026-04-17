@@ -36,6 +36,7 @@ However, these will be introduced in the following backend section, where their 
 
 
 .. _common_communication_standard:
+
 Common communication standard
 ------------------------------
 As the architecture depiction above implies, different IDS send their results to the Core. This central component then handles the combination and evaluation. However, different IDS offer different alert formats. Therefore, it is necessary to convert each result set into a common standard to allow the Core to analyse them indifferently. To accomplish this, either the Core needs to convert each result or the IDS containers need to adjust their formats accordingly. The latter approach is chosen, as it better fulfills the requirements of expandability and maintainability. Modules for each IDS can be implemented and maintained separately from the Core logic, allowing updates to the IDS modules without changing the Core. 

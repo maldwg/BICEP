@@ -1,7 +1,7 @@
 bicep\_utils package
 ====================
 
-.. automodule:: bicep_utils
+.. automodule:: app.bicep_utils
    :members:
    :show-inheritance:
    :undoc-members:
@@ -22,7 +22,7 @@ Submodules
 bicep\_utils.general\_utilities module
 --------------------------------------
 
-.. automodule:: bicep_utils.general_utilities
+.. automodule:: app.bicep_utils.general_utilities
    :members:
    :show-inheritance:
    :undoc-members:
