@@ -36,7 +36,7 @@ COPY ./example-configs/hamstring_config.yaml /opt/runtime_configurations/uuid7/h
 COPY ./example-configs/hamstring_clickhouse.sql /opt/runtime_configurations/uuid8/hamstring_clickhouse.sql
 
 COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
-COPY ./example-configs/snort-all.rules /opt/rulesets/uuid2/snort-all.rules
+COPY ./example-configs/snort-max-detect.rules /opt/rulesets/uuid2/snort-max-detect.rules
 COPY ./example-configs/suricata-all.rules /opt/rulesets/uuid3/suricata-all.rules
 COPY ./example-configs/suricata-et-open.rules /opt/rulesets/uuid4/suricata-et-open.rules
 
