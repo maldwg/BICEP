@@ -41,6 +41,28 @@ async def test_query_average_cpu_usage_success():
 
 
 @pytest.mark.asyncio
+async def test_query_average_cpu_usage_preserves_small_values():
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client_cls.return_value.__aenter__.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "status": "success",
+            "data": {
+                "result": [{"values": [[1609459200, "0.000004"], [1609459215, "0.000006"]]}]
+            },
+        }
+        mock_client.get.return_value = mock_response
+
+        start_time = "01-01-2021 00:00:00.000000"
+        end_time = "01-01-2021 00:01:00.000000"
+
+        result = await query_average_cpu_usage("test-container", start_time, end_time)
+        assert result == 0.000005
+
+
+@pytest.mark.asyncio
 async def test_query_average_cpu_usage_failure_http():
     with patch("httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()

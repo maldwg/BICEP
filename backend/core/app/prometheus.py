@@ -246,7 +246,7 @@ async def query_average_cpu_usage(
         if not values:
             LOGGER.warning(f"No CPU metrics found for targets {resolved_targets}")
             return None
-        return round(sum(values) / len(values), 2)
+        return round(sum(values) / len(values), 10)
     except Exception as exc:
         LOGGER.error(f"Error querying CPU metrics: {exc}")
         return None
