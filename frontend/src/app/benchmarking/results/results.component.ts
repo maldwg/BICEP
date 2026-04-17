@@ -125,8 +125,9 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
       // Define CSV headers based on displayed columns
       const headers = [
-        'ID', 'IDS Name', 'Dataset', 'Ensemble Method', 'Start Time', 'Stop Time',
-        'Runtime', 'Detection Rate', 'FPR', 'FNR', 'FDR', 'Accuracy', 'Precision', 'F1 Score'
+        'ID', 'IDS Name', 'Dataset', 'Ensemble Method', 'Configuration', 'Ruleset', 'Start Time', 'Stop Time',
+        'Runtime', 'Detection Rate', 'FPR', 'FNR', 'FDR', 'Accuracy', 'Precision', 'F1 Score',
+        'Avg CPU (cores)', 'Avg RAM (MB)'
       ];
 
       // Convert data to CSV rows
@@ -137,6 +138,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
           this.escapeCsvValue(row.ids_name),
           this.escapeCsvValue(row.dataset_name),
           this.escapeCsvValue(row.ensembling_method),
+          this.escapeCsvValue(row.configuration_name),
+          this.escapeCsvValue(row.ruleset_name),
           this.escapeCsvValue(row.start_time),
           this.escapeCsvValue(row.stop_time),
           row.runtime,
@@ -146,7 +149,9 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
           row.fdr,
           row.acc,
           row.prec,
-          row.f1_score
+          row.f1_score,
+          row.avg_cpu_usage ?? '',
+          row.avg_memory_usage ?? ''
         ].join(','))
       ];
 
@@ -178,6 +183,19 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
     return stringValue;
+  }
+
+  formatCpuUsage(value: number | null | undefined): string {
+    if (value == null) {
+      return '-';
+    }
+
+    const formattedValue = value.toFixed(5);
+    if (Number(formattedValue) === 0) {
+      return `~${formattedValue}`;
+    }
+
+    return formattedValue;
   }
 
 }
