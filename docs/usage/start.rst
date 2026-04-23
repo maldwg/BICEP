@@ -48,7 +48,14 @@ In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` ad
 
     [Service]
     ExecStart=
-    ExecStart=/usr/bin/dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
+    ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock
+
+
+.. warning::
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ for a secure Docker daemon connection.
+
+
+
 
 This will allow external services like the core to access the Docker daemon remotely. Afterwards run:
 
@@ -70,10 +77,13 @@ If you are using an apple device, you might want to configure the docker deamon 
 
     {
         "hosts": [
-            "tcp://0.0.0.0:2375"
+            "tcp://x.x.x.x:2375"
             "unix:///var/run/docker.sock"
         ]
     }
+
+.. warning::
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ for a secure Docker daemon connection.
 
 In your engine configuration or docker.json
 
