@@ -1,7 +1,15 @@
 **/package-lock.json
 **/__pycache__
 **/_build
+**/.pytest_cache
 **/*.csv
+evaluation/data_preprocessing/**/*.pcap
+evaluation/data_preprocessing/**/*.pcapng
+evaluation/data_preprocessing/tests/data/**/*.png
+evaluation/data_preprocessing/tests/data/**/*.pdf
+evaluation/data_preprocessing/tests/data/**/*.json
+!evaluation/data_preprocessing/tests/data/**/.gitkeep
+!evaluation/data_preprocessing/tests/data/README.md
 # !ids_results*.csv
 # !CPU*.csv
 # !Memory*.csv
