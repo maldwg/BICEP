@@ -11,4 +11,4 @@ Prepare the docker node
 ------------------------
 In order to use the framework locally, you will need to have Docker installed. 
 Furthermore, your docker client needs to be configured properly, as the framework will try to use the docker daemon to run containers.
-For the proper configuration of your docker client, refer to the section :ref:`Distributed Setup <distributed_setup>`
+For the proper configuration of your docker client, refer to the sections :ref:`Core Configuration <core_configuration>` and :ref:`Distributed Setup <distributed_setup>`

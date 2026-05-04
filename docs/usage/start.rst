@@ -34,14 +34,37 @@ If Production mode has not been enabled in such a setup, the frontend tries to r
     The production mode currently does not support a distributed setup of the (core) system, i.e. the different services of BICEP NEED to run on the same machine.
 
 
+.. _core_configuration:
+
+Core Configuration
+------------------
+The docker daemon on the Core machine needs to be configured appropriately, so that containers can be deployed by it. For this you need to adjust the docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` add the following lines:
+
+.. code-block:: bash
+
+    [Service]
+    ExecStart=
+    ExecStart=/usr/bin/dockerd -H tcp://172.22.0.1:2375 -H unix:///var/run/docker.sock
+
+This will allow external services like the core to access the Docker daemon remotely. Afterwards, run:
+
+.. code-block:: bash
+
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker.service
+
+.. warning::
+    Please note that this allows connections to the docker daemon only by the local machine via the BICEP network. If you change the network as configured in the ``docker-compose.yaml`` then you will need to adjust the daemon accordingly.
+    If not configured correctly you will not be able to start any IDS container or the metric service.
+
 .. _distributed_setup:
 
 Distributed Setup
 -----------------
 
-If you want to run your IDS and ensembles, you will need to configure a node. For a small setup, this will be the machine that hosts the framework as well. However, you can configure any machine to host IDS containers by following these steps:
+You may want a distributed setup to host the application on one machine and benchmark IDS' on another node, to avoid performance intereference. 
+For this, the remote machine needs to have the docker daemon configured like the Core host, with some slight differences:
 
-You will need to adapt the docker configuration on the node you would like to add.
 In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` add the following lines:
 
 .. code-block:: bash
@@ -50,14 +73,14 @@ In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` ad
     ExecStart=
     ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock
 
+Make sure that you expose a remotely available IP address that the other machine hosting the BICEP application can reach! 
 
 .. warning::
-    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ for a secure Docker daemon connection.
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to ``https://docs.docker.com/engine/daemon/remote-access/`` for a secure Docker daemon connection.
 
 
 
-
-This will allow external services like the core to access the Docker daemon remotely. Afterwards run:
+Afterwards run:
 
 .. code-block:: bash
 
