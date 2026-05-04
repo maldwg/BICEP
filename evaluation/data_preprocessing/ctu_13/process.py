@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from scapy.all import PcapReader, PcapWriter
 import os.path
 import csv
@@ -6,10 +7,39 @@ from scapy.all import PcapReader
 from tqdm import tqdm
 from dateutil import parser 
 from data_preprocessing.utils import Dataset, Precision, csv_row_is_empty
+from data_preprocessing.sample_dataset_comparison import generate_sampling_comparison
 from datetime import timedelta, timezone, datetime
 import time
 
 class CTU(Dataset):
+
+    def plot_sampled_dataset_comparison(
+        self,
+        original_csv,
+        output_dir,
+        *,
+        sampled_csv=None,
+        original_pcap=None,
+        sampled_pcap=None,
+        embedding_method="auto",
+        max_points_per_source=1000,
+        random_state=42,
+    ):
+        sampled_csv = sampled_csv or self.combined_csv
+        sampled_pcap = sampled_pcap or self.combined_pcap
+        output_dir = Path(output_dir)
+        return generate_sampling_comparison(
+            self,
+            original_csv=str(original_csv),
+            sampled_csv=str(sampled_csv),
+            output_dir=str(output_dir),
+            dataset_name="ctu_13",
+            original_pcap=str(original_pcap) if original_pcap is not None else None,
+            sampled_pcap=str(sampled_pcap) if sampled_pcap is not None else None,
+            embedding_method=embedding_method,
+            max_points_per_source=max_points_per_source,
+            random_state=random_state,
+        )
 
 
 
@@ -131,7 +161,7 @@ class CTU(Dataset):
                 key = self.get_key_from_csv_row(row=row)             
                 label = str(row[self.labels_row]).strip()
                 if "benign" not in label.casefold():
-                    if target_malicious >= malicious:
+                    if malicious < target_malicious:
                         csv_records[key] = True
                         csv_entries_list.append(row)
                         malicious += 1
@@ -149,7 +179,7 @@ class CTU(Dataset):
                 # if modulo step is reached, sample the fllowing packets specified using the buffer
                 if counter > 0:
                     if "benign" in label.casefold():              
-                        if target_benign >= benign:
+                        if benign < target_benign:
                             csv_records[key] = True
                             csv_entries_list.append(row)
                             benign += 1
@@ -207,42 +237,69 @@ class CTU(Dataset):
         
         
 if __name__ == "__main__":
+    original_combined_csv = os.getenv(
+        "BICEP_CTU_13_ORIGINAL_CSV",
+        "/mnt/hdd/Datasets/CTU-13/combined.csv",
+    )
+    original_combined_pcap = os.getenv(
+        "BICEP_CTU_13_ORIGINAL_PCAP",
+        "/mnt/hdd/Datasets/CTU-13/combined.pcap",
+    )
+    sampled_csv = "/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv"
+    sampled_pcap = "/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap"
+    comparison_output_dir = os.getenv(
+        "BICEP_CTU_13_PLOTS_DIR",
+        "./data_preprocessing/ctu_13/plots_reduced",
+    )
 
     ctu = CTU(
         sip_row=3,
         sport_row=4,
         dip_row=6,
         dport_row=7,
+        protocol_row=2,
         labels_row=-1,
         ts_row=0,
+        flow_duration_row=1,
+        flow_duration_unit="seconds",
         base_dir_path="/mnt/hdd/Datasets/CTU-13/",
         labels_path_glob= ["*/*.binetflow"],
         pcap_path_glob=["*/*.pcap"],
-        combined_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
-        combined_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap" ,
-        precision=Precision.MILISECOND.value
+        combined_csv=sampled_csv,
+        combined_pcap=sampled_pcap ,
+        precision=Precision.MILISECOND.value,
+        sampled_csv=sampled_csv,
+        sampled_pcap=sampled_pcap,
     )
 
     # ctu.convert_binetflow_to_csv_and_combine()
-
-
     # ctu.combine_pcaps()
+    # can be used bot does not lookup reverse keys for flows.
     # ctu.sample_subset_of_combined_files(
     #     output_csv_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.csv",
     #     output_pcap_file="/mnt/hdd/Datasets/CTU-13/sampled-ratio-0point5pc.pcap",
     #     ratio=0.005
     # )
-    # ctu.sample_pcap_and_filter_csv_from_combined(
-    #     output_csv="/mnt/hdd/Datasets/CTU-13/sampled-reverse.csv",
-    #     output_pcap= "/mnt/hdd/Datasets/CTU-13/sampled-reverse.pcap",
-    #     sample_ratio=0.001,
-    # )
-    ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio_reduced.txt")
-    ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio_reduced.txt")
+    # ctu.write_class_ratios_from_combined_csv_to_file("./data_preprocessing/ctu_13/ratio_reduced.txt")
+    # ctu.write_noise_ratios_from_combined_pcap_to_file("./data_preprocessing/ctu_13/noise_ratio_reduced.txt")
     
-#     ctu.sample_from_csv_and_include_pcap_flow_based(
-#        output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
-#        output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap",
-#         sample_ratio_benign    = 0.00065,
-#         sample_ratio_malicious = 0.03
-# )
+    ctu.sample_from_csv_and_include_pcap_flow_based(
+       output_csv="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.csv",
+       output_pcap="/mnt/hdd/Datasets/CTU-13/flow_based_sampling_timestamp_aware_reverse_key_overnight_bigger_last_try_100mb.pcap",
+        sample_ratio_benign    = 0.00065,
+        sample_ratio_malicious = 0.03,
+        denoise=False
+
+)
+
+    ctu.validate_sampled_data()
+    if Path(original_combined_csv).exists() and Path(original_combined_pcap).exists():
+        ctu.plot_sampled_dataset_comparison(
+            original_csv=ctu.combined_csv,
+            original_pcap=ctu.combined_pcap,
+            sampled_csv=ctu.sampled_csv,
+            sampled_pcap=ctu.sampled_pcap,
+            output_dir=comparison_output_dir,
+        )
+    else:
+        print("Skipping sampled-vs-original comparison plots because the original CTU-13 files were not found.")

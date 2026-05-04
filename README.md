@@ -44,7 +44,7 @@ This fetches the newest version of the submodule for the backend code and is nec
 ## Start The Project
 
 > [!IMPORTANT]
-> In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#distributed-setup)
+> In order for the framework to work out of the box, the host where you want to deploy containers needs to be prepared as mentioned [here](https://bicep.readthedocs.io/en/latest/usage/start.html#core-configuration)
 
 The project can be started by running 
 ```
