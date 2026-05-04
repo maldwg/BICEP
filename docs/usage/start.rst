@@ -71,12 +71,14 @@ In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` ad
 
     [Service]
     ExecStart=
-    ExecStart=/usr/bin/dockerd -H tcp://192.168.X.X:2375 -H unix:///var/run/docker.sock
+    ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock
 
 Make sure that you expose a remotely available IP address that the other machine hosting the BICEP application can reach! 
 
 .. warning::
-    Please avoid using 0.0.0.0 as this would allow any machine in the network to access the docker daemon, which can lead to security issues. Make sure you know what you are doing when configuring the external access and refer to the official documentation ``https://docs.docker.com/engine/daemon/remote-access/``.
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to ``https://docs.docker.com/engine/daemon/remote-access/`` for a secure Docker daemon connection.
+
+
 
 Afterwards run:
 
@@ -98,10 +100,13 @@ If you are using an apple device, you might want to configure the docker deamon 
 
     {
         "hosts": [
-            "tcp://0.0.0.0:2375"
+            "tcp://x.x.x.x:2375"
             "unix:///var/run/docker.sock"
         ]
     }
+
+.. warning::
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ for a secure Docker daemon connection.
 
 In your engine configuration or docker.json
 
