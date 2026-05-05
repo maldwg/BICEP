@@ -44,7 +44,7 @@ The docker daemon on the Core machine needs to be configured appropriately, so t
 
     [Service]
     ExecStart=
-    ExecStart=/usr/bin/dockerd -H tcp://172.22.0.1:2375 -H unix:///var/run/docker.sock
+    ExecStart=/usr/bin/dockerd -H tcp://172.22.0.1:2375 -H unix:///var/run/docker.sock --tls=false
 
 This will allow external services like the core to access the Docker daemon remotely. Afterwards, run:
 
@@ -53,9 +53,37 @@ This will allow external services like the core to access the Docker daemon remo
     sudo systemctl daemon-reload
     sudo systemctl restart docker.service
 
+
+
 .. warning::
     Please note that this allows connections to the docker daemon only by the local machine via the BICEP network. If you change the network as configured in the ``docker-compose.yaml`` then you will need to adjust the daemon accordingly.
     If not configured correctly you will not be able to start any IDS container or the metric service.
+
+
+Troubleshooting
+~~~~~~~~~~~~~~~~
+
+**My Docker service is not starting after changing the configuration**
+
+The reason can be twofold: On newer versions of docker >29, the docker daemon needs to be started with the ``--tls=false`` flag to allow unencrypted connections or the daemon needs to be secured properly https://docs.docker.com/engine/security/protect-access/.
+Alternatively, the docker service might refuse to start because it can't bind to the 172.22.0.1 IP address. Two mitigate this either (before changing the daemon configuration), start the BICEP application, to create the needed interface, or run the following:
+
+.. code-block:: bash
+
+    sudo ip link add docker-dummy0 type dummy
+    sudo ip addr add 172.22.0.1/32 dev docker-dummy0
+    sudo ip link set docker-dummy0 up
+    sudo systemctl restart docker 
+    sudo ip link delete docker-dummy0
+
+This will create a temporary dummy interface with the required IP address, so that the docker daemon can start and create the BICEP network. After the network is created, the dummy interface can be removed again.
+
+
+**After starting the application, the docker host is not becoming available**
+
+In this case check the logs of the core. Either, your docker daemon is not configured with the proper IP bind address, or a firewall setup on your host like ufw is blocking the connection. To bypass the latter, you will need to add a rule to allow incoming connections on port 2375.
+
+
 
 .. _distributed_setup:
 
@@ -71,12 +99,12 @@ In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` ad
 
     [Service]
     ExecStart=
-    ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock
+    ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock --tls=false
 
 Make sure that you expose a remotely available IP address that the other machine hosting the BICEP application can reach! 
 
 .. warning::
-    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to ``https://docs.docker.com/engine/daemon/remote-access/`` for a secure Docker daemon connection.
+    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ and https://docs.docker.com/engine/security/protect-access/ for a secure Docker daemon connection.
 
 
 
@@ -94,19 +122,16 @@ per default, the localhost (the machine where the framework is running), is alre
 
 Mac Support
 -----------
-If you are using an apple device, you might want to configure the docker deamon in the toolbox, by adding 
+If you are using an apple device, you might want to configure the docker daemon in the toolbox, by adding 
 
 .. code-block:: 
 
     {
         "hosts": [
-            "tcp://x.x.x.x:2375"
+            "tcp://172.22.0.1:2375"
             "unix:///var/run/docker.sock"
         ]
     }
-
-.. warning::
-    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ for a secure Docker daemon connection.
 
 In your engine configuration or docker.json
 
