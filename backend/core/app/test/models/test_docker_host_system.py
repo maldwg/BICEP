@@ -590,6 +590,22 @@ async def test_check_metric_service_health_schedules_background_deploy_when_miss
 
 
 @pytest.mark.asyncio
+async def test_is_host_reachable_core_host_socket_exists(core_host: DockerHostSystem):
+    """For core host, should return True when the socket file exists."""
+    with patch("os.path.exists", return_value=True):
+        result = await core_host.is_host_reachable()
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_is_host_reachable_core_host_socket_missing(core_host: DockerHostSystem):
+    """For core host, should return False when the socket file is absent."""
+    with patch("os.path.exists", return_value=False):
+        result = await core_host.is_host_reachable()
+    assert result is False
+
+
+@pytest.mark.asyncio
 async def test_is_host_reachable_success(remote_host: DockerHostSystem):
     """When TCP connection succeeds, should return True."""
     mock_writer = MagicMock()

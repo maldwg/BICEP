@@ -303,6 +303,7 @@ async def test_split_deployment(
         host.id = host_id
         host.name = f"Host-{host_id}"
         host.host = "localhost" if host_id == 1 else "192.168.1.100"
+        host.is_core_host.return_value = host_id == 1
         host.get_host_and_docker_port.return_value = (host.host, 2375)
         return host
 

@@ -34,6 +34,9 @@ class ComposeHostOperations:
         self._get_core_url = get_core_url
 
     def get_docker_host_url(self, host_system) -> str:
+        if host_system.is_core_host():
+            socket_path = os.getenv("DOCKER_SOCKET_PATH", "/var/run/docker.sock")
+            return f"unix://{socket_path}"
         host_ip, docker_port = host_system.get_host_and_docker_port()
         return f"tcp://{host_ip}:{docker_port}"
 

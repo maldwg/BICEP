@@ -53,20 +53,28 @@ def mock_container():
     return MagicMock()
 
 @patch("docker.DockerClient")
-@patch("app.utils.get_core_host_ip")
-def test_get_docker_client(mock_get_core_host, mock_docker_client, mock_client, mock_host_system):
-    mock_get_core_host.return_value = "127.0.0.1"
+def test_get_docker_client_core_host_uses_socket(mock_docker_client, mock_client, mock_host_system):
     mock_docker_client.return_value = mock_client
-
-    mock_host_system.name = "CoreHost"
-    mock_host_system.host = "localhost"
-    mock_host_system.docker_port = 2375
-    get_host_and_docker_port_mock = MagicMock()
-    get_host_and_docker_port_mock.return_value = (mock_host_system.host, mock_host_system.docker_port)
-    mock_host_system.get_host_and_docker_port = get_host_and_docker_port_mock
+    mock_host_system.is_core_host.return_value = True
 
     client = get_docker_client(mock_host_system)
+
     assert client == mock_client
+    called_url = mock_docker_client.call_args[1]["base_url"]
+    assert called_url.startswith("unix://")
+
+
+@patch("docker.DockerClient")
+def test_get_docker_client_remote_host_uses_tcp(mock_docker_client, mock_client, mock_host_system):
+    mock_docker_client.return_value = mock_client
+    mock_host_system.is_core_host.return_value = False
+    mock_host_system.get_host_and_docker_port.return_value = ("10.0.0.5", 2376)
+
+    client = get_docker_client(mock_host_system)
+
+    assert client == mock_client
+    called_url = mock_docker_client.call_args[1]["base_url"]
+    assert called_url == "tcp://10.0.0.5:2376"
 
 @pytest.mark.asyncio
 @patch("app.deployment.deployment_plugins.docker.get_docker_client")
@@ -109,6 +117,7 @@ async def test_remove_docker_container(mock_get_host_and_port,mock_docker_client
     mock_get_host_and_port.return_value = ("localhost", 2375)
     mock_host_system = MagicMock()
     mock_host_system.get_host_and_docker_port = mock_get_host_and_port
+    mock_host_system.is_core_host.return_value = False
     mock_ids_container.host_system = mock_host_system
 
     await remove_docker_container(mock_ids_container)
