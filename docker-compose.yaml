@@ -78,6 +78,8 @@ services:
       - MARIADB_ROOT_PASSWORD=root
     ports:
       - 3306:3306
+    volumes:
+      - bicep_db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mariadb -uroot -p$${MARIADB_ROOT_PASSWORD} -e 'SELECT 1'"]
       start_period: 10s
@@ -108,3 +110,6 @@ networks:
       config:
         - subnet: 172.22.0.0/16
           gateway: 172.22.0.1
+
+volumes:
+  bicep_db_data:
