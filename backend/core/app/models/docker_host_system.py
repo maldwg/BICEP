@@ -656,7 +656,9 @@ class DockerHostSystem(Base):
     async def is_host_reachable(self, timeout: float = 2.0) -> bool:
         if self.is_core_host():
             socket_path = os.getenv("DOCKER_SOCKET_PATH", "/var/run/docker.sock")
-            return os.path.exists(socket_path)
+            if os.path.exists(socket_path):
+                return True
+            # socket absent – fall back to TCP probe
         host, port = self.get_host_and_docker_port()
         try:
             reader, writer = await asyncio.wait_for(

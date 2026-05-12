@@ -53,7 +53,8 @@ def mock_container():
     return MagicMock()
 
 @patch("docker.DockerClient")
-def test_get_docker_client_core_host_uses_socket(mock_docker_client, mock_client, mock_host_system):
+@patch("os.path.exists", return_value=True)
+def test_get_docker_client_core_host_uses_socket(mock_exists, mock_docker_client, mock_client, mock_host_system):
     mock_docker_client.return_value = mock_client
     mock_host_system.is_core_host.return_value = True
 
@@ -62,6 +63,20 @@ def test_get_docker_client_core_host_uses_socket(mock_docker_client, mock_client
     assert client == mock_client
     called_url = mock_docker_client.call_args[1]["base_url"]
     assert called_url.startswith("unix://")
+
+
+@patch("docker.DockerClient")
+@patch("os.path.exists", return_value=False)
+def test_get_docker_client_core_host_falls_back_to_tcp_when_no_socket(mock_exists, mock_docker_client, mock_client, mock_host_system):
+    mock_docker_client.return_value = mock_client
+    mock_host_system.is_core_host.return_value = True
+    mock_host_system.get_host_and_docker_port.return_value = ("172.17.0.1", 2375)
+
+    client = get_docker_client(mock_host_system)
+
+    assert client == mock_client
+    called_url = mock_docker_client.call_args[1]["base_url"]
+    assert called_url == "tcp://172.17.0.1:2375"
 
 
 @patch("docker.DockerClient")

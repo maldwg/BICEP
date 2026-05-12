@@ -598,10 +598,26 @@ async def test_is_host_reachable_core_host_socket_exists(core_host: DockerHostSy
 
 
 @pytest.mark.asyncio
-async def test_is_host_reachable_core_host_socket_missing(core_host: DockerHostSystem):
-    """For core host, should return False when the socket file is absent."""
+async def test_is_host_reachable_core_host_socket_missing_tcp_reachable(core_host: DockerHostSystem):
+    """For core host with no socket, should fall back to TCP and return True when reachable."""
+    mock_writer = MagicMock()
+    mock_writer.close = MagicMock()
+    mock_writer.wait_closed = AsyncMock()
     with patch("os.path.exists", return_value=False):
-        result = await core_host.is_host_reachable()
+        with patch("app.models.docker_host_system.get_core_host_ip", return_value="172.17.0.1"):
+            with patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for:
+                mock_wait_for.return_value = (MagicMock(), mock_writer)
+                result = await core_host.is_host_reachable()
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_is_host_reachable_core_host_socket_missing_tcp_unreachable(core_host: DockerHostSystem):
+    """For core host with no socket, should fall back to TCP and return False when unreachable."""
+    with patch("os.path.exists", return_value=False):
+        with patch("app.models.docker_host_system.get_core_host_ip", return_value="172.17.0.1"):
+            with patch("asyncio.wait_for", side_effect=ConnectionRefusedError):
+                result = await core_host.is_host_reachable()
     assert result is False
 
 
