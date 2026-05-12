@@ -11,6 +11,7 @@ from app.validation.models import (
 )
 from app.models.ids_system import (
     IdsSystem,
+    build_ids_system_name,
     get_ids_system_by_id,
     get_ids_system_by_id_any_status,
     get_ids_system_model,
@@ -66,7 +67,7 @@ async def setup_ids(
 
     free_port = find_free_port()
     ruleset_id = data.ruleset_id if data.ruleset_id else None
-    initial_name = f"{ids_tool.name}-{free_port}"
+    initial_name = build_ids_system_name(ids_tool.name, free_port)
 
     ids_system_model = get_ids_system_model(getattr(ids_tool, "ids_type", None))
     ids_system: IdsSystem = ids_system_model(
