@@ -31,6 +31,34 @@ async def test_setup_ids(db_session_fixture: DatabaseSessionFixture):
 
 
 @pytest.mark.asyncio
+async def test_setup_ids_sanitizes_container_name_from_tool_name(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    request_data: IdsContainerCreate = IdsContainerCreate(
+        host_system_id=1,
+        description="Test IDS Container",
+        configuration_id=1,
+        ids_tool_id=1,
+    )
+
+    db_session = await db_session_fixture.get_db_session()
+    mock_ids_tool = await db_session_fixture.get_ids_tool_model()
+    mock_ids_tool.name = "Suricata Demo"
+
+    with patch("app.routers.ids.find_free_port", return_value=8080):
+        response = await setup_ids(
+            request_data,
+            background_tasks=BackgroundTasks(),
+            db=db_session,
+        )
+
+    created_ids_system = db_session.add.call_args.args[0]
+
+    assert response.status_code == 202
+    assert created_ids_system.name == "Suricata-Demo-8080"
+
+
+@pytest.mark.asyncio
 async def test_remove_container(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     container_id = 1

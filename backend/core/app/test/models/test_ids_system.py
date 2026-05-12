@@ -6,6 +6,7 @@ from app.models.ids_system import (
     NidsSystem,
     HidsSystem,
     CidsSystem,
+    build_ids_system_name,
     get_ids_system_by_id,
     get_all_container,
     remove_container_by_id,
@@ -163,6 +164,34 @@ def test_get_ids_system_model_none():
 def test_get_ids_system_model_empty_string():
     result = get_ids_system_model("")
     assert result is IdsSystem
+
+
+def test_build_ids_system_name_sanitizes_spaces_and_special_characters():
+    assert build_ids_system_name("My IDS / Demo", 8080) == "My-IDS-Demo-8080"
+
+
+@pytest.mark.asyncio
+async def test_setup_uses_docker_safe_name_for_tool_labels_with_spaces(nids_system):
+    db_session = AsyncMock()
+    db_session.add = MagicMock()
+    ids_tool = MagicMock()
+    ids_tool.name = "Suricata Demo"
+    ids_tool.requires_ruleset = False
+
+    with patch(
+        "app.models.ids_system.get_ids_by_id",
+        new=AsyncMock(return_value=ids_tool),
+    ), patch(
+        "app.models.configuration.get_config_by_id",
+        new=AsyncMock(return_value=MagicMock()),
+    ), patch.object(
+        IdsSystem,
+        "_deploy",
+        new=AsyncMock(),
+    ):
+        await nids_system.setup(db_session)
+
+    assert nids_system.name == "Suricata-Demo-8080"
 
 
 # ==================== IDS CONTAINER HTTP URL ====================
