@@ -71,7 +71,7 @@ services:
       - CORE_HOST_IP=${CORE_HOST_IP}
       - HOST_AVAILABILITY_CHECK_INTERVAL=15
       - METRIC_SERVICE_IMAGE_NAME=ghcr.io/bicep-pump/metric-service
-      - METRIC_SERVICE_IMAGE_VERSION=0.0.5-dev
+      - METRIC_SERVICE_IMAGE_VERSION=v1.1.0
   database:
     build:
       context: ./database
@@ -106,6 +106,3 @@ networks:
     driver: bridge
     ipam:
       driver: default
-      config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1

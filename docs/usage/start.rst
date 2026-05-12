@@ -85,7 +85,7 @@ Configure the core to use the client certs by setting the following environment 
     environment:
       - DOCKER_TLS_CERTDIR=/etc/docker/client-certs
 
-**Minimum (insecure) alternative**
+**Minimum alternative**
 
 If TLS is not possible, restrict the bind address to only the IP that the BICEP machine can reach and use firewall rules to allow port 2375 only from the BICEP host's IP.
 
@@ -102,7 +102,7 @@ Make sure that you expose a remotely available IP address that the other machine
 .. warning::
     Never bind to ``0.0.0.0`` without firewall restrictions. Doing so grants unauthenticated root-level access to your machine to anyone who can reach that port.
 
-Afterwards run:
+Afterwards, run:
 
 .. code-block:: bash
 
@@ -131,5 +131,5 @@ In your engine configuration or docker.json
 
 Deactivating Containerd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-Containerd needs to be deactivated, otherwise the Docker-based observability components may run into issues later on. 
+Containerd might need to be deactivated, otherwise the Docker-based observability components may run into issues later on. 
 To do so, go into the docker desktop ``settings > general`` and deactivate ``Use containerd for pulling and storing images``.
