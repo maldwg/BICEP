@@ -349,6 +349,53 @@ async def test_spec_manager_write_deployment_files_writes_ruleset_and_runtime_co
     assert (tmp_path / "sensor.yaml").read_text() == "sensor-config"
 
 
+@patch("os.path.exists", return_value=True)
+def test_get_docker_host_url_core_host_returns_unix_socket(mock_exists):
+    host_operations = ComposeHostOperations(
+        docker_client_cls=MagicMock(),
+        docker_sdk_module=MagicMock(),
+        ids_component_cls=MagicMock(),
+        logger=MagicMock(),
+        get_core_url=MagicMock(),
+    )
+    host_system = SimpleNamespace(is_core_host=lambda: True)
+    url = host_operations.get_docker_host_url(host_system)
+    assert url.startswith("unix://")
+
+
+@patch("os.path.exists", return_value=False)
+def test_get_docker_host_url_core_host_falls_back_to_tcp_when_no_socket(mock_exists):
+    host_operations = ComposeHostOperations(
+        docker_client_cls=MagicMock(),
+        docker_sdk_module=MagicMock(),
+        ids_component_cls=MagicMock(),
+        logger=MagicMock(),
+        get_core_url=MagicMock(),
+    )
+    host_system = SimpleNamespace(
+        is_core_host=lambda: True,
+        get_host_and_docker_port=lambda: ("172.17.0.1", 2375),
+    )
+    url = host_operations.get_docker_host_url(host_system)
+    assert url == "tcp://172.17.0.1:2375"
+
+
+def test_get_docker_host_url_remote_host_returns_tcp():
+    host_operations = ComposeHostOperations(
+        docker_client_cls=MagicMock(),
+        docker_sdk_module=MagicMock(),
+        ids_component_cls=MagicMock(),
+        logger=MagicMock(),
+        get_core_url=MagicMock(),
+    )
+    host_system = SimpleNamespace(
+        is_core_host=lambda: False,
+        get_host_and_docker_port=lambda: ("10.0.0.5", 2376),
+    )
+    url = host_operations.get_docker_host_url(host_system)
+    assert url == "tcp://10.0.0.5:2376"
+
+
 def test_host_operations_copy_runtime_configs_blocking_uploads_archive(tmp_path):
     docker_sdk_module = MagicMock()
     host_docker = MagicMock()
@@ -368,7 +415,10 @@ def test_host_operations_copy_runtime_configs_blocking_uploads_archive(tmp_path)
     runtime_file = tmp_path / "sensor.yaml"
     runtime_file.write_text("content")
     deployment = SimpleNamespace(
-        host_system=SimpleNamespace(get_host_and_docker_port=lambda: ("127.0.0.1", 2375)),
+        host_system=SimpleNamespace(
+            get_host_and_docker_port=lambda: ("127.0.0.1", 2375),
+            is_core_host=lambda: True,
+        ),
         runtime_config_files={str(runtime_file): MagicMock()},
         paths=SimpleNamespace(work_dir="/tmp/bicep_cids_1_localhost"),
     )
@@ -424,6 +474,7 @@ async def test_host_operations_start_project_registers_components_and_scales():
         host_system=SimpleNamespace(
             name="Remote",
             id=5,
+            is_core_host=lambda: False,
             get_host_and_docker_port=lambda: ("10.0.0.5", 2375),
         ),
         paths=SimpleNamespace(
@@ -511,6 +562,7 @@ async def test_host_operations_start_project_redeploys_only_requested_services()
         host_system=SimpleNamespace(
             name="Remote",
             id=5,
+            is_core_host=lambda: False,
             get_host_and_docker_port=lambda: ("10.0.0.5", 2375),
         ),
         paths=SimpleNamespace(
@@ -575,6 +627,7 @@ async def test_host_operations_start_project_wraps_compose_errors():
     deployment = SimpleNamespace(
         host_system=SimpleNamespace(
             name="Remote",
+            is_core_host=lambda: False,
             get_host_and_docker_port=lambda: ("10.0.0.5", 2375),
         ),
         paths=SimpleNamespace(
@@ -633,6 +686,7 @@ def test_host_operations_teardown_remote_project_blocking_falls_back_to_containe
     result = host_operations._teardown_remote_project_blocking(
         host_system=SimpleNamespace(
             name="Remote",
+            is_core_host=lambda: False,
             get_host_and_docker_port=lambda: ("10.0.0.5", 2375),
         ),
         components=[SimpleNamespace(name="sensor")],
