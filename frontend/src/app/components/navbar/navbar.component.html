@@ -1,6 +1,6 @@
 <header class="navbar-shell">
   <mat-toolbar class="navbar">
-    <a class="navbar__brand" routerLink="/">
+    <a class="navbar__brand" routerLink="/" (click)="closeMenu()">
       <span class="navbar__brand-mark">
         <img src="../../../assets/Biceps_logo.svg" alt="BICEP logo" class="toolbar-icon">
       </span>
@@ -10,15 +10,23 @@
       </span>
     </a>
 
-    <nav class="navbar__nav" aria-label="Primary navigation">
+    <div class="navbar__spacer"></div>
+
+    <button type="button" class="navbar__toggle" (click)="toggleMenu()" aria-label="Toggle navigation" [class.navbar__toggle--active]="isMenuOpen">
+      <span class="navbar__toggle-bar"></span>
+      <span class="navbar__toggle-bar"></span>
+      <span class="navbar__toggle-bar"></span>
+    </button>
+
+    <nav class="navbar__nav" [class.navbar__nav--open]="isMenuOpen" aria-label="Primary navigation">
       <div class="navbar__item" routerLinkActive="navbar__item--active" [routerLinkActiveOptions]="{ exact: true }">
-        <a class="navbar__link" routerLink="/">
+        <a class="navbar__link" routerLink="/" (click)="closeMenu()">
           <mat-icon>dashboard</mat-icon>
           <span>Dashboard</span>
         </a>
       </div>
       <div class="navbar__item" routerLinkActive="navbar__item--active">
-        <a class="navbar__link" routerLink="/monitoring">
+        <a class="navbar__link" routerLink="/monitoring" (click)="closeMenu()">
           <mat-icon>timeline</mat-icon>
           <span>Monitoring</span>
         </a>
@@ -30,30 +38,30 @@
           <mat-icon class="navbar__caret">expand_more</mat-icon>
         </button>
         <mat-menu #benchmarkingMenu="matMenu" panelClass="benchmarking-dropdown" yPosition="below" xPosition="after">
-          <button mat-menu-item routerLink="/benchmarking/start">Start</button>
-          <button mat-menu-item routerLink="/benchmarking/results">Results</button>
+          <button mat-menu-item routerLink="/benchmarking/start" (click)="closeMenu()">Start</button>
+          <button mat-menu-item routerLink="/benchmarking/results" (click)="closeMenu()">Results</button>
         </mat-menu>
       </div>
       <div class="navbar__item" routerLinkActive="navbar__item--active">
-        <a class="navbar__link" routerLink="/setup">
+        <a class="navbar__link" routerLink="/setup" (click)="closeMenu()">
           <mat-icon>tune</mat-icon>
           <span>Setup</span>
         </a>
       </div>
       <div class="navbar__item" routerLinkActive="navbar__item--active">
-        <a class="navbar__link" routerLink="/upload">
+        <a class="navbar__link" routerLink="/upload" (click)="closeMenu()">
           <mat-icon>folder_open</mat-icon>
           <span>Uploads</span>
         </a>
       </div>
       <div class="navbar__item" routerLinkActive="navbar__item--active">
-        <a class="navbar__link" routerLink="/hosts">
+        <a class="navbar__link" routerLink="/hosts" (click)="closeMenu()">
           <mat-icon>dns</mat-icon>
           <span>Docker Hosts</span>
         </a>
       </div>
       <div class="navbar__item" routerLinkActive="navbar__item--active">
-        <a class="navbar__link" routerLink="/ids-tools">
+        <a class="navbar__link" routerLink="/ids-tools" (click)="closeMenu()">
           <mat-icon>security</mat-icon>
           <span>IDS Tools</span>
         </a>
@@ -68,6 +76,10 @@
       <mat-icon>menu</mat-icon>
     </button>
   </mat-toolbar>
+
+  @if (isMenuOpen) {
+    <div class="navbar__overlay" (click)="closeMenu()"></div>
+  }
 </header>
 
 <mat-menu #mobileNavMenu="matMenu" panelClass="navbar-mobile-menu" xPosition="before" yPosition="below">

@@ -1,9 +1,13 @@
+@use '../../variables' as *;
+
 .monitoring-container {
   min-height: 100%;
 }
 
 .monitoring-summary-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  @media (min-width: $bp-sm) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  }
 }
 
 .monitoring-summary-card {
@@ -29,7 +33,7 @@
 
 .header {
   width: 100%;
-  padding: 1.15rem 1.25rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   border: 0.0625rem solid rgba(255, 255, 255, 0.52);
   border-radius: 1.5rem;
   background:
@@ -45,11 +49,17 @@
 }
 
 .time-selector {
-  width: 13rem;
+  width: 100%;
+  @media (min-width: $bp-sm) {
+    width: 13rem;
+  }
 }
 
 .datetime-picker {
-  width: 15rem;
+  width: 100%;
+  @media (min-width: $bp-sm) {
+    width: 15rem;
+  }
 }
 
 .datetime-picker input {
@@ -60,11 +70,15 @@
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  width: 100%;
+  @media (min-width: $bp-sm) {
+    width: auto;
+  }
 }
 
 .component-toolbar {
   width: 100%;
-  padding: 1.2rem 1.3rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 250, 248, 0.72));
   box-shadow: var(--app-shadow-soft);
@@ -78,6 +92,10 @@
   justify-content: space-between;
   gap: 1rem;
   align-items: flex-start;
+  flex-direction: column;
+  @media (min-width: $bp-sm) {
+    flex-direction: row;
+  }
 }
 
 .component-controls-copy {
@@ -92,6 +110,12 @@
   gap: 0.75rem;
   align-items: center;
   margin-top: 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  @media (min-width: $bp-sm) {
+    flex-direction: row;
+    align-items: center;
+  }
 }
 
 .component-controls-label {
@@ -115,6 +139,10 @@
 .component-reset-button {
   flex-shrink: 0;
   border-radius: 999rem;
+  width: 100%;
+  @media (min-width: $bp-sm) {
+    width: auto;
+  }
 }
 
 .charts-wrapper {
@@ -131,11 +159,11 @@
   box-shadow: var(--app-shadow-soft);
   border: 0.0625rem solid rgba(255, 255, 255, 0.52);
   border-radius: 1.5rem;
-  padding: 1.25rem;
+  padding: clamp(0.75rem, 3vw, 1.25rem);
 }
 
 .chart {
-  height: 28rem;
+  height: clamp(20rem, 50vh, 28rem);
   width: 100%;
 }
 
@@ -156,32 +184,9 @@
 }
 
 .export-fab {
-  margin-left: auto;
-}
-
-@media (max-width: 60rem) {
-  .custom-time-inputs {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .component-controls-header {
-    flex-direction: column;
-  }
-
-  .component-controls-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .datetime-picker,
-  .time-selector,
-  .component-toggle-button,
-  .component-reset-button {
-    width: 100%;
-  }
-
-  .export-fab {
-    margin-left: 0;
+  width: 100%;
+  @media (min-width: $bp-sm) {
+    width: auto;
+    margin-left: auto;
   }
 }
