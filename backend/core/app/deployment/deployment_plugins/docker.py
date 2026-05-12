@@ -37,8 +37,19 @@ def _split_image_reference(image_reference: str) -> tuple[str, str | None]:
 
 
 def get_docker_client(host_system, timeout: int | None = None):
-    host, docker_port = host_system.get_host_and_docker_port()
-    host_url = f"tcp://{host}:{docker_port}"
+    if host_system.is_core_host():
+        socket_path = os.getenv("DOCKER_SOCKET_PATH", "/var/run/docker.sock")
+        if os.path.exists(socket_path):
+            host_url = f"unix://{socket_path}"
+        else:
+            LOGGER.warning(
+                f"Unix socket {socket_path} not found, falling back to TCP for core host"
+            )
+            host, docker_port = host_system.get_host_and_docker_port()
+            host_url = f"tcp://{host}:{docker_port}"
+    else:
+        host, docker_port = host_system.get_host_and_docker_port()
+        host_url = f"tcp://{host}:{docker_port}"
     try:
         client = docker_sdk.DockerClient(
             base_url=host_url,

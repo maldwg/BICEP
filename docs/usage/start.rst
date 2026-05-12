@@ -38,52 +38,13 @@ If Production mode has not been enabled in such a setup, the frontend tries to r
 
 Core Configuration
 ------------------
-The docker daemon on the Core machine needs to be configured appropriately, so that containers can be deployed by it. For this you need to adjust the docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` add the following lines:
+For a single-node setup, no special Docker daemon configuration is required. BICEP's core service connects to the Docker daemon through the Unix socket (``/var/run/docker.sock``), which is mounted into the core container by the ``docker-compose.yaml``. This means the daemon is never exposed over the network.
 
-.. code-block:: bash
-
-    [Service]
-    ExecStart=
-    ExecStart=/usr/bin/dockerd -H tcp://172.22.0.1:2375 -H unix:///var/run/docker.sock --tls=false
-
-This will allow external services like the core to access the Docker daemon remotely. Afterwards, run:
-
-.. code-block:: bash
-
-    sudo systemctl daemon-reload
-    sudo systemctl restart docker.service
-
-
+.. note::
+    If you need to use a custom socket path, set the ``DOCKER_SOCKET_PATH`` environment variable in the core service.
 
 .. warning::
-    Please note that this allows connections to the docker daemon only by the local machine via the BICEP network. If you change the network as configured in the ``docker-compose.yaml`` then you will need to adjust the daemon accordingly.
     If not configured correctly you will not be able to start any IDS container or the metric service.
-
-
-Troubleshooting
-~~~~~~~~~~~~~~~~
-
-**My Docker service is not starting after changing the configuration**
-
-The reason can be twofold: On newer versions of docker >29, the docker daemon needs to be started with the ``--tls=false`` flag to allow unencrypted connections or the daemon needs to be secured properly https://docs.docker.com/engine/security/protect-access/.
-Alternatively, the docker service might refuse to start because it can't bind to the 172.22.0.1 IP address. Two mitigate this either (before changing the daemon configuration), start the BICEP application, to create the needed interface, or run the following:
-
-.. code-block:: bash
-
-    sudo ip link add docker-dummy0 type dummy
-    sudo ip addr add 172.22.0.1/32 dev docker-dummy0
-    sudo ip link set docker-dummy0 up
-    sudo systemctl restart docker 
-    sudo ip link delete docker-dummy0
-
-This will create a temporary dummy interface with the required IP address, so that the docker daemon can start and create the BICEP network. After the network is created, the dummy interface can be removed again.
-
-
-**After starting the application, the docker host is not becoming available**
-
-In this case check the logs of the core. Either, your docker daemon is not configured with the proper IP bind address, or a firewall setup on your host like ufw is blocking the connection. To bypass the latter, you will need to add a rule to allow incoming connections on port 2375.
-
-
 
 .. _distributed_setup:
 
@@ -91,9 +52,44 @@ Distributed Setup
 -----------------
 
 You may want a distributed setup to host the application on one machine and benchmark IDS' on another node, to avoid performance intereference. 
-For this, the remote machine needs to have the docker daemon configured like the Core host, with some slight differences:
+For this, the remote machine's Docker daemon needs to be reachable over TCP from the machine running BICEP.
 
-In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` add the following lines:
+.. warning::
+    Exposing the Docker daemon over an unencrypted and unauthenticated TCP connection is a significant security risk, as it grants root-equivalent access to the remote machine. **We strongly recommend securing the daemon with TLS mutual authentication (mTLS)** before exposing it over the network. See https://docs.docker.com/engine/security/protect-access/ for the full guide.
+
+**Recommended: Secure the daemon with TLS**
+
+Generate a CA, server certificate and client certificate on the remote node, then configure ``/etc/systemd/system/docker.service.d/docker.conf``:
+
+.. code-block:: bash
+
+    [Service]
+    ExecStart=
+    ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock \
+        --tlsverify --tlscacert=/etc/docker/certs/ca.pem \
+        --tlscert=/etc/docker/certs/server-cert.pem \
+        --tlskey=/etc/docker/certs/server-key.pem
+
+Then place the corresponding client certificate, key and CA in a directory accessible to the core container (e.g. ``/etc/docker/certs/client/``) and mount it:
+
+.. code-block:: yaml
+
+    # docker-compose.yaml — core service
+    volumes:
+      - /etc/docker/certs/client:/etc/docker/client-certs:ro
+
+Configure the core to use the client certs by setting the following environment variables on the core service:
+
+.. code-block:: yaml
+
+    environment:
+      - DOCKER_TLS_CERTDIR=/etc/docker/client-certs
+
+**Minimum (insecure) alternative**
+
+If TLS is not possible, restrict the bind address to only the IP that the BICEP machine can reach and use firewall rules to allow port 2375 only from the BICEP host's IP.
+
+In ``/etc/systemd/system/docker.service.d/docker.conf``:
 
 .. code-block:: bash
 
@@ -101,12 +97,10 @@ In your docker config in ``/etc/systemd/system/docker.service.d/docker.conf`` ad
     ExecStart=
     ExecStart=/usr/bin/dockerd -H tcp://x.x.x.x:2375 -H unix:///var/run/docker.sock --tls=false
 
-Make sure that you expose a remotely available IP address that the other machine hosting the BICEP application can reach! 
+Make sure that you expose a remotely available IP address that the other machine hosting the BICEP application can reach!
 
 .. warning::
-    0.0.0.0 allows access from any IP. You should make sure to only allow trusted IPs to access the docker daemon remotely. We refer to https://docs.docker.com/engine/daemon/remote-access/ and https://docs.docker.com/engine/security/protect-access/ for a secure Docker daemon connection.
-
-
+    Never bind to ``0.0.0.0`` without firewall restrictions. Doing so grants unauthenticated root-level access to your machine to anyone who can reach that port.
 
 Afterwards run:
 
@@ -115,8 +109,8 @@ Afterwards run:
     sudo systemctl daemon-reload
     sudo systemctl restart docker.service
 
-This refreshs the daemon for docker. You can now use the web GUI to add the new node to the framework by following the instructions on the `Docker Hosts` tab. 
-per default, the localhost (the machine where the framework is running), is already added and can be used. Any other node needs to be added via the GUI or DB.
+This refreshes the daemon for Docker. You can now use the web GUI to add the new node to the framework by following the instructions on the `Docker Hosts` tab. 
+Per default, the localhost (the machine where the framework is running), is already added and can be used. Any other node needs to be added via the GUI or DB.
 
 .. _mac_support:
 
