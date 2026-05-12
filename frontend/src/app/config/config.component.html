@@ -50,9 +50,9 @@
           </mat-panel-description>
         </mat-expansion-panel-header>
         <div class="expansion-panel-flexbox-container">
-          @for (configuration of configurationList; track configuration) {
-            <div class="flexbox-item">
-              @if (configuration.file_type === fileTypeDict.runtime) {
+          @for (configuration of configurationList; track configuration.id) {
+            @if (configuration.file_type === fileTypeDict.runtime) {
+              <div class="flexbox-item">
                 <mat-card>
                   <mat-card-header>
                     <mat-card-title>
@@ -84,8 +84,8 @@
                     </button>
                   </mat-card-actions>
                 </mat-card>
-              }
-            </div>
+              </div>
+            }
           }
         </div>
       </mat-expansion-panel>
@@ -105,9 +105,9 @@
           </mat-panel-description>
         </mat-expansion-panel-header>
         <div class="expansion-panel-flexbox-container">
-          @for (configuration of configurationList; track configuration) {
-            <div class="flexbox-item">
-              @if (configuration.file_type === fileTypeDict.deployment) {
+          @for (configuration of configurationList; track configuration.id) {
+            @if (configuration.file_type === fileTypeDict.deployment) {
+              <div class="flexbox-item">
                 <mat-card>
                   <mat-card-header>
                     <mat-card-title>
@@ -139,8 +139,8 @@
                     </button>
                   </mat-card-actions>
                 </mat-card>
-              }
-            </div>
+              </div>
+            }
           }
         </div>
       </mat-expansion-panel>
@@ -160,9 +160,9 @@
           </mat-panel-description>
         </mat-expansion-panel-header>
         <div class="expansion-panel-flexbox-container">
-          @for (configuration of configurationList; track configuration) {
-            <div class="flexbox-item">
-              @if (configuration.file_type === fileTypeDict.ruleSet) {
+          @for (configuration of configurationList; track configuration.id) {
+            @if (configuration.file_type === fileTypeDict.ruleSet) {
+              <div class="flexbox-item">
                 <mat-card>
                   <mat-card-header>
                     <mat-card-title>
@@ -194,8 +194,8 @@
                     </button>
                   </mat-card-actions>
                 </mat-card>
-              }
-            </div>
+              </div>
+            }
           }
         </div>
       </mat-expansion-panel>
@@ -216,7 +216,7 @@
           </mat-panel-description>
         </mat-expansion-panel-header>
         <div class="expansion-panel-flexbox-container">
-          @for (dataset of datasetList; track dataset) {
+          @for (dataset of datasetList; track dataset.id) {
             <div class="flexbox-item">
               <mat-card class="elevation3">
                 <mat-card-header>

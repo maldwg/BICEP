@@ -3,6 +3,7 @@ IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 """
 
 from http.client import HTTPResponse
+import re
 from types import SimpleNamespace
 from sqlalchemy import Column, ForeignKey, Integer, String, select, text
 from sqlalchemy.orm import relationship
@@ -21,6 +22,24 @@ from app.database import Base, engine
 from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+
+_UNSAFE_DOCKER_NAME_CHARS = re.compile(r"[^A-Za-z0-9_.-]+")
+
+
+def sanitize_ids_runtime_name(value: str | None, fallback: str = "ids") -> str:
+    """Normalize a user-facing IDS label into a Docker-safe runtime name."""
+    normalized = (value or "").strip()
+    normalized = re.sub(r"\s+", "-", normalized)
+    normalized = _UNSAFE_DOCKER_NAME_CHARS.sub("-", normalized)
+    normalized = re.sub(r"-{2,}", "-", normalized)
+    normalized = normalized.strip("-._")
+    return normalized or fallback
+
+
+def build_ids_system_name(ids_tool_name: str | None, port: int) -> str:
+    """Build the persisted IDS/container name from the tool label and assigned port."""
+    return f"{sanitize_ids_runtime_name(ids_tool_name)}-{port}"
 
 
 class IdsSystem(Base):
@@ -72,7 +91,7 @@ class IdsSystem(Base):
 
         ids_tool = await get_ids_by_id(db, self.ids_tool_id)
         self.ids_tool = ids_tool
-        self.name = f"{ids_tool.name}-{self.port}"
+        self.name = build_ids_system_name(ids_tool.name, self.port)
         config = await get_config_by_id(db, self.configuration_id)
         ruleset = None
         if ids_tool.requires_ruleset:
