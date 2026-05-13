@@ -6,6 +6,7 @@ from app.routers import crud, ids, ensemble, monitoring, benchmarking_metrics, m
 from app.database import get_db
 from contextlib import asynccontextmanager
 from app.models.docker_host_system import get_all_hosts
+from app.defaults import ensure_default_maltrail_assets
 
 HOST_AVAILABILITY_CHECK_INTERVAL_SECONDS = int(
     os.getenv("HOST_AVAILABILITY_CHECK_INTERVAL", "5")
@@ -37,6 +38,7 @@ async def update_availability_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await ensure_default_maltrail_assets()
     availability_task = asyncio.create_task(update_availability_loop())
     try:
         yield

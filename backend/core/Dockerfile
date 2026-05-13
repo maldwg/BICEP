@@ -21,6 +21,7 @@ RUN mkdir -p /opt/deployment_configurations/uuid5
 RUN mkdir -p /opt/deployment_configurations/uuid6
 RUN mkdir -p /opt/runtime_configurations/uuid7
 RUN mkdir -p /opt/runtime_configurations/uuid8
+RUN mkdir -p /opt/runtime_configurations/uuid9
 
 
 RUN mkdir -p /opt/rulesets/uuid1
@@ -34,6 +35,7 @@ COPY ./example-configs/slips.yaml /opt/runtime_configurations/uuid3/slips.yaml
 COPY ./example-configs/hamstring-compose.yaml /opt/deployment_configurations/uuid5/hamstring-compose.yaml
 COPY ./example-configs/hamstring_config.yaml /opt/runtime_configurations/uuid7/hamstring_config.yaml
 COPY ./example-configs/hamstring_clickhouse.sql /opt/runtime_configurations/uuid8/hamstring_clickhouse.sql
+COPY ./example-configs/maltrail.conf /opt/runtime_configurations/uuid9/maltrail.conf
 
 COPY ./example-configs/snort-community.rules /opt/rulesets/uuid1/snort-community.rules
 COPY ./example-configs/snort-max-detect.rules /opt/rulesets/uuid2/snort-max-detect.rules
