@@ -175,6 +175,43 @@ CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (
     stop_time VARCHAR(256)
 );
 
+CREATE TABLE IF NOT EXISTS benchmarking_job (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    status VARCHAR(32) NOT NULL DEFAULT 'queued',
+    total_runs INT NOT NULL DEFAULT 0,
+    completed_runs INT NOT NULL DEFAULT 0,
+    settle_seconds INT NOT NULL DEFAULT 5,
+    repeat_count INT NOT NULL DEFAULT 1,
+    stop_requested BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at VARCHAR(64) NOT NULL,
+    started_at VARCHAR(64),
+    completed_at VARCHAR(64),
+    error TEXT
+);
+
+CREATE TABLE IF NOT EXISTS benchmarking_job_item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    job_id INT NOT NULL,
+    position INT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'pending',
+    target_type VARCHAR(32) NOT NULL,
+    target_id INT NOT NULL,
+    target_name VARCHAR(256) NOT NULL,
+    dataset_id INT NOT NULL,
+    dataset_name VARCHAR(256) NOT NULL,
+    configuration_id INT,
+    configuration_name VARCHAR(256),
+    ruleset_id INT,
+    ruleset_name VARCHAR(256),
+    repeat_index INT NOT NULL DEFAULT 1,
+    repeat_total INT NOT NULL DEFAULT 1,
+    started_at VARCHAR(64),
+    completed_at VARCHAR(64),
+    error TEXT,
+
+    FOREIGN KEY (job_id) REFERENCES benchmarking_job(id)
+);
+
 
 INSERT INTO dataset_type (name, description, function_prefix) VALUES ('Network Analysis Data', 'Network traffic data in form of PCAPs. The labels are in CSV file format', 'network_traffic_data');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Suricata', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-suricata', 'latest', 'SINGLE_CONTAINER', '');
