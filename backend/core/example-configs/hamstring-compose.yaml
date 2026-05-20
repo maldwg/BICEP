@@ -245,7 +245,7 @@ services:
     networks:
         - hamstring
   zeek: 
-    image: ghcr.io/maldwg/bicep-hamstring:1.0.0
+    image: ghcr.io/maldwg/bicep-hamstring:2.0.1
     labels: 
       - "bicep.role=SENSOR"
       - "bicep.sensor=true"
