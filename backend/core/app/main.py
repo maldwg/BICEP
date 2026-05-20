@@ -14,7 +14,6 @@ from app.routers import (
 from app.database import SessionLocal, get_db
 from contextlib import asynccontextmanager
 from app.models.docker_host_system import get_all_hosts
-from app.defaults import ensure_default_maltrail_assets
 from app.benchmarking_queue import start_benchmarking_worker, stop_benchmarking_worker
 from app.models.benchmarking import (
     ensure_benchmarking_queue_tables,
@@ -51,7 +50,6 @@ async def update_availability_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await ensure_default_maltrail_assets()
     if SessionLocal is not None:
         await ensure_benchmarking_queue_tables()
         db_gen = get_db()

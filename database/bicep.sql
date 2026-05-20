@@ -218,8 +218,8 @@ INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_n
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Slips', 'NIDS', 'Anomaly-based', false, 'maxldwg/bicep-slips', 'latest', 'SINGLE_CONTAINER', '');
 INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Snort', 'NIDS', 'Signature-based', true, 'maxldwg/bicep-snort', 'latest', 'SINGLE_CONTAINER', '');
 -- Sample CIDS Tool
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Hamstring', 'CIDS', 'ML-based', false, 'hamstring/hamstring', 'latest', 'DOCKER_COMPOSE', 'HOST_IP,MOUNT_PATH');
-INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Maltrail', 'NIDS', 'Threat-intel-based', false, 'ghcr.io/maldwg/bicep-maltrail', 'latest', 'SINGLE_CONTAINER', '');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Hamstring', 'CIDS', 'ML-based', false, '-', '-', 'DOCKER_COMPOSE', 'HOST_IP,MOUNT_PATH');
+INSERT INTO ids_tool (name, ids_type, analysis_method, requires_ruleset, image_name, image_tag, deployment_type, required_env_vars) VALUES ('Maltrail', 'NIDS', 'Threat-intel-based', false, 'ghcr.io/bicep-pump/bicep-maltrail', 'latest', 'SINGLE_CONTAINER', '');
 
 INSERT INTO ensemble_technique (name, description, function_name) VALUES ('Majority Vote', 'A simply Majority vote approach where all IDS in the ensemble have the same weight', 'majority_vote');
 INSERT INTO docker_host_system (name, host, docker_port, status) VALUES ("Core-server", "localhost", 2375, "unavailable");
