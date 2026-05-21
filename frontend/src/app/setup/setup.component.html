@@ -245,7 +245,7 @@
                 <mat-option [value]="runtimeConfig.id">ID: {{runtimeConfig.id}} - {{runtimeConfig.name}}</mat-option>
                 }
               </mat-select>
-              <mat-hint>{{ getRuntimeConfigHint(config) }}</mat-hint>
+              <mat-hint [matTooltip]="getRuntimeConfigHint(config)">{{ getRuntimeConfigHint(config) }}</mat-hint>
             </mat-form-field>
             }
           </div>

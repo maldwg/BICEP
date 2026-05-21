@@ -213,9 +213,9 @@ export class SetupComponent implements OnInit {
       return 'No bicep.config.mount label on this service. Leave runtime config set to None.';
     }
     if (config.expected_config_extension) {
-      return `Mount target: ${config.config_mount_path} (expects ${config.expected_config_extension})`;
+      return `Mount: ${config.config_mount_path} (${config.expected_config_extension})`;
     }
-    return `Mount target: ${config.config_mount_path}`;
+    return `Mount: ${config.config_mount_path}`;
   }
 
   private getFileExtension(path: string | undefined | null): string | null {

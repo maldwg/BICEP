@@ -21,10 +21,8 @@
   border: 0.0625rem solid rgba(255, 255, 255, 0.58);
   border-radius: 1.75rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 252, 250, 0.76));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 252, 250, 0.9));
   box-shadow: var(--app-shadow-soft);
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
 }
 
 .navbar__brand {
@@ -112,13 +110,12 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .navbar__link:hover {
   background: rgba(143, 29, 37, 0.08);
   color: var(--app-accent-strong);
-  transform: translateY(-0.08rem);
 }
 
 .navbar__item--active .navbar__link {

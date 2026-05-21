@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,11 +35,23 @@ interface ContainerBenchmarkSelection {
   container: Container;
   configuration_ids: number[];
   ruleset_ids: number[];
+  configurationOptions: Configuration[];
 }
 
 interface EnsembleBenchmarkSelection {
   selected: boolean;
   ensemble: Ensemble;
+}
+
+interface BenchmarkingJobItemView extends BenchmarkingJobItem {
+  label: string;
+}
+
+interface BenchmarkingJobView extends BenchmarkingJob {
+  progressValue: number;
+  currentItem?: BenchmarkingJobItemView;
+  canStop: boolean;
+  items: BenchmarkingJobItemView[];
 }
 
 @Component({
@@ -59,7 +71,8 @@ interface EnsembleBenchmarkSelection {
     MatSelectModule
   ],
   templateUrl: './start.component.html',
-  styleUrl: './start.component.scss'
+  styleUrl: './start.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StartComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
@@ -73,7 +86,8 @@ export class StartComponent implements OnInit {
   selectedDatasetIds: number[] = [];
   settleSeconds = 5;
   repeatCount = 1;
-  jobs: BenchmarkingJob[] = [];
+  preparedRunCount = 0;
+  jobs: BenchmarkingJobView[] = [];
   loading = true;
   submitting = false;
 
@@ -86,6 +100,7 @@ export class StartComponent implements OnInit {
     private datasetService: DatasetService,
     private benchmarkingService: BenchmarkingService,
     private destroyRef: DestroyRef,
+    private cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit(): void {
@@ -109,7 +124,8 @@ export class StartComponent implements OnInit {
             selected: false,
             container,
             configuration_ids: container.configuration_id ? [container.configuration_id] : [],
-            ruleset_ids: container.ruleset_id ? [container.ruleset_id] : []
+            ruleset_ids: container.ruleset_id ? [container.ruleset_id] : [],
+            configurationOptions: container.type === 'CIDS' ? data.deploymentConfigs : data.runtimeConfigs
           }));
           this.ensembleSelections = data.ensembles.map(ensemble => ({
             selected: false,
@@ -119,11 +135,14 @@ export class StartComponent implements OnInit {
           this.deploymentConfigs = data.deploymentConfigs;
           this.ruleSets = data.ruleSets;
           this.datasets = data.datasets;
+          this.refreshSelectedRunCount();
           this.loading = false;
+          this.cdr.markForCheck();
         },
         error: err => {
           this.loading = false;
           this.errorPopup.showError(err.error?.error || 'Could not load benchmarking data.', err.status || 500);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -137,10 +156,12 @@ export class StartComponent implements OnInit {
       )
       .subscribe({
         next: response => {
-          this.jobs = response.content;
+          this.jobs = response.content.map(job => this.toJobView(job));
+          this.cdr.markForCheck();
         },
         error: err => {
           this.errorPopup.showError(err.error?.error || 'Could not load benchmark jobs.', err.status || 500);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -169,24 +190,30 @@ export class StartComponent implements OnInit {
       .subscribe({
         next: response => {
           this.submitting = false;
-          this.jobs = [response.content, ...this.jobs.filter(job => job.id !== response.content.id)];
+          const job = this.toJobView(response.content);
+          this.jobs = [job, ...this.jobs.filter(existing => existing.id !== job.id)];
+          this.cdr.markForCheck();
         },
         error: err => {
           this.submitting = false;
           this.errorPopup.showError(err.error?.error || 'Could not start benchmarking.', err.status || 500);
+          this.cdr.markForCheck();
         }
       });
   }
 
-  stopJob(job: BenchmarkingJob): void {
+  stopJob(job: BenchmarkingJobView): void {
     this.benchmarkingService.stopBenchmarkingJob(job.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: response => {
-          this.jobs = this.jobs.map(existing => existing.id === response.content.id ? response.content : existing);
+          const job = this.toJobView(response.content);
+          this.jobs = this.jobs.map(existing => existing.id === job.id ? job : existing);
+          this.cdr.markForCheck();
         },
         error: err => {
           this.errorPopup.showError(err.error?.error || 'Could not stop benchmarking.', err.status || 500);
+          this.cdr.markForCheck();
         }
       });
   }
@@ -213,41 +240,45 @@ export class StartComponent implements OnInit {
     return [...containerTargets, ...ensembleTargets];
   }
 
-  progressValue(job: BenchmarkingJob): number {
+  refreshSelectedRunCount(): void {
+    this.preparedRunCount = this.calculateSelectedRunCount();
+    this.cdr.markForCheck();
+  }
+
+  private toJobView(job: BenchmarkingJob): BenchmarkingJobView {
+    const items = job.items.map(item => ({
+      ...item,
+      label: this.itemLabel(item)
+    }));
+
+    return {
+      ...job,
+      items,
+      progressValue: this.progressValue(job),
+      currentItem: items.find(item => item.status === 'running'),
+      canStop: this.canStop(job)
+    };
+  }
+
+  private progressValue(job: BenchmarkingJob): number {
     if (!job.total_runs) {
       return 0;
     }
     return Math.round((job.completed_runs / job.total_runs) * 100);
   }
 
-  currentItem(job: BenchmarkingJob): BenchmarkingJobItem | undefined {
-    return job.items.find(item => item.status === 'running');
-  }
-
-  pendingItems(job: BenchmarkingJob): BenchmarkingJobItem[] {
-    return job.items.filter(item => item.status === 'pending');
-  }
-
-  completedItems(job: BenchmarkingJob): BenchmarkingJobItem[] {
-    return job.items.filter(item => ['completed', 'failed', 'cancelled'].includes(item.status));
-  }
-
-  canStop(job: BenchmarkingJob): boolean {
+  private canStop(job: BenchmarkingJob): boolean {
     return ['queued', 'running'].includes(job.status) && !job.stop_requested;
   }
 
-  itemLabel(item: BenchmarkingJobItem): string {
+  private itemLabel(item: BenchmarkingJobItem): string {
     const config = item.configuration_name ? ` / ${item.configuration_name}` : '';
     const ruleset = item.ruleset_name ? ` / ${item.ruleset_name}` : '';
     const repeat = item.repeat_total > 1 ? ` / run ${item.repeat_index}/${item.repeat_total}` : '';
     return `${item.target_name} / ${item.dataset_name}${config}${ruleset}${repeat}`;
   }
 
-  getConfigurationOptions(selection: ContainerBenchmarkSelection): Configuration[] {
-    return selection.container.type === 'CIDS' ? this.deploymentConfigs : this.runtimeConfigs;
-  }
-
-  selectedRunCount(): number {
+  private calculateSelectedRunCount(): number {
     const selectedDatasets = this.selectedDatasetIds.length;
     if (!selectedDatasets) {
       return 0;

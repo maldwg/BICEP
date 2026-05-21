@@ -216,9 +216,7 @@ p {
   padding: 1.25rem 1.5rem;
   border: 0.0625rem solid rgba(255, 255, 255, 0.18);
   border-radius: 1.5rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.1));
 
   &:hover {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
@@ -336,13 +334,6 @@ p {
   box-shadow: var(--app-shadow-strong);
   z-index: 1000;
   border-radius: 1.5rem;
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
-}
-
-.matdialog-backdrop {
-  backdrop-filter: blur(0.9rem);
-  -webkit-backdrop-filter: blur(0.9rem);
 }
 
 .mat-mdc-dialog-surface {
@@ -555,8 +546,7 @@ p {
 .cancel-button:hover,
 .compare-button:hover {
   transform: translateY(-0.12rem);
-  box-shadow: var(--app-shadow-strong) !important;
-  filter: saturate(1.04);
+  box-shadow: 0 0.8rem 1.7rem rgba(88, 28, 31, 0.16) !important;
 }
 
 .action-button,
@@ -660,10 +650,8 @@ mat-card {
   border: 0.0625rem solid rgba(255, 255, 255, 0.5);
   border-radius: 1.5rem !important;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 250, 248, 0.82)) !important;
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
-  box-shadow: var(--app-shadow-soft) !important;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 248, 0.9)) !important;
+  box-shadow: 0 0.7rem 1.5rem rgba(88, 28, 31, 0.09) !important;
   overflow: hidden;
 }
 
@@ -691,10 +679,8 @@ mat-expansion-panel {
   border: 0.0625rem solid rgba(255, 255, 255, 0.52) !important;
   border-radius: 1.6rem !important;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 250, 248, 0.7)) !important;
-  backdrop-filter: blur(1rem);
-  -webkit-backdrop-filter: blur(1rem);
-  box-shadow: var(--app-shadow-soft) !important;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 250, 248, 0.88)) !important;
+  box-shadow: 0 0.7rem 1.45rem rgba(88, 28, 31, 0.08) !important;
   overflow: hidden;
 }
 
@@ -719,7 +705,7 @@ mat-expansion-panel {
 
 .bDrop,
 mat-dialog-container {
-  backdrop-filter: blur(0.5rem);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .mat-mdc-form-field .mdc-text-field--disabled {

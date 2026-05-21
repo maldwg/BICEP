@@ -37,6 +37,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 export class MonitoringComponent implements OnInit, OnDestroy {
   containers: ContainerMetric[] = [];
   topLevelContainers: ContainerMetric[] = [];
+  cidsContainers: ContainerMetric[] = [];
+  hasExpandedCids = false;
   pollingSubscription?: Subscription;
   expandedCidsIds = new Set<number>();
   private readonly reloadTrigger$ = new Subject<void>();
@@ -68,14 +70,6 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     private metricsService: MetricsService,
     private cdr: ChangeDetectorRef
   ) { }
-
-  get cidsContainers(): ContainerMetric[] {
-    return this.topLevelContainers.filter(container => container.type === 'CIDS');
-  }
-
-  get hasExpandedCids(): boolean {
-    return this.expandedCidsIds.size > 0;
-  }
 
   ngOnInit(): void {
     const automaticRefresh$ = interval(this.pollingIntervalSeconds * 1000)
@@ -111,6 +105,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
     this.containers = newMetrics;
     this.topLevelContainers = newMetrics.filter(container => !container.is_component);
+    this.refreshCidsViewState();
     this.timeLabels.push(timeStr);
     if (this.timeLabels.length > this.maxDataPoints) this.timeLabels.shift();
 
@@ -199,6 +194,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     // Clear existing data
     this.containers = [];
     this.topLevelContainers = [];
+    this.refreshCidsViewState();
     this.cpuHistory.clear();
     this.memoryHistory.clear();
     this.timeLabels = [];
@@ -283,6 +279,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
         this.topLevelContainers.push(containerMetric);
       }
     }
+    this.refreshCidsViewState();
 
     this.updateCharts();
     this.cdr.markForCheck();
@@ -299,6 +296,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       this.expandedCidsIds.add(container.id);
     }
 
+    this.refreshCidsViewState();
     this.loadHistoricalData();
   }
 
@@ -308,7 +306,12 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     }
 
     this.expandedCidsIds.clear();
+    this.refreshCidsViewState();
     this.loadHistoricalData();
+  }
+
+  trackContainer(_: number, container: ContainerMetric): number {
+    return container.id;
   }
 
   updateCharts(): void {
@@ -344,12 +347,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       name: container.name,
       type: 'line',
       data: this.cpuHistory.get(container.name) || [],
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 6
+      smooth: false,
+      showSymbol: false,
+      sampling: 'lttb',
+      animation: false
     }));
 
     this.cpuChartOption = {
+      animation: false,
       backgroundColor: 'transparent',
       title: {
         text: 'CPU Usage (Cores)',
@@ -388,12 +393,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       name: container.name,
       type: 'line',
       data: this.memoryHistory.get(container.name) || [],
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 6
+      smooth: false,
+      showSymbol: false,
+      sampling: 'lttb',
+      animation: false
     }));
 
     this.memoryChartOption = {
+      animation: false,
       backgroundColor: 'transparent',
       title: {
         text: 'Memory Usage (MB)',
@@ -566,6 +573,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       display_name: containerData.display_name,
       raw_name: containerData.raw_name
     };
+  }
+
+  private refreshCidsViewState(): void {
+    this.cidsContainers = this.topLevelContainers.filter(container => container.type === 'CIDS');
+    this.hasExpandedCids = this.expandedCidsIds.size > 0;
   }
 
   private getHistoricalStep(): string {

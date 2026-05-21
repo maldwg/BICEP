@@ -86,7 +86,7 @@
                     mat-stroked-button
                     type="button"
                     class="component-toggle-button"
-                    *ngFor="let container of cidsContainers"
+                    *ngFor="let container of cidsContainers; trackBy: trackContainer"
                     (click)="toggleCidsComponents(container)"
                 >
                     {{ isCidsExpanded(container.id) ? 'Hide' : 'Show' }} {{ container.name }} components

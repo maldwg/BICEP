@@ -65,8 +65,6 @@
   line-height: 1;
   white-space: nowrap;
   cursor: default;
-  backdrop-filter: blur(0.8rem);
-  -webkit-backdrop-filter: blur(0.8rem);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 

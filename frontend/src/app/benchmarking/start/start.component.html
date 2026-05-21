@@ -22,7 +22,7 @@
       </article>
       <article class="summary-card">
         <span class="summary-card__label">Queued Runs</span>
-        <span class="summary-card__value">{{ selectedRunCount() }}</span>
+        <span class="summary-card__value">{{ preparedRunCount }}</span>
         <span class="summary-card__hint">Runs prepared from the current selection</span>
       </article>
     </div>
@@ -43,7 +43,7 @@
             New Benchmark Batch
           </h2>
         </div>
-        <button matFab extended type="submit" class="start-button" [disabled]="submitting || selectedRunCount() === 0">
+        <button matFab extended type="submit" class="start-button" [disabled]="submitting || preparedRunCount === 0">
           <mat-icon>play_arrow</mat-icon>
           Start
         </button>
@@ -52,7 +52,7 @@
       <div class="benchmark-controls">
         <mat-form-field appearance="outline">
           <mat-label>Datasets</mat-label>
-          <mat-select required multiple [(ngModel)]="selectedDatasetIds" name="datasets">
+          <mat-select required multiple [(ngModel)]="selectedDatasetIds" (ngModelChange)="refreshSelectedRunCount()" name="datasets">
             @for (dataset of datasets; track dataset.id) {
               <mat-option [value]="dataset.id">{{ dataset.name }}</mat-option>
             }
@@ -66,7 +66,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Repeats per Run</mat-label>
-          <input matInput min="1" max="100" type="number" [(ngModel)]="repeatCount" name="repeatCount">
+          <input matInput min="1" max="100" type="number" [(ngModel)]="repeatCount" (ngModelChange)="refreshSelectedRunCount()" name="repeatCount">
         </mat-form-field>
       </div>
 
@@ -90,7 +90,7 @@
           <div class="target-row" [class.target-row--selected]="selection.selected">
             <div class="target-row__identity">
               <div class="target-row__choice">
-                <mat-checkbox [(ngModel)]="selection.selected" [name]="'container-' + selection.container.id"></mat-checkbox>
+                <mat-checkbox [(ngModel)]="selection.selected" (ngModelChange)="refreshSelectedRunCount()" [name]="'container-' + selection.container.id"></mat-checkbox>
                 <div class="target-row__copy">
                   <span class="target-row__name">{{ selection.container.name }}</span>
                   <span class="target-row__meta">{{ selection.container.type }} · port {{ selection.container.port }}</span>
@@ -105,8 +105,9 @@
               <mat-form-field appearance="outline" class="benchmark-select-field">
                 <mat-label>Configurations</mat-label>
                 <mat-select multiple panelClass="benchmark-select-panel" [disabled]="!selection.selected" [(ngModel)]="selection.configuration_ids"
+                  (ngModelChange)="refreshSelectedRunCount()"
                   [name]="'configs-' + selection.container.id">
-                  @for (config of getConfigurationOptions(selection); track config.id) {
+                  @for (config of selection.configurationOptions; track config.id) {
                     <mat-option [value]="config.id">ID {{ config.id }} - {{ config.name }}</mat-option>
                   }
                 </mat-select>
@@ -115,6 +116,7 @@
                 <mat-form-field appearance="outline" class="benchmark-select-field">
                   <mat-label>Rulesets</mat-label>
                   <mat-select multiple panelClass="benchmark-select-panel" [disabled]="!selection.selected" [(ngModel)]="selection.ruleset_ids"
+                    (ngModelChange)="refreshSelectedRunCount()"
                     [name]="'rulesets-' + selection.container.id">
                     @for (ruleset of ruleSets; track ruleset.id) {
                       <mat-option [value]="ruleset.id">ID {{ ruleset.id }} - {{ ruleset.name }}</mat-option>
@@ -145,7 +147,7 @@
           <div class="target-row target-row--compact" [class.target-row--selected]="selection.selected">
             <div class="target-row__identity">
               <div class="target-row__choice">
-                <mat-checkbox [(ngModel)]="selection.selected" [name]="'ensemble-' + selection.ensemble.id"></mat-checkbox>
+                <mat-checkbox [(ngModel)]="selection.selected" (ngModelChange)="refreshSelectedRunCount()" [name]="'ensemble-' + selection.ensemble.id"></mat-checkbox>
                 <div class="target-row__copy">
                   <span class="target-row__name">{{ selection.ensemble.name }}</span>
                   <span class="target-row__meta">Technique #{{ selection.ensemble.technique_id }}</span>
@@ -195,16 +197,17 @@
               </mat-panel-description>
             </mat-expansion-panel-header>
 
+            <ng-template matExpansionPanelContent>
             <div class="job-panel">
               <div class="job-progress-row">
-                <mat-progress-bar mode="determinate" [value]="progressValue(job)"></mat-progress-bar>
-                <span>{{ progressValue(job) }}%</span>
+                <mat-progress-bar mode="determinate" [value]="job.progressValue"></mat-progress-bar>
+                <span>{{ job.progressValue }}%</span>
               </div>
 
-              @if (currentItem(job); as item) {
+              @if (job.currentItem; as item) {
                 <div class="job-current">
                   <mat-icon class="spinning">settings</mat-icon>
-                  <span>{{ itemLabel(item) }}</span>
+                  <span>{{ item.label }}</span>
                 </div>
               }
 
@@ -226,13 +229,13 @@
                     [class.job-item--done]="item.status === 'completed'"
                     [class.job-item--stopped]="item.status === 'failed' || item.status === 'cancelled'">
                     <span class="job-item__position">{{ item.position }}</span>
-                    <span class="job-item__label">{{ itemLabel(item) }}</span>
+                    <span class="job-item__label">{{ item.label }}</span>
                     <span class="job-item__status">{{ item.status }}</span>
                   </div>
                 }
               </div>
 
-              @if (canStop(job)) {
+              @if (job.canStop) {
                 <div class="job-actions">
                   <button matFab extended type="button" class="stop-button" (click)="stopJob(job)">
                     <mat-icon>stop</mat-icon>
@@ -241,6 +244,7 @@
                 </div>
               }
             </div>
+            </ng-template>
           </mat-expansion-panel>
         }
       </mat-accordion>
