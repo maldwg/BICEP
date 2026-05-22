@@ -32,6 +32,10 @@ class Configuration(Base):
             content = await f.read()
             return content
 
+    async def write_content(self, content: str) -> None:
+        async with aiofiles.open(self.file_path, mode="w") as f:
+            await f.write(content)
+
 
 class DeploymentConfig(Configuration):
     __mapper_args__ = {"polymorphic_identity": "DEPLOYMENT"}
@@ -70,6 +74,19 @@ async def add_config(db: AsyncSession, configuration: Configuration):
     await db.refresh(configuration)
 
 
+async def update_configuration(db: AsyncSession, configuration_data):
+    configuration = await get_config_by_id(db, configuration_data.id)
+    if configuration is None:
+        return None
+
+    configuration.name = configuration_data.name
+    configuration.description = configuration_data.description
+    await configuration.write_content(configuration_data.file_content)
+    await db.commit()
+    await db.refresh(configuration)
+    return configuration
+
+
 async def get_all_configurations_by_type(db: AsyncSession, file_type: str):
     stmt = select(Configuration).where(Configuration.file_type == file_type)
     result = await db.execute(stmt)
@@ -77,12 +94,11 @@ async def get_all_configurations_by_type(db: AsyncSession, file_type: str):
 
 
 async def get_serialized_configuration(configuration):
+    file_content = await configuration.read_content()
     serialized_config = {
         "id": configuration.id,
         "name": configuration.name,
-        "file_content": base64.b64encode(await configuration.read_content()).decode(
-            "utf-8"
-        ),  # Encode binary data to Base64, otherwise error when returning pcap files
+        "file_content": base64.b64encode(file_content.encode("utf-8")).decode("utf-8"),
         "file_type": configuration.file_type,
         "file_path": configuration.file_path,
         "description": configuration.description,

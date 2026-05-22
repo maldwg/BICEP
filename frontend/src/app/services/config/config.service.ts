@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Configuration, ConfigurationSetupData, SerializedConfiguration, DeserializedConfiguration } from '../../models/configuration';
+import { Configuration, ConfigurationSetupData, SerializedConfiguration, DeserializedConfiguration, ConfigurationUpdateData } from '../../models/configuration';
 import { HttpClient, HttpEvent, HttpEventType, HttpResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable, map, shareReplay, tap } from 'rxjs';
@@ -44,7 +44,7 @@ export class ConfigService {
   }
 
   getDeserializedConfiguration(id: number): Observable<DeserializedConfiguration> {
-    const path = `/crud/configuartion/${id}/serialized`;
+    const path = `/crud/configuration/${id}/serialized`;
     return this.http.get<SerializedConfiguration>(environment.backendUrl + path).pipe(
       map(serialized => this.deserializeConfiguration(serialized))
     );
@@ -87,6 +87,14 @@ export class ConfigService {
           this.invalidateConfigurationCaches();
         }
       })
+    );
+  }
+
+  updateConfiguration(configuration: ConfigurationUpdateData): Observable<DeserializedConfiguration> {
+    const path = "/crud/configuration";
+    return this.http.patch<SerializedConfiguration>(environment.backendUrl + path, configuration).pipe(
+      tap(() => this.invalidateConfigurationCaches()),
+      map(serialized => this.deserializeConfiguration(serialized))
     );
   }
 

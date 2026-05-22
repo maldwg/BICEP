@@ -36,7 +36,7 @@
   </div>
 
   <div class="expansion-panel-flexbox-container host-grid">
-    @for (hostSystem of hostSystemList; track hostSystem) {
+    @for (hostSystem of hostSystemList; track hostSystem.id) {
       <div class="flexbox-item">
         <mat-card>
           <mat-card-header>
@@ -97,9 +97,6 @@
             }
           </mat-card-content>
           <mat-card-actions>
-            <button class="edit-button" matFab>
-              <mat-icon>edit_document</mat-icon>
-            </button>
             <button class="delete-button" (click)="removeHost(hostSystem)" matFab>
               <mat-icon>delete</mat-icon>
             </button>

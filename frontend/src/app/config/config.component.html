@@ -76,7 +76,7 @@
                     </div>
                   </mat-card-content>
                   <mat-card-actions>
-                    <button class="edit-button" matFab>
+                    <button class="edit-button" (click)="editConfiguration(configuration)" matFab>
                       <mat-icon>edit_document</mat-icon>
                     </button>
                     <button class="delete-button" (click)="removeConfiguration(configuration)" matFab>
@@ -131,7 +131,7 @@
                     </div>
                   </mat-card-content>
                   <mat-card-actions>
-                    <button class="edit-button" matFab>
+                    <button class="edit-button" (click)="editConfiguration(configuration)" matFab>
                       <mat-icon>edit_document</mat-icon>
                     </button>
                     <button class="delete-button" (click)="removeConfiguration(configuration)" matFab>
@@ -186,7 +186,7 @@
                     </div>
                   </mat-card-content>
                   <mat-card-actions>
-                    <button class="edit-button" matFab>
+                    <button class="edit-button" (click)="editConfiguration(configuration)" matFab>
                       <mat-icon>edit_document</mat-icon>
                     </button>
                     <button class="delete-button" (click)="removeConfiguration(configuration)" matFab>
@@ -250,9 +250,6 @@
                   </div>
                 </mat-card-content>
                 <mat-card-actions>
-                  <button class="edit-button" matFab>
-                    <mat-icon>edit_document</mat-icon>
-                  </button>
                   <button class="delete-button" (click)="removeDataset(dataset)" matFab>
                     <mat-icon>delete</mat-icon>
                   </button>

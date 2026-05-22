@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.config-editor-dialog {
+  width: min(100%, 62rem);
+}
+
+.config-editor-form {
+  gap: 0.85rem;
+}
+
+.config-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+@media (min-width: 48rem) {
+  .config-editor-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.35fr);
+  }
+}
+
+.config-editor-field textarea {
+  min-height: 24rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre;
+  overflow: auto;
+}
+
+.config-editor-loading {
+  min-height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: var(--app-text-muted);
+  font-weight: 700;
+}

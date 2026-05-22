@@ -37,6 +37,13 @@ class IdsContainerUpdate(BaseModel):
     components: Optional[list[IdsComponentUpdate]] = []
 
 
+class ConfigurationUpdate(BaseModel):
+    id: int
+    name: str
+    description: str
+    file_content: str
+
+
 class EnsembleCreate(BaseModel):
     """
     Class to validate input for Ensemble creation

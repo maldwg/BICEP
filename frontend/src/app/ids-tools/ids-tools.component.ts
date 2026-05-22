@@ -42,8 +42,9 @@ export class IdsToolsComponent implements OnInit {
 
     newTool(): void {
         const dialogRef = this.dialog.open(IdsToolDialogComponent, {
-            width: '50%',
-            height: '70%',
+            width: 'min(94vw, 46rem)',
+            maxWidth: '94vw',
+            maxHeight: '88vh',
             backdropClass: 'bDrop',
             data: { mode: 'create' }
         });
@@ -74,8 +75,9 @@ export class IdsToolsComponent implements OnInit {
 
     editTool(tool: IdsTool): void {
         const dialogRef = this.dialog.open(IdsToolDialogComponent, {
-            width: '50%',
-            height: '70%',
+            width: 'min(94vw, 46rem)',
+            maxWidth: '94vw',
+            maxHeight: '88vh',
             backdropClass: 'bDrop',
             data: { mode: 'edit', tool: tool }
         });

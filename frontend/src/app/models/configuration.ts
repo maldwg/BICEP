@@ -14,6 +14,13 @@ export interface ConfigurationSetupData {
   file_type: string
 }
 
+export interface ConfigurationUpdateData {
+  id: number;
+  name: string;
+  description: string;
+  file_content: string;
+}
+
 export interface DeserializedConfiguration {
   id: number;
   name: string;
@@ -32,4 +39,3 @@ export interface SerializedConfiguration {
   file_path: string;
   description: string;
 }
-

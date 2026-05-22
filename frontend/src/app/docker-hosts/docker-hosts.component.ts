@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DockerHostService } from '../services/host/host.service';
-import { DockerHostSystem, RegisteredMetricService } from '../models/host';
+import { DockerHostSystem, DockerHostSystemCreationData, RegisteredMetricService } from '../models/host';
 import { MatDialog } from '@angular/material/dialog';
 import { HostCreationComponent } from './host-creation/host-creation.component';
 import {  MatCardModule } from '@angular/material/card';
@@ -98,30 +98,23 @@ export class DockerHostsComponent implements OnInit{
 
   newHost(): void{
     const dialogRef = this.dialog.open(HostCreationComponent, {
-      width: "50%",
-      height: "50%",
+      width: "min(94vw, 38rem)",
+      maxWidth: "94vw",
+      maxHeight: "88vh",
       backdropClass: "bDrop"
-
     });
 
     dialogRef.afterClosed().subscribe(hostData =>{
-      if(hostData !== null){
-        console.log(hostData)
-        	this.hostService.addHost(hostData).subscribe(result => {
-              this.reloadHostSystems(true);
-            },
-            err => {
-              this.errorPopup.showError(err.error["error"], err.status);
-          })
+      if(hostData != null){
+        this.hostService.addHost(hostData as DockerHostSystemCreationData).subscribe({
+          next: () => this.reloadHostSystems(true),
+          error: err => this.errorPopup.showError(err.error["error"], err.status),
+        });
       }
       else {
         console.error("The addition was aborted")
       }
-  })
-
-
-
-
+    })
   }
 
 

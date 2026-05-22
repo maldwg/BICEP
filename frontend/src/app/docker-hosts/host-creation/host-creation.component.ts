@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
-import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
-import { DockerHostsComponent } from '../docker-hosts.component';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {DockerHostSystemCreationData} from "../../models/host"
-import { MatFormField, MatFormFieldModule, MatLabel } from '@angular/material/form-field';
+import { DockerHostSystemCreationData } from "../../models/host"
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,24 +22,19 @@ import { MatIconModule } from '@angular/material/icon';
     styleUrl: './host-creation.component.scss'
 })
 export class HostCreationComponent {
-
-
   hostForm = new FormGroup({
     name: new FormControl(""),
     host: new FormControl(""),
     dockerPort: new FormControl("2375"),
   })
   constructor(
-
     public dialogRef: MatDialogRef<HostCreationComponent>
-  ) {
-
-  }
+  ) {}
 
 
   save() {
     if(this.hostForm.valid){
-      let hostCreationData: DockerHostSystemCreationData = {
+      const hostCreationData: DockerHostSystemCreationData = {
         name: this.hostForm.value.name!,
         host: this.hostForm.value.host!,
         docker_port: parseInt(this.hostForm.value.dockerPort!)

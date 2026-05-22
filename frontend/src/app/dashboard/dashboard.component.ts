@@ -156,8 +156,9 @@ export class DashboardComponent implements OnInit {
   // TODO 10: if not status code 200 then popup with error code 
   startAnalysis(container: Container) {
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "35%",
-      width: "80%",
+      width: "min(94vw, 34rem)",
+      maxWidth: "94vw",
+      maxHeight: "88vh",
       data: {
         datasets: this.datasetList
       }
@@ -235,8 +236,9 @@ export class DashboardComponent implements OnInit {
 
   startEnsembleAnalysis(ensemble: Ensemble) {
     const dialogRef = this.AnalysisDialog.open(StartAnalysisComponent, {
-      height: "35%",
-      width: "80%",
+      width: "min(94vw, 34rem)",
+      maxWidth: "94vw",
+      maxHeight: "88vh",
       data: {
         datasets: this.datasetList
       }
@@ -295,8 +297,9 @@ export class DashboardComponent implements OnInit {
   }
   editEnsemble(ensemble: Ensemble) {
     const dialogRef = this.EnsembleDialog.open(EnsembleEditComponent, {
-      height: "50%",
-      width: "50%",
+      width: "min(94vw, 44rem)",
+      maxWidth: "94vw",
+      maxHeight: "88vh",
       data: {
         ensemble: ensemble,
         containerList: this.containerList,
@@ -338,8 +341,9 @@ export class DashboardComponent implements OnInit {
 
   edit(container: Container) {
     const dialogRef = this.idsDialog.open(IdsEditComponent, {
-      height: "70%",
-      width: "60%",
+      width: "min(94vw, 56rem)",
+      maxWidth: "94vw",
+      maxHeight: "88vh",
       data: {
         container: container,
         configList: this.configList,

@@ -24,6 +24,7 @@ import { AlertComponent } from '../components/alert-component/alert-component.co
 import { HttpResponse } from '@angular/common/http';
 import { DatasetType } from '../models/datasetType';
 import { DatasetTypesService } from '../services/dataset-type/dataset-type.service';
+import { ConfigDetailsComponent } from './config-details/config-details.component';
 
 
 @Component({
@@ -95,10 +96,27 @@ export class ConfigComponent implements OnInit{
     });    
   }
 
+  editConfiguration(configuration: Configuration): void {
+    const dialogRef = this.dialog.open(ConfigDetailsComponent, {
+      width: 'min(94vw, 68rem)',
+      maxWidth: '94vw',
+      maxHeight: '88vh',
+      panelClass: "matdialog-panel",
+      data: { configuration }
+    });
+
+    dialogRef.afterClosed().subscribe(res => {
+      if (res != null) {
+        this.getAllConfigs();
+      }
+    });
+  }
+
   newConfig(): void {
     const dialogRef = this.dialog.open(ConfigCreationComponent, {
-      height: '50%',
-      width: '40%',
+      width: 'min(94vw, 44rem)',
+      maxWidth: '94vw',
+      maxHeight: '88vh',
       panelClass: "matdialog-panel",
     });
  

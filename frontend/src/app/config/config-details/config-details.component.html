@@ -1,1 +1,55 @@
-<p>config-details works!</p>
+<app-alert-component></app-alert-component>
+
+<div class="dialog-shell config-editor-dialog">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Edit Configuration</h2>
+    <p class="dialog-subtitle">
+      Update metadata and edit the stored {{ data.configuration.file_type }} file contents.
+    </p>
+  </div>
+
+  @if (loading || closing) {
+    <div class="config-editor-loading">
+      <mat-icon>{{ closing ? 'sync' : 'hourglass_top' }}</mat-icon>
+      <span>{{ closing ? 'Closing editor' : 'Loading configuration' }}</span>
+    </div>
+  } @else {
+    <form [formGroup]="configForm" (ngSubmit)="save()" class="dialog-form config-editor-form">
+      <mat-dialog-content>
+        <div class="config-editor-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>File Type</mat-label>
+            <input matInput [value]="data.configuration.file_type" readonly>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput rows="3" formControlName="description"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="config-editor-field">
+          <mat-label>File Content</mat-label>
+          <textarea matInput formControlName="fileContent" spellcheck="false" required></textarea>
+        </mat-form-field>
+      </mat-dialog-content>
+
+      <mat-dialog-actions>
+        <div class="dialog-actions-div">
+          <button type="submit" class="start-button" matFab extended [disabled]="saving">
+            <mat-icon>save</mat-icon>
+            Save
+          </button>
+          <button type="button" (click)="exit()" class="cancel-button" matFab>
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </div>
+      </mat-dialog-actions>
+    </form>
+  }
+</div>

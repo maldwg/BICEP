@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
-from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
+from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type, update_configuration
 from app.models.dataset import get_all_datasets, remove_dataset_by_id
 from app.models.ids_tool import IdsTool, get_all_tools, add_ids_tool, update_ids_tool, delete_ids_tool
 from app.models.ids_system import get_all_container, update_container
@@ -9,7 +9,7 @@ from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
 from app.models.benchmarking import get_all_benchmarking_results
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
-from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData, IdsToolCreate, IdsToolUpdate
+from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData, IdsToolCreate, IdsToolUpdate, ConfigurationUpdate
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
 from app.models.metric_service import serialize_metric_service
@@ -82,8 +82,17 @@ async def remove_config( id: int, db=Depends(get_db)):
 @router.get("/configuration/{id}/serialized")
 async def get_config_content( id: int, db=Depends(get_db)):
     configuration = await get_config_by_id(db, id)
-    serialized_configurations = get_serialized_configuration(configuration)
-    return Response(status_code=204)
+    if configuration is None:
+        return JSONResponse({"error": "Configuration not found"}, status_code=404)
+    return await get_serialized_configuration(configuration)
+
+
+@router.patch("/configuration")
+async def patch_configuration(configuration_data: ConfigurationUpdate, db=Depends(get_db)):
+    configuration = await update_configuration(db, configuration_data)
+    if configuration is None:
+        return JSONResponse({"error": "Configuration not found"}, status_code=404)
+    return await get_serialized_configuration(configuration)
 
 @router.get("/configuration/{id}/services")
 async def get_config_services(id: int, db=Depends(get_db)):
@@ -266,6 +275,7 @@ async def create_host(host_data: DockerHostCreationData, db=Depends(get_db)):
     )
     await add_host_system(db, host)
     return JSONResponse(content={"message": "Successfully created host"}, status_code=200)
+
 
 @router.delete("/host/delete/{id}")
 async def delete_host(id: int,db=Depends(get_db)):

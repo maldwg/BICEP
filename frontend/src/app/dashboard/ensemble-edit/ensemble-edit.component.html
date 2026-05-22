@@ -1,7 +1,10 @@
-
-<div>
+<div class="dialog-shell">
+  <div class="dialog-title-block">
+    <h2 mat-dialog-title class="dialog-title">Edit Ensemble</h2>
+    <p class="dialog-subtitle">Adjust the ensemble metadata, selected containers, and coordination technique.</p>
+  </div>
   <mat-dialog-content>
-    <form [formGroup]="ensembleEdit">
+    <form [formGroup]="ensembleEdit" class="dialog-form">
       <div class="form-item">
         <mat-form-field>
           <mat-label>Name</mat-label>
