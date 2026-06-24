@@ -231,7 +231,7 @@ INSERT INTO configuration VALUES
 INSERT INTO configuration VALUES
 (2, 'snort.lua', '/opt/runtime_configurations/uuid1/snort.lua', 'RUNTIME', 'default snort configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES
-(3, 'slips.yaml', '/opt/runtime_configurations/uuid3/slips.yaml', 'RUNTIME', 'default slips configuartion', 'RUNTIME');
+(3, 'slips.yaml', '/opt/runtime_configurations/uuid3/slips.yaml', 'RUNTIME', 'default slips configuartion for v1.1.21', 'RUNTIME');
 INSERT INTO configuration VALUES
 (4, 'hamstring_config.yaml', '/opt/runtime_configurations/uuid7/hamstring_config.yaml', 'RUNTIME', 'default hamstring configuartion', 'RUNTIME');
 INSERT INTO configuration VALUES

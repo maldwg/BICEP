@@ -1,14 +1,40 @@
 # This configuration file controls several aspects of the working of Slips.
+################ 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨 #########################
+##                DO NOT MODIFY THIS FILE. EVER.                                                      #
+##      IF YOU NEED TO CHANGE ANYTHING, MAKE A COPY AND USE THAT COPY WITH slips.py -c                #
+################ 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨 #########################
 
 ---
-modes:
+
+update:
+  # Enable automatic live updates of the installed Slips version.
+  # This setting is separate from the feeds_update_manager module, which only
+  # updates TI feeds and related files during runtime.
+  # Automatic Slips updates may overwrite the default config files shipped
+  # with Slips. If you want to keep your local configuration changes intact, avoid editing the default config files.
+  # Instead, create separate config files with different names and use those.
+  auto_update_slips: false
+
+  # Select which update channel Slips should auto-update from.
+  # Available update channels:
+  # - stable:  uses origin/master
+  # - unstable: uses origin/develop
+  # - testing:  specify your branch name in the testing_branch_to_update_slips_from parameter below.
+  channel_to_update_slips_from: stable
+
+  # This branch is used only when channel_to_update_slips_from is set to
+  # testing.
+  # Must be a remote origin/<branch> ref.
+  # Example: origin/your_branch_here
+  testing_branch_to_update_slips_from: origin/your_branch_here
+
+output:
   # Define the file names for the default output.
   stdout: slips.log
   stderr: errors.log
-  logsfile: slips.log
+  logs: slips.log
 
 #############################
-# Parameters that can be also specified with modifiers in the command line
 
 parameters:
   # The verbosity is related to how much data you want to see about the
@@ -26,7 +52,6 @@ parameters:
   # For 5 min
   # time_window_width : 300
   # For 1 hour
-  # time_window_width : 3600
   time_window_width: 3600
   # For 1 day
   # time_window_width = 86400
@@ -78,12 +103,17 @@ parameters:
   # whitelist file, current commit and date
   metadata_dir: true
 
+  # This directory stores databases and runtime-generated files that must
+  # persist across different slips runs and should not be overwritten.
+  # this dir is inside slips root dir.
+  permanent_dir: permanent
+
   # Default pcap packet filter. Used with zeek pcapfilter : 'ip or not ip'
   # If you want more important traffic and forget the multicast and broadcast
   # traffic, you can use
   # pcapfilter: 'not icmp and not multicast and not broadcast and not arp and
   # not port 5353 and not port 67'
-  pcapfilter: false
+  pcapfilter: ''
 
   # Defines for Zeek how much is the TCP inactivity timeout.
   # This means when will Zeek consider a TCP connection timeout after no
@@ -113,7 +143,7 @@ parameters:
   # label: malicious
   # label: unknown
   label: normal
-  # If Zeek files are rotated or not to avoid running out of disk.
+  # determines if Zeek files are rotated or not to avoid running out of disk.
   # Zeek rotation is enabled by default when using an interface,
   # which means Slips will delete all Zeek log files after 1 day
   # of running
@@ -127,17 +157,16 @@ parameters:
   # Whitespace between the numeric constant and time unit is optional.
   # Appending the letter s to the time unit in order to
   # pluralize it is also optional
-  # rotation_period = 30min
-  # rotation_period = 2hr
-  # rotation_period = 30sec
-  rotation_period: 1day
+  # default_rotation_interval: 30min
+  # default_rotation_interval: 2hr
+  #default_rotation_interval: 30sec
+  default_rotation_interval: 1day
 
   # How many days Slips keeps the rotated Zeek files before deleting them.
   # Value should be in days
   # set it to 0 day if you want to delete them immediately
-  # keep_rotated_files_for : 1 day
+  # keep_rotated_files_for : 0 day
   # keep_rotated_files_for : 2 day
-  # keep_rotated_files_for : 3 day
   keep_rotated_files_for: 1 day
 
   # How many minutes to wait for all modules to finish before killing them
@@ -163,6 +192,16 @@ parameters:
   # All private client ips should belong to the same local network
   # client_ips : [10.0.0.1, 11.0.0.0/24]
   client_ips: []
+
+#############################
+Debug:
+  # Generate latency, throughput, and other performance related CSV files and plots in output/performance_plots/ for debugging
+  # When enabled, Slips records extra per-flow/per-minute performance data from
+  # input, profiler workers, and evidence handling, then generates summary plots
+  # during shutdown. Keep this disabled for normal runs because it adds extra
+  # bookkeeping and disk writes.
+  #  available options are true/false
+  generate_performance_plots: false
 
 #############################
 detection:
@@ -192,10 +231,10 @@ modules:
   # List of modules to ignore. By default we always ignore the template,
   # do not remove it from the list
   # Add the names of other modules that you want to disable
-  # (they all should be lowercase with no special characters). Example,
-  # threatintelligence, blocking, networkdiscovery, timeline, virustotal,
-  # rnnccdetection, flowmldetection, updatemanager
-  disable: [template,blocking]
+  # (use module snake_case names). Example,
+  # threat_intelligence, blocking, network_discovery, timeline, virustotal,
+  # rnn_cc_detection, flow_ml_detection, feeds_update_manager
+  disable: [template]
 
   # For each line in timeline file there is a timestamp.
   # By default the timestamp is seconds in unix time. However
@@ -203,10 +242,10 @@ modules:
   timeline_human_timestamp: true
 
 #############################
-flowmldetection:
+flow_ml_detection:
   # This is a module that uses machine learning for detection.
   # It can be used in train mode or test mode.
-  # The mode 'train' should be used to tell the flowmldetection module
+  # The mode 'train' should be used to tell the flow_ml_detection module
   # that the flows received are all for training.
   # A label should be provided in the [Parameters] section
   # mode : train
@@ -215,6 +254,65 @@ flowmldetection:
   # You should have trained at least once with 'Normal' data and once with
   # 'Malicious' data in order for the test to work.
   mode: test
+
+#############################
+brute_force_detector:
+  # Minimum number of SSH attempts from one source to one destination
+  # before Slips considers it brute forcing.
+  ssh_attempt_threshold: 9
+
+#############################
+anomaly_detection_https:
+  # Number of initial hours used to train the baseline model assuming benign traffic.
+  # If set to 0, detection starts immediately and baseline is learned online.
+  training_hours: 2
+  # Training fit technique: welford or ewma.
+  training_fit_method: welford
+  # Training adaptation strength:
+  # 1.0 = Welford benign fit (strongest, equal-weight fit),
+  # <1.0 = EWMA-style training with this alpha (used when training_fit_method=ewma).
+  training_alpha: 1
+
+  # Thresholds for anomaly detection in hourly and per-flow checks.
+  hourly_zscore_threshold: 3.0
+  flow_zscore_threshold: 3.5
+
+  # If hourly anomaly score is lower than this, treat it as drift and adapt.
+  adaptation_score_threshold: 2.0
+
+  # Adaptation speed for baseline updates.
+  baseline_alpha: 0.5
+  drift_alpha: 0.05
+  suspicious_alpha: 0.005
+
+  # Minimum baseline history required before z-score checks are applied.
+  min_baseline_points: 6
+
+  # Max flow anomalies in an hour still considered "small drift".
+  max_small_flow_anomalies: 1
+
+  # Optional ADWIN-based drift trigger (river).
+  # If true, drift/suspicious update is decided only after ADWIN signals drift.
+  # If false, Slips uses the previous threshold-only drift logic.
+  use_adwin_drift: true
+  adwin_delta: 0.01
+  adwin_clock: 1
+  adwin_grace_period: 5
+  adwin_min_window_length: 5
+  empirical_threshold_quantile: 0.995
+
+
+  # JA3 statistical fallback gate used only when training_hours = 0.
+  # If there is no benign training period, ja3_changes is not scored
+  # until this minimum hourly value is reached.
+  ja3_min_variants_per_server: 3
+
+  # Operational logging verbosity:
+  # 0: disabled
+  # 1: important events only (detections, drift, training fit, stop/start)
+  # 2: + hourly summaries (recommended)
+  # 3: + per-flow arrivals and model update details
+  log_verbosity: 3
 
 #############################
 virustotal:
@@ -231,7 +329,7 @@ virustotal:
 #############################
 threatintelligence:
 
-  # By default, slips starts without the TI files, and runs the Update Manager
+  # By default, slips starts without the TI files, and runs the feeds_update_manager
   # in the background. If this option is set to true, slips will not start
   # analyzing the flows until the update manager finished and all TI files are
   # loaded successfully.
@@ -243,7 +341,7 @@ threatintelligence:
   # new detections are done.
   # So no detection will be missied, just it will take longer to start if
   # you use true.
-  wait_for_TI_to_finish: false
+  wait_for_TI_to_finish: true
 
   # Default path to the folder with files holding malcious IPs as defined
   # locally by the user. So the user can define its own malicious TI.
@@ -257,7 +355,7 @@ threatintelligence:
   # The remote TI files will be temporaly stored in this directory
   download_path_for_remote_threat_intelligence: modules/threat_intelligence/remote_data_files/
 
-  # Update period of Threat Intelligence files. How often should Slips update
+  # Update period of threat_intelligence files. How often should Slips update
   # the IoCs.
   # The expected value is in seconds.
   # 1 day = 86400 seconds
@@ -321,8 +419,8 @@ whitelists:
   local_whitelist_path: config/whitelist.conf
 
 #############################
-flowalerts:
-  # For the flowalerts module
+flow_alerts:
+  # For the flow_alerts module
   # We need a thrshold to determine a long connection in seconds.
   # In Slips by default is 25 minutes
   long_connection_threshold: 1500
@@ -348,7 +446,7 @@ exporting_alerts:
 
   # Configuer all the methods Slips will export data with
   # Available options are slack or stix
-  # export_to : [stix]
+  # export_to : [stix] (And a TAXII server)
   # export_to : [slack]
   export_to: []
 
@@ -364,43 +462,62 @@ exporting_alerts:
   slack_api_path: config/slack_bot_token_secret
 
   # Stix
-  # Server to use if you enable exporting STIX
+  # Server to use if you enable exporting STIX alerts
+
+  # If slips is running on the host, and docker compose of SlipsWeb is used
+  # TAXII_server should be localhost
+
+  # If slips is running in docker container, and docker compose of SlipsWeb is used, and all if them are running inside
+  # the same docker network, it should be TAXII_server: 'opentaxii', 'medallion'
   TAXII_server: localhost
 
-  # Ff your TAXII server is a remote server,
+  # If your TAXII server is a remote server,
   # you can set the port to 443 or 80.
   port: 1234
 
   # For Stix, if Slips should use TLS
   use_https: false
 
-  # TAXII
-  discovery_path: /services/discovery-a
-  inbox_path: /services/inbox-a
+  # TAXII 2 discovery endpoint (relative path or full URL)
+  discovery_path: /taxii2/
 
-  # Collection on the server you want to push stix data to
-  collection_name: collection-a
+  # TAXII protocol version
+  # - 2 (default) for Medallion / TAXII 2.1
+  # - 1 for OpenTAXII / TAXII 1.x
+  taxii_version: 2
+
+  # Collection (ID or title) on the server you want to push STIX data to
+  collection_name: Alerts
 
   # This value is only used when Slips is running non-stop (e.g with -i )
   # push_delay is the time to wait before pushing STIX data to server
   # (in seconds)
-  # If running on a file not an interface
+  # If running on a file, not an interface
   # Slips will export to server after analysis is done.
-  # 3600 = 1h
+  # 3600s = 1 minute
   push_delay: 3600
+
+  # If true, export each evidence directly to TAXII without writing STIX_data.json
+  direct_export: true
+
+  # Number of worker threads for direct TAXII export
+  direct_export_workers: 4
+  # Upper bound for auto-scaling direct export workers
+  direct_export_max_workers: 12
+  # Retry settings for direct TAXII export
+  # 0 = retry forever (no drops)
+  direct_export_retry_max: 0
+  direct_export_retry_backoff: 0.5
+  direct_export_retry_max_delay: 5.0
 
   # TAXII server credentials
   taxii_username: admin
-  taxii_password: admin
-
-  # URL used to obtain JWT token. set this to '' if you don't want to use it
-  # is required for JWT based authentication.
-  # (JWT based authentication is Optional)
-  # It's usually /management/auth
-  jwt_auth_path: /management/auth
+  taxii_password: changeme_before_installing_a_medallion_server #  pragma: allowlist secret
+  # Timeout for TAXII HTTP requests (seconds)
+  taxii_timeout: 10
 
 #############################
-CESNET:
+cesnet:
   # Slips also supports exporting and importing evidence in the IDEA format to/from
   # warden servers of CESNET organization in Czech Republic.
   send_alerts: false
@@ -468,8 +585,10 @@ Profiling:
   cpu_profiler_mode: dev
 
   # decides whether the profiler tracks all processes or only one.
-  # only used  in dev mode [true,false].
-  cpu_profiler_multiprocess: false
+  # when this is set to false: The profiler profiles main.py only
+  # when it is set to true, it profiles all slips children
+  # only used in dev mode [true,false].
+  cpu_profiler_multiprocess: true
 
   # set number of tracer entries (dev mode only)
   # VizTracer uses a circular buffer to store the entries.
@@ -508,7 +627,7 @@ global_p2p:
    use_global_p2p: False
    iris_conf: config/iris_config.yaml
    bootstrapping_node: False
-   bootstrapping_modules: ["fidesModule", "irisModule"]
+   bootstrapping_modules: ["fides", "iris"]
 
 #############################
 local_p2p:
