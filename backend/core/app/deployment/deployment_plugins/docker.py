@@ -97,6 +97,7 @@ def image_exists_blocking(client, image_name):
 
 
 def pull_image_blocking(client, image_name):
+    logger.info("Pulling Image: image_name=%s", image_name)
     repository, tag = _split_image_reference(image_name)
     if tag is None:
         return client.images.pull(repository)
@@ -259,7 +260,12 @@ class SingleContainerDeploymentPlugin(DeploymentPlugin):
             context.ids_system,
             timeout=self.startup_timeout,
         )
-        if not healthy:
+        if healthy:
+            logger.info(
+                "IDS became healthy: ids_system=%s",
+                context.ids_system.name
+            )
+        else:
             raise Exception(
                 f"IDS {context.ids_system.id} did not become healthy in time."
             )

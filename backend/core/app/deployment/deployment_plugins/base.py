@@ -59,7 +59,12 @@ class DeploymentPlugin(ABC):
             timeout=self.startup_timeout,
             interval=self.healthcheck_interval,
         )
-        if not healthy:
+        if healthy:
+            logger.info(
+                "IDS became healthy: ids_system=%s",
+                context.ids_system.name
+            )
+        else:
             raise Exception(
                 f"{self.deployment_type} deployment for IDS {context.ids_system.id} "
                 "did not become healthy in time."
