@@ -1,6 +1,9 @@
+import logging
+
 from app.bicep_utils.models.ids_base import Alert
-from app.logger import LOGGER
 from app.utils import extract_ts_srcip_srcport_dstip_dstport_from_alert
+
+logger = logging.getLogger('bicep.ensemble')
 
 async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
     """
@@ -32,7 +35,7 @@ async def majority_vote(alerts_dict: dict, ensemble) -> list[Alert]:
             alert.severity = avg_severity
             majority_voted_alerts.append(alert)
             container_voting_for_alert = sum(1 for alerts in container_dict.values() if len(alerts) > 0)
-    LOGGER.debug(f"length of total majority voted alerts is {len(majority_voted_alerts)}")
+    logger.debug(f"length of total majority voted alerts is {len(majority_voted_alerts)}")
     return majority_voted_alerts
 
 

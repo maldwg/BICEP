@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 import aiofiles
 from http.client import HTTPResponse
 import socket
@@ -19,7 +21,6 @@ import shutil
 from app.database import SessionLocal
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
-from app.logger import LOGGER
 from abc import ABC, abstractmethod
 from urllib.parse import urlparse
 from app.metrics import calculate_evaluation_metrics
@@ -30,6 +31,9 @@ from app.prometheus import (
     serialize_resource_query_targets,
 )
 import json
+
+logger = logging.getLogger('bicep.utils')
+
 dataset_addition_tasks = set()
 
 class Precision(ABC):
@@ -272,7 +276,7 @@ async def start_static_analysis(container, form_data, dataset):
                     )
                     response.raise_for_status()
         except Exception as e:
-            LOGGER.error(e)
+            logger.error(e)
 
     task = asyncio.create_task(send_request_in_background())
     return JSONResponse(
@@ -284,7 +288,7 @@ async def start_static_analysis(container, form_data, dataset):
 async def start_network_analysis(container, data):
     endpoint = "/analysis/network"
     container_url = container.get_container_http_url()
-    LOGGER.debug(f"Sending network analysis request to {container_url + endpoint} with data: {data}")
+    logger.debug(f"Sending network analysis request to {container_url + endpoint} with data: {data}")
     async with httpx.AsyncClient() as client:
         response = await client.post(container_url + endpoint, json=data)
     return response
@@ -344,7 +348,7 @@ async def remove_directory(path):
     try:
         shutil.rmtree(path)
     except Exception as e:
-        LOGGER.error(e)
+        logger.error(e)
 
 
 async def create_directory(path):
@@ -380,7 +384,7 @@ async def calculate_evaluation_metrics_and_push(
     metrics = await calculate_evaluation_metrics(
         db, benchmarking_results.dataset_id, benchmarking_results.alerts
     )
-    LOGGER.info(
+    logger.info(
         f"container {container_name} for enesemble {ensemble_name} got metrics {metrics}"
     )
 
@@ -403,7 +407,7 @@ async def calculate_evaluation_metrics_and_push(
                 match_mode=resource_query_mode,
                 targets=resource_query_targets,
             )
-            LOGGER.info(
+            logger.info(
                 "Resource metrics for %s with mode=%s and targets=%s: CPU=%s cores, "
                 "Memory=%sMB",
                 container_name,
@@ -413,7 +417,7 @@ async def calculate_evaluation_metrics_and_push(
                 avg_memory,
             )
         except Exception as e:
-            LOGGER.error(f"Failed to query resource metrics: {e}")
+            logger.error(f"Failed to query resource metrics: {e}")
 
     result = BenchmarkingResult(
         dataset_name=dataset.name,
@@ -495,7 +499,7 @@ async def finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) ->
     async with SessionLocal() as db:
         ids_system = await get_ids_system_by_id(db, ids_system_id)
         if ids_system is None:
-            LOGGER.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
+            logger.error(f"Background setup failed: IDS system {ids_system_id} was not found.")
             return
 
         try:
@@ -505,4 +509,4 @@ async def finish_ids_setup(ids_system_id: int, cids_configurations, env_vars) ->
                 env_vars=env_vars,
             )
         except Exception as exc:
-            LOGGER.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")
+            logger.error(f"Background setup failed for IDS system {ids_system_id}: {exc}")

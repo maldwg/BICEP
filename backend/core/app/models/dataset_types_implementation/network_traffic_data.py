@@ -6,12 +6,15 @@ This implementation enables a user to use the following structure as datasets fo
         b) timestamp in human readable form
         c) a label which contains the keyword "benign" or "malicious"
 """
-from app.logger import LOGGER
 import csv
+import logging
+
 from app.utils import HourPrecision, MinutePrecision, SecondPrecision, MilisecondPrecision, get_precision_by_name, normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict, Precision
 from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
 import random
+
+logger = logging.getLogger('bicep.network_traffic_data')
 
 def network_traffic_data_calculate_precision(labels_file_path):
 
@@ -215,7 +218,7 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
     print(f"Direct matches: {direct_counter}, reverse direct matches {reverse_direct_counter},tolerance matches: {tolerance_counter}, reverse_matches {reverse_tolerance_counter}, else matches: {else_counter}")
     # amount of alerts that could not be assigned to a label, for isntance if multiple alerts exist for 1 label
     UNASSIGNED_ALERTS = _count_value_occurences_in_dict(alerts_dict, False)# get_item_counts_of_dict(alerts_dict)
-    LOGGER.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
+    logger.debug(f"TP {TP}, FP {FP}, TN {TN}, FN {FN}, Unassigned: {UNASSIGNED_ALERTS} of {TOTAL_ALERTS}")
 
     return TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS
 

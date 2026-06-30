@@ -1,3 +1,4 @@
+import logging
 from http.client import HTTPResponse
 import json
 import uuid
@@ -18,10 +19,11 @@ from app.models.ids_system import IdsSystem, update_ids_status
 from app.validation.models import EnsembleUpdate
 import httpx
 from sqlalchemy.future import select
-from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ids_system import IdsSystem, get_ids_system_by_id
 from app.models.dataset import get_dataset_by_id
+
+logger = logging.getLogger('bicep.ensemble')
 
 class Ensemble(Base):
     __tablename__ = "ensemble"
@@ -80,7 +82,7 @@ class Ensemble(Base):
 
     async def start_static_analysis(self, db: AsyncSession, dataset_id: int):
 
-        LOGGER.debug(f"{dataset_id}")
+        logger.debug(f"{dataset_id}")
         dataset = await get_dataset_by_id(db, dataset_id)
         containers: list[IdsSystem] = await self.get_assigned_containers(db)
         responses = []

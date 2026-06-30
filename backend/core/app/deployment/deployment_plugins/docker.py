@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import time
 
@@ -18,9 +19,10 @@ from app.deployment.common import (
     register_deployment_plugin,
 )
 from app.deployment.deployment_plugins.base import DeploymentContext, DeploymentPlugin
-from app.logger import LOGGER
 from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
+
+logger = logging.getLogger('bicep.docker')
 
 DOCKER_DEPLOYMENT_CLIENT_TIMEOUT = int(
     os.getenv("DOCKER_DEPLOYMENT_CLIENT_TIMEOUT_SECONDS", "600")
@@ -48,7 +50,7 @@ def get_docker_client(host_system, timeout: int | None = None):
         if os.path.exists(socket_path):
             host_url = f"unix://{socket_path}"
         else:
-            LOGGER.warning(
+            logger.warning(
                 "Unix socket %s not found, falling back to TCP for core host", socket_path
             )
             host, docker_port = host_system.get_host_and_docker_port()
@@ -62,7 +64,7 @@ def get_docker_client(host_system, timeout: int | None = None):
             timeout=timeout or DOCKER_DEPLOYMENT_CLIENT_TIMEOUT,
         )
     except Exception as exc:
-        LOGGER.error(exc)
+        logger.error(exc)
         raise Exception(
             f"Could not create a docker client for url {host_url} \n"
             "Try to use an IP instead of hostname"
@@ -106,7 +108,7 @@ def ensure_image_present_blocking(client, image_name):
         pull_image_blocking(client, image_name)
     except Exception as exc:
         if image_exists_blocking(client, image_name):
-            LOGGER.warning(
+            logger.warning(
                 "Image pull failed for %s, using existing local image instead: %s",
                 image_name,
                 exc,
@@ -125,7 +127,7 @@ async def run_container_async(client, ids_tool, container, url):
     await ensure_image_present(client, image_name_and_version)
 
     try:
-        LOGGER.info("Creating docker container: name=%s image=%s", container.name, image_name_and_version)
+        logger.info("Creating docker container: name=%s image=%s", container.name, image_name_and_version)
         docker_container: Container = await asyncio.to_thread(
             client.containers.create,
             image=image_name_and_version,
@@ -134,16 +136,16 @@ async def run_container_async(client, ids_tool, container, url):
             environment={"PORT": container.port, "CORE_URL": url, "TZ": "UTC"},
             cap_add=["NET_ADMIN", "NET_RAW"],
         )
-        LOGGER.info("Docker container created successfully: name=%s", container.name)
+        logger.info("Docker container created successfully: name=%s", container.name)
     except (ImageNotFound , APIError) as exc:
-        LOGGER.error("Error during container creation: name=%s error=%s", container.name, exc)
+        logger.error("Error during container creation: name=%s error=%s", container.name, exc)
         raise
 
     try:
         await asyncio.to_thread(docker_container.start)
-        LOGGER.info("Docker container started successfully: name=%s", container.name)
+        logger.info("Docker container started successfully: name=%s", container.name)
     except APIError as exc:
-        LOGGER.error("Error during container startup: name=%s error=%s", container.name, exc)
+        logger.error("Error during container startup: name=%s error=%s", container.name, exc)
         raise
 
 
@@ -183,19 +185,19 @@ async def remove_docker_container(ids_container):
     try:
         container = client.containers.get(container_id=ids_container.name)
     except (NotFound , APIError) as exc:
-        LOGGER.error("Error during stopping container: name=%s error=%s", ids_container.name, exc)
+        logger.error("Error during stopping container: name=%s error=%s", ids_container.name, exc)
         return
 
     try:
         container.stop()
     except APIError as exc:
-        LOGGER.error("Error during stopping container: name=%s error=%s", container.name, exc)
+        logger.error("Error during stopping container: name=%s error=%s", container.name, exc)
         raise
 
     try:
         container.remove()
     except APIError as exc:
-        LOGGER.error("Error during removing container: name=%s error=%s", container.name, exc)
+        logger.error("Error during removing container: name=%s error=%s", container.name, exc)
         raise
 
 

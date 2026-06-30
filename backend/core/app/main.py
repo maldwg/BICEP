@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,14 +8,30 @@ from app.database import get_db
 from contextlib import asynccontextmanager
 from app.models.docker_host_system import get_all_hosts
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        # Ensure logs are printed to stdout
+        logging.StreamHandler()
+    ]
+)
+# To reduce the otherwise massive amounts of sql alchemy logs
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+# Suppress noisy httpx INFO request logs (e.g. periodic /health checks)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+for name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
+    logger = logging.getLogger(name)
+    logger.handlers = []
+    logger.propagate = True
+
 HOST_AVAILABILITY_CHECK_INTERVAL_SECONDS = int(
     os.getenv("HOST_AVAILABILITY_CHECK_INTERVAL", "5")
 )
 availability_update_lock = asyncio.Lock()
 
-
 async def update_availability():
-
     async with availability_update_lock:
         try:
             db_gen = get_db()
@@ -47,6 +64,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
 
+
 app = FastAPI(lifespan=lifespan)
 
 origins = [
@@ -60,9 +78,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-
 
 app.include_router(ids.router)
 app.include_router(crud.router)
