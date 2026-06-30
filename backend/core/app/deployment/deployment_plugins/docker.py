@@ -22,7 +22,7 @@ from app.deployment.deployment_plugins.base import DeploymentContext, Deployment
 from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
 
-logger = logging.getLogger('bicep.docker')
+logger = logging.getLogger('bicep.deployment_plugin.single_container')
 
 DOCKER_DEPLOYMENT_CLIENT_TIMEOUT = int(
     os.getenv("DOCKER_DEPLOYMENT_CLIENT_TIMEOUT_SECONDS", "600")
