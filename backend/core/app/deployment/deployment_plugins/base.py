@@ -1,9 +1,12 @@
 from __future__ import annotations
+
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
+logger = logging.getLogger('bicep.deployment_plugin')
 
 @dataclass(slots=True)
 class DeploymentContext:
@@ -23,8 +26,25 @@ class DeploymentPlugin(ABC):
     healthcheck_interval = 2
 
     async def deploy(self, context: DeploymentContext):
+        logger.info(
+            "Starting IDS deployment: ids_system=%s deployment_plugin=%s",
+            context.ids_system.name,
+            self.__class__.__name__
+        )
         await self.start(context)
+
+        logger.info(
+            "Waiting for IDS to become healthy: ids_system=%s plugin=%s",
+            context.ids_system.name,
+            self.__class__.__name__
+        )
         await self.wait_until_healthy(context)
+
+        logger.info(
+            "Configuring IDS: ids_system=%s plugin=%s",
+            context.ids_system.name,
+            self.__class__.__name__
+        )
         await self.configure(context)
 
     @abstractmethod
@@ -39,7 +59,12 @@ class DeploymentPlugin(ABC):
             timeout=self.startup_timeout,
             interval=self.healthcheck_interval,
         )
-        if not healthy:
+        if healthy:
+            logger.info(
+                "IDS became healthy: ids_system=%s",
+                context.ids_system.name
+            )
+        else:
             raise Exception(
                 f"{self.deployment_type} deployment for IDS {context.ids_system.id} "
                 "did not become healthy in time."

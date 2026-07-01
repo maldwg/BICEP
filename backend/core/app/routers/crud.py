@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, UploadFile, Form, BackgroundTasks
 from fastapi.responses import JSONResponse, Response
 from app.models.configuration import get_config_by_id, get_all_configurations, get_serialized_configuration, remove_configuration_by_id, add_config,Configuration, get_all_configurations_by_type
@@ -13,12 +15,13 @@ from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHost
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
 from app.models.dataset_types import get_dataset_type_by_id, get_all_dataset_types
 from app.models.metric_service import serialize_metric_service
-from app.logger import LOGGER
 from app.database import get_db
 import uuid
 import shutil
 import os
 import yaml
+
+logger = logging.getLogger('bicep.crud')
 
 router = APIRouter(
     prefix="/crud"
@@ -127,7 +130,7 @@ async def get_config_services(id: int, db=Depends(get_db)):
             
         return services
     except Exception as e:
-        LOGGER.error(f"Error parsing services for config {id}: {e}")
+        logger.error(f"Error parsing services for config {id}: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 @router.post("/configuration/add")
@@ -272,7 +275,7 @@ async def delete_host(id: int,db=Depends(get_db)):
     try:
         removed = await remove_host(db, id)
     except RuntimeError as exc:
-        LOGGER.error(f"Failed to delete docker host {id}: {exc}")
+        logger.error(f"Failed to delete docker host {id}: {exc}")
         return JSONResponse(content={"error": str(exc)}, status_code=500)
 
     if not removed:

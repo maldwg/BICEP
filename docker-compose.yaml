@@ -12,16 +12,6 @@ services:
       - bicep
     environment:
       - PRODUCTION=${PRODUCTION:-False}
-  grafana:
-    build:
-      context: ./grafana
-    ports:
-      - 3000:3000
-    networks:
-      - bicep
-    environment:
-      - GF_PATHS_PROVISIONING=/usr/share/grafana/conf/provisioning
-      - TZ=UTC
 
   prometheus:
     build:

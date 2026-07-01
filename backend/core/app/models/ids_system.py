@@ -1,7 +1,7 @@
 """
 IDS System Models - Polymorphic base class and subclasses for NIDS, HIDS, CIDS.
 """
-
+import logging
 from http.client import HTTPResponse
 import re
 from types import SimpleNamespace
@@ -19,10 +19,10 @@ from app.utils import (
 )
 from app.validation.models import IdsContainerUpdate
 from app.database import Base, engine
-from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+logger = logging.getLogger('bicep.ids')
 
 _UNSAFE_DOCKER_NAME_CHARS = re.compile(r"[^A-Za-z0-9_.-]+")
 
@@ -111,11 +111,11 @@ class IdsSystem(Base):
                 ids_tool, config, ruleset, db, runtime_config=runtime_config, **kwargs
             )
         except Exception as e:
-            LOGGER.error(f"Setup failed: {e}")
+            logger.error(f"Setup failed: {e}")
             try:
                 await self.teardown(db)
             except Exception as teardown_error:
-                LOGGER.error(f"Teardown during failed setup also failed: {teardown_error}")
+                logger.error(f"Teardown during failed setup also failed: {teardown_error}")
                 await db.delete(self)
                 await db.commit()
             raise
@@ -225,12 +225,12 @@ class NidsSystem(IdsSystem):
 
     async def start_network_analysis(self, data):
         """NIDS-specific network analysis with packet capture."""
-        LOGGER.info(f"Starting NIDS network analysis on {self.name}")
+        logger.info(f"Starting NIDS network analysis on {self.name}")
         return await super().start_network_analysis(data)
 
     async def start_static_analysis(self, form_data, dataset):
         """NIDS static analysis using PCAP files."""
-        LOGGER.info(f"Starting NIDS static analysis on {self.name}")
+        logger.info(f"Starting NIDS static analysis on {self.name}")
         return await super().start_static_analysis(form_data, dataset)
 
 
@@ -241,12 +241,12 @@ class HidsSystem(IdsSystem):
 
     async def start_static_analysis(self, form_data, dataset):
         """HIDS-specific static/log analysis."""
-        LOGGER.info(f"Starting HIDS static analysis on {self.name}")
+        logger.info(f"Starting HIDS static analysis on {self.name}")
         return await super().start_static_analysis(form_data, dataset)
 
     async def start_network_analysis(self, data):
         """HIDS typically doesn't do network analysis, but can monitor host network."""
-        LOGGER.warning(
+        logger.warning(
             f"HIDS {self.name} starting network analysis (typically log-based)"
         )
         return await super().start_network_analysis(data)
@@ -339,12 +339,12 @@ class CidsSystem(IdsSystem):
 
     async def start_network_analysis(self, data):
         """CIDS network analysis routes to sensor nodes."""
-        LOGGER.info(f"Starting CIDS network analysis on {self.name}")
+        logger.info(f"Starting CIDS network analysis on {self.name}")
         return await super().start_network_analysis(data)
 
     async def start_static_analysis(self, form_data, dataset):
         """CIDS static analysis routes to sensor nodes."""
-        LOGGER.info(f"Starting CIDS static analysis on {self.name}")
+        logger.info(f"Starting CIDS static analysis on {self.name}")
         return await super().start_static_analysis(form_data, dataset)
 
 

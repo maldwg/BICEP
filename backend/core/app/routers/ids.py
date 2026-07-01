@@ -1,3 +1,4 @@
+import logging
 from http.client import HTTPResponse
 from app.models.benchmarking import BenchmarkingResultTransferObject
 from fastapi import APIRouter, Depends, Response, BackgroundTasks
@@ -34,12 +35,14 @@ from app.loki import push_alerts_to_loki
 from app.bicep_utils.models.ids_base import Alert
 from app.models.docker_host_system import get_host_by_id
 from fastapi.responses import JSONResponse
-from app.logger import LOGGER
 from app.database import get_db
 from datetime import datetime
 from app.models.ids_tool import get_ids_by_id
 from app.models.ensemble import get_ensemble_by_id
 from app.prometheus import build_resource_query_spec_for_ids_system
+
+
+logger = logging.getLogger('bicep.ids')
 
 router = APIRouter(prefix="/ids")
 
@@ -124,7 +127,7 @@ async def remove_container(container_id: int, db=Depends(get_db)):
         # stop analysis to also remove interfaces created if run in networking mode
         await container.stop_analysis()
     except Exception as exc:
-        LOGGER.warning(f"Failed to stop analysis before teardown of {container.name}: {exc}")
+        logger.warning(f"Failed to stop analysis before teardown of {container.name}: {exc}")
     await container.teardown(db)
     return Response(status_code=204)
 
@@ -184,7 +187,7 @@ async def start_static_container_analysis(
         return response
     except Exception as e:
         await update_ids_status(db, STATUS.IDLE.value, ids)
-        LOGGER.error(f"Failed to start static analysis: {e}")
+        logger.error(f"Failed to start static analysis: {e}")
         return create_response_error(f"Failed to start static analysis: {e}", 500)
 
 
@@ -230,7 +233,7 @@ async def start_network_container_analysis(
     try:
         response: HTTPResponse = await ids.start_network_analysis(data)
         timestamp = datetime.now().isoformat()
-        LOGGER.info(
+        logger.info(
             f"Started network analysis for container{ids.name} at {timestamp}"
         )
         response = await parse_response_for_triggered_analysis(
@@ -243,7 +246,7 @@ async def start_network_container_analysis(
         return response
     except Exception as e:
         await update_ids_status(db, STATUS.IDLE.value, ids)
-        LOGGER.error(f"Failed to start network analysis: {e}")
+        logger.error(f"Failed to start network analysis: {e}")
         return create_response_error(f"Failed to start network analysis: {e}", 500)
 
 
@@ -304,8 +307,8 @@ async def receive_alerts_from_ids(
             {"error": f"container with id {alert_data.container_id} was not found"},
             status_code=404,
         )
-    LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
-    LOGGER.debug(f"Received Logs for container {container.name}")
+    logger.debug(f"analysis-type: {alert_data.analysis_type}")
+    logger.debug(f"Received Logs for container {container.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -330,7 +333,7 @@ async def receive_alerts_from_ids(
         )
         for alert in alert_data.alerts
     ]
-    LOGGER.debug(f"Created {len(alerts)} alerts")
+    logger.debug(f"Created {len(alerts)} alerts")
     background_tasks.add_task(push_alerts_to_loki, alerts, labels)
     if alert_data.analysis_type == "static":
         resource_query_mode, resource_query_targets = (
