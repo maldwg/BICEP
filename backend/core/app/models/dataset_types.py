@@ -1,12 +1,15 @@
+import logging
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.models.dataset_types_implementation import *
 import asyncio
-from app.logger import LOGGER
 import importlib
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger('bicep.models')
 
 class DatasetType(Base):
     __tablename__ = "dataset_type"
@@ -21,7 +24,7 @@ class DatasetType(Base):
     async def get_benign_and_malicious_counts(self, labels_file_text_stream):
         function_name = f"{self.function_prefix.lower()}_get_benign_and_malicious_counts_of_labels_file"
         module = self._import_dataset_module()
-        LOGGER.debug(f"Using module: {module}")
+        logger.debug(f"Using module: {module}")
         func = getattr(module, function_name)
         return await asyncio.to_thread(func, labels_file_text_stream)
 
@@ -49,7 +52,7 @@ class DatasetType(Base):
             module = importlib.import_module(module_name)
             return module
         except ModuleNotFoundError as e:
-            LOGGER.error(f"Module {module_name} not found: {e}")
+            logger.error(f"Module {module_name} not found: {e}")
             raise
 
 async def get_dataset_type_by_id(db: AsyncSession, id: int):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Any
 
@@ -9,9 +10,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deployment.deployment_plugins.base import DeploymentContext, DeploymentPlugin
-from app.logger import LOGGER
 from app.models.configuration import Configuration
 from app.models.ids_tool import get_ids_by_id
+
+logger = logging.getLogger('bicep.deployment')
 
 SINGLE_CONTAINER_DEPLOYMENT = "SINGLE_CONTAINER"
 DOCKER_COMPOSE_DEPLOYMENT = "DOCKER_COMPOSE"
@@ -169,6 +171,6 @@ async def is_ids_available(ids_system, db_session: AsyncSession | None = None) -
     try:
         plugin = await get_plugin_for_system(ids_system, db_session=db_session)
     except ValueError as exc:
-        LOGGER.error(exc)
+        logger.error(exc)
         return False
     return await plugin.is_available(ids_system)

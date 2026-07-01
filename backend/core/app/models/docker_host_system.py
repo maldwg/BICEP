@@ -1,3 +1,5 @@
+import logging
+
 from app.database import Base, SessionLocal
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import relationship
@@ -18,7 +20,6 @@ from app.deployment.deployment_plugins.docker import (
     ensure_image_present,
     get_docker_client,
 )
-from app.logger import LOGGER
 import asyncio
 import httpx
 import os
@@ -32,6 +33,9 @@ from app.models.metric_service import (
     get_or_create_metric_service,
     update_metric_service,
 )
+
+logger = logging.getLogger('bicep.docker_host_system')
+
 METRIC_SERVICE_DEFAULT_IMAGE_NAME = "ghcr.io/bicep-pump/metric-service"
 METRIC_SERVICE_DEFAULT_IMAGE_VERSION = "latest"
 METRIC_SERVICE_DEFAULT_NAME = "bicep-metric-service"
@@ -278,13 +282,13 @@ class DockerHostSystem(Base):
                 status=METRIC_SERVICE_STATUS.UNAVAILABLE.value,
                 status_message=f"Metric service deployment failed: {exc}",
             )
-            LOGGER.error(f"Failed to deploy metric service on {self.name}: {exc}")
+            logger.error(f"Failed to deploy metric service on {self.name}: {exc}")
         finally:
             client.close()
 
     def _ensure_metric_service_deployment_task(self) -> str:
         if self.id is None or SessionLocal is None:
-            LOGGER.error(
+            logger.error(
                 "Could not schedule metric service deployment for host %s.",
                 self.name,
             )
@@ -309,7 +313,7 @@ class DockerHostSystem(Base):
             try:
                 await host_snapshot._deploy_metric_service(db)
             except Exception as exc:
-                LOGGER.error(
+                logger.error(
                     "Background metric service deployment failed on %s: %s",
                     self.name,
                     exc,
@@ -362,7 +366,7 @@ class DockerHostSystem(Base):
         try:
             return datetime.fromisoformat(started_at.replace("Z", "+00:00"))
         except ValueError:
-            LOGGER.warning(
+            logger.warning(
                 "Could not parse metric service StartedAt timestamp for host %s: %s",
                 self.name,
                 started_at,
@@ -424,7 +428,7 @@ class DockerHostSystem(Base):
         try:
             await self.remove_metric_service_container()
         except Exception as exc:
-            LOGGER.error(
+            logger.error(
                 "Failed to remove metric service container from host %s before redeploy: %s",
                 self.name,
                 exc,
@@ -625,7 +629,7 @@ class DockerHostSystem(Base):
     async def check_host_health(self, db: AsyncSession | None = None):
         try:
             if await self.is_host_reachable():
-                LOGGER.debug(f"host {self.name} is reachable")
+                logger.debug(f"host {self.name} is reachable")
                 client = get_docker_client(self, timeout=DOCKER_CONTROL_CLIENT_TIMEOUT)
                 try:
                     version = await asyncio.to_thread(client.version)
@@ -633,7 +637,7 @@ class DockerHostSystem(Base):
                     client.close()
 
                 if version:
-                    LOGGER.info(f"Docker Host {self.name} is reachable")
+                    logger.debug(f"Docker Host {self.name} is reachable")
                     if db is None:
                         return DOCKER_HOST_STATUS.AVAILABLE.value
                     if await self._check_metric_service_health(db):
@@ -641,13 +645,13 @@ class DockerHostSystem(Base):
                     return DOCKER_HOST_STATUS.UNAVAILABLE.value
             else:
                 self._clear_metric_service_unhealthy_tracker()
-                LOGGER.info(f"host {self.name} is not reachable")
+                logger.info(f"host {self.name} is not reachable")
                 await self._mark_metric_service_unavailable(
                     db, "Docker host is not reachable."
                 )
         except Exception as e:
             self._clear_metric_service_unhealthy_tracker()
-            LOGGER.error(e)
+            logger.error(e)
             await self._mark_metric_service_unavailable(
                 db, f"Docker host healthcheck failed: {e}"
             )
@@ -674,11 +678,11 @@ class DockerHostSystem(Base):
         old_availability = self.status
         new_availability = await self.check_host_health(db)
         if old_availability != new_availability:
-            LOGGER.debug(
+            logger.debug(
                 f"Host {self.name} changed its availability from {old_availability} to {new_availability}"
             )
             await set_host_status(db, self, new_availability)
-            LOGGER.debug(f"Changed status from host {self.name} to {new_availability}")
+            logger.debug(f"Changed status from host {self.name} to {new_availability}")
 
 
 async def set_host_status(
@@ -718,7 +722,7 @@ async def remove_host(db: AsyncSession, host_id: int):
     try:
         await host.remove_metric_service_container()
     except Exception as exc:
-        LOGGER.error(
+        logger.error(
             f"Failed to remove metric service container from host {host.name}: {exc}"
         )
         raise RuntimeError(

@@ -5,8 +5,7 @@ from datetime import datetime
 
 import httpx
 
-logging.basicConfig(level=logging.INFO)
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger('bicep.prometheus')
 
 RESOURCE_QUERY_MODE_EXACT = "exact"
 RESOURCE_QUERY_MODE_PREFIX = "prefix"
@@ -25,7 +24,7 @@ def deserialize_resource_query_targets(raw_targets: str | None) -> list[str]:
     try:
         parsed = json.loads(raw_targets)
     except json.JSONDecodeError:
-        LOGGER.warning("Could not decode resource query targets JSON.")
+        logger.warning("Could not decode resource query targets JSON.")
         return []
 
     if not isinstance(parsed, list):
@@ -171,7 +170,7 @@ async def _query_range_series(
 ) -> list[float]:
     prometheus_url = _normalize_prometheus_url()
     if not prometheus_url:
-        LOGGER.warning("PROMETHEUS_URL not set, cannot query Prometheus")
+        logger.warning("PROMETHEUS_URL not set, cannot query Prometheus")
         return []
     if not query:
         return []
@@ -189,7 +188,7 @@ async def _query_range_series(
         )
 
         if response.status_code != 200:
-            LOGGER.error(
+            logger.error(
                 "Prometheus query failed: %s for query=%s response=%s",
                 response.status_code,
                 query,
@@ -199,7 +198,7 @@ async def _query_range_series(
 
         data = response.json()
         if data.get("status") != "success":
-            LOGGER.error(f"Prometheus query unsuccessful: {data}")
+            logger.error(f"Prometheus query unsuccessful: {data}")
             return []
 
         results = data.get("data", {}).get("result", [])
@@ -244,11 +243,11 @@ async def query_average_cpu_usage(
         )
         values = await _query_range_series(query, start_time, end_time, "1s")
         if not values:
-            LOGGER.warning(f"No CPU metrics found for targets {resolved_targets}")
+            logger.warning(f"No CPU metrics found for targets {resolved_targets}")
             return None
         return round(sum(values) / len(values), 10)
     except Exception as exc:
-        LOGGER.error(f"Error querying CPU metrics: {exc}")
+        logger.error(f"Error querying CPU metrics: {exc}")
         return None
 
 
@@ -277,11 +276,11 @@ async def query_average_memory_usage(
         )
         values = await _query_range_series(query, start_time, end_time, "1s")
         if not values:
-            LOGGER.warning(f"No memory metrics found for targets {resolved_targets}")
+            logger.warning(f"No memory metrics found for targets {resolved_targets}")
             return None
         return round(sum(values) / len(values), 2)
     except Exception as exc:
-        LOGGER.error(f"Error querying memory metrics: {exc}")
+        logger.error(f"Error querying memory metrics: {exc}")
         return None
 
 
@@ -293,7 +292,7 @@ async def query_current_cpu_usage(container_name: str) -> float | None:
     try:
         prometheus_url = _normalize_prometheus_url()
         if not prometheus_url:
-            LOGGER.warning("PROMETHEUS_URL not set, cannot query current CPU usage")
+            logger.warning("PROMETHEUS_URL not set, cannot query current CPU usage")
             return None
 
         query = f'container_cpu_usage{{name="{container_name}"}}'
@@ -316,7 +315,7 @@ async def query_current_cpu_usage(container_name: str) -> float | None:
             value = float(results[0].get("value", [0, 0])[1])
             return round(value, 4)
     except Exception as exc:
-        LOGGER.error(f"Error querying current CPU metrics: {exc}")
+        logger.error(f"Error querying current CPU metrics: {exc}")
         return None
 
 
@@ -328,7 +327,7 @@ async def query_current_memory_usage(container_name: str) -> float | None:
     try:
         prometheus_url = _normalize_prometheus_url()
         if not prometheus_url:
-            LOGGER.warning("PROMETHEUS_URL not set, cannot query current memory usage")
+            logger.warning("PROMETHEUS_URL not set, cannot query current memory usage")
             return None
 
         query = f'container_memory_usage_bytes{{name="{container_name}"}} / 1024 / 1024'
@@ -351,7 +350,7 @@ async def query_current_memory_usage(container_name: str) -> float | None:
             value = float(results[0].get("value", [0, 0])[1])
             return round(value, 2)
     except Exception as exc:
-        LOGGER.error(f"Error querying current memory metrics: {exc}")
+        logger.error(f"Error querying current memory metrics: {exc}")
         return None
 
 
@@ -379,7 +378,7 @@ async def query_cpu_usage_series(
         )
         return await _query_range_series(query, start_time, end_time, "2s")
     except Exception as exc:
-        LOGGER.error(f"Error querying CPU series: {exc}")
+        logger.error(f"Error querying CPU series: {exc}")
         return []
 
 
@@ -408,5 +407,5 @@ async def query_memory_usage_series(
         )
         return await _query_range_series(query, start_time, end_time, "2s")
     except Exception as exc:
-        LOGGER.error(f"Error querying memory series: {exc}")
+        logger.error(f"Error querying memory series: {exc}")
         return []
