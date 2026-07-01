@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
@@ -60,6 +61,7 @@ interface BenchmarkingJobView extends BenchmarkingJob {
     AlertComponent,
     CommonModule,
     FormsModule,
+    MatButtonToggleModule,
     MatButtonModule,
     MatCheckboxModule,
     MatDividerModule,
@@ -86,6 +88,22 @@ export class StartComponent implements OnInit {
   selectedDatasetIds: number[] = [];
   settleSeconds = 5;
   repeatCount = 1;
+  benchmarkMode: 'static_dataset' | 'throughput' = 'static_dataset';
+  trafficMode: 'packet_generator' | 'iperf' = 'packet_generator';
+  packetCount = 1000;
+  ratePps = 100;
+  payloadSize = 64;
+  packetProtocol: 'tcp' | 'udp' | 'icmp' = 'udp';
+  sourceIp = '';
+  destinationIp = '';
+  sourcePort = 40000;
+  destinationPort = 50000;
+  payload = '';
+  iperfDuration = 10;
+  iperfParallel = 1;
+  iperfProtocol: 'tcp' | 'udp' = 'tcp';
+  iperfBandwidth = '';
+  analysisWaitSeconds = 5;
   preparedRunCount = 0;
   jobs: BenchmarkingJobView[] = [];
   loading = true;
@@ -172,16 +190,32 @@ export class StartComponent implements OnInit {
       this.errorPopup.showError('Select at least one IDS or ensemble.', 400);
       return;
     }
-    if (this.selectedDatasetIds.length === 0) {
+    if (this.benchmarkMode === 'static_dataset' && this.selectedDatasetIds.length === 0) {
       this.errorPopup.showError('Select at least one dataset.', 400);
       return;
     }
 
     const payload: BenchmarkJobCreate = {
       targets,
-      dataset_ids: this.selectedDatasetIds,
+      dataset_ids: this.benchmarkMode === 'static_dataset' ? this.selectedDatasetIds : [],
       settle_seconds: Number(this.settleSeconds) || 0,
-      repeat_count: Math.max(1, Number(this.repeatCount) || 1)
+      repeat_count: Math.max(1, Number(this.repeatCount) || 1),
+      mode: this.benchmarkMode,
+      traffic_mode: this.trafficMode,
+      packet_count: Math.max(1, Number(this.packetCount) || 1),
+      rate_pps: Math.max(0, Number(this.ratePps) || 0),
+      payload_size: Math.max(0, Number(this.payloadSize) || 0),
+      protocol: this.packetProtocol,
+      source_ip: this.sourceIp.trim() || null,
+      destination_ip: this.destinationIp.trim() || null,
+      source_port: Math.max(1, Number(this.sourcePort) || 1),
+      destination_port: Math.max(1, Number(this.destinationPort) || 1),
+      payload: this.payload || null,
+      iperf_duration: Math.max(1, Number(this.iperfDuration) || 1),
+      iperf_parallel: Math.max(1, Number(this.iperfParallel) || 1),
+      iperf_protocol: this.iperfProtocol,
+      iperf_bandwidth: this.iperfBandwidth.trim() || null,
+      analysis_wait_seconds: Math.max(0, Number(this.analysisWaitSeconds) || 0)
     };
 
     this.submitting = true;
@@ -245,6 +279,11 @@ export class StartComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  setBenchmarkMode(mode: 'static_dataset' | 'throughput'): void {
+    this.benchmarkMode = mode;
+    this.refreshSelectedRunCount();
+  }
+
   private toJobView(job: BenchmarkingJob): BenchmarkingJobView {
     const items = job.items.map(item => ({
       ...item,
@@ -275,12 +314,16 @@ export class StartComponent implements OnInit {
     const config = item.configuration_name ? ` / ${item.configuration_name}` : '';
     const ruleset = item.ruleset_name ? ` / ${item.ruleset_name}` : '';
     const repeat = item.repeat_total > 1 ? ` / run ${item.repeat_index}/${item.repeat_total}` : '';
+    if (item.dataset_id === 0 || item.traffic_mode) {
+      const traffic = item.traffic_mode === 'iperf' ? 'iperf' : 'packets';
+      return `${item.target_name} / throughput ${traffic}${config}${ruleset}${repeat}`;
+    }
     return `${item.target_name} / ${item.dataset_name}${config}${ruleset}${repeat}`;
   }
 
   private calculateSelectedRunCount(): number {
-    const selectedDatasets = this.selectedDatasetIds.length;
-    if (!selectedDatasets) {
+    const selectedDatasets = this.benchmarkMode === 'static_dataset' ? this.selectedDatasetIds.length : 1;
+    if (!selectedDatasets && this.benchmarkMode === 'static_dataset') {
       return 0;
     }
 
@@ -294,6 +337,19 @@ export class StartComponent implements OnInit {
 
     const ensembleRuns = this.ensembleSelections.filter(selection => selection.selected).length * selectedDatasets * this.normalizedRepeatCount();
     return containerRuns + ensembleRuns;
+  }
+
+  metricLabel(item: BenchmarkingJobItem): string {
+    if (!item.throughput_mbps && !item.throughput_pps) {
+      return item.status;
+    }
+    const mbps = item.throughput_mbps !== undefined && item.throughput_mbps !== null
+      ? `${item.throughput_mbps.toFixed(2)} Mbps`
+      : '';
+    const pps = item.throughput_pps !== undefined && item.throughput_pps !== null
+      ? `${item.throughput_pps.toFixed(0)} pps`
+      : '';
+    return [mbps, pps].filter(Boolean).join(' / ') || item.status;
   }
 
   normalizedRepeatCount(): number {

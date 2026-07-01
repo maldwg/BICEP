@@ -109,6 +109,107 @@
   margin-top: 2rem;
 }
 
+.throughput-results-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.52);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 248, 0.76));
+  box-shadow: var(--app-shadow-soft);
+  overflow: hidden;
+}
+
+.throughput-results-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.throughput-results-panel__header h2 {
+  margin: 0.2rem 0 0;
+  color: var(--app-heading);
+  font-size: 1.35rem;
+}
+
+.throughput-results-panel__eyebrow {
+  color: var(--app-accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.throughput-results-panel__count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 0.0625rem solid rgba(128, 71, 76, 0.14);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--app-text-muted);
+  font-weight: 700;
+}
+
+.throughput-results-table {
+  min-width: 82rem;
+}
+
+.throughput-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.75rem;
+  padding: 0.25rem 0.55rem;
+  border: 0.0625rem solid rgba(120, 44, 44, 0.12);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--app-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.throughput-status--done {
+  border-color: rgba(21, 128, 61, 0.18);
+  background: rgba(21, 128, 61, 0.08);
+  color: #176b3a;
+}
+
+.throughput-status--running {
+  border-color: rgba(61, 121, 143, 0.18);
+  background: rgba(61, 121, 143, 0.12);
+  color: var(--app-accent-strong);
+}
+
+.throughput-status--failed {
+  border-color: rgba(178, 63, 63, 0.26);
+  background: rgba(178, 63, 63, 0.12);
+  color: #9d3030;
+}
+
+.throughput-empty {
+  min-height: 5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 0.0625rem dashed rgba(120, 44, 44, 0.22);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--app-text-muted);
+}
+
+.throughput-empty mat-icon {
+  color: var(--app-accent-strong);
+}
+
 ::ng-deep .mdc-text-field--outlined {
   background-color: white !important;
 }

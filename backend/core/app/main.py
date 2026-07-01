@@ -16,7 +16,6 @@ from contextlib import asynccontextmanager
 from app.models.docker_host_system import get_all_hosts
 from app.benchmarking_queue import start_benchmarking_worker, stop_benchmarking_worker
 from app.models.benchmarking import (
-    ensure_benchmarking_queue_tables,
     mark_interrupted_benchmarking_jobs_as_queued,
 )
 
@@ -51,7 +50,6 @@ async def update_availability_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if SessionLocal is not None:
-        await ensure_benchmarking_queue_tables()
         db_gen = get_db()
         db = await anext(db_gen)
         try:

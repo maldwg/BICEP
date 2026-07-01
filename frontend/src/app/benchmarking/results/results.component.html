@@ -41,6 +41,10 @@
         <mat-icon>download</mat-icon>
         CSV
       </button>
+      <button class="download-button" (click)="downloadThroughputResultsAsCSV()" [disabled]="throughputResults.length === 0" matFab extended>
+        <mat-icon>speed</mat-icon>
+        Throughput CSV
+      </button>
       <button class="compare-button" (click)="toggleComparisonView()" [disabled]="selection.selected.length < 2" matFab
         extended color="accent">
         <mat-icon>bar_chart</mat-icon>
@@ -158,6 +162,106 @@
       </div>
     </ng-template>
   </div>
+
+  <section class="throughput-results-panel">
+    <div class="throughput-results-panel__header">
+      <div>
+        <span class="throughput-results-panel__eyebrow">Throughput</span>
+        <h2>Packet Test Results</h2>
+      </div>
+      <span class="throughput-results-panel__count">{{ filteredThroughputResults.length }} rows</span>
+    </div>
+
+    <div class="results-table-wrap" *ngIf="filteredThroughputResults.length > 0; else noThroughputResults">
+      <table mat-table [dataSource]="filteredThroughputResults" class="results-table throughput-results-table">
+        <ng-container matColumnDef="job_id">
+          <th mat-header-cell *matHeaderCellDef>Job</th>
+          <td mat-cell *matCellDef="let row">#{{ row.job_id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="target_name">
+          <th mat-header-cell *matHeaderCellDef>Target</th>
+          <td mat-cell *matCellDef="let row">{{ row.target_name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="traffic_mode">
+          <th mat-header-cell *matHeaderCellDef>Mode</th>
+          <td mat-cell *matCellDef="let row">{{ row.traffic_mode === 'iperf' ? 'iperf' : 'packets' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="configuration_name">
+          <th mat-header-cell *matHeaderCellDef>Configuration</th>
+          <td mat-cell *matCellDef="let row">{{ row.configuration_name || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ruleset_name">
+          <th mat-header-cell *matHeaderCellDef>Ruleset</th>
+          <td mat-cell *matCellDef="let row">{{ row.ruleset_name || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="repeat">
+          <th mat-header-cell *matHeaderCellDef>Repeat</th>
+          <td mat-cell *matCellDef="let row">{{ row.repeat_index }} / {{ row.repeat_total }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="packet_count">
+          <th mat-header-cell *matHeaderCellDef>Packets</th>
+          <td mat-cell *matCellDef="let row">{{ row.packet_count != null ? (row.packet_count | number:'1.0-0') : '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="bytes_sent">
+          <th mat-header-cell *matHeaderCellDef>Bytes</th>
+          <td mat-cell *matCellDef="let row">{{ row.bytes_sent != null ? (row.bytes_sent | number:'1.0-0') : '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="traffic_runtime">
+          <th mat-header-cell *matHeaderCellDef>Runtime</th>
+          <td mat-cell *matCellDef="let row">{{ row.traffic_runtime != null ? (row.traffic_runtime | number:'1.2-2') : '-' }}s</td>
+        </ng-container>
+
+        <ng-container matColumnDef="throughput_pps">
+          <th mat-header-cell *matHeaderCellDef>pps</th>
+          <td mat-cell *matCellDef="let row">{{ row.throughput_pps != null ? (row.throughput_pps | number:'1.0-0') : '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="throughput_mbps">
+          <th mat-header-cell *matHeaderCellDef>Mbps</th>
+          <td mat-cell *matCellDef="let row">{{ row.throughput_mbps != null ? (row.throughput_mbps | number:'1.2-2') : '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="started_at">
+          <th mat-header-cell *matHeaderCellDef>Started</th>
+          <td mat-cell *matCellDef="let row">{{ row.started_at || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="completed_at">
+          <th mat-header-cell *matHeaderCellDef>Completed</th>
+          <td mat-cell *matCellDef="let row">{{ row.completed_at || '-' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="throughput-status" [class.throughput-status--done]="row.status === 'completed'"
+              [class.throughput-status--running]="row.status === 'running'"
+              [class.throughput-status--failed]="row.status === 'failed' || row.status === 'cancelled'">
+              {{ row.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="throughputDisplayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: throughputDisplayedColumns"></tr>
+      </table>
+    </div>
+
+    <ng-template #noThroughputResults>
+      <div class="throughput-empty">
+        <mat-icon>speed</mat-icon>
+        <span>No throughput results match the current filter.</span>
+      </div>
+    </ng-template>
+  </section>
 </section>
 
 <app-comparison *ngIf="showComparison" [items]="selection.selected" (close)="toggleComparisonView()">

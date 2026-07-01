@@ -14,6 +14,7 @@ from app.models.benchmarking import (
     BENCHMARK_JOB_STATUS_FAILED,
     BENCHMARK_JOB_STATUS_QUEUED,
     BENCHMARK_JOB_STATUS_RUNNING,
+    BENCHMARK_MODE_THROUGHPUT,
     BENCHMARK_TARGET_CONTAINER,
     BENCHMARK_TARGET_ENSEMBLE,
     BenchmarkingJob,
@@ -23,11 +24,12 @@ from app.models.benchmarking import (
     get_timestamp,
     refresh_benchmarking_job_progress,
 )
+from app.throughput import ThroughputProfile, run_throughput_traffic
 from app.models.configuration import get_config_by_id
 from app.models.ensemble import get_ensemble_by_id, update_ensemble_status
 from app.models.ids_system import get_ids_system_by_id, update_ids_status
 from app.utils import STATUS
-from app.validation.models import StaticAnalysisData, stop_analysisData
+from app.validation.models import NetworkAnalysisData, StaticAnalysisData, stop_analysisData
 
 
 POLL_INTERVAL_SECONDS = 2
@@ -144,6 +146,13 @@ async def _run_job(job_id: int):
 
 
 async def _execute_item(job_id: int, item_id: int) -> bool:
+    async with SessionLocal() as db:
+        job = await get_benchmarking_job_by_id(db, job_id)
+        is_throughput_job = job and job.mode == BENCHMARK_MODE_THROUGHPUT
+
+    if is_throughput_job:
+        return await _execute_throughput_item(job_id, item_id)
+
     if not await _wait_until_target_ready(job_id, item_id):
         await _mark_item_cancelled(item_id, "Benchmark job was stopped before this run started.")
         return False
@@ -179,6 +188,52 @@ async def _execute_item(job_id: int, item_id: int) -> bool:
     return False
 
 
+async def _execute_throughput_item(job_id: int, item_id: int) -> bool:
+    if not await _wait_until_target_ready(job_id, item_id):
+        await _mark_item_cancelled(item_id, "Benchmark job was stopped before this run started.")
+        return False
+
+    async with SessionLocal() as db:
+        job = await get_benchmarking_job_by_id(db, job_id)
+        item = _find_item(job, item_id) if job else None
+        if job is None or item is None:
+            return False
+        if job.stop_requested:
+            await _mark_item_cancelled(item_id, "Benchmark job was stopped before this run started.")
+            return False
+
+        if item.target_type == BENCHMARK_TARGET_CONTAINER:
+            response = await _start_container_network_item(db, item)
+        elif item.target_type == BENCHMARK_TARGET_ENSEMBLE:
+            response = await _start_ensemble_network_item(db, item)
+        else:
+            raise ValueError(f"Unknown benchmark target type: {item.target_type}")
+
+        if response.status_code != 200:
+            error_text = getattr(response, "body", b"").decode("utf-8", errors="ignore")
+            await _mark_item_failed(item_id, error_text or "Throughput run could not be started.")
+            return False
+
+        profile = _throughput_profile_from_job(job)
+        fallback_destination = await _fallback_destination_for_item(db, item)
+
+    try:
+        result = await run_throughput_traffic(profile, fallback_destination)
+        if job.analysis_wait_seconds > 0:
+            await _sleep_until_next_run_or_stop(job_id, job.analysis_wait_seconds)
+    finally:
+        await _stop_active_item_if_needed(job_id, item_id)
+
+    async with SessionLocal() as db:
+        job = await get_benchmarking_job_by_id(db, job_id)
+        if job is None or job.stop_requested:
+            await _mark_item_cancelled(item_id, "Benchmark job was stopped while this run was active.")
+            return False
+
+    await _mark_throughput_item_completed(item_id, result)
+    return True
+
+
 async def _start_container_item(db, item: BenchmarkingJobItem) -> Response:
     from app.routers.ids import start_static_container_analysis
 
@@ -202,6 +257,33 @@ async def _start_ensemble_item(db, item: BenchmarkingJobItem) -> Response:
 
     return await start_static_ensemble_analysis(
         StaticAnalysisData(ensemble_id=item.target_id, dataset_id=item.dataset_id),
+        db=db,
+    )
+
+
+async def _start_container_network_item(db, item: BenchmarkingJobItem) -> Response:
+    from app.routers.ids import start_network_container_analysis
+
+    container = await get_ids_system_by_id(db, item.target_id)
+    if container is None:
+        raise ValueError(f"Container {item.target_id} is not available.")
+
+    await _apply_container_configuration(db, container, item)
+    return await start_network_container_analysis(
+        NetworkAnalysisData(container_id=item.target_id),
+        db=db,
+    )
+
+
+async def _start_ensemble_network_item(db, item: BenchmarkingJobItem) -> Response:
+    from app.routers.ensemble import start_network_ensemble_analysis
+
+    ensemble = await get_ensemble_by_id(db, item.target_id)
+    if ensemble is None:
+        raise ValueError(f"Ensemble {item.target_id} is not available.")
+
+    return await start_network_ensemble_analysis(
+        NetworkAnalysisData(ensemble_id=item.target_id),
         db=db,
     )
 
@@ -317,6 +399,21 @@ async def _mark_item_completed(item_id: int):
         await db.commit()
 
 
+async def _mark_throughput_item_completed(item_id: int, result: dict):
+    async with SessionLocal() as db:
+        item = await _get_item_by_id(db, item_id)
+        if item is None:
+            return
+        item.status = BENCHMARK_ITEM_STATUS_COMPLETED
+        item.completed_at = get_timestamp()
+        item.packet_count = result.get("packet_count")
+        item.bytes_sent = result.get("bytes_sent")
+        item.traffic_runtime = result.get("traffic_runtime")
+        item.throughput_pps = result.get("throughput_pps")
+        item.throughput_mbps = result.get("throughput_mbps")
+        await db.commit()
+
+
 async def _mark_item_cancelled(item_id: int, error: str):
     async with SessionLocal() as db:
         item = await _get_item_by_id(db, item_id)
@@ -387,3 +484,47 @@ async def _get_item_by_id(db, item_id: int):
         select(BenchmarkingJobItem).where(BenchmarkingJobItem.id == item_id)
     )
     return result.scalar_one_or_none()
+
+
+def _throughput_profile_from_job(job: BenchmarkingJob) -> ThroughputProfile:
+    return ThroughputProfile(
+        traffic_mode=job.traffic_mode,
+        packet_count=job.packet_count or 1000,
+        rate_pps=job.rate_pps or 100.0,
+        payload_size=job.payload_size or 64,
+        protocol=job.protocol or "udp",
+        source_ip=job.source_ip,
+        destination_ip=job.destination_ip,
+        source_port=job.source_port or 40000,
+        destination_port=job.destination_port or 50000,
+        payload=job.payload,
+        iperf_duration=job.iperf_duration or 10,
+        iperf_parallel=job.iperf_parallel or 1,
+        iperf_protocol=job.iperf_protocol or "tcp",
+        iperf_bandwidth=job.iperf_bandwidth,
+    )
+
+
+async def _fallback_destination_for_item(db, item: BenchmarkingJobItem) -> str:
+    if item.target_type == BENCHMARK_TARGET_CONTAINER:
+        container = await get_ids_system_by_id(db, item.target_id)
+        if container is None:
+            raise ValueError(f"Container {item.target_id} is not available.")
+        return _host_for_container(container)
+
+    ensemble = await get_ensemble_by_id(db, item.target_id)
+    if ensemble is None:
+        raise ValueError(f"Ensemble {item.target_id} is not available.")
+    containers = await ensemble.get_assigned_containers(db)
+    if not containers:
+        raise ValueError(f"Ensemble {ensemble.name} has no assigned IDS containers.")
+    return _host_for_container(containers[0])
+
+
+def _host_for_container(container) -> str:
+    if container.host_system is None:
+        return "127.0.0.1"
+    host = container.host_system.host
+    if host == "localhost" or "Core" in container.host_system.name:
+        return "127.0.0.1"
+    return host

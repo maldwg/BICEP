@@ -49,15 +49,36 @@
         </button>
       </div>
 
+      <mat-button-toggle-group class="mode-toggle" [(ngModel)]="benchmarkMode" (ngModelChange)="setBenchmarkMode($event)" name="benchmarkMode">
+        <mat-button-toggle value="static_dataset">
+          <mat-icon>folder_open</mat-icon>
+          Static Dataset
+        </mat-button-toggle>
+        <mat-button-toggle value="throughput">
+          <mat-icon>speed</mat-icon>
+          Throughput
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
       <div class="benchmark-controls">
-        <mat-form-field appearance="outline">
-          <mat-label>Datasets</mat-label>
-          <mat-select required multiple [(ngModel)]="selectedDatasetIds" (ngModelChange)="refreshSelectedRunCount()" name="datasets">
-            @for (dataset of datasets; track dataset.id) {
-              <mat-option [value]="dataset.id">{{ dataset.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        @if (benchmarkMode === 'static_dataset') {
+          <mat-form-field appearance="outline">
+            <mat-label>Datasets</mat-label>
+            <mat-select required multiple [(ngModel)]="selectedDatasetIds" (ngModelChange)="refreshSelectedRunCount()" name="datasets">
+              @for (dataset of datasets; track dataset.id) {
+                <mat-option [value]="dataset.id">{{ dataset.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline">
+            <mat-label>Traffic Mode</mat-label>
+            <mat-select [(ngModel)]="trafficMode" name="trafficMode">
+              <mat-option value="packet_generator">Packet Generator</mat-option>
+              <mat-option value="iperf">iperf</mat-option>
+            </mat-select>
+          </mat-form-field>
+        }
 
         <mat-form-field appearance="outline">
           <mat-label>Calm-down Seconds</mat-label>
@@ -69,6 +90,85 @@
           <input matInput min="1" max="100" type="number" [(ngModel)]="repeatCount" (ngModelChange)="refreshSelectedRunCount()" name="repeatCount">
         </mat-form-field>
       </div>
+
+      @if (benchmarkMode === 'throughput') {
+        <div class="throughput-controls">
+          @if (trafficMode === 'packet_generator') {
+            <mat-form-field appearance="outline">
+              <mat-label>Packets</mat-label>
+              <input matInput min="1" type="number" [(ngModel)]="packetCount" name="packetCount">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Rate pps</mat-label>
+              <input matInput min="0" type="number" [(ngModel)]="ratePps" name="ratePps">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Protocol</mat-label>
+              <mat-select [(ngModel)]="packetProtocol" name="packetProtocol">
+                <mat-option value="udp">UDP</mat-option>
+                <mat-option value="tcp">TCP</mat-option>
+                <mat-option value="icmp">ICMP</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Payload Bytes</mat-label>
+              <input matInput min="0" type="number" [(ngModel)]="payloadSize" name="payloadSize">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Source IP</mat-label>
+              <input matInput [(ngModel)]="sourceIp" name="sourceIp">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Destination IP</mat-label>
+              <input matInput [(ngModel)]="destinationIp" name="destinationIp">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Source Port</mat-label>
+              <input matInput min="1" max="65535" type="number" [(ngModel)]="sourcePort" name="sourcePort">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Destination Port</mat-label>
+              <input matInput min="1" max="65535" type="number" [(ngModel)]="destinationPort" name="destinationPort">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="throughput-controls__wide">
+              <mat-label>Payload</mat-label>
+              <textarea matInput rows="2" [(ngModel)]="payload" name="payload"></textarea>
+            </mat-form-field>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>Destination IP</mat-label>
+              <input matInput [(ngModel)]="destinationIp" name="iperfDestinationIp">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Port</mat-label>
+              <input matInput min="1" max="65535" type="number" [(ngModel)]="destinationPort" name="iperfDestinationPort">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Duration Seconds</mat-label>
+              <input matInput min="1" type="number" [(ngModel)]="iperfDuration" name="iperfDuration">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Parallel Streams</mat-label>
+              <input matInput min="1" type="number" [(ngModel)]="iperfParallel" name="iperfParallel">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Protocol</mat-label>
+              <mat-select [(ngModel)]="iperfProtocol" name="iperfProtocol">
+                <mat-option value="tcp">TCP</mat-option>
+                <mat-option value="udp">UDP</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Bandwidth</mat-label>
+              <input matInput [(ngModel)]="iperfBandwidth" name="iperfBandwidth">
+            </mat-form-field>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Analysis Wait Seconds</mat-label>
+            <input matInput min="0" max="300" type="number" [(ngModel)]="analysisWaitSeconds" name="analysisWaitSeconds">
+          </mat-form-field>
+        </div>
+      }
 
       <mat-divider></mat-divider>
 
@@ -215,6 +315,7 @@
                 <span>Created: {{ job.created_at }}</span>
                 <span>Started: {{ job.started_at || '-' }}</span>
                 <span>Finished: {{ job.completed_at || '-' }}</span>
+                <span>Mode: {{ job.mode === 'throughput' ? (job.traffic_mode || 'throughput') : 'static' }}</span>
                 <span>Calm-down: {{ job.settle_seconds }}s</span>
                 <span>Repeats: {{ job.repeat_count }}</span>
               </div>
@@ -230,7 +331,7 @@
                     [class.job-item--stopped]="item.status === 'failed' || item.status === 'cancelled'">
                     <span class="job-item__position">{{ item.position }}</span>
                     <span class="job-item__label">{{ item.label }}</span>
-                    <span class="job-item__status">{{ item.status }}</span>
+                    <span class="job-item__status">{{ metricLabel(item) }}</span>
                   </div>
                 }
               </div>

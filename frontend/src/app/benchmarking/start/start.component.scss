@@ -76,9 +76,36 @@
   padding: 0.35rem;
 }
 
+.mode-toggle {
+  width: fit-content;
+  margin: 0 0.35rem;
+}
+
+.mode-toggle mat-icon {
+  margin-right: 0.35rem;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.throughput-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.35rem;
+}
+
+.throughput-controls__wide {
+  grid-column: 1 / -1;
+}
+
 @media (min-width: 48rem) {
   .benchmark-controls {
     grid-template-columns: minmax(0, 2fr) repeat(2, minmax(10rem, 0.5fr));
+  }
+
+  .throughput-controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -392,7 +419,13 @@
 
 @media (min-width: 48rem) {
   .job-meta-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 70rem) {
+  .job-meta-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

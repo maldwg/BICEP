@@ -6,8 +6,8 @@ import { ResultsDataSource } from '../../services/benchmarking/results';
 import { MatIconModule } from '@angular/material/icon';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { BenchmarkingResultsItem } from '../../models/benchmarking';
-import { FormControl, NgModel, ReactiveFormsModule } from '@angular/forms';
+import { BenchmarkingJob, BenchmarkingJobItem, BenchmarkingResultsItem, ThroughputResultItem } from '../../models/benchmarking';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -34,12 +34,18 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   dataSource = new ResultsDataSource(this.benchmarkingService);
   searchControl = new FormControl('');
+  throughputResults: ThroughputResultItem[] = [];
+  filteredThroughputResults: ThroughputResultItem[] = [];
 
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = [
     'select', 'id', 'ids_name', 'dataset_name', 'ensembling_method', 'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
     'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score', 'avg_cpu_usage', 'avg_memory_usage'];
+  throughputDisplayedColumns = [
+    'job_id', 'target_name', 'traffic_mode', 'configuration_name', 'ruleset_name', 'repeat', 'packet_count',
+    'bytes_sent', 'traffic_runtime', 'throughput_pps', 'throughput_mbps', 'started_at', 'completed_at', 'status'
+  ];
 
   selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
   showComparison = false;
@@ -100,7 +106,9 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     this.searchControl.valueChanges.subscribe(value => {
       console.log("Filtering with value:", value);
       this.dataSource.setFilter(value || '');
+      this.applyThroughputFilter(value || '');
     });
+    this.loadThroughputResults();
     document.body.classList.add('no-body-background');
   }
 
@@ -110,9 +118,23 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   applyFilter(value: string) {
     this.dataSource.setFilter(value);
+    this.applyThroughputFilter(value);
   }
   applyFilters(value: string) {
     this.dataSource.setFilter(value);
+    this.applyThroughputFilter(value);
+  }
+
+  loadThroughputResults() {
+    this.benchmarkingService.getBenchmarkingJobs(100).subscribe({
+      next: response => {
+        this.throughputResults = response.content.flatMap(job => this.toThroughputRows(job));
+        this.applyThroughputFilter(this.searchControl.value || '');
+      },
+      error: err => {
+        console.error('Could not load throughput benchmark results.', err);
+      }
+    });
   }
 
   downloadResultsAsCSV() {
@@ -175,6 +197,57 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     });
   }
 
+  downloadThroughputResultsAsCSV() {
+    const hasFilter = Boolean(this.searchControl.value?.trim());
+    const data = hasFilter ? this.filteredThroughputResults : this.throughputResults;
+    if (!data || data.length === 0) {
+      console.warn('No throughput data available to download');
+      return;
+    }
+
+    const headers = [
+      'Job ID', 'Item ID', 'Target', 'Target Type', 'Traffic Mode', 'Configuration', 'Ruleset', 'Repeat',
+      'Packet Count', 'Bytes Sent', 'Runtime Seconds', 'Throughput pps', 'Throughput Mbps',
+      'Started', 'Completed', 'Status'
+    ];
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row => [
+        row.job_id,
+        row.item_id,
+        this.escapeCsvValue(row.target_name),
+        row.target_type,
+        row.traffic_mode,
+        this.escapeCsvValue(row.configuration_name),
+        this.escapeCsvValue(row.ruleset_name),
+        `${row.repeat_index}/${row.repeat_total}`,
+        row.packet_count ?? '',
+        row.bytes_sent ?? '',
+        row.traffic_runtime ?? '',
+        row.throughput_pps ?? '',
+        row.throughput_mbps ?? '',
+        this.escapeCsvValue(row.started_at),
+        this.escapeCsvValue(row.completed_at),
+        row.status
+      ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `throughput_results_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  }
+
   // Helper method to escape CSV values that contain commas, quotes, or newlines
   private escapeCsvValue(value: any): string {
     if (value == null) return '';
@@ -196,6 +269,53 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     }
 
     return formattedValue;
+  }
+
+  private toThroughputRows(job: BenchmarkingJob): ThroughputResultItem[] {
+    if (job.mode !== 'throughput') {
+      return [];
+    }
+
+    return job.items
+      .filter(item => item.traffic_mode || item.dataset_id === 0)
+      .map(item => this.toThroughputRow(job, item));
+  }
+
+  private toThroughputRow(job: BenchmarkingJob, item: BenchmarkingJobItem): ThroughputResultItem {
+    return {
+      job_id: job.id,
+      item_id: item.id,
+      target_name: item.target_name,
+      target_type: item.target_type,
+      traffic_mode: item.traffic_mode || job.traffic_mode || 'packet_generator',
+      status: item.status,
+      configuration_name: item.configuration_name,
+      ruleset_name: item.ruleset_name,
+      repeat_index: item.repeat_index,
+      repeat_total: item.repeat_total,
+      packet_count: item.packet_count ?? job.packet_count,
+      bytes_sent: item.bytes_sent,
+      traffic_runtime: item.traffic_runtime,
+      throughput_pps: item.throughput_pps,
+      throughput_mbps: item.throughput_mbps,
+      started_at: item.started_at,
+      completed_at: item.completed_at,
+    };
+  }
+
+  private applyThroughputFilter(value: string) {
+    const filterValue = value.trim().toLowerCase();
+    if (!filterValue) {
+      this.filteredThroughputResults = [...this.throughputResults];
+      return;
+    }
+
+    this.filteredThroughputResults = this.throughputResults.filter(item =>
+      Object.values(item)
+        .map(v => (v == null ? '' : String(v).toLowerCase()))
+        .join(' ')
+        .includes(filterValue)
+    );
   }
 
 }

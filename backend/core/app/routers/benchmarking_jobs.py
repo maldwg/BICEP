@@ -11,10 +11,13 @@ from app.models.benchmarking import (
     BENCHMARK_JOB_STATUS_CANCELLED,
     BENCHMARK_JOB_STATUS_COMPLETED,
     BENCHMARK_JOB_STATUS_FAILED,
+    BENCHMARK_MODE_STATIC_DATASET,
+    BENCHMARK_MODE_THROUGHPUT,
     BENCHMARK_TARGET_CONTAINER,
     BENCHMARK_TARGET_ENSEMBLE,
     BenchmarkingJob,
     BenchmarkingJobItem,
+    TRAFFIC_MODE_PACKET_GENERATOR,
     add_benchmarking_job,
     get_all_benchmarking_jobs,
     get_benchmarking_job_by_id,
@@ -39,34 +42,56 @@ class BenchmarkTargetSelection(BaseModel):
 
 class BenchmarkJobCreate(BaseModel):
     targets: list[BenchmarkTargetSelection]
-    dataset_ids: list[int]
+    dataset_ids: list[int] = Field(default_factory=list)
     settle_seconds: int = Field(default=5, ge=0, le=300)
     repeat_count: int = Field(default=1, ge=1, le=100)
+    mode: Literal["static_dataset", "throughput"] = BENCHMARK_MODE_STATIC_DATASET
+    traffic_mode: Literal["packet_generator", "iperf"] = TRAFFIC_MODE_PACKET_GENERATOR
+    packet_count: int = Field(default=1000, ge=1, le=1_000_000)
+    rate_pps: float = Field(default=100.0, ge=0, le=1_000_000)
+    payload_size: int = Field(default=64, ge=0, le=65507)
+    protocol: Literal["tcp", "udp", "icmp"] = "udp"
+    source_ip: str | None = None
+    destination_ip: str | None = None
+    source_port: int = Field(default=40000, ge=1, le=65535)
+    destination_port: int = Field(default=50000, ge=1, le=65535)
+    payload: str | None = Field(default=None, max_length=65507)
+    iperf_duration: int = Field(default=10, ge=1, le=3600)
+    iperf_parallel: int = Field(default=1, ge=1, le=128)
+    iperf_protocol: Literal["tcp", "udp"] = "tcp"
+    iperf_bandwidth: str | None = Field(default=None, max_length=32)
+    analysis_wait_seconds: int = Field(default=5, ge=0, le=300)
 
 
 @router.post("/jobs")
 async def create_benchmarking_job(job_data: BenchmarkJobCreate, db=Depends(get_db)):
     if not job_data.targets:
         return JSONResponse({"error": "Select at least one IDS or ensemble."}, status_code=400)
-    if not job_data.dataset_ids:
+    if job_data.mode == BENCHMARK_MODE_STATIC_DATASET and not job_data.dataset_ids:
         return JSONResponse({"error": "Select at least one dataset."}, status_code=400)
 
     try:
         datasets = []
-        for dataset_id in _unique(job_data.dataset_ids):
-            dataset = await get_dataset_by_id(db, dataset_id)
-            if dataset is None:
-                return JSONResponse(
-                    {"error": f"Dataset {dataset_id} was not found."}, status_code=404
-                )
-            datasets.append(dataset)
+        if job_data.mode == BENCHMARK_MODE_STATIC_DATASET:
+            for dataset_id in _unique(job_data.dataset_ids):
+                dataset = await get_dataset_by_id(db, dataset_id)
+                if dataset is None:
+                    return JSONResponse(
+                        {"error": f"Dataset {dataset_id} was not found."}, status_code=404
+                    )
+                datasets.append(dataset)
 
         items: list[BenchmarkingJobItem] = []
         position = 1
         for target in job_data.targets:
-            created_items = await _create_items_for_target(
-                db, target, datasets, position, job_data.repeat_count
-            )
+            if job_data.mode == BENCHMARK_MODE_THROUGHPUT:
+                created_items = await _create_throughput_items_for_target(
+                    db, target, position, job_data.repeat_count, job_data.traffic_mode
+                )
+            else:
+                created_items = await _create_items_for_target(
+                    db, target, datasets, position, job_data.repeat_count
+                )
             items.extend(created_items)
             position += len(created_items)
 
@@ -79,6 +104,22 @@ async def create_benchmarking_job(job_data: BenchmarkJobCreate, db=Depends(get_d
         job = BenchmarkingJob(
             settle_seconds=job_data.settle_seconds,
             repeat_count=job_data.repeat_count,
+            mode=job_data.mode,
+            traffic_mode=job_data.traffic_mode if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            packet_count=job_data.packet_count if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            rate_pps=job_data.rate_pps if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            payload_size=job_data.payload_size if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            protocol=job_data.protocol if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            source_ip=job_data.source_ip if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            destination_ip=job_data.destination_ip if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            source_port=job_data.source_port if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            destination_port=job_data.destination_port if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            payload=job_data.payload if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            iperf_duration=job_data.iperf_duration if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            iperf_parallel=job_data.iperf_parallel if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            iperf_protocol=job_data.iperf_protocol if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            iperf_bandwidth=job_data.iperf_bandwidth if job_data.mode == BENCHMARK_MODE_THROUGHPUT else None,
+            analysis_wait_seconds=job_data.analysis_wait_seconds,
         )
         job = await add_benchmarking_job(db, job, items)
         serialized_job = serialize_benchmarking_job(job)
@@ -139,6 +180,97 @@ async def _create_items_for_target(
         return await _create_ensemble_items(
             db, target, datasets, start_position, repeat_count
         )
+    raise ValueError(f"Unsupported benchmark target type: {target.target_type}")
+
+
+async def _create_throughput_items_for_target(
+    db,
+    target,
+    start_position: int,
+    repeat_count: int,
+    traffic_mode: str,
+):
+    target_type = target.target_type.lower()
+    if target_type == BENCHMARK_TARGET_CONTAINER:
+        container = await get_ids_system_by_id(db, target.target_id)
+        if container is None:
+            raise ValueError(f"Container {target.target_id} was not found.")
+        if container.ensemble_ids:
+            raise ValueError(
+                f"Container {container.name} is part of an ensemble. Select the ensemble instead."
+            )
+
+        configuration_ids = _unique(target.configuration_ids) or [container.configuration_id]
+        ruleset_ids = _unique(target.ruleset_ids) or (
+            [container.ruleset_id] if container.ruleset_id else [None]
+        )
+
+        configuration_names = {}
+        for configuration_id in configuration_ids:
+            configuration = await get_config_by_id(db, configuration_id)
+            if configuration is None:
+                raise ValueError(f"Configuration {configuration_id} was not found.")
+            configuration_names[configuration_id] = configuration.name
+
+        ruleset_names = {None: None}
+        for ruleset_id in [ruleset_id for ruleset_id in ruleset_ids if ruleset_id is not None]:
+            ruleset = await get_config_by_id(db, ruleset_id)
+            if ruleset is None:
+                raise ValueError(f"Ruleset {ruleset_id} was not found.")
+            ruleset_names[ruleset_id] = ruleset.name
+
+        items = []
+        position = start_position
+        for configuration_id in configuration_ids:
+            for ruleset_id in ruleset_ids:
+                for repeat_index in range(1, repeat_count + 1):
+                    items.append(
+                        BenchmarkingJobItem(
+                            position=position,
+                            target_type=BENCHMARK_TARGET_CONTAINER,
+                            target_id=container.id,
+                            target_name=container.name,
+                            dataset_id=0,
+                            dataset_name="Throughput traffic",
+                            configuration_id=configuration_id,
+                            configuration_name=configuration_names.get(configuration_id),
+                            ruleset_id=ruleset_id,
+                            ruleset_name=ruleset_names.get(ruleset_id),
+                            repeat_index=repeat_index,
+                            repeat_total=repeat_count,
+                            traffic_mode=traffic_mode,
+                        )
+                    )
+                    position += 1
+        return items
+
+    if target_type == BENCHMARK_TARGET_ENSEMBLE:
+        ensemble = await get_ensemble_by_id(db, target.target_id)
+        if ensemble is None:
+            raise ValueError(f"Ensemble {target.target_id} was not found.")
+        containers = await ensemble.get_assigned_containers(db)
+        if not containers:
+            raise ValueError(f"Ensemble {ensemble.name} has no assigned IDS containers.")
+
+        items = []
+        position = start_position
+        for repeat_index in range(1, repeat_count + 1):
+            items.append(
+                BenchmarkingJobItem(
+                    position=position,
+                    target_type=BENCHMARK_TARGET_ENSEMBLE,
+                    target_id=ensemble.id,
+                    target_name=ensemble.name,
+                    dataset_id=0,
+                    dataset_name="Throughput traffic",
+                    repeat_index=repeat_index,
+                    repeat_total=repeat_count,
+                    traffic_mode=traffic_mode,
+                )
+            )
+            position += 1
+        return items
+
     raise ValueError(f"Unsupported benchmark target type: {target.target_type}")
 
 

@@ -1,11 +1,10 @@
 from datetime import datetime
 from app.bicep_utils.models.ids_base import Alert
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text, text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import Base
 from sqlalchemy.future import select
 from sqlalchemy.orm import relationship, selectinload
-from app.database import engine
 
 
 BENCHMARK_JOB_STATUS_QUEUED = "queued"
@@ -22,6 +21,12 @@ BENCHMARK_ITEM_STATUS_FAILED = "failed"
 
 BENCHMARK_TARGET_CONTAINER = "container"
 BENCHMARK_TARGET_ENSEMBLE = "ensemble"
+
+BENCHMARK_MODE_STATIC_DATASET = "static_dataset"
+BENCHMARK_MODE_THROUGHPUT = "throughput"
+
+TRAFFIC_MODE_PACKET_GENERATOR = "packet_generator"
+TRAFFIC_MODE_IPERF = "iperf"
 
 
 def get_timestamp() -> str:
@@ -108,6 +113,22 @@ class BenchmarkingJob(Base):
     completed_runs = Column(Integer, nullable=False, default=0)
     settle_seconds = Column(Integer, nullable=False, default=5)
     repeat_count = Column(Integer, nullable=False, default=1)
+    mode = Column(String(32), nullable=False, default=BENCHMARK_MODE_STATIC_DATASET)
+    traffic_mode = Column(String(32))
+    packet_count = Column(Integer)
+    rate_pps = Column(Float)
+    payload_size = Column(Integer)
+    protocol = Column(String(16))
+    source_ip = Column(String(64))
+    destination_ip = Column(String(64))
+    source_port = Column(Integer)
+    destination_port = Column(Integer)
+    payload = Column(Text)
+    iperf_duration = Column(Integer)
+    iperf_parallel = Column(Integer)
+    iperf_protocol = Column(String(16))
+    iperf_bandwidth = Column(String(32))
+    analysis_wait_seconds = Column(Integer, nullable=False, default=5)
     stop_requested = Column(Boolean, nullable=False, default=False)
     created_at = Column(String(64), nullable=False, default=get_timestamp)
     started_at = Column(String(64))
@@ -141,6 +162,12 @@ class BenchmarkingJobItem(Base):
     ruleset_name = Column(String(256))
     repeat_index = Column(Integer, nullable=False, default=1)
     repeat_total = Column(Integer, nullable=False, default=1)
+    traffic_mode = Column(String(32))
+    packet_count = Column(Integer)
+    bytes_sent = Column(Integer)
+    traffic_runtime = Column(Float)
+    throughput_pps = Column(Float)
+    throughput_mbps = Column(Float)
     started_at = Column(String(64))
     completed_at = Column(String(64))
     error = Column(Text)
@@ -165,6 +192,12 @@ def serialize_benchmarking_job_item(item: BenchmarkingJobItem) -> dict:
         "ruleset_name": item.ruleset_name,
         "repeat_index": item.repeat_index,
         "repeat_total": item.repeat_total,
+        "traffic_mode": item.traffic_mode,
+        "packet_count": item.packet_count,
+        "bytes_sent": item.bytes_sent,
+        "traffic_runtime": item.traffic_runtime,
+        "throughput_pps": item.throughput_pps,
+        "throughput_mbps": item.throughput_mbps,
         "started_at": item.started_at,
         "completed_at": item.completed_at,
         "error": item.error,
@@ -179,6 +212,21 @@ def serialize_benchmarking_job(job: BenchmarkingJob) -> dict:
         "completed_runs": job.completed_runs,
         "settle_seconds": job.settle_seconds,
         "repeat_count": job.repeat_count,
+        "mode": job.mode,
+        "traffic_mode": job.traffic_mode,
+        "packet_count": job.packet_count,
+        "rate_pps": job.rate_pps,
+        "payload_size": job.payload_size,
+        "protocol": job.protocol,
+        "source_ip": job.source_ip,
+        "destination_ip": job.destination_ip,
+        "source_port": job.source_port,
+        "destination_port": job.destination_port,
+        "iperf_duration": job.iperf_duration,
+        "iperf_parallel": job.iperf_parallel,
+        "iperf_protocol": job.iperf_protocol,
+        "iperf_bandwidth": job.iperf_bandwidth,
+        "analysis_wait_seconds": job.analysis_wait_seconds,
         "stop_requested": job.stop_requested,
         "created_at": job.created_at,
         "started_at": job.started_at,
@@ -267,30 +315,3 @@ async def refresh_benchmarking_job_progress(db: AsyncSession, job: BenchmarkingJ
     )
     await db.commit()
     await db.refresh(job)
-
-
-async def ensure_benchmarking_queue_tables():
-    if engine is None:
-        return
-
-    async with engine.begin() as connection:
-        await connection.run_sync(BenchmarkingJob.__table__.create, checkfirst=True)
-        await connection.run_sync(BenchmarkingJobItem.__table__.create, checkfirst=True)
-        await connection.execute(
-            text(
-                "ALTER TABLE benchmarking_job "
-                "ADD COLUMN IF NOT EXISTS repeat_count INT NOT NULL DEFAULT 1"
-            )
-        )
-        await connection.execute(
-            text(
-                "ALTER TABLE benchmarking_job_item "
-                "ADD COLUMN IF NOT EXISTS repeat_index INT NOT NULL DEFAULT 1"
-            )
-        )
-        await connection.execute(
-            text(
-                "ALTER TABLE benchmarking_job_item "
-                "ADD COLUMN IF NOT EXISTS repeat_total INT NOT NULL DEFAULT 1"
-            )
-        )
