@@ -25,7 +25,7 @@ BICEP presents an evaluation platform to benchmark arbitrary IDS solutions like 
 
 Currently Suricata, Snort, and Slips modules are featured IDS.
 
-We presented this framework at the 9th CSNet. If you are interested, take a look at our paper [here](https://doi.org/10.1109/CSNet64211.2024.10851475)!
+We presented this framework at the 9th CSNet. If you are interested, take a look at our paper [here](https://doi.org/10.1109/CSNet67572.2025.11288183)!
 
 ## Supported Systems 
 
