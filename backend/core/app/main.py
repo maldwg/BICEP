@@ -12,8 +12,13 @@ from app.routers import (
     monitoring,
 )
 from app.database import SessionLocal, get_db
+from app.database_migrations import apply_feature_schema_migrations
 from contextlib import asynccontextmanager
-from app.models.docker_host_system import get_all_hosts
+from app.models.docker_host_system import (
+    cleanup_metric_services_on_shutdown,
+    get_all_hosts,
+)
+from app.logger import LOGGER
 from app.benchmarking_queue import start_benchmarking_worker, stop_benchmarking_worker
 from app.models.benchmarking import (
     mark_interrupted_benchmarking_jobs_as_queued,
@@ -50,6 +55,7 @@ async def update_availability_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if SessionLocal is not None:
+        await apply_feature_schema_migrations()
         db_gen = get_db()
         db = await anext(db_gen)
         try:
@@ -67,6 +73,14 @@ async def lifespan(app: FastAPI):
             await availability_task
         except asyncio.CancelledError:
             pass
+        if SessionLocal is not None:
+            async with SessionLocal() as db:
+                try:
+                    await cleanup_metric_services_on_shutdown(db)
+                except Exception as exc:
+                    LOGGER.error(
+                        "Metric service cleanup failed during core shutdown: %s", exc
+                    )
 
 app = FastAPI(lifespan=lifespan)
 

@@ -17,6 +17,15 @@ from app.prometheus import (
 import os
 
 
+def test_parse_timestamp_accepts_static_and_job_iso_formats():
+    from app.prometheus import _parse_timestamp
+
+    static_timestamp = _parse_timestamp("01-01-2026 12:30:45.000000")
+    iso_timestamp = _parse_timestamp("2026-01-01T12:30:45")
+
+    assert static_timestamp == iso_timestamp
+
+
 @pytest.mark.asyncio
 async def test_query_average_cpu_usage_success():
     with patch("httpx.AsyncClient") as mock_client_cls:

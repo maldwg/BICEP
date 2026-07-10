@@ -12,6 +12,7 @@ from app.models.docker_host_system import (
     get_host_by_id,
     get_all_hosts,
     add_host_system,
+    cleanup_metric_services_on_shutdown,
     remove_host,
 )
 from app.utils import DOCKER_HOST_STATUS, METRIC_SERVICE_STATUS
@@ -795,3 +796,26 @@ async def test_remove_host_raises_when_metric_service_cleanup_fails(
             await remove_host(mock_db, remote_host.id)
 
     mock_db.delete.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_shutdown_cleanup_attempts_every_host_and_tolerates_failure(
+    core_host: DockerHostSystem, remote_host: DockerHostSystem
+):
+    mock_db = AsyncMock()
+    core_host.remove_metric_service_container = AsyncMock()
+    remote_host.remove_metric_service_container = AsyncMock(
+        side_effect=RuntimeError("remote docker unavailable")
+    )
+
+    with patch(
+        "app.models.docker_host_system.get_all_hosts",
+        new=AsyncMock(return_value=[core_host, remote_host]),
+    ), patch(
+        "app.models.docker_host_system.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=None),
+    ):
+        await cleanup_metric_services_on_shutdown(mock_db)
+
+    core_host.remove_metric_service_container.assert_awaited_once()
+    remote_host.remove_metric_service_container.assert_awaited_once()

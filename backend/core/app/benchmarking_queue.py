@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from fastapi.responses import Response
 
 from app.database import SessionLocal
@@ -28,6 +29,14 @@ from app.throughput import ThroughputProfile, run_throughput_traffic
 from app.models.configuration import get_config_by_id
 from app.models.ensemble import get_ensemble_by_id, update_ensemble_status
 from app.models.ids_system import get_ids_system_by_id, update_ids_status
+from app.prometheus import (
+    RESOURCE_QUERY_MODE_EXACT,
+    RESOURCE_QUERY_MODE_PREFIX,
+    build_resource_query_spec_for_ids_system,
+    query_average_cpu_usage,
+    query_average_memory_usage,
+    serialize_resource_query_targets,
+)
 from app.utils import STATUS
 from app.validation.models import NetworkAnalysisData, StaticAnalysisData, stop_analysisData
 
@@ -216,13 +225,40 @@ async def _execute_throughput_item(job_id: int, item_id: int) -> bool:
 
         profile = _throughput_profile_from_job(job)
         fallback_destination = await _fallback_destination_for_item(db, item)
+        resource_query_mode, resource_query_targets = (
+            await _resource_query_spec_for_item(db, item)
+        )
 
+    resource_start_time = _resource_timestamp()
+    avg_cpu = None
+    avg_memory = None
     try:
         result = await run_throughput_traffic(profile, fallback_destination)
         if job.analysis_wait_seconds > 0:
             await _sleep_until_next_run_or_stop(job_id, job.analysis_wait_seconds)
     finally:
-        await _stop_active_item_if_needed(job_id, item_id)
+        resource_stop_time = _resource_timestamp()
+        try:
+            avg_cpu, avg_memory = await asyncio.gather(
+                query_average_cpu_usage(
+                    None,
+                    resource_start_time,
+                    resource_stop_time,
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                ),
+                query_average_memory_usage(
+                    None,
+                    resource_start_time,
+                    resource_stop_time,
+                    match_mode=resource_query_mode,
+                    targets=resource_query_targets,
+                ),
+            )
+        except Exception as exc:
+            LOGGER.warning("Could not query throughput resource usage: %s", exc)
+        finally:
+            await _stop_active_item_if_needed(job_id, item_id)
 
     async with SessionLocal() as db:
         job = await get_benchmarking_job_by_id(db, job_id)
@@ -230,6 +266,12 @@ async def _execute_throughput_item(job_id: int, item_id: int) -> bool:
             await _mark_item_cancelled(item_id, "Benchmark job was stopped while this run was active.")
             return False
 
+    result["avg_cpu_usage"] = avg_cpu
+    result["avg_memory_usage"] = avg_memory
+    result["resource_query_mode"] = resource_query_mode
+    result["resource_query_targets"] = serialize_resource_query_targets(
+        resource_query_targets
+    )
     await _mark_throughput_item_completed(item_id, result)
     return True
 
@@ -411,6 +453,10 @@ async def _mark_throughput_item_completed(item_id: int, result: dict):
         item.traffic_runtime = result.get("traffic_runtime")
         item.throughput_pps = result.get("throughput_pps")
         item.throughput_mbps = result.get("throughput_mbps")
+        item.avg_cpu_usage = result.get("avg_cpu_usage")
+        item.avg_memory_usage = result.get("avg_memory_usage")
+        item.resource_query_mode = result.get("resource_query_mode")
+        item.resource_query_targets = result.get("resource_query_targets")
         await db.commit()
 
 
@@ -528,3 +574,42 @@ def _host_for_container(container) -> str:
     if host == "localhost" or "Core" in container.host_system.name:
         return "127.0.0.1"
     return host
+
+
+def _resource_timestamp() -> str:
+    return datetime.now().strftime("%d-%m-%Y %H:%M:%S.%f")
+
+
+async def _resource_query_spec_for_item(
+    db, item: BenchmarkingJobItem
+) -> tuple[str | None, list[str]]:
+    if item.target_type == BENCHMARK_TARGET_CONTAINER:
+        container = await get_ids_system_by_id(db, item.target_id)
+        if container is None:
+            return None, []
+        return build_resource_query_spec_for_ids_system(container)
+
+    ensemble = await get_ensemble_by_id(db, item.target_id)
+    if ensemble is None:
+        return None, []
+
+    containers = await ensemble.get_assigned_containers(db)
+    modes_and_targets = [
+        build_resource_query_spec_for_ids_system(container)
+        for container in containers
+    ]
+    targets = sorted(
+        {
+            target
+            for _, query_targets in modes_and_targets
+            for target in query_targets
+        }
+    )
+    if not targets:
+        return None, []
+    mode = (
+        RESOURCE_QUERY_MODE_PREFIX
+        if any(query_mode == RESOURCE_QUERY_MODE_PREFIX for query_mode, _ in modes_and_targets)
+        else RESOURCE_QUERY_MODE_EXACT
+    )
+    return mode, targets

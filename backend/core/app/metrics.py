@@ -59,4 +59,10 @@ async def calculate_evaluation_metrics(db, dataset_id, alerts):
         "F_SCORE": calculate_f_score(),
         "UNASSIGNED_ALERTS_RATIO": calculate_unassigned_requests_ratio()
     }
+    if getattr(dataset, "evaluation_mode", "binary") == "multiclass":
+        class_detection = await dataset.dataset_type.get_class_detection_statistics(
+            dataset, alerts
+        )
+        metrics["PER_CLASS"] = class_detection["classes"]
+        metrics["UNASSIGNED_ALERTS"] = class_detection["unassigned_alerts"]
     return metrics

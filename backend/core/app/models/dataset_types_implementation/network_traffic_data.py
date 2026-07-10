@@ -12,6 +12,7 @@ from app.utils import HourPrecision, MinutePrecision, SecondPrecision, Milisecon
 from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
 import random
+from collections import Counter
 
 def network_traffic_data_calculate_precision(labels_file_path):
 
@@ -20,7 +21,9 @@ def network_traffic_data_calculate_precision(labels_file_path):
             reader = csv.reader(input)
             header = next(reader)
             all_rows = list(reader)
-        return header, random.sample(all_rows, 5)
+        if not all_rows:
+            raise ValueError("The labels CSV does not contain any data rows.")
+        return header, random.sample(all_rows, min(5, len(all_rows)))
 
     def parse_timestamp(timestamp):
         return parser.parse(timestamp, dayfirst=False).replace(tzinfo=None)
@@ -65,6 +68,98 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
             else:
                 malicious_count += 1
     return benign_count, malicious_count
+
+
+def network_traffic_data_get_class_counts(labels_file_path) -> dict[str, int]:
+    with open(labels_file_path, "r", encoding="utf-8", newline="") as input_csv:
+        reader = csv.reader(input_csv)
+        header = next(reader)
+        label_col_id, _, _, _, _, _ = _get_column_ids(header)
+        counts = Counter()
+        for row in reader:
+            label = str(row[label_col_id]).strip()
+            if not label:
+                raise ValueError("Dataset labels must not be empty.")
+            if len(label) > 256:
+                raise ValueError("Dataset labels must not exceed 256 characters.")
+            counts[label] += 1
+    if not counts:
+        raise ValueError("The labels CSV does not contain any data rows.")
+    return dict(sorted(counts.items(), key=lambda item: item[0].casefold()))
+
+
+def network_traffic_data_get_class_detection_statistics(
+    dataset, alerts: list[Alert]
+) -> dict:
+    """Return alert coverage for each ground-truth class in a static dataset."""
+    precision = get_precision_by_name(dataset.timestamp_precision)
+    alerts_dict = {}
+    for alert in alerts:
+        key = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert, precision)
+        alerts_dict[key] = False
+
+    class_stats: dict[str, dict[str, int | float | str]] = {}
+    with open(dataset.labels_file_path, "r", encoding="utf-8", newline="") as csv_file:
+        reader = csv.reader(csv_file)
+        header = next(reader)
+        (
+            label_col_id,
+            timestamp_col_id,
+            src_ip_col_id,
+            src_port_col_id,
+            dst_ip_col_id,
+            dst_port_col_id,
+        ) = _get_column_ids(header)
+
+        for row in reader:
+            label = str(row[label_col_id]).strip()
+            if not label:
+                raise ValueError("Dataset labels must not be empty.")
+            if len(label) > 256:
+                raise ValueError("Dataset labels must not exceed 256 characters.")
+            row_stats = class_stats.setdefault(
+                label,
+                {"class_label": label, "support": 0, "detected": 0, "missed": 0},
+            )
+            row_stats["support"] += 1
+
+            base_key = (
+                normalize_and_parse_alert_timestamp(row[timestamp_col_id], precision),
+                row[src_ip_col_id].strip(),
+                row[src_port_col_id].strip(),
+                row[dst_ip_col_id].strip(),
+                row[dst_port_col_id].strip(),
+            )
+            reverse_key = _get_reverse_key(base_key)
+            candidate_keys = (
+                [base_key]
+                + _get_keys_with_tolerance(base_key, precision)
+                + [reverse_key]
+                + _get_keys_with_tolerance(reverse_key, precision)
+            )
+            matching_key = next(
+                (candidate for candidate in candidate_keys if candidate in alerts_dict),
+                None,
+            )
+            if matching_key is None:
+                row_stats["missed"] += 1
+            else:
+                alerts_dict[matching_key] = True
+                row_stats["detected"] += 1
+
+    for row_stats in class_stats.values():
+        support = int(row_stats["support"])
+        row_stats["detection_rate"] = round(
+            int(row_stats["detected"]) / support if support else 0, 4
+        )
+
+    return {
+        "classes": sorted(
+            class_stats.values(), key=lambda item: str(item["class_label"]).casefold()
+        ),
+        "unassigned_alerts": _count_value_occurences_in_dict(alerts_dict, False),
+        "total_alerts": len(alerts_dict),
+    }
 
 
 def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alerts: list[Alert]) -> tuple[int, int, int, int, int, int]:
@@ -291,7 +386,5 @@ def _get_keys_with_tolerance(key, precision: Precision):
         new_key[0] = ts.replace(tzinfo=None).strftime(precision.timestamp_format)
         keys.append(tuple(new_key))
     return keys
-
-
 
 

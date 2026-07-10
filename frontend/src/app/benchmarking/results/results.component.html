@@ -45,6 +45,10 @@
         <mat-icon>speed</mat-icon>
         Throughput CSV
       </button>
+      <button class="download-button" (click)="downloadMulticlassResultsAsCSV()" [disabled]="multiclassResults.length === 0" matFab extended>
+        <mat-icon>category</mat-icon>
+        Per-class CSV
+      </button>
       <button class="compare-button" (click)="toggleComparisonView()" [disabled]="selection.selected.length < 2" matFab
         extended color="accent">
         <mat-icon>bar_chart</mat-icon>
@@ -229,6 +233,16 @@
           <td mat-cell *matCellDef="let row">{{ row.throughput_mbps != null ? (row.throughput_mbps | number:'1.2-2') : '-' }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="avg_cpu_usage">
+          <th mat-header-cell *matHeaderCellDef>Avg CPU</th>
+          <td mat-cell *matCellDef="let row">{{ formatCpuUsage(row.avg_cpu_usage) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="avg_memory_usage">
+          <th mat-header-cell *matHeaderCellDef>Avg RAM</th>
+          <td mat-cell *matCellDef="let row">{{ row.avg_memory_usage != null ? (row.avg_memory_usage | number:'1.2-2') + ' MB' : '-' }}</td>
+        </ng-container>
+
         <ng-container matColumnDef="started_at">
           <th mat-header-cell *matHeaderCellDef>Started</th>
           <td mat-cell *matCellDef="let row">{{ row.started_at || '-' }}</td>
@@ -261,6 +275,34 @@
         <span>No throughput results match the current filter.</span>
       </div>
     </ng-template>
+  </section>
+
+  <section class="throughput-results-panel" *ngIf="multiclassResults.length > 0">
+    <div class="throughput-results-panel__header">
+      <div>
+        <span class="throughput-results-panel__eyebrow">Multiclass</span>
+        <h2>Per-class Detection Coverage</h2>
+      </div>
+    </div>
+    <article class="multiclass-result" *ngFor="let result of multiclassResults">
+      <h3>{{ result.ids_name }} · {{ result.dataset_name }} · Result #{{ result.id }}</h3>
+      <div class="results-table-wrap">
+        <table class="class-results-table">
+          <thead>
+            <tr><th>Class</th><th>Support</th><th>Detected</th><th>Missed</th><th>Detection rate</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let classResult of result.class_results">
+              <td>{{ classResult.class_label }}</td>
+              <td>{{ classResult.support }}</td>
+              <td>{{ classResult.detected }}</td>
+              <td>{{ classResult.missed }}</td>
+              <td>{{ classResult.detection_rate | percent:'1.0-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
   </section>
 </section>
 

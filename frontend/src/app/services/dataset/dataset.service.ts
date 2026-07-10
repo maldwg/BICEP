@@ -44,6 +44,7 @@ export class DatasetService {
     formData.append('data_file', dataset.data_file, dataset.data_file.name)
     formData.append('labels_file', dataset.labels_file, dataset.labels_file.name)
     formData.append('dataset_type_id', dataset.dataset_type_id)
+    formData.append('evaluation_mode', dataset.evaluation_mode || 'binary')
 
     return this.http.post(environment.backendUrl+path, formData, {
       reportProgress: true,

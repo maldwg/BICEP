@@ -88,7 +88,11 @@ def _normalize_prometheus_url() -> str | None:
 
 
 def _parse_timestamp(timestamp: str) -> float:
-    return datetime.strptime(timestamp, "%d-%m-%Y %H:%M:%S.%f").timestamp()
+    try:
+        parsed = datetime.strptime(timestamp, "%d-%m-%Y %H:%M:%S.%f")
+    except ValueError:
+        parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    return parsed.timestamp()
 
 
 def _resolve_query_targets(

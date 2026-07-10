@@ -66,7 +66,7 @@
             <mat-label>Datasets</mat-label>
             <mat-select required multiple [(ngModel)]="selectedDatasetIds" (ngModelChange)="refreshSelectedRunCount()" name="datasets">
               @for (dataset of datasets; track dataset.id) {
-                <mat-option [value]="dataset.id">{{ dataset.name }}</mat-option>
+                <mat-option [value]="dataset.id">{{ dataset.name }} · {{ dataset.evaluation_mode || 'binary' }}</mat-option>
               }
             </mat-select>
           </mat-form-field>

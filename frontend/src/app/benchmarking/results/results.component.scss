@@ -210,6 +210,36 @@
   color: var(--app-accent-strong);
 }
 
+.multiclass-result {
+  padding: 1rem;
+  border: 0.0625rem solid rgba(128, 71, 76, 0.14);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.multiclass-result h3 {
+  margin: 0 0 0.75rem;
+  color: var(--app-heading);
+}
+
+.class-results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.class-results-table th,
+.class-results-table td {
+  padding: 0.65rem 0.8rem;
+  border-bottom: 0.0625rem solid rgba(128, 71, 76, 0.12);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.class-results-table th {
+  color: #fffdfc;
+  background: rgba(128, 71, 76, 0.9);
+}
+
 ::ng-deep .mdc-text-field--outlined {
   background-color: white !important;
 }

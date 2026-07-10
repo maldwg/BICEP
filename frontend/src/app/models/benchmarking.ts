@@ -17,6 +17,16 @@ export interface BenchmarkingResultsItem {
   fdr: number,
   avg_cpu_usage?: number,
   avg_memory_usage?: number
+  evaluation_mode?: 'binary' | 'multiclass',
+  class_results?: BenchmarkingClassResult[]
+}
+
+export interface BenchmarkingClassResult {
+  class_label: string,
+  support: number,
+  detected: number,
+  missed: number,
+  detection_rate: number
 }
 
 export interface BenchmarkTargetSelection {
@@ -71,6 +81,8 @@ export interface BenchmarkingJobItem {
   traffic_runtime?: number,
   throughput_pps?: number,
   throughput_mbps?: number,
+  avg_cpu_usage?: number,
+  avg_memory_usage?: number,
   started_at?: string,
   completed_at?: string,
   error?: string
@@ -130,6 +142,8 @@ export interface ThroughputResultItem {
   traffic_runtime?: number,
   throughput_pps?: number,
   throughput_mbps?: number,
+  avg_cpu_usage?: number,
+  avg_memory_usage?: number,
   started_at?: string,
   completed_at?: string
 }

@@ -701,6 +701,51 @@ async def get_all_hosts(db: AsyncSession):
     return result.scalars().all()
 
 
+async def cleanup_metric_services_on_shutdown(db: AsyncSession) -> None:
+    """Best-effort cleanup of metric-service containers managed by this core."""
+    deployment_tasks = list(_metric_service_deployment_tasks.values())
+    for task in deployment_tasks:
+        if not task.done():
+            task.cancel()
+    if deployment_tasks:
+        await asyncio.gather(*deployment_tasks, return_exceptions=True)
+    _metric_service_deployment_tasks.clear()
+
+    hosts = await get_all_hosts(db)
+    cleanup_results = await asyncio.gather(
+        *(host.remove_metric_service_container() for host in hosts),
+        return_exceptions=True,
+    )
+    for host, cleanup_result in zip(hosts, cleanup_results):
+        if isinstance(cleanup_result, BaseException):
+            LOGGER.error(
+                "Failed to remove metric service container from host %s during "
+                "core shutdown: %s",
+                host.name,
+                cleanup_result,
+            )
+            continue
+
+        try:
+            metric_service = await get_metric_service_by_host_id(db, host.id)
+            if metric_service is not None:
+                await update_metric_service(
+                    db,
+                    metric_service,
+                    status=METRIC_SERVICE_STATUS.UNAVAILABLE.value,
+                    status_message="Metric service removed during core shutdown.",
+                    clear_registration=True,
+                )
+        except Exception as exc:
+            LOGGER.error(
+                "Metric-service database state could not be updated for host %s "
+                "during core shutdown: %s",
+                host.name,
+                exc,
+            )
+        host._clear_metric_service_unhealthy_tracker()
+
+
 async def add_host_system(db: AsyncSession, host: DockerHostSystem):
     db.add(host)
     await db.commit()

@@ -246,6 +246,9 @@
                     <strong>Dataset Type:</strong> <span>{{ getDatasetTypeName(dataset.dataset_type_id) }}</span>
                   </div>
                   <div class="info-row">
+                    <strong>Evaluation Mode:</strong> <span>{{ dataset.evaluation_mode || 'binary' }}</span>
+                  </div>
+                  <div class="info-row">
                     <strong>Timestamp Precision:</strong> <span>{{ dataset.timestamp_precision }}</span>
                   </div>
                 </mat-card-content>

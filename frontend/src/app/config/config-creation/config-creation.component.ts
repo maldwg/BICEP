@@ -57,6 +57,7 @@ export class ConfigCreationComponent implements OnInit{
     dataFile: new FormControl(),
     labelsFile: new FormControl(),
     datasetTypeId: new FormControl(""),
+    evaluationMode: new FormControl<'binary' | 'multiclass'>('binary'),
   });
 
   fileNames: string[] = [];
@@ -93,6 +94,7 @@ export class ConfigCreationComponent implements OnInit{
           labels_file: this.configForm.value.labelsFile!,
           data_file: this.configForm.value.dataFile!,
           dataset_type_id: String(this.configForm.value.datasetTypeId),
+          evaluation_mode: this.configForm.value.evaluationMode || 'binary',
 
         };
         this.datasetService.addDataset(newDataset)

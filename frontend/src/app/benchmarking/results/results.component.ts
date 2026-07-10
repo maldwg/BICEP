@@ -44,7 +44,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score', 'avg_cpu_usage', 'avg_memory_usage'];
   throughputDisplayedColumns = [
     'job_id', 'target_name', 'traffic_mode', 'configuration_name', 'ruleset_name', 'repeat', 'packet_count',
-    'bytes_sent', 'traffic_runtime', 'throughput_pps', 'throughput_mbps', 'started_at', 'completed_at', 'status'
+    'bytes_sent', 'traffic_runtime', 'throughput_pps', 'throughput_mbps', 'avg_cpu_usage', 'avg_memory_usage',
+    'started_at', 'completed_at', 'status'
   ];
 
   selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
@@ -149,7 +150,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       const headers = [
         'ID', 'IDS Name', 'Dataset', 'Ensemble Method', 'Configuration', 'Ruleset', 'Start Time', 'Stop Time',
         'Runtime', 'Detection Rate', 'FPR', 'FNR', 'FDR', 'Accuracy', 'Precision', 'F1 Score',
-        'Avg CPU (cores)', 'Avg RAM (MB)'
+        'Avg CPU (cores)', 'Avg RAM (MB)', 'Evaluation Mode'
       ];
 
       // Convert data to CSV rows
@@ -173,7 +174,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
           row.prec,
           row.f1_score,
           row.avg_cpu_usage ?? '',
-          row.avg_memory_usage ?? ''
+          row.avg_memory_usage ?? '',
+          row.evaluation_mode || 'binary'
         ].join(','))
       ];
 
@@ -208,7 +210,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     const headers = [
       'Job ID', 'Item ID', 'Target', 'Target Type', 'Traffic Mode', 'Configuration', 'Ruleset', 'Repeat',
       'Packet Count', 'Bytes Sent', 'Runtime Seconds', 'Throughput pps', 'Throughput Mbps',
-      'Started', 'Completed', 'Status'
+      'Avg CPU (cores)', 'Avg RAM (MB)', 'Started', 'Completed', 'Status'
     ];
     const csvRows = [
       headers.join(','),
@@ -226,6 +228,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
         row.traffic_runtime ?? '',
         row.throughput_pps ?? '',
         row.throughput_mbps ?? '',
+        row.avg_cpu_usage ?? '',
+        row.avg_memory_usage ?? '',
         this.escapeCsvValue(row.started_at),
         this.escapeCsvValue(row.completed_at),
         row.status
@@ -246,6 +250,39 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+  }
+
+  downloadMulticlassResultsAsCSV() {
+    const rows = this.dataSource.data.flatMap(result =>
+      (result.class_results || []).map(classResult => ({ result, classResult }))
+    );
+    if (rows.length === 0) {
+      return;
+    }
+    const csvRows = [
+      'Result ID,IDS Name,Dataset,Class,Support,Detected,Missed,Detection Rate',
+      ...rows.map(({ result, classResult }) => [
+        result.id,
+        this.escapeCsvValue(result.ids_name),
+        this.escapeCsvValue(result.dataset_name),
+        this.escapeCsvValue(classResult.class_label),
+        classResult.support,
+        classResult.detected,
+        classResult.missed,
+        classResult.detection_rate,
+      ].join(','))
+    ];
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `multiclass_results_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  get multiclassResults(): BenchmarkingResultsItem[] {
+    return this.dataSource.data.filter(result => (result.class_results?.length || 0) > 0);
   }
 
   // Helper method to escape CSV values that contain commas, quotes, or newlines
@@ -298,6 +335,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       traffic_runtime: item.traffic_runtime,
       throughput_pps: item.throughput_pps,
       throughput_mbps: item.throughput_mbps,
+      avg_cpu_usage: item.avg_cpu_usage,
+      avg_memory_usage: item.avg_memory_usage,
       started_at: item.started_at,
       completed_at: item.completed_at,
     };

@@ -7,7 +7,10 @@ from app.models.ids_system import get_all_container, update_container
 from app.models.ensemble import get_all_ensembles, update_ensemble
 from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
-from app.models.benchmarking import get_all_benchmarking_results
+from app.models.benchmarking import (
+    get_all_benchmarking_results,
+    serialize_benchmarking_result,
+)
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
 from app.validation.models import EnsembleUpdate, IdsContainerUpdate, DockerHostCreationData, IdsToolCreate, IdsToolUpdate, ConfigurationUpdate
 from app.models.docker_host_system import get_all_hosts, remove_host, add_host_system, DockerHostSystem
@@ -48,7 +51,7 @@ def serialize_host(host: DockerHostSystem) -> dict:
 @router.get("/benchmarking-results/all")
 async def get_benchmarking_results(db=Depends(get_db)):
     benchmarking_results = await get_all_benchmarking_results(db)
-    return benchmarking_results
+    return [serialize_benchmarking_result(result) for result in benchmarking_results]
 
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):
@@ -171,7 +174,7 @@ async def add_new_config(configuration: UploadFile = Form(...), name: str = Form
 
 
 @router.post("/dataset/add")
-async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), dataset_type_id: str = Form(...), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
+async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadFile = Form(...), name: str = Form(...), description: str = Form(...), dataset_type_id: str = Form(...), evaluation_mode: str = Form("binary"), background_tasks: BackgroundTasks = BackgroundTasks(), db=Depends(get_db)):
     data_file_ending = data_file.filename.split(".")[-1]
     labels_file_ending = labels_file.filename.split(".")[-1]
     if not file_type_is_accepted(file_type=FILE_TYPES.DATASET.value ,file_ending=data_file_ending):
@@ -180,6 +183,11 @@ async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadF
         return JSONResponse({"error": f"file in {labels_file_ending} format is not accepted as {FILE_TYPES.DATASET.value} "}, status_code=500)
     # For rulesets and general configurations
     dataset_type = await get_dataset_type_by_id(db, int(dataset_type_id))
+    if evaluation_mode not in {"binary", "multiclass"}:
+        return JSONResponse(
+            {"error": "evaluation_mode must be binary or multiclass"},
+            status_code=400,
+        )
     
     uid = str(uuid.uuid4())
     base_path = os.getenv("DATASET_BASE_PATH")
@@ -195,7 +203,7 @@ async def add_new_dataset(data_file: UploadFile = Form(...),labels_file: UploadF
     with open(labels_file_path, "wb") as f_out:
         shutil.copyfileobj(labels_file.file, f_out)
     
-    background_tasks.add_task(calculate_and_add_dataset, data_file_path=data_file_path, labels_file_path=labels_file_path, name=name, description=description, dataset_type=dataset_type, db=db)
+    background_tasks.add_task(calculate_and_add_dataset, data_file_path=data_file_path, labels_file_path=labels_file_path, name=name, description=description, dataset_type=dataset_type, db=db, evaluation_mode=evaluation_mode)
     return JSONResponse(content={"message": "configuration added successfully"}, status_code=200)
 
 

@@ -6,6 +6,8 @@ export interface Dataset{
     description: string,
     ammount_benign: number,
     ammount_malicious: number,
+    evaluation_mode?: 'binary' | 'multiclass',
+    class_counts?: string,
     dataset_type_id: number,
     timestamp_precision: string
 }
@@ -16,4 +18,5 @@ export interface DatasetSetupData{
     labels_file: any,
     description: string,
     dataset_type_id: string
+    evaluation_mode?: 'binary' | 'multiclass'
 }

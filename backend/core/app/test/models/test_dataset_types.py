@@ -4,6 +4,7 @@ from app.models.dataset_types_implementation.network_traffic_data import *
 from app.models.dataset_types import *
 from app.utils import Precision, SecondPrecision, MilisecondPrecision, MinutePrecision, HourPrecision
 import io
+from types import SimpleNamespace
 
 @pytest.fixture
 def sample_dataset():
@@ -67,3 +68,45 @@ async def test_get_precision(mock_network_traffic_data_dataset_type, sample_data
     print(type(precision))
     assert isinstance(precision, MinutePrecision)
 
+
+def test_multiclass_counts_and_detection_coverage(tmp_path):
+    labels_file = tmp_path / "multiclass.csv"
+    labels_file.write_text(
+        "Label,Timestamp,Source IP,Source Port,Destination IP,Destination Port\n"
+        "benign,2026-01-01T00:00:00,10.0.0.1,1000,10.0.0.2,80\n"
+        "scan,2026-01-01T00:00:01,10.0.0.3,1001,10.0.0.4,443\n"
+        "botnet,2026-01-01T00:00:02,10.0.0.5,1002,10.0.0.6,53\n",
+        encoding="utf-8",
+    )
+    dataset = SimpleNamespace(
+        labels_file_path=str(labels_file), timestamp_precision="second"
+    )
+    alerts = [
+        Alert(
+            "2026-01-01T00:00:01",
+            "10.0.0.3",
+            "1001",
+            "10.0.0.4",
+            "443",
+            1,
+        )
+    ]
+
+    assert network_traffic_data_get_class_counts(str(labels_file)) == {
+        "benign": 1,
+        "botnet": 1,
+        "scan": 1,
+    }
+    result = network_traffic_data_get_class_detection_statistics(dataset, alerts)
+
+    by_class = {row["class_label"]: row for row in result["classes"]}
+    assert by_class["scan"] == {
+        "class_label": "scan",
+        "support": 1,
+        "detected": 1,
+        "missed": 0,
+        "detection_rate": 1.0,
+    }
+    assert by_class["benign"]["detection_rate"] == 0.0
+    assert by_class["botnet"]["detection_rate"] == 0.0
+    assert result["unassigned_alerts"] == 0

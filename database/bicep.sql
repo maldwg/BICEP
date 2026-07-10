@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS dataset(
     description VARCHAR(2048) NOT NULL,
     ammount_benign INT NOT NULL,
     ammount_malicious INT NOT NULL,
+    evaluation_mode VARCHAR(32) NOT NULL DEFAULT 'binary',
+    class_counts TEXT,
     dataset_type_id INT NOT NULL,
     timestamp_precision VARCHAR(64) NOT NULL,
     FOREIGN KEY (dataset_type_id) REFERENCES dataset_type(id)
@@ -163,7 +165,19 @@ CREATE TABLE IF NOT EXISTS benchmarking_result (
     avg_cpu_usage FLOAT,
     avg_memory_usage FLOAT,
     resource_query_mode VARCHAR(32),
-    resource_query_targets TEXT
+    resource_query_targets TEXT,
+    evaluation_mode VARCHAR(32) NOT NULL DEFAULT 'binary'
+);
+
+CREATE TABLE IF NOT EXISTS benchmarking_class_result (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    benchmarking_result_id INT NOT NULL,
+    class_label VARCHAR(256) NOT NULL,
+    support INT NOT NULL,
+    detected INT NOT NULL,
+    missed INT NOT NULL,
+    detection_rate FLOAT NOT NULL,
+    FOREIGN KEY (benchmarking_result_id) REFERENCES benchmarking_result(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS benchmarking_intermediate_result (
@@ -227,6 +241,10 @@ CREATE TABLE IF NOT EXISTS benchmarking_job_item (
     traffic_runtime FLOAT,
     throughput_pps FLOAT,
     throughput_mbps FLOAT,
+    avg_cpu_usage FLOAT,
+    avg_memory_usage FLOAT,
+    resource_query_mode VARCHAR(32),
+    resource_query_targets TEXT,
     started_at VARCHAR(64),
     completed_at VARCHAR(64),
     error TEXT,

@@ -86,6 +86,55 @@ class BenchmarkingResult(Base):
     avg_memory_usage = Column(Float)
     resource_query_mode = Column(String(32))
     resource_query_targets = Column(Text)
+    evaluation_mode = Column(String(32), nullable=False, default="binary")
+
+    class_results = relationship(
+        "BenchmarkingClassResult",
+        back_populates="benchmarking_result",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="BenchmarkingClassResult.class_label",
+    )
+
+
+class BenchmarkingClassResult(Base):
+    __tablename__ = "benchmarking_class_result"
+
+    id = Column(Integer, primary_key=True, index=True)
+    benchmarking_result_id = Column(
+        Integer, ForeignKey("benchmarking_result.id", ondelete="CASCADE"), nullable=False
+    )
+    class_label = Column(String(256), nullable=False)
+    support = Column(Integer, nullable=False)
+    detected = Column(Integer, nullable=False)
+    missed = Column(Integer, nullable=False)
+    detection_rate = Column(Float, nullable=False)
+
+    benchmarking_result = relationship(
+        "BenchmarkingResult", back_populates="class_results"
+    )
+
+
+def serialize_benchmarking_class_result(result: BenchmarkingClassResult) -> dict:
+    return {
+        "class_label": result.class_label,
+        "support": result.support,
+        "detected": result.detected,
+        "missed": result.missed,
+        "detection_rate": result.detection_rate,
+    }
+
+
+def serialize_benchmarking_result(result: BenchmarkingResult) -> dict:
+    return {
+        column.name: getattr(result, column.name)
+        for column in BenchmarkingResult.__table__.columns
+    } | {
+        "class_results": [
+            serialize_benchmarking_class_result(class_result)
+            for class_result in result.class_results
+        ]
+    }
 
 async def add_benchmarking_result(db: AsyncSession, result: BenchmarkingResult):
     db.add(result)
@@ -93,13 +142,19 @@ async def add_benchmarking_result(db: AsyncSession, result: BenchmarkingResult):
     await db.refresh(result)  
     
 async def get_all_benchmarking_results(db: AsyncSession):
-    stmt = select(BenchmarkingResult)
+    stmt = select(BenchmarkingResult).options(
+        selectinload(BenchmarkingResult.class_results)
+    )
     result = await db.execute(stmt)
     return result.scalars().all()  
 
 
 async def get_benchmarking_result_by_id(db: AsyncSession, result_id: int):
-    stmt = select(BenchmarkingResult).where(BenchmarkingResult.id == result_id)
+    stmt = (
+        select(BenchmarkingResult)
+        .options(selectinload(BenchmarkingResult.class_results))
+        .where(BenchmarkingResult.id == result_id)
+    )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
@@ -168,6 +223,10 @@ class BenchmarkingJobItem(Base):
     traffic_runtime = Column(Float)
     throughput_pps = Column(Float)
     throughput_mbps = Column(Float)
+    avg_cpu_usage = Column(Float)
+    avg_memory_usage = Column(Float)
+    resource_query_mode = Column(String(32))
+    resource_query_targets = Column(Text)
     started_at = Column(String(64))
     completed_at = Column(String(64))
     error = Column(Text)
@@ -198,6 +257,10 @@ def serialize_benchmarking_job_item(item: BenchmarkingJobItem) -> dict:
         "traffic_runtime": item.traffic_runtime,
         "throughput_pps": item.throughput_pps,
         "throughput_mbps": item.throughput_mbps,
+        "avg_cpu_usage": item.avg_cpu_usage,
+        "avg_memory_usage": item.avg_memory_usage,
+        "resource_query_mode": item.resource_query_mode,
+        "resource_query_targets": item.resource_query_targets,
         "started_at": item.started_at,
         "completed_at": item.completed_at,
         "error": item.error,

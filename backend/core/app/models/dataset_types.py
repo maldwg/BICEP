@@ -37,6 +37,20 @@ class DatasetType(Base):
         func = getattr(module, function_name)
         return await asyncio.to_thread(func, labels_file_text_stream)       
 
+    async def get_class_counts(self, labels_file_path):
+        function_name = f"{self.function_prefix.lower()}_get_class_counts"
+        module = self._import_dataset_module()
+        func = getattr(module, function_name)
+        return await asyncio.to_thread(func, labels_file_path)
+
+    async def get_class_detection_statistics(self, dataset, alerts: list):
+        function_name = (
+            f"{self.function_prefix.lower()}_get_class_detection_statistics"
+        )
+        module = self._import_dataset_module()
+        func = getattr(module, function_name)
+        return await asyncio.to_thread(func, dataset, alerts)
+
     def _import_dataset_module(self):
         """
         Dynamically imports the correct module based on function_prefix.
@@ -61,4 +75,3 @@ async def get_all_dataset_types(db: AsyncSession):
     stmt = select(DatasetType)
     result = await db.execute(stmt)
     return result.scalars().all()
-

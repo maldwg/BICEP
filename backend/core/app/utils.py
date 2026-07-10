@@ -6,6 +6,7 @@ from contextlib import closing
 from enum import Enum
 import os
 from app.models.benchmarking import (
+    BenchmarkingClassResult,
     BenchmarkingResult,
     add_benchmarking_result,
     BenchmarkingResultTransferObject,
@@ -315,12 +316,21 @@ async def parse_response_for_triggered_analysis(
 
 
 async def calculate_and_add_dataset(
-    data_file_path, labels_file_path, name, description, dataset_type, db
+    data_file_path,
+    labels_file_path,
+    name,
+    description,
+    dataset_type,
+    db,
+    evaluation_mode="binary",
 ):
     benign, malicious = await dataset_type.get_benign_and_malicious_counts(
         labels_file_path
     )
     precision = await dataset_type.calculate_precision(labels_file_path)
+    class_counts = await dataset_type.get_class_counts(labels_file_path)
+    if evaluation_mode == "multiclass" and len(class_counts) < 2:
+        raise ValueError("A multiclass dataset must contain at least two classes.")
 
     dataset = Dataset(
         name=name,
@@ -329,6 +339,8 @@ async def calculate_and_add_dataset(
         labels_file_path=labels_file_path,
         ammount_benign=benign,
         ammount_malicious=malicious,
+        evaluation_mode=evaluation_mode,
+        class_counts=json.dumps(class_counts),
         dataset_type_id=dataset_type.id,
         timestamp_precision=precision.name,
     )
@@ -437,7 +449,19 @@ async def calculate_evaluation_metrics_and_push(
         resource_query_targets=serialize_resource_query_targets(
             resource_query_targets
         ),
+        evaluation_mode=getattr(dataset, "evaluation_mode", "binary") or "binary",
     )
+    if result.evaluation_mode == "multiclass":
+        result.class_results = [
+            BenchmarkingClassResult(
+                class_label=class_result["class_label"],
+                support=class_result["support"],
+                detected=class_result["detected"],
+                missed=class_result["missed"],
+                detection_rate=class_result["detection_rate"],
+            )
+            for class_result in metrics.get("PER_CLASS", [])
+        ]
     await add_benchmarking_result(db, result)
     await db.close()
 

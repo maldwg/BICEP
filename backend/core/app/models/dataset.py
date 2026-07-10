@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from app.database import Base
 from sqlalchemy.future import select
@@ -14,6 +14,8 @@ class Dataset(Base):
     description = Column(String(2048), nullable=False)
     ammount_benign = Column(Integer, nullable=False)
     ammount_malicious = Column(Integer, nullable=False)
+    evaluation_mode = Column(String(32), nullable=False, default="binary")
+    class_counts = Column(Text)
     timestamp_precision = Column(String(64), nullable=False)
     dataset_type_id = Column(Integer, ForeignKey("dataset_type.id"), nullable=False)
 
@@ -50,4 +52,4 @@ async def remove_dataset_by_id(db: AsyncSession, id: int):
 async def add_dataset(db: AsyncSession, dataset: Dataset):
         db.add(dataset)
         await db.commit() 
-        await db.refresh(dataset) 
+        await db.refresh(dataset)
