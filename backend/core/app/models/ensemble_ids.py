@@ -2,7 +2,6 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from app.database import Base
 from app.utils import ANALYSIS_STATUS
 from sqlalchemy.future import select
-from app.logger import LOGGER
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

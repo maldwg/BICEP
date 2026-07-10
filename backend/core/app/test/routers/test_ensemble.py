@@ -358,7 +358,7 @@ async def test_finished_ensemble_analysis(db_session_fixture: DatabaseSessionFix
     print(response_json)
     assert response.status_code == 200
     assert response_json == {
-        "message": f"Successfully finished analysis for esemble {finished_data.ensemble_id} and container {finished_data.container_id}"
+        "message": f"Successfully finished analysis for ensemble {finished_data.ensemble_id} and container {finished_data.container_id}"
     }
 
 

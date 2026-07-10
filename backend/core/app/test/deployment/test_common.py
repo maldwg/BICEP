@@ -159,7 +159,7 @@ async def test_is_ids_available_returns_false_when_plugin_lookup_fails():
         "app.deployment.common.get_plugin_for_system",
         AsyncMock(side_effect=ValueError("broken")),
     ):
-        with patch("app.deployment.common.LOGGER.error") as mock_log_error:
+        with patch("app.deployment.common.logger.error") as mock_log_error:
             result = await common.is_ids_available(ids_system)
 
     assert result is False

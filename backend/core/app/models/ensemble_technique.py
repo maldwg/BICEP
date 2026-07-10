@@ -1,11 +1,15 @@
+import logging
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.database import Base
-from app.logger import LOGGER
 from app.models.ensemble_techniques_implementation import *
 import importlib
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger('bicep.ensemble')
+
 class EnsembleTechnique(Base):
     __tablename__ = "ensemble_technique"
 
@@ -29,7 +33,7 @@ class EnsembleTechnique(Base):
             module = importlib.import_module(module_name)
             return module
         except ModuleNotFoundError as e:
-            LOGGER.error(f"Module {module_name} not found: {e}")
+            logger.error(f"Module {module_name} not found: {e}")
             raise
 
 async def get_all_ensemble_techniques(db: AsyncSession):

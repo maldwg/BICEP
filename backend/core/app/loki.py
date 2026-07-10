@@ -1,20 +1,21 @@
+import logging
 import os
 import json
 from datetime import datetime, timedelta
 import httpx
 from app.bicep_utils.models.ids_base import Alert
-from app.logger import LOGGER
 import asyncio
 from fastapi.responses import JSONResponse
 
-LOKI_URL = os.environ.get('LOKI_URL')
+logger = logging.getLogger('bicep.loki')
 
+LOKI_URL = os.environ.get('LOKI_URL')
 
 async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
     responses = []
     values = await asyncio.to_thread(combine_timestamps_and_alerts, alerts)
     chunked_values = await get_chunk_of_values(values)
-    LOGGER.debug(f"Partitioned the values for loki into {len(chunked_values)} chunks")
+    logger.debug(f"Partitioned the values for loki into {len(chunked_values)} chunks")
     for chunk in chunked_values:          
         log_entry = {
             'streams': [
@@ -28,9 +29,9 @@ async def push_alerts_to_loki(alerts: list[Alert], labels: dict):
         responses.append(response)
     for response in responses:
         if response.status_code not in [200, 204]:
-            LOGGER.debug(f"Did not sucessfully push all alerts to loki, got statuscode {response.status_code}")
+            logger.debug(f"Did not sucessfully push all alerts to loki, got statuscode {response.status_code}")
             return JSONResponse(content={"message": f"Did not succesfully send data to loki in {len(responses)} chunks"}, status_code=500)
-    LOGGER.debug(f"Succesfully pushed alerts to loki")
+    logger.debug(f"Succesfully pushed alerts to loki")
     return JSONResponse(content={"message": f"succesfully send data to loki in {len(responses)} chunks"}, status_code=200)
 
 # chunksize of 50000 ~15MB per chunk
@@ -98,7 +99,7 @@ async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
                             try:
                                 alerts_of_container.append(Alert.from_json(log))
                             except:
-                                LOGGER.debug(f"Could not parse alert from JSON: {log}")
+                                logger.debug(f"Could not parse alert from JSON: {log}")
 
                         label = stream["stream"]["container_name"]
                         if label in alerts:
@@ -107,14 +108,14 @@ async def get_all_alerts_for_ensemble_from_analysis_id(analysis_id: str):
                             alerts[label] = alerts_of_container
 
                 except Exception as e:
-                    LOGGER.error(f"Error processing logs: {e}")
+                    logger.error(f"Error processing logs: {e}")
                     raise
 
             else:
-                LOGGER.error(f"Failed to retrieve logs: {response.status_code}")
+                logger.error(f"Failed to retrieve logs: {response.status_code}")
 
     for container, logs in alerts.items():
-        LOGGER.debug(f"Found {len(logs)} alerts for {container}")
+        logger.debug(f"Found {len(logs)} alerts for {container}")
 
     return alerts
 

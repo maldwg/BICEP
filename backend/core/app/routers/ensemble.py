@@ -1,3 +1,4 @@
+import logging
 from http.client import HTTPResponse
 from app.bicep_utils.models.ids_base import Alert
 from app.models.ensemble_ids import (
@@ -43,7 +44,6 @@ from app.loki import (
     get_all_alerts_for_ensemble_from_analysis_id,
     clean_up_alerts_in_loki,
 )
-from app.logger import LOGGER
 from app.database import get_db
 from app.models.benchmarking import (
     BenchmarkingResultTransferObject,
@@ -53,6 +53,8 @@ from app.models.benchmarking import (
     get_all_intermediate_results_for_ensemble_and_id,
 )
 from datetime import datetime
+
+logger = logging.getLogger('bicep.ensemble')
 
 router = APIRouter(prefix="/ensemble")
 
@@ -225,7 +227,7 @@ async def finished_ensemble_analysis(
         await ensemble.unset_analysis_id(db)
     return JSONResponse(
         {
-            "message": f"Successfully finished analysis for esemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"
+            "message": f"Successfully finished analysis for ensemble {analysisFinishedData.ensemble_id} and container {analysisFinishedData.container_id}"
         },
         status_code=200,
     )
@@ -237,8 +239,8 @@ async def receive_alerts_from_ids_for_ensemble(
 ):
     container: IdsSystem = await get_ids_system_by_id(db=db, id=alert_data.container_id)
     ensemble: Ensemble = await get_ensemble_by_id(db=db, id=alert_data.ensemble_id)
-    LOGGER.debug(f"analysis-type: {alert_data.analysis_type}")
-    LOGGER.debug(f"Received Logs for ensemble {ensemble.name}")
+    logger.debug(f"analysis-type: {alert_data.analysis_type}")
+    logger.debug(f"Received Logs for ensemble {ensemble.name}")
     labels = {
         "container_name": container.name,
         "analysis_type": alert_data.analysis_type,
@@ -267,17 +269,17 @@ async def receive_alerts_from_ids_for_ensemble(
         )
         for alert in alert_data.alerts
     ]
-    LOGGER.debug(f"Found {len(alerts)} alerts for container {container.name}")
+    logger.debug(f"Found {len(alerts)} alerts for container {container.name}")
 
     response = await push_alerts_to_loki(alerts=alerts, labels=labels)
     if response.status_code not in [200, 204]:
-        LOGGER.error("Could not push logs to loki effectively")
+        logger.error("Could not push logs to loki effectively")
         return JSONResponse(
             {"error": "Could not push logs to loki for container"}, status_code=500
         )
 
     if analysis_is_static:
-        LOGGER.debug("Static analysis data received")
+        logger.debug("Static analysis data received")
         await update_sendig_logs_status(
             db=db,
             container=container,
@@ -295,8 +297,8 @@ async def receive_alerts_from_ids_for_ensemble(
         if not await last_container_sending_logs(
             db=db, container=container, ensemble=ensemble
         ):
-            LOGGER.debug(f"Successfully pushed alerts for container {container.name}")
-            LOGGER.debug(f"{container.name} is not the last running container")
+            logger.debug(f"Successfully pushed alerts for container {container.name}")
+            logger.debug(f"{container.name} is not the last running container")
             return JSONResponse(
                 {
                     "content": f"Successfully pushed alerts for container {container.name}"
@@ -304,7 +306,7 @@ async def receive_alerts_from_ids_for_ensemble(
                 status_code=200,
             )
         else:
-            LOGGER.debug(f"{container.name} is the last container running")
+            logger.debug(f"{container.name} is the last container running")
             # get all alerts including the ones form the current container
             all_alerts: dict = await get_all_alerts_for_ensemble_from_analysis_id(
                 ensemble.current_analysis_id
@@ -362,8 +364,8 @@ async def receive_alerts_from_ids_for_ensemble(
                 status_code=200,
             )
     else:
-        LOGGER.debug("Network analysis data received")
-        LOGGER.debug(f"{container.name} got {len(alerts)}")
+        logger.debug("Network analysis data received")
+        logger.debug(f"{container.name} got {len(alerts)}")
         if not await last_container_sending_logs(
             db=db, container=container, ensemble=ensemble
         ):

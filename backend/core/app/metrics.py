@@ -1,8 +1,11 @@
-from app.logger import LOGGER
+import logging
+
 from app.models.dataset import get_dataset_by_id
 
+logger = logging.getLogger('bicep.metrics')
+
 async def calculate_evaluation_metrics(db, dataset_id, alerts):
-    LOGGER.debug("start calculation of evaluation metrics")
+    logger.debug("start calculation of evaluation metrics")
     dataset = await get_dataset_by_id(db, dataset_id=dataset_id)
     true_benign = dataset.ammount_benign
     true_malicious = dataset.ammount_malicious

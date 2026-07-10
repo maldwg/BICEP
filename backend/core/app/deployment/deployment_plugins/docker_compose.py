@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 from types import SimpleNamespace
 
 import docker as docker_sdk
@@ -20,12 +22,13 @@ from app.deployment.deployment_plugins.docker import (
     inject_config as inject_single_container_config,
     inject_ruleset as inject_single_container_ruleset,
 )
-from app.logger import LOGGER
 from app.models.configuration import get_config_by_id
 from app.models.docker_host_system import get_host_by_id
 from app.models.ids_component import IdsComponent
 from app.models.ids_system import mark_container_as_deleted
 from app.utils import get_core_url
+
+logger = logging.getLogger('bicep.docker_compose')
 
 
 def _build_compose_services():
@@ -33,7 +36,7 @@ def _build_compose_services():
         docker_client_cls=DockerClient,
         docker_sdk_module=docker_sdk,
         ids_component_cls=IdsComponent,
-        logger=LOGGER,
+        logger=logger,
         get_core_url=get_core_url,
     )
     spec_manager = ComposeSpecManager(
@@ -49,7 +52,7 @@ def _build_compose_services():
         ComposeAvailabilityChecker(
             docker_sdk_module=docker_sdk,
             host_operations=host_operations,
-            logger=LOGGER,
+            logger=logger,
             http_client_cls=httpx.AsyncClient,
         ),
     )
@@ -162,7 +165,7 @@ class DockerComposeDeploymentPlugin(DeploymentPlugin):
         return list(snapshots.values())
 
     async def update_config(self, ids_system, db_session, config_id: int):
-        LOGGER.info(f"Re-deploying CIDS {ids_system.name} to apply changes.")
+        logger.info(f"Re-deploying CIDS {ids_system.name} to apply changes.")
 
         # Persist the per-service deployment state before teardown removes the
         # component rows that tell us where each compose service belongs.
@@ -214,6 +217,6 @@ class DockerComposeDeploymentPlugin(DeploymentPlugin):
         )
 
     async def update_ruleset(self, ids_system, db_session, ruleset_id: int):
-        LOGGER.info(f"Re-deploying CIDS {ids_system.name} to apply ruleset update.")
+        logger.info(f"Re-deploying CIDS {ids_system.name} to apply ruleset update.")
         # Identical strategy to update_config for CIDS
         await self.update_config(ids_system, db_session, ids_system.configuration_id)

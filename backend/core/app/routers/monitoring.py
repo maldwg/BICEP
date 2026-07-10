@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -10,10 +11,11 @@ from app.prometheus import (
     build_resource_query_spec_for_ids_system,
 )
 from app.utils import STATUS
-from app.logger import LOGGER
 import httpx
 import os
 from datetime import datetime, timedelta
+
+logger = logging.getLogger('bicep.monitoring')
 
 router = APIRouter(prefix="/monitoring")
 
@@ -162,7 +164,7 @@ async def get_monitoring_metrics(db=Depends(get_db)):
                         }
                     )
             except Exception as e:
-                LOGGER.error(f"Error fetching metrics for {container.name}: {e}")
+                logger.error(f"Error fetching metrics for {container.name}: {e}")
                 metrics_data.append(
                     {
                         "id": container.id,
@@ -354,7 +356,7 @@ async def get_historical_metrics(
                             )
                         )
             except Exception as e:
-                LOGGER.error(
+                logger.error(
                     f"Error fetching historical metrics for {container.name}: {e}"
                 )
 

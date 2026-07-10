@@ -5,7 +5,6 @@ The following method shows, how to implement a method for an ensembling techniqu
     3. implement an async method called the same as the function_name property you selected
 """
 from app.bicep_utils.models.ids_base import Alert
-from app.logger import LOGGER
 
 async def sample(alerts_dict: dict, ensemble) -> list[Alert]:
     """
