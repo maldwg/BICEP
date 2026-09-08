@@ -15,6 +15,23 @@ from dateutil import parser
 import random
 from collections import Counter
 
+BENIGN_CLASS_LABELS = {
+    "benign",
+    "normal",
+    "normal traffic",
+    "background",
+    "background traffic",
+    "legitimate",
+    "clean",
+    "non malicious",
+    "non-malicious",
+}
+
+
+def _is_benign_label(label: str) -> bool:
+    normalized = " ".join(str(label).strip().casefold().replace("_", " ").split())
+    return normalized in BENIGN_CLASS_LABELS
+
 logger = logging.getLogger('bicep.network_traffic_data')
 
 def network_traffic_data_calculate_precision(labels_file_path):
@@ -58,15 +75,12 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
     """
     benign_count = 0
     malicious_count = 0
-    header = True
-    with open(labels_file_path, "r", encoding="utf-8") as input_csv:
+    with open(labels_file_path, "r", encoding="utf-8", newline="") as input_csv:
         reader = csv.reader(input_csv)
+        header = next(reader)
+        label_col_id, _, _, _, _, _ = _get_column_ids(header)
         for row in reader:
-            if header:
-                header = False
-                continue
-            # Convert each cell in the row to lowercase and check for "benign"
-            if any("benign" in cell.lower() for cell in row):
+            if _is_benign_label(row[label_col_id]):
                 benign_count += 1
             else:
                 malicious_count += 1
@@ -101,7 +115,7 @@ def network_traffic_data_get_class_detection_statistics(
         key = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert, precision)
         alerts_dict[key] = False
 
-    class_stats: dict[str, dict[str, int | float | str]] = {}
+    class_stats: dict[str, dict[str, int | float | str | bool]] = {}
     with open(dataset.labels_file_path, "r", encoding="utf-8", newline="") as csv_file:
         reader = csv.reader(csv_file)
         header = next(reader)
@@ -122,7 +136,13 @@ def network_traffic_data_get_class_detection_statistics(
                 raise ValueError("Dataset labels must not exceed 256 characters.")
             row_stats = class_stats.setdefault(
                 label,
-                {"class_label": label, "support": 0, "detected": 0, "missed": 0},
+                {
+                    "class_label": label,
+                    "is_benign": _is_benign_label(label),
+                    "support": 0,
+                    "detected": 0,
+                    "missed": 0,
+                },
             )
             row_stats["support"] += 1
 
@@ -334,9 +354,7 @@ def _get_reverse_key(key):
     return (ts, dst_ip, dst_port, src_ip, src_port)
 
 def _is_request_benign(cell: str) -> bool:
-    if "benign" == str(cell).lower().strip():
-        return True
-    return False
+    return _is_benign_label(cell)
 
 def _get_index(lst: list, search_list: list[str]) -> int:
     """
@@ -389,5 +407,4 @@ def _get_keys_with_tolerance(key, precision: Precision):
         new_key[0] = ts.replace(tzinfo=None).strftime(precision.timestamp_format)
         keys.append(tuple(new_key))
     return keys
-
 

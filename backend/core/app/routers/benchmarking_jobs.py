@@ -1,4 +1,5 @@
 from typing import Literal
+import logging
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
@@ -6,7 +7,6 @@ from pydantic import BaseModel, Field
 
 from app.benchmarking_queue import start_benchmarking_worker
 from app.database import get_db
-from app.logger import LOGGER
 from app.models.benchmarking import (
     BENCHMARK_JOB_STATUS_CANCELLED,
     BENCHMARK_JOB_STATUS_COMPLETED,
@@ -31,6 +31,7 @@ from app.models.ids_tool import get_ids_by_id
 
 
 router = APIRouter(prefix="/benchmarking")
+logger = logging.getLogger("bicep.benchmarking_jobs")
 
 
 class BenchmarkTargetSelection(BaseModel):
@@ -126,7 +127,7 @@ async def create_benchmarking_job(job_data: BenchmarkJobCreate, db=Depends(get_d
     except ValueError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
     except Exception as exc:
-        LOGGER.error(f"Could not create benchmarking job: {exc}")
+        logger.error(f"Could not create benchmarking job: {exc}")
         return JSONResponse({"error": str(exc)}, status_code=500)
 
     await start_benchmarking_worker()

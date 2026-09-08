@@ -49,10 +49,10 @@
         <mat-icon>category</mat-icon>
         Per-class CSV
       </button>
-      <button class="compare-button" (click)="toggleComparisonView()" [disabled]="selection.selected.length < 2" matFab
+      <button class="compare-button" (click)="openBinaryComparison()" [disabled]="selection.selected.length < 2" matFab
         extended color="accent">
         <mat-icon>bar_chart</mat-icon>
-        Compare
+        Compare binary
       </button>
     </div>
     <div class="flex-container">
@@ -173,11 +173,32 @@
         <span class="throughput-results-panel__eyebrow">Throughput</span>
         <h2>Packet Test Results</h2>
       </div>
-      <span class="throughput-results-panel__count">{{ filteredThroughputResults.length }} rows</span>
+      <div class="throughput-results-panel__actions">
+        <span class="throughput-results-panel__count">{{ filteredThroughputResults.length }} rows</span>
+        <button class="compare-button" (click)="openThroughputComparison()"
+          [disabled]="throughputSelection.selected.length < 2" matFab extended color="accent">
+          <mat-icon>bar_chart</mat-icon>
+          Compare throughput
+        </button>
+      </div>
     </div>
 
     <div class="results-table-wrap" *ngIf="filteredThroughputResults.length > 0; else noThroughputResults">
       <table mat-table [dataSource]="filteredThroughputResults" class="results-table throughput-results-table">
+        <ng-container matColumnDef="throughput_select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox (change)="toggleAllThroughput()"
+              [checked]="throughputSelection.hasValue() && isAllThroughputSelected()"
+              [indeterminate]="throughputSelection.hasValue() && !isAllThroughputSelected()">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-checkbox (click)="$event.stopPropagation()" (change)="throughputSelection.toggle(row)"
+              [checked]="throughputSelection.isSelected(row)">
+            </mat-checkbox>
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="job_id">
           <th mat-header-cell *matHeaderCellDef>Job</th>
           <td mat-cell *matCellDef="let row">#{{ row.job_id }}</td>
@@ -281,30 +302,87 @@
     <div class="throughput-results-panel__header">
       <div>
         <span class="throughput-results-panel__eyebrow">Multiclass</span>
-        <h2>Per-class Detection Coverage</h2>
+        <h2>Multiclass Result Summary</h2>
+      </div>
+      <div class="throughput-results-panel__actions">
+        <span class="throughput-results-panel__count">{{ filteredMulticlassResults.length }} rows</span>
+        <button class="compare-button" (click)="openMulticlassComparison()"
+          [disabled]="multiclassSelection.selected.length < 2" matFab extended color="accent">
+          <mat-icon>bar_chart</mat-icon>
+          Compare multiclass
+        </button>
       </div>
     </div>
-    <article class="multiclass-result" *ngFor="let result of multiclassResults">
-      <h3>{{ result.ids_name }} · {{ result.dataset_name }} · Result #{{ result.id }}</h3>
-      <div class="results-table-wrap">
-        <table class="class-results-table">
-          <thead>
-            <tr><th>Class</th><th>Support</th><th>Detected</th><th>Missed</th><th>Detection rate</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let classResult of result.class_results">
-              <td>{{ classResult.class_label }}</td>
-              <td>{{ classResult.support }}</td>
-              <td>{{ classResult.detected }}</td>
-              <td>{{ classResult.missed }}</td>
-              <td>{{ classResult.detection_rate | percent:'1.0-2' }}</td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="results-table-wrap" *ngIf="filteredMulticlassResults.length; else noMulticlassResults">
+      <table class="class-results-table multiclass-summary-table">
+        <thead>
+          <tr>
+            <th>
+              <mat-checkbox (change)="toggleAllMulticlass()"
+                [checked]="multiclassSelection.hasValue() && isAllMulticlassSelected()"
+                [indeterminate]="multiclassSelection.hasValue() && !isAllMulticlassSelected()">
+              </mat-checkbox>
+            </th>
+            <th>Result</th><th>IDS</th><th>Dataset</th><th>Configuration</th><th>Classes</th><th>Per-class coverage</th>
+            <th>Macro malicious detection</th><th>Weighted malicious detection</th><th>Lowest malicious class</th><th>Benign false detections</th>
+            <th>Runtime</th><th>Avg CPU</th><th>Avg RAM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let result of filteredMulticlassResults">
+            <td>
+              <mat-checkbox (click)="$event.stopPropagation()" (change)="multiclassSelection.toggle(result)"
+                [checked]="multiclassSelection.isSelected(result)">
+              </mat-checkbox>
+            </td>
+            <td>#{{ result.id }}</td>
+            <td>{{ result.ids_name }}</td>
+            <td>{{ result.dataset_name }}</td>
+            <td>{{ result.configuration_name || '-' }}</td>
+            <td>{{ result.class_results?.length || 0 }}</td>
+            <td>
+              <details class="class-coverage-details">
+                <summary>View classes</summary>
+                <table>
+                  <thead><tr><th>Class</th><th>Type</th><th>Outcome</th><th>Missed</th><th>Rate</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let classResult of result.class_results">
+                      <td>{{ classResult.class_label }}</td>
+                      <td>{{ classResult.is_benign ? 'Benign' : 'Malicious' }}</td>
+                      <td>
+                        {{ classResult.is_benign ? 'False detections' : 'Detections' }}:
+                        {{ classResult.detected }}/{{ classResult.support }}
+                      </td>
+                      <td>{{ classResult.missed }}</td>
+                      <td>
+                        {{ classResult.detection_rate | percent:'1.0-2' }}
+                        {{ classResult.is_benign ? ' false' : '' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </details>
+            </td>
+            <td>{{ multiclassMacroDetectionRate(result) | percent:'1.0-2' }}</td>
+            <td>{{ multiclassWeightedDetectionRate(result) | percent:'1.0-2' }}</td>
+            <td>{{ multiclassLowestDetectionRate(result) | percent:'1.0-2' }}</td>
+            <td>{{ multiclassBenignFalseDetectionRate(result) | percent:'1.0-2' }}</td>
+            <td>{{ result.runtime | number:'1.2-2' }}s</td>
+            <td>{{ formatCpuUsage(result.avg_cpu_usage) }}</td>
+            <td>{{ result.avg_memory_usage != null ? (result.avg_memory_usage | number:'1.2-2') + ' MB' : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noMulticlassResults>
+      <div class="throughput-empty">
+        <mat-icon>category</mat-icon>
+        <span>No multiclass results match the current filter.</span>
       </div>
-    </article>
+    </ng-template>
   </section>
 </section>
 
-<app-comparison *ngIf="showComparison" [items]="selection.selected" (close)="toggleComparisonView()">
+<app-comparison *ngIf="showComparison" [title]="comparisonTitle" [subtitle]="comparisonSubtitle"
+  [items]="comparisonItems" [metrics]="comparisonMetrics" (close)="showComparison = false">
 </app-comparison>

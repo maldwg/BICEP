@@ -722,7 +722,7 @@ async def cleanup_metric_services_on_shutdown(db: AsyncSession) -> None:
     )
     for host, cleanup_result in zip(hosts, cleanup_results):
         if isinstance(cleanup_result, BaseException):
-            LOGGER.error(
+            logger.error(
                 "Failed to remove metric service container from host %s during "
                 "core shutdown: %s",
                 host.name,
@@ -741,7 +741,7 @@ async def cleanup_metric_services_on_shutdown(db: AsyncSession) -> None:
                     clear_registration=True,
                 )
         except Exception as exc:
-            LOGGER.error(
+            logger.error(
                 "Metric-service database state could not be updated for host %s "
                 "during core shutdown: %s",
                 host.name,

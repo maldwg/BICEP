@@ -102,11 +102,20 @@ def test_multiclass_counts_and_detection_coverage(tmp_path):
     by_class = {row["class_label"]: row for row in result["classes"]}
     assert by_class["scan"] == {
         "class_label": "scan",
+        "is_benign": False,
         "support": 1,
         "detected": 1,
         "missed": 0,
         "detection_rate": 1.0,
     }
     assert by_class["benign"]["detection_rate"] == 0.0
+    assert by_class["benign"]["is_benign"] is True
     assert by_class["botnet"]["detection_rate"] == 0.0
     assert result["unassigned_alerts"] == 0
+
+
+def test_normal_and_benign_labels_are_negative_traffic():
+    assert _is_request_benign("benign") is True
+    assert _is_request_benign("Normal") is True
+    assert _is_request_benign("normal_traffic") is True
+    assert _is_request_benign("botnet") is False

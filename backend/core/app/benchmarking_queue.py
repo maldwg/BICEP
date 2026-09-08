@@ -1,9 +1,9 @@
 import asyncio
+import logging
 from datetime import datetime
 from fastapi.responses import Response
 
 from app.database import SessionLocal
-from app.logger import LOGGER
 from app.models.benchmarking import (
     BENCHMARK_ITEM_STATUS_CANCELLED,
     BENCHMARK_ITEM_STATUS_COMPLETED,
@@ -42,6 +42,7 @@ from app.validation.models import NetworkAnalysisData, StaticAnalysisData, stop_
 
 
 POLL_INTERVAL_SECONDS = 2
+logger = logging.getLogger("bicep.benchmarking_queue")
 
 _worker_task: asyncio.Task | None = None
 _worker_start_lock = asyncio.Lock()
@@ -68,7 +69,7 @@ async def stop_benchmarking_worker():
 async def _run_benchmarking_worker():
     while True:
         if SessionLocal is None:
-            LOGGER.error("Benchmarking queue cannot start without a database session.")
+            logger.error("Benchmarking queue cannot start without a database session.")
             return
 
         async with SessionLocal() as db:
@@ -121,7 +122,7 @@ async def _run_job(job_id: int):
         try:
             item_completed = await _execute_item(job_id, item_id)
         except Exception as exc:
-            LOGGER.error(f"Benchmark item {item_id} failed: {exc}")
+            logger.error(f"Benchmark item {item_id} failed: {exc}")
             item_completed = False
             async with SessionLocal() as db:
                 job = await get_benchmarking_job_by_id(db, job_id)
@@ -256,7 +257,7 @@ async def _execute_throughput_item(job_id: int, item_id: int) -> bool:
                 ),
             )
         except Exception as exc:
-            LOGGER.warning("Could not query throughput resource usage: %s", exc)
+            logger.warning("Could not query throughput resource usage: %s", exc)
         finally:
             await _stop_active_item_if_needed(job_id, item_id)
 

@@ -10,7 +10,7 @@
 }
 
 .container-setting-up-status {
-  opacity: 0.72;
+  opacity: 0.82;
 }
 
 @keyframes spin {
@@ -25,4 +25,55 @@
 
 .spinning {
   animation: spin 3s linear infinite;
+}
+
+.deployment-status {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: rgba(128, 71, 76, 0.1);
+}
+
+.deployment-icon {
+  font-size: 1.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.deployment-icon--pulling {
+  color: #b76b17;
+  animation: deployment-download 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.deployment-icon--working {
+  color: var(--app-accent-strong);
+  animation: spin 1.5s linear infinite;
+}
+
+.deployment-icon--ready {
+  color: #39744d;
+}
+
+.deployment-icon--error {
+  color: #b43c3c;
+}
+
+.deployment-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes deployment-download {
+  0%, 100% {
+    transform: translateY(-0.12rem);
+    opacity: 0.68;
+  }
+
+  50% {
+    transform: translateY(0.16rem);
+    opacity: 1;
+  }
 }

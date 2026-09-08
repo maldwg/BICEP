@@ -23,6 +23,7 @@ export interface BenchmarkingResultsItem {
 
 export interface BenchmarkingClassResult {
   class_label: string,
+  is_benign: boolean,
   support: number,
   detected: number,
   missed: number,

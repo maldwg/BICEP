@@ -28,6 +28,25 @@ BENCHMARK_MODE_THROUGHPUT = "throughput"
 TRAFFIC_MODE_PACKET_GENERATOR = "packet_generator"
 TRAFFIC_MODE_IPERF = "iperf"
 
+BENIGN_CLASS_LABELS = {
+    "benign",
+    "normal",
+    "normal traffic",
+    "background",
+    "background traffic",
+    "legitimate",
+    "clean",
+    "non malicious",
+    "non-malicious",
+}
+
+
+def is_benign_class_label(label: str | None) -> bool:
+    normalized = " ".join(
+        str(label or "").strip().casefold().replace("_", " ").split()
+    )
+    return normalized in BENIGN_CLASS_LABELS
+
 
 def get_timestamp() -> str:
     return datetime.now().isoformat(timespec="seconds")
@@ -114,10 +133,15 @@ class BenchmarkingClassResult(Base):
         "BenchmarkingResult", back_populates="class_results"
     )
 
+    @property
+    def is_benign(self) -> bool:
+        return is_benign_class_label(self.class_label)
+
 
 def serialize_benchmarking_class_result(result: BenchmarkingClassResult) -> dict:
     return {
         "class_label": result.class_label,
+        "is_benign": result.is_benign,
         "support": result.support,
         "detected": result.detected,
         "missed": result.missed,

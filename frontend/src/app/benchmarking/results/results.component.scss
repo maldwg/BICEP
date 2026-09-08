@@ -157,6 +157,14 @@
   font-weight: 700;
 }
 
+.throughput-results-panel__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .throughput-results-table {
   min-width: 82rem;
 }
@@ -240,6 +248,34 @@
   background: rgba(128, 71, 76, 0.9);
 }
 
+.multiclass-summary-table {
+  min-width: 92rem;
+}
+
+.class-coverage-details summary {
+  cursor: pointer;
+  color: var(--app-accent-strong);
+  font-weight: 700;
+}
+
+.class-coverage-details table {
+  margin-top: 0.55rem;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.class-coverage-details th,
+.class-coverage-details td {
+  padding: 0.35rem 0.5rem;
+  border: 0.0625rem solid rgba(128, 71, 76, 0.12);
+  font-size: 0.76rem;
+}
+
+.class-coverage-details th {
+  color: var(--app-heading);
+  background: rgba(128, 71, 76, 0.08);
+}
+
 ::ng-deep .mdc-text-field--outlined {
   background-color: white !important;
 }
@@ -259,5 +295,10 @@
   .download-button,
   .compare-button {
     width: 100%;
+  }
+
+  .throughput-results-panel__actions {
+    width: 100%;
+    justify-content: stretch;
   }
 }

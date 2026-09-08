@@ -138,7 +138,7 @@
         <ng-template matExpansionPanelContent>
           <div class="expansion-panel-flexbox-container">
             @for (container of containerList; track container.id) {
-              <div class="flexbox-item" [class.container-setting-up-status]="container.status === 'setting_up'">
+              <div class="flexbox-item" [class.container-setting-up-status]="container.status === statusTypes.setting_up">
                 <mat-card>
                   <mat-card-header>
                     <mat-card-title>
@@ -147,16 +147,12 @@
                           <span class="card-title-eyebrow">IDS Container</span>
                           <span class="mat-card-title-text">{{ container.name }}</span>
                         </div>
-                        @if (container.status === 'active') {
-                          <span class="card-title-status card-title-status--active">
-                            <mat-icon class="spinning">settings</mat-icon>
-                          </span>
-                        }
-                        @if (container.status === 'idle') {
-                          <span class="card-title-status card-title-status--idle">
-                            <mat-icon>pause_circle</mat-icon>
-                          </span>
-                        }
+                        <span class="card-title-status deployment-status"
+                          [attr.aria-label]="containerStatusLabel(container)">
+                          <mat-icon [class]="containerStatusIconClass(container)">
+                            {{ containerStatusIcon(container) }}
+                          </mat-icon>
+                        </span>
                       </div>
                     </mat-card-title>
                   </mat-card-header>
@@ -187,8 +183,11 @@
                     <div class="info-row">
                       <strong>Status:</strong> <span class="text-capitalize">{{ container.status }}</span>
                     </div>
-                    @if (container.status === 'setting_up') {
-                      <div class="info-message">Info: Container image is getting pulled, please wait.</div>
+                    @if (container.status === statusTypes.setting_up) {
+                      <div class="info-message deployment-message">
+                        <mat-icon class="deployment-icon deployment-icon--pulling">download</mat-icon>
+                        <span>{{ containerStatusLabel(container) }}. Please wait.</span>
+                      </div>
                     }
                   </mat-card-content>
                   <mat-card-actions>
@@ -209,7 +208,7 @@
                         <button (click)="edit(container)" class="edit-button" matFab>
                           <mat-icon>edit_document</mat-icon>
                         </button>
-                        @if (container.status !== 'setting_up') {
+                        @if (container.status !== statusTypes.setting_up) {
                           <button (click)="remove(container)" class="delete-button" matFab>
                             <mat-icon>delete</mat-icon>
                           </button>

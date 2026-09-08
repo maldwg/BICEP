@@ -35,6 +35,7 @@ import { interval, startWith, switchMap } from 'rxjs';
 })
 export class DashboardComponent implements OnInit {
   @ViewChild(AlertComponent) errorPopup!: AlertComponent;
+  readonly statusTypes = statusTypes;
   containerList: Container[] = [];
   ensembleList: Ensemble[] = [];
   idsToolList: IdsTool[] = [];
@@ -475,6 +476,45 @@ export class DashboardComponent implements OnInit {
     }
     else {
       return true;
+    }
+  }
+
+  containerStatusIcon(container: Container): string {
+    switch (container.status) {
+      case statusTypes.setting_up:
+        return 'download';
+      case statusTypes.active:
+        return 'settings';
+      case statusTypes.idle:
+        return 'pause_circle';
+      default:
+        return 'error_outline';
+    }
+  }
+
+  containerStatusLabel(container: Container): string {
+    switch (container.status) {
+      case statusTypes.setting_up:
+        return 'Pulling image and preparing container';
+      case statusTypes.active:
+        return 'Analysis is running';
+      case statusTypes.idle:
+        return 'Ready for analysis';
+      default:
+        return `Unexpected status: ${container.status}`;
+    }
+  }
+
+  containerStatusIconClass(container: Container): string {
+    switch (container.status) {
+      case statusTypes.setting_up:
+        return 'deployment-icon deployment-icon--pulling';
+      case statusTypes.active:
+        return 'deployment-icon deployment-icon--working';
+      case statusTypes.idle:
+        return 'deployment-icon deployment-icon--ready';
+      default:
+        return 'deployment-icon deployment-icon--error';
     }
   }
 

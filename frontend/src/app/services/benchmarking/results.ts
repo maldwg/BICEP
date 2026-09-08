@@ -45,7 +45,10 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
         )
       ),
       map((data) => {
-        const filtered = this.getFilteredData([...data]);
+        const binaryResults = data.filter(
+          result => (result.evaluation_mode || 'binary') === 'binary'
+        );
+        const filtered = this.getFilteredData(binaryResults);
         if (this.paginator) {
           this.paginator.length = filtered.length;
         }

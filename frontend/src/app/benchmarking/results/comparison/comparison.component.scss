@@ -50,6 +50,12 @@ mat-card {
     min-height: 32rem;
 }
 
+.comparison-empty {
+    margin: 2rem 0;
+    text-align: center;
+    color: var(--app-text-muted);
+}
+
 @media (max-width: 60rem) {
     .comparison-download-button {
         margin-left: 0;
