@@ -3,15 +3,27 @@ This implementation enables a user to use the following structure as datasets fo
     1. A pcap file with all the requests. May include background traffic, noise, etc.
     2. A CSV file with:
         a) information on the Source and Destintation (IP and Port), 
-        b) timestamp in human readable form
+        b) timestamp in human-readable or Unix epoch form
         c) a label which contains the keyword "benign" or "malicious"
 """
 import csv
+import ipaddress
 import logging
+import re
 
-from app.utils import HourPrecision, MinutePrecision, SecondPrecision, MilisecondPrecision, get_precision_by_name, normalize_and_parse_alert_timestamp, extract_ts_srcip_srcport_dstip_dstport_from_alert, get_item_counts_of_dict, Precision
+from app.utils import (
+    HourPrecision,
+    MinutePrecision,
+    SecondPrecision,
+    MilisecondPrecision,
+    get_precision_by_name,
+    normalize_and_parse_alert_timestamp,
+    parse_datetime_timestamp,
+    extract_ts_srcip_srcport_dstip_dstport_from_alert,
+    get_item_counts_of_dict,
+    Precision,
+)
 from app.bicep_utils.models.ids_base import Alert
-from dateutil import parser
 import random
 from collections import Counter
 
@@ -46,11 +58,11 @@ def network_traffic_data_calculate_precision(labels_file_path):
         return header, random.sample(all_rows, min(5, len(all_rows)))
 
     def parse_timestamp(timestamp):
-        return parser.parse(timestamp, dayfirst=False).replace(tzinfo=None)
+        return parse_datetime_timestamp(timestamp)
 
     # TODO 1: maybe enough to look for 0 values ? unliekly that everywhere there will be the same sec, ms, min, etc. 
     header, random_rows = get_header_and_sample_rows_from_csv(labels_file_path)
-    _, timestamp_col_id, _, _, _, _ = _get_column_ids(header)
+    _, timestamp_col_id, _, _, _, _ = _get_column_ids(header, random_rows)
     timestamps = [ parse_timestamp(row[timestamp_col_id]) for row in random_rows]
     if not all(ts.microsecond == 0 for ts in timestamps):
         return MilisecondPrecision()
@@ -73,12 +85,13 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
         malicious_count (int): Amount of malicious data points
 
     """
+    column_ids = _get_column_ids_for_file(labels_file_path)
     benign_count = 0
     malicious_count = 0
     with open(labels_file_path, "r", encoding="utf-8", newline="") as input_csv:
         reader = csv.reader(input_csv)
         header = next(reader)
-        label_col_id, _, _, _, _, _ = _get_column_ids(header)
+        label_col_id = column_ids[0]
         for row in reader:
             if _is_benign_label(row[label_col_id]):
                 benign_count += 1
@@ -88,10 +101,11 @@ def network_traffic_data_get_benign_and_malicious_counts_of_labels_file(labels_f
 
 
 def network_traffic_data_get_class_counts(labels_file_path) -> dict[str, int]:
+    column_ids = _get_column_ids_for_file(labels_file_path)
     with open(labels_file_path, "r", encoding="utf-8", newline="") as input_csv:
         reader = csv.reader(input_csv)
         header = next(reader)
-        label_col_id, _, _, _, _, _ = _get_column_ids(header)
+        label_col_id = column_ids[0]
         counts = Counter()
         for row in reader:
             label = str(row[label_col_id]).strip()
@@ -110,6 +124,7 @@ def network_traffic_data_get_class_detection_statistics(
 ) -> dict:
     """Return alert coverage for each ground-truth class in a static dataset."""
     precision = get_precision_by_name(dataset.timestamp_precision)
+    column_ids = _get_column_ids_for_file(dataset.labels_file_path)
     alerts_dict = {}
     for alert in alerts:
         key = extract_ts_srcip_srcport_dstip_dstport_from_alert(alert, precision)
@@ -126,7 +141,7 @@ def network_traffic_data_get_class_detection_statistics(
             src_port_col_id,
             dst_ip_col_id,
             dst_port_col_id,
-        ) = _get_column_ids(header)
+        ) = column_ids
 
         for row in reader:
             label = str(row[label_col_id]).strip()
@@ -204,6 +219,7 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
 
     TP = TN = FN = FP = 0
     precision = get_precision_by_name(dataset.timestamp_precision)
+    column_ids = _get_column_ids_for_file(dataset.labels_file_path)
     # save in a dict for performance reasons 
     alerts_dict = {}
     for alert in alerts:
@@ -218,7 +234,7 @@ def network_traffic_data_get_positives_and_negatives_from_dataset(dataset, alert
         reader = csv.reader(csv_file)
         header = next(reader)
         # Get column dynamically from header
-        label_col_id, timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id = _get_column_ids(header)
+        label_col_id, timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id = column_ids
         direct_counter = 0
         tolerance_counter = 0
         reverse_tolerance_counter = 0
@@ -356,50 +372,245 @@ def _get_reverse_key(key):
 def _is_request_benign(cell: str) -> bool:
     return _is_benign_label(cell)
 
-def _get_index(lst: list, search_list: list[str]) -> int:
-    """
-    Method to lookup a list index based on a search list
-    Args: 
-        lst (list): The list to search 
-        search_list (list[str]): Contains keywords or phrases to look for in lst
-    
-    Returns: 
-        index (int): The first index in the list that contains any of the search_list entries
-    """
-    for index, element in enumerate(lst):
-            # Compare the lowercase versions of the strings
-            element = str(element).strip().casefold()
-            for search in search_list:
-                if str(element).casefold() == search.casefold():
-                    return index
-    raise KeyError(f"list {lst} does not contain any of these keywords: {search_list}")
+_COLUMN_NAME_PATTERNS = {
+    "label": re.compile(
+        r"^(?:(?:traffic|event|attack|groundtruth)?labels?|"
+        r"(?:traffic|event|attack|groundtruth)?class(?:ification)?|"
+        r"category|target|attack(?:type|cat(?:egory)?)?)$"
+    ),
+    "timestamp": re.compile(
+        r"^(?:time(?:stamp)?|datetime|dateandtime|stime|starttime|"
+        r"flowstart(?:time)?|eventtime(?:stamp)?|epoch(?:time)?|"
+        r"unix(?:epoch)?(?:time|timestamp)?|ts|"
+        r"bidirectionalfirstseen(?:ms|us|ns|s)?)$"
+    ),
+    "source_ip": re.compile(
+        r"^(?:(?:ipv[46])?(?:src|source|client|origin)"
+        r"(?:ip(?:addr(?:ess)?)?|addr(?:ess)?)?|(?:id)?origh)$"
+    ),
+    "source_port": re.compile(
+        r"^(?:(?:src|source|client|origin)(?:port|p)|sport|(?:id)?origp)$"
+    ),
+    "destination_ip": re.compile(
+        r"^(?:(?:ipv[46])?(?:dst|dest|destination|server|responder)"
+        r"(?:ip(?:addr(?:ess)?)?|addr(?:ess)?)?|(?:id)?resph)$"
+    ),
+    "destination_port": re.compile(
+        r"^(?:(?:dst|dest|destination|server|responder)(?:port|p)|"
+        r"dport|dsport|(?:id)?respp)$"
+    ),
+}
 
-def _get_column_ids(header: list) -> tuple[int, int, int, int ,int ,int]:
-    """
-    Looks in the header row of a labels file for the necessary column indexes to construct Alerts
-    Args: 
-        header (list): A list containing all column names
-    Returns: 
-        label_col_id (int): The index containing the label for an entry
-        timestamp_col_id (int): The index containing the timestamp
-        src_ip_col_id (int): The index containing the source ip
-        src_port_col_id (int): Index containing the source port
-        dst_ip_col_id (int): Index containing th destination ip
-        dst_port_col_id (int): Index containing the destination port
-    """
-    label_col_id = _get_index(header, ["Label", "Class"])
-    timestamp_col_id = _get_index(header, ["Time", "Timestamp", "StartTime", "Stime"])
-    src_ip_col_id = _get_index(header, ["Source", "Source-IP", "Source_IP", "Source IP", "Src", "Src_IP", "Src-IP", "Src_IP", "Src IP", "SrcAddr", "SrcIP"])
-    src_port_col_id = _get_index(header, ["Source Port", "Source-Port", "Source_Port", "Src_Port", "Src-Port", "Src Port", "Sport"])
-    dst_ip_col_id = _get_index(header, ["Destination", "Destination-IP", "Destination_IP", "Destination IP", "Dst", "Dst_IP", "Dst-IP", "Dst IP", "DstAddr", "DstIP"])
-    dst_port_col_id = _get_index(header, ["Destination Port", "Destination-Port", "Destination_Port", "Dst_Port", "Dst-Port", "Dst Port", "Dport", "Dsport"])
-    return label_col_id,timestamp_col_id, src_ip_col_id, src_port_col_id, dst_ip_col_id, dst_port_col_id
+_COLUMN_DISPLAY_NAMES = {
+    "label": "label",
+    "timestamp": "timestamp",
+    "source_ip": "source IP",
+    "source_port": "source port",
+    "destination_ip": "destination IP",
+    "destination_port": "destination port",
+}
+
+
+def _normalize_column_name(value) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value).strip().casefold())
+
+
+def _sample_column_values(sample_rows: list[list[str]], column_id: int) -> list[str]:
+    return [
+        str(row[column_id]).strip()
+        for row in sample_rows
+        if column_id < len(row) and str(row[column_id]).strip()
+    ]
+
+
+def _matching_ratio(values: list[str], predicate) -> float:
+    if not values:
+        return 0.0
+    return sum(bool(predicate(value)) for value in values) / len(values)
+
+
+def _is_ip_value(value: str) -> bool:
+    try:
+        ipaddress.ip_address(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_port_value(value: str) -> bool:
+    try:
+        numeric_value = float(value)
+    except ValueError:
+        return False
+    return numeric_value.is_integer() and 0 <= numeric_value <= 65535
+
+
+def _is_timestamp_value(value: str) -> bool:
+    try:
+        numeric_value = float(value)
+        if abs(numeric_value) <= 65535:
+            return False
+    except ValueError:
+        pass
+    try:
+        parsed = parse_datetime_timestamp(value)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return 1970 <= parsed.year <= 2200
+
+
+def _assign_single_typed_column(
+    role: str, resolved: dict[str, int], candidates: list[tuple[float, int]]
+) -> None:
+    if role in resolved or not candidates:
+        return
+    candidates.sort(reverse=True)
+    best_score, best_index = candidates[0]
+    tied = [index for score, index in candidates if score == best_score]
+    if best_score >= 0.8 and len(tied) == 1:
+        resolved[role] = best_index
+
+
+def _assign_directional_pair(
+    source_role: str,
+    destination_role: str,
+    resolved: dict[str, int],
+    candidates: list[int],
+) -> None:
+    missing_roles = [
+        role for role in (source_role, destination_role) if role not in resolved
+    ]
+    available = sorted(index for index in candidates if index not in resolved.values())
+    if len(missing_roles) == 1 and len(available) == 1:
+        resolved[missing_roles[0]] = available[0]
+    elif len(missing_roles) == 2 and len(available) == 2:
+        # When names contain no direction at all, conventional CSV order is src,dst.
+        resolved[source_role], resolved[destination_role] = available
+
+
+def _infer_label_column(
+    header: list, sample_rows: list[list[str]], resolved: dict[str, int]
+) -> None:
+    if "label" in resolved:
+        return
+    scored_candidates = []
+    for index in range(len(header)):
+        if index in resolved.values():
+            continue
+        values = _sample_column_values(sample_rows, index)
+        if not values:
+            continue
+        normalized_values = {value.casefold() for value in values}
+        benign_values = sum(_is_benign_label(value) for value in values)
+        name = _normalize_column_name(header[index])
+        name_hint = bool(re.search(r"(?:label|class|attack|category|target)", name))
+        score = benign_values * 10 + (5 if name_hint else 0)
+        if len(normalized_values) <= max(20, len(values) // 2):
+            score += 1
+        if score > 0:
+            scored_candidates.append((score, index))
+    scored_candidates.sort(reverse=True)
+    if scored_candidates:
+        best_score, best_index = scored_candidates[0]
+        if len(scored_candidates) == 1 or best_score > scored_candidates[1][0]:
+            resolved["label"] = best_index
+
+
+def _get_column_ids_for_file(labels_file_path) -> tuple[int, int, int, int, int, int]:
+    with open(labels_file_path, "r", encoding="utf-8-sig", newline="") as csv_file:
+        reader = csv.reader(csv_file)
+        try:
+            header = next(reader)
+        except StopIteration as error:
+            raise ValueError("The labels CSV is empty.") from error
+        sample_rows = []
+        for row in reader:
+            if any(str(value).strip() for value in row):
+                sample_rows.append(row)
+            if len(sample_rows) >= 50:
+                break
+    if not sample_rows:
+        raise ValueError("The labels CSV does not contain any data rows.")
+    return _get_column_ids(header, sample_rows)
+
+
+def _get_column_ids(
+    header: list, sample_rows: list[list[str]] | None = None
+) -> tuple[int, int, int, int, int, int]:
+    """Resolve required fields by normalized names and conservative value inference."""
+    normalized_header = [_normalize_column_name(value) for value in header]
+    resolved: dict[str, int] = {}
+
+    for role, pattern in _COLUMN_NAME_PATTERNS.items():
+        matches = [
+            index
+            for index, name in enumerate(normalized_header)
+            if pattern.fullmatch(name)
+        ]
+        if len(matches) == 1:
+            resolved[role] = matches[0]
+        elif len(matches) > 1:
+            names = [str(header[index]) for index in matches]
+            raise ValueError(
+                f"Ambiguous {_COLUMN_DISPLAY_NAMES[role]} columns: {names}."
+            )
+
+    if sample_rows:
+        used_indexes = set(resolved.values())
+        timestamp_candidates = []
+        ip_candidates = []
+        port_candidates = []
+        for index in range(len(header)):
+            if index in used_indexes:
+                continue
+            values = _sample_column_values(sample_rows, index)
+            timestamp_candidates.append(
+                (_matching_ratio(values, _is_timestamp_value), index)
+            )
+            if _matching_ratio(values, _is_ip_value) >= 0.8:
+                ip_candidates.append(index)
+            if _matching_ratio(values, _is_port_value) >= 0.8:
+                port_candidates.append(index)
+
+        _assign_single_typed_column(
+            "timestamp", resolved, timestamp_candidates
+        )
+        _assign_directional_pair(
+            "source_ip", "destination_ip", resolved, ip_candidates
+        )
+        _assign_directional_pair(
+            "source_port", "destination_port", resolved, port_candidates
+        )
+        _infer_label_column(header, sample_rows, resolved)
+
+    role_order = (
+        "label",
+        "timestamp",
+        "source_ip",
+        "source_port",
+        "destination_ip",
+        "destination_port",
+    )
+    missing_roles = [role for role in role_order if role not in resolved]
+    if missing_roles:
+        missing_names = ", ".join(_COLUMN_DISPLAY_NAMES[role] for role in missing_roles)
+        raise ValueError(
+            f"Could not uniquely infer CSV columns for: {missing_names}. "
+            f"Available headers: {[str(value) for value in header]}. "
+            "Use recognizable field names when value-based inference is ambiguous."
+        )
+
+    logger.debug(
+        "Resolved dataset CSV columns: %s",
+        {role: str(header[resolved[role]]) for role in role_order},
+    )
+    return tuple(resolved[role] for role in role_order)
 
 def _get_keys_with_tolerance(key, precision: Precision):
     # if the precision is second or milisecond than discrepancies are likely between pcap and csv 
     # therefor adjust the tolerance depending on the precision type of the dataset
     tolerance_unit = 1 if type(precision) in [MinutePrecision, HourPrecision] else 10
-    timestamp = parser.parse(key[0], dayfirst=False).replace(tzinfo=None)
+    timestamp = parse_datetime_timestamp(key[0])
     timestamps_with_tolerance = precision.calculate_timestamps_with_tolerance(timestamp, tolerance_unit=tolerance_unit)
     keys = []
     for ts in timestamps_with_tolerance:

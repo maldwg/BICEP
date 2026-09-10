@@ -266,14 +266,24 @@ async def stop_analysis(stop_data: stop_analysisData, db=Depends(get_db)):
             if ensemble.status == STATUS.ACTIVE.value:
                 message = f"Container is part of a running ensemble. It is not possible to stop a container analysis individually"
                 return create_response_error(message, 500)
+    container_id = container.id
     response: HTTPResponse = await container.stop_analysis()
-    # set container status to active/idle afterwards before
     if response.status_code == 200:
-        await update_ids_status(db, STATUS.IDLE.value, container)
-        message = f"Analysis for container {container.id} stopped successfully"
+        # The IDS synchronously calls /analysis/finished while handling its stop
+        # request. Discard the transaction snapshot created before that callback,
+        # then reload the row instead of committing the now-stale ORM instance.
+        await db.rollback()
+        current_container = await get_ids_system_by_id_any_status(db, container_id)
+        if (
+            current_container is not None
+            and current_container.status != STATUS.IDLE.value
+        ):
+            # Fallback for a failed/missing IDS completion callback.
+            await update_ids_status(db, STATUS.IDLE.value, current_container)
+        message = f"Analysis for container {container_id} stopped successfully"
         return create_response_message(message, 200)
     else:
-        message = f"Analysis for container {container.id} did not stop successfully"
+        message = f"Analysis for container {container_id} did not stop successfully"
         return create_response_error(message, 500)
 
 

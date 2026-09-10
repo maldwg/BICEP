@@ -9,3 +9,11 @@
 .progress-div {
   padding-top: 1rem;
 }
+
+.labels-format-hint {
+  max-width: 32rem;
+  margin: -0.75rem 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}

@@ -148,7 +148,7 @@ export class ComparisonComponent implements OnInit, OnChanges {
 
     const classes = this.classDescriptors();
     const labels = classes.map(item =>
-      item.isBenign ? item.label + '\n(benign false detection)' : item.label
+      item.isBenign ? item.label + '\n(benign FPR)' : item.label
     );
 
     this.classChartOption = {

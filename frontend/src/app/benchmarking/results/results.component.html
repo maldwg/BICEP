@@ -134,19 +134,25 @@
               <summary>View class rates</summary>
               <table>
                 <thead>
-                  <tr><th>Class</th><th>Type</th><th>Support</th><th>Flagged</th><th>Not flagged</th><th>Rate</th></tr>
+                  <tr><th>Class</th><th>Type</th><th>Support</th><th>Alerted rows</th><th>Not-alerted rows</th><th>Rate</th></tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let classResult of row.class_results">
                     <td>{{ classResult.class_label }}</td>
                     <td>{{ classResult.is_benign ? 'Benign' : 'Malicious' }}</td>
                     <td>{{ classResult.support }}</td>
-                    <td>{{ classResult.detected }}</td>
-                    <td>{{ classResult.missed }}</td>
+                    <td>
+                      {{ classResult.detected }}
+                      <span class="class-rate-label">{{ classResult.is_benign ? 'FP' : 'TP' }}</span>
+                    </td>
+                    <td>
+                      {{ classResult.missed }}
+                      <span class="class-rate-label">{{ classResult.is_benign ? 'TN' : 'FN' }}</span>
+                    </td>
                     <td>
                       {{ classResult.detection_rate | percent:'1.0-2' }}
                       <span class="class-rate-label">
-                        {{ classResult.is_benign ? 'false-detection rate' : 'detection rate' }}
+                        {{ classResult.is_benign ? 'false-positive-rate' : 'detection-rate' }}
                       </span>
                     </td>
                   </tr>
@@ -180,10 +186,10 @@
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="benign_false_detection_rate">
-        <th mat-header-cell *matHeaderCellDef>Benign false detection</th>
+      <ng-container matColumnDef="benign_fpr">
+        <th mat-header-cell *matHeaderCellDef><abbr title="False-positive rate among benign rows: FP / (FP + TN)">Benign FPR</abbr></th>
         <td mat-cell *matCellDef="let row" class="metric-value">
-          {{ isMulticlassResult(row) ? (multiclassBenignFalseDetectionRate(row) | percent:'1.0-2') : '—' }}
+          {{ isMulticlassResult(row) ? (multiclassBenignFpr(row) | percent:'1.0-2') : '—' }}
         </td>
       </ng-container>
 
@@ -197,7 +203,7 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="fpr">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-positive rate">FPR</abbr></th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-positive rate: FP / (FP + TN)">FPR</abbr></th>
         <td mat-cell *matCellDef="let row">{{ row.fpr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="fnr">
@@ -205,7 +211,7 @@
         <td mat-cell *matCellDef="let row">{{ row.fnr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="fdr">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-discovery rate">FDR</abbr></th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-discovery rate: FP / (TP + FP)">FDR</abbr></th>
         <td mat-cell *matCellDef="let row">{{ row.fdr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="detection_rate">

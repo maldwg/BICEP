@@ -12,46 +12,42 @@ async def calculate_evaluation_metrics(db, dataset_id, alerts):
     total = true_benign + true_malicious
     TP, FP, TN, FN, UNASSIGNED_ALERTS, TOTAL_ALERTS = await dataset.dataset_type.get_positives_and_negatives_from_dataset( dataset, alerts)
 
+    def ratio(numerator, denominator):
+        return numerator / denominator if denominator > 0 else 0
+
     def calculate_fpr():
-        fpr = round(FP / (FP + TN), 2) if FP + TN > 0 else 0
-        return fpr
+        return round(ratio(FP, FP + TN), 4)
 
-    # FNR: False Negative Rate
     def calculate_fnr():
-        fnr = FN / (FN + TP) if (FN + TP) > 0 else 0
-        return round(fnr, 2)
-    # DR: Detection Rate (Sensitivity/Recall)
+        return round(ratio(FN, FN + TP), 4)
+
     def calculate_dr():
-        dr = TP / (TP + FN) if (TP + FN) > 0 else 0
-        # if there is no malicious return DR of 100 %
-        dr = 1 if true_malicious == 0 and dr == 0 else dr
-        return round(dr,2)
+        if true_malicious == 0:
+            return 1
+        return round(ratio(TP, TP + FN), 4)
+
     def calculate_fdr():
-        fdr = round(FP / (FP + TP), 2) if FP + TP > 0 else 0
-        return fdr
-    
-    # Accuracy
+        return round(ratio(FP, FP + TP), 4)
+
     def calculate_accuracy():
-        acc = (TP + TN) / total if total > 0 else 0
-        return round(acc, 2)
+        return round(ratio(TP + TN, total), 4)
 
-    # Precision
     def calculate_precision():
-        prec = TP / (TP + FP) if (TP + FP) > 0 else 0
-        return round(prec, 2)
+        return round(ratio(TP, TP + FP), 4)
 
-    # F-Score (F1-Score)
     def calculate_f_score():
-        precision = calculate_precision()
-        recall = calculate_dr()
-        score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        return round(score,2)
+        precision = ratio(TP, TP + FP)
+        recall = ratio(TP, TP + FN)
+        return round(
+            2 * precision * recall / (precision + recall)
+            if precision + recall > 0
+            else 0,
+            4,
+        )
 
     def calculate_unassigned_requests_ratio():
-        if TOTAL_ALERTS != 0:
-            return round(UNASSIGNED_ALERTS / TOTAL_ALERTS, 2)
-        else:
-            return 0
+        return round(ratio(UNASSIGNED_ALERTS, TOTAL_ALERTS), 4)
+
     metrics = {
         "FPR": calculate_fpr(),
         "FNR": calculate_fnr(),

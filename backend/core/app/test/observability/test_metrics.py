@@ -40,14 +40,14 @@ async def test_calculate_evaluation_metrics(sample_alerts, db_session_fixture: D
     # Replace with actual metrics calculation logic
     metrics = await calculate_evaluation_metrics(db, sample_dataset.id, sample_alerts)
     correct_metrics = {
-        "FPR": 0.01,
+        "FPR": 0.0067,
         "FNR": 0.91,
         "DR": 0.09,
         "FDR": 0.4,
-        "ACCURACY": 0.9,
+        "ACCURACY": 0.9029,
         "PRECISION": 0.6,
-        "F_SCORE": 0.16,
-        "UNASSIGNED_ALERTS_RATIO": 0.0
+        "F_SCORE": 0.1565,
+        "UNASSIGNED_ALERTS_RATIO": 0.0,
     }
-    
+
     assert metrics == correct_metrics

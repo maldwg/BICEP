@@ -44,7 +44,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
     'detection_rate', 'prec', 'f1_score', 'acc', 'fpr', 'fnr', 'fdr',
     'class_count', 'class_breakdown', 'macro_detection_rate', 'weighted_detection_rate',
-    'lowest_detection_rate', 'benign_false_detection_rate', 'avg_cpu_usage', 'avg_memory_usage'
+    'lowest_detection_rate', 'benign_fpr', 'avg_cpu_usage', 'avg_memory_usage'
   ];
   throughputDisplayedColumns = [
     'throughput_select', 'job_id', 'target_name', 'traffic_mode', 'configuration_name', 'ruleset_name', 'repeat', 'packet_count',
@@ -85,7 +85,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     { value: 'macro_detection_rate', viewValue: 'Macro malicious detection rate', max: 1 },
     { value: 'weighted_detection_rate', viewValue: 'Weighted malicious detection rate', max: 1 },
     { value: 'lowest_detection_rate', viewValue: 'Lowest malicious-class detection rate', max: 1 },
-    { value: 'benign_false_detection_rate', viewValue: 'Benign false-detection rate', max: 1 },
+    { value: 'benign_fpr', viewValue: 'Benign FPR', max: 1 },
     { value: 'class_count', viewValue: 'Class count' },
     { value: 'runtime', viewValue: 'Runtime (s)' },
     { value: 'avg_cpu_usage', viewValue: 'Average CPU (cores)' },
@@ -266,8 +266,9 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
         'Overall FPR', 'Overall FNR', 'Overall FDR', 'Avg CPU (cores)', 'Avg RAM (MB)',
         'Multiclass Class Count', 'Macro Malicious Detection Rate',
         'Weighted Malicious Detection Rate', 'Lowest Malicious Class Detection Rate',
-        'Benign False Detection Rate', 'Class', 'Class Type', 'Class Support',
-        'Class Flagged', 'Class Not Flagged', 'Class Rate Type', 'Class Rate'
+        'Benign FPR', 'Class', 'Class Type', 'Class Support',
+        'Class Alerted Rows', 'Class Not-alerted Rows', 'Alerted Outcome',
+        'Not-alerted Outcome', 'Class Rate Type', 'Class Rate'
       ];
 
       const rows = data.flatMap(result => {
@@ -301,13 +302,15 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
           isMulticlass ? this.multiclassMacroDetectionRate(result) : '',
           isMulticlass ? this.multiclassWeightedDetectionRate(result) : '',
           isMulticlass ? this.multiclassLowestDetectionRate(result) : '',
-          isMulticlass ? this.multiclassBenignFalseDetectionRate(result) : '',
+          isMulticlass ? this.multiclassBenignFpr(result) : '',
           this.escapeCsvValue(classResult?.class_label),
           classResult ? (classResult.is_benign ? 'benign' : 'malicious') : '',
           classResult?.support ?? '',
           classResult?.detected ?? '',
           classResult?.missed ?? '',
-          classResult ? (classResult.is_benign ? 'false detection rate' : 'detection rate') : '',
+          classResult ? (classResult.is_benign ? 'FP' : 'TP') : '',
+          classResult ? (classResult.is_benign ? 'TN' : 'FN') : '',
+          classResult ? (classResult.is_benign ? 'FPR' : 'DR') : '',
           classResult?.detection_rate ?? ''
         ].join(','));
       });
@@ -414,7 +417,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     return classes.length ? Math.min(...classes.map(item => item.detection_rate)) : 0;
   }
 
-  multiclassBenignFalseDetectionRate(result: BenchmarkingResultsItem): number {
+  multiclassBenignFpr(result: BenchmarkingResultsItem): number {
     const classes = (result.class_results || []).filter(item => item.is_benign);
     const support = classes.reduce((total, item) => total + item.support, 0);
     return support
@@ -531,7 +534,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       macro_detection_rate: this.multiclassMacroDetectionRate(result),
       weighted_detection_rate: this.multiclassWeightedDetectionRate(result),
       lowest_detection_rate: this.multiclassLowestDetectionRate(result),
-      benign_false_detection_rate: this.multiclassBenignFalseDetectionRate(result),
+      benign_fpr: this.multiclassBenignFpr(result),
       class_count: result.class_results?.length || 0
     };
   }
