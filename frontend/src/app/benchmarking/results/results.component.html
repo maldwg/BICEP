@@ -39,15 +39,11 @@
       </mat-form-field>
       <button class="download-button" (click)="downloadResultsAsCSV()" matFab extended>
         <mat-icon>download</mat-icon>
-        CSV
+        Results CSV
       </button>
       <button class="download-button" (click)="downloadThroughputResultsAsCSV()" [disabled]="throughputResults.length === 0" matFab extended>
         <mat-icon>speed</mat-icon>
         Throughput CSV
-      </button>
-      <button class="download-button" (click)="downloadMulticlassResultsAsCSV()" [disabled]="multiclassResults.length === 0" matFab extended>
-        <mat-icon>category</mat-icon>
-        Multiclass CSV
       </button>
       <button class="compare-button" (click)="openResultComparison()" [disabled]="selection.selected.length < 2" matFab
         extended color="accent">

@@ -36,8 +36,6 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   searchControl = new FormControl('');
   throughputResults: ThroughputResultItem[] = [];
   filteredThroughputResults: ThroughputResultItem[] = [];
-  multiclassResults: BenchmarkingResultsItem[] = [];
-  filteredMulticlassResults: BenchmarkingResultsItem[] = [];
 
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
@@ -188,10 +186,8 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       console.log("Filtering with value:", value);
       this.dataSource.setFilter(value || '');
       this.applyThroughputFilter(value || '');
-      this.applyMulticlassFilter(value || '');
     });
     this.loadThroughputResults();
-    this.loadMulticlassResults();
     document.body.classList.add('no-body-background');
   }
 
@@ -202,12 +198,10 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   applyFilter(value: string) {
     this.dataSource.setFilter(value);
     this.applyThroughputFilter(value);
-    this.applyMulticlassFilter(value);
   }
   applyFilters(value: string) {
     this.dataSource.setFilter(value);
     this.applyThroughputFilter(value);
-    this.applyMulticlassFilter(value);
   }
 
   loadThroughputResults() {
@@ -222,75 +216,77 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     });
   }
 
-  loadMulticlassResults() {
-    this.benchmarkingService.getAllConfigurations().subscribe({
-      next: results => {
-        this.multiclassResults = results.filter(
-          result => (result.evaluation_mode || 'binary') === 'multiclass'
-        );
-        this.applyMulticlassFilter(this.searchControl.value || '');
-      },
-      error: err => console.error('Could not load multiclass benchmark results.', err)
-    });
-  }
-
   downloadResultsAsCSV() {
-    // Get all data from the service (not just the current page)
     this.benchmarkingService.getAllConfigurations().subscribe(data => {
       if (!data || data.length === 0) {
         console.warn('No data available to download');
         return;
       }
 
-      // Define CSV headers based on displayed columns
       const headers = [
-        'ID', 'IDS Name', 'Dataset', 'Ensemble Method', 'Configuration', 'Ruleset', 'Start Time', 'Stop Time',
-        'Runtime', 'Detection Rate', 'FPR', 'FNR', 'FDR', 'Accuracy', 'Precision', 'F1 Score',
-        'Avg CPU (cores)', 'Avg RAM (MB)', 'Evaluation Mode'
+        'ID', 'Evaluation Mode', 'IDS Name', 'Dataset', 'Ensemble Method',
+        'Configuration', 'Ruleset', 'Start Time', 'Stop Time', 'Runtime Seconds',
+        'Overall Detection Rate', 'Overall Precision', 'Overall F1 Score', 'Overall Accuracy',
+        'Overall FPR', 'Overall FNR', 'Overall FDR', 'Avg CPU (cores)', 'Avg RAM (MB)',
+        'Multiclass Class Count', 'Macro Malicious Detection Rate',
+        'Weighted Malicious Detection Rate', 'Lowest Malicious Class Detection Rate',
+        'Benign False Detection Rate', 'Class', 'Class Type', 'Class Support',
+        'Class Flagged', 'Class Not Flagged', 'Class Rate Type', 'Class Rate'
       ];
 
-      // Convert data to CSV rows
-      const csvRows = [
-        headers.join(','), // Header row
-        ...data.map(row => [
-          row.id,
-          this.escapeCsvValue(row.ids_name),
-          this.escapeCsvValue(row.dataset_name),
-          this.escapeCsvValue(row.ensembling_method),
-          this.escapeCsvValue(row.configuration_name),
-          this.escapeCsvValue(row.ruleset_name),
-          this.escapeCsvValue(row.start_time),
-          this.escapeCsvValue(row.stop_time),
-          row.runtime,
-          row.detection_rate,
-          row.fpr,
-          row.fnr,
-          row.fdr,
-          row.acc,
-          row.prec,
-          row.f1_score,
-          row.avg_cpu_usage ?? '',
-          row.avg_memory_usage ?? '',
-          row.evaluation_mode || 'binary'
-        ].join(','))
-      ];
+      const rows = data.flatMap(result => {
+        const evaluationMode = result.evaluation_mode || 'binary';
+        const isMulticlass = evaluationMode === 'multiclass';
+        const classResults = isMulticlass && result.class_results?.length
+          ? result.class_results
+          : [undefined];
 
-      // Create CSV content
-      const csvContent = csvRows.join('\n');
+        return classResults.map(classResult => [
+          result.id,
+          evaluationMode,
+          this.escapeCsvValue(result.ids_name),
+          this.escapeCsvValue(result.dataset_name),
+          this.escapeCsvValue(result.ensembling_method),
+          this.escapeCsvValue(result.configuration_name),
+          this.escapeCsvValue(result.ruleset_name),
+          this.escapeCsvValue(result.start_time),
+          this.escapeCsvValue(result.stop_time),
+          result.runtime,
+          result.detection_rate,
+          result.prec,
+          result.f1_score,
+          result.acc,
+          result.fpr,
+          result.fnr,
+          result.fdr,
+          result.avg_cpu_usage ?? '',
+          result.avg_memory_usage ?? '',
+          isMulticlass ? (result.class_results?.length || 0) : '',
+          isMulticlass ? this.multiclassMacroDetectionRate(result) : '',
+          isMulticlass ? this.multiclassWeightedDetectionRate(result) : '',
+          isMulticlass ? this.multiclassLowestDetectionRate(result) : '',
+          isMulticlass ? this.multiclassBenignFalseDetectionRate(result) : '',
+          this.escapeCsvValue(classResult?.class_label),
+          classResult ? (classResult.is_benign ? 'benign' : 'malicious') : '',
+          classResult?.support ?? '',
+          classResult?.detected ?? '',
+          classResult?.missed ?? '',
+          classResult ? (classResult.is_benign ? 'false detection rate' : 'detection rate') : '',
+          classResult?.detection_rate ?? ''
+        ].join(','));
+      });
 
-      // Create blob and download
+      const csvContent = [headers.join(','), ...rows].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
 
-      link.setAttribute('href', url);
-      link.setAttribute('download', `benchmarking_results_${new Date().toISOString().split('T')[0]}.csv`);
+      link.href = url;
+      link.download = 'benchmarking_results_' + new Date().toISOString().split('T')[0] + '.csv';
       link.style.visibility = 'hidden';
-
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       URL.revokeObjectURL(url);
     });
   }
@@ -345,62 +341,6 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     link.click();
     document.body.removeChild(link);
 
-    URL.revokeObjectURL(url);
-  }
-
-  downloadMulticlassResultsAsCSV() {
-    if (this.filteredMulticlassResults.length === 0) {
-      return;
-    }
-
-    const headers = [
-      "Result ID", "IDS Name", "Dataset", "Configuration", "Ruleset", "Runtime Seconds",
-      "Overall Detection Rate", "Overall Precision", "Overall F1 Score", "Overall Accuracy",
-      "Overall FPR", "Overall FNR", "Overall FDR", "Class Count",
-      "Macro Malicious Detection Rate", "Weighted Malicious Detection Rate",
-      "Lowest Malicious Class Detection Rate", "Benign False Detection Rate",
-      "Class", "Class Type", "Support", "Detected or Flagged", "Missed or Correct Benign",
-      "Class Rate Type", "Class Rate"
-    ];
-
-    const rows = this.filteredMulticlassResults.flatMap(result => {
-      const classResults = result.class_results?.length ? result.class_results : [undefined];
-      return classResults.map(classResult => [
-        result.id,
-        this.escapeCsvValue(result.ids_name),
-        this.escapeCsvValue(result.dataset_name),
-        this.escapeCsvValue(result.configuration_name),
-        this.escapeCsvValue(result.ruleset_name),
-        result.runtime,
-        result.detection_rate,
-        result.prec,
-        result.f1_score,
-        result.acc,
-        result.fpr,
-        result.fnr,
-        result.fdr,
-        result.class_results?.length || 0,
-        this.multiclassMacroDetectionRate(result),
-        this.multiclassWeightedDetectionRate(result),
-        this.multiclassLowestDetectionRate(result),
-        this.multiclassBenignFalseDetectionRate(result),
-        this.escapeCsvValue(classResult?.class_label),
-        classResult ? (classResult.is_benign ? "benign" : "malicious") : "",
-        classResult?.support ?? "",
-        classResult?.detected ?? "",
-        classResult?.missed ?? "",
-        classResult ? (classResult.is_benign ? "false detection rate" : "detection rate") : "",
-        classResult?.detection_rate ?? ""
-      ].join(","));
-    });
-
-    const csvRows = [headers.join(","), ...rows];
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = "multiclass_results_" + new Date().toISOString().split("T")[0] + ".csv";
-    link.click();
     URL.revokeObjectURL(url);
   }
 
@@ -513,27 +453,6 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     this.filteredThroughputResults = this.throughputResults.filter(item =>
       Object.values(item)
         .map(v => (v == null ? '' : String(v).toLowerCase()))
-        .join(' ')
-        .includes(filterValue)
-    );
-  }
-
-  private applyMulticlassFilter(value: string) {
-    const filterValue = value.trim().toLowerCase();
-    if (!filterValue) {
-      this.filteredMulticlassResults = [...this.multiclassResults];
-      return;
-    }
-    this.filteredMulticlassResults = this.multiclassResults.filter(result =>
-      [
-        result.id,
-        result.ids_name,
-        result.dataset_name,
-        result.configuration_name,
-        result.ruleset_name,
-        ...(result.class_results || []).map(classResult => classResult.class_label)
-      ]
-        .map(value => value == null ? '' : String(value).toLowerCase())
         .join(' ')
         .includes(filterValue)
     );
