@@ -7,9 +7,14 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from app.database import get_db
-from app.models.docker_host_system import get_all_hosts, get_host_by_id
+from app.models.docker_host_system import (
+    get_all_hosts,
+    get_host_by_id,
+    get_metric_service_lock,
+)
 from app.models.metric_service import (
     get_all_metric_services,
+    get_metric_service_by_host_id,
     get_or_create_metric_service,
     serialize_metric_service,
     update_metric_service,
@@ -65,6 +70,32 @@ async def _resolve_host_for_registration(db, registration: MetricServiceRegistra
 
 
 async def _persist_metric_service_registration(host, registration, db):
+    host_id = host.id
+    await db.rollback()
+    async with get_metric_service_lock(host_id):
+        fresh_host = await get_host_by_id(db, host_id)
+        if fresh_host is None:
+            return JSONResponse(
+                {"error": f"Docker host with id {host_id} was not found."},
+                status_code=404,
+            )
+        return await _persist_metric_service_registration_unlocked(
+            fresh_host, registration, db
+        )
+
+
+async def _persist_metric_service_registration_unlocked(host, registration, db):
+    existing_metric_service = await get_metric_service_by_host_id(db, host.id)
+    if (
+        existing_metric_service is not None
+        and existing_metric_service.port is not None
+        and existing_metric_service.port != registration.port
+    ):
+        return JSONResponse(
+            {"error": "Ignoring registration from a superseded metric service."},
+            status_code=409,
+        )
+
     metric_service = await get_or_create_metric_service(
         db,
         host.id,
@@ -149,5 +180,4 @@ async def register_metric_service_for_host(
     )
     if not reported_aliases.intersection(expected_aliases):
         return _registration_mismatch_response()
-
     return await _persist_metric_service_registration(host, registration, db)

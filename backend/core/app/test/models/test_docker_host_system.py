@@ -44,9 +44,11 @@ def remote_host():
 def clear_metric_service_health_trackers():
     docker_host_system_module._metric_service_unhealthy_since.clear()
     docker_host_system_module._metric_service_deployment_tasks.clear()
+    docker_host_system_module._metric_service_locks.clear()
     yield
     docker_host_system_module._metric_service_unhealthy_since.clear()
     docker_host_system_module._metric_service_deployment_tasks.clear()
+    docker_host_system_module._metric_service_locks.clear()
 
 
 # ==================== get_host_and_docker_port ====================
@@ -106,7 +108,7 @@ def test_get_metric_service_metric_endpoint_uses_core_pushgateway(
         )
 
 
-def test_get_metric_service_metric_endpoint_uses_localhost_for_core_host(
+def test_get_metric_service_metric_endpoint_uses_host_network_for_core_host(
     core_host: DockerHostSystem,
 ):
     with patch.dict("os.environ", {"EXTERNAL_FASTAPI_PORT": "8000"}), patch(
@@ -119,15 +121,12 @@ def test_get_metric_service_metric_endpoint_uses_localhost_for_core_host(
         )
 
 
-def test_get_metric_service_registration_ip_uses_accessible_host_for_core_host(
+def test_get_metric_service_registration_ip_uses_gateway_for_core_host(
     core_host: DockerHostSystem,
 ):
     with patch(
         "app.models.docker_host_system.get_core_host_ip",
         return_value="172.17.0.1",
-    ), patch(
-        "app.models.docker_host_system.socket.gethostbyname_ex",
-        return_value=("172.17.0.1", [], ["172.17.0.1"]),
     ):
         assert core_host.get_metric_service_registration_ip() == "172.17.0.1"
 
@@ -140,7 +139,7 @@ def test_resolve_host_aliases_includes_registration_ip_for_core_host(
         return_value="172.17.0.1",
     ), patch(
         "app.models.docker_host_system.DockerHostSystem.get_metric_service_registration_ip",
-        return_value="172.17.0.1",
+        return_value="bicep-metric-service-1",
     ), patch(
         "app.models.docker_host_system.socket.gethostbyname_ex",
         side_effect=[
@@ -150,7 +149,7 @@ def test_resolve_host_aliases_includes_registration_ip_for_core_host(
     ):
         aliases = core_host.resolve_host_aliases()
 
-    assert "172.17.0.1" in aliases
+    assert "bicep-metric-service-1" in aliases
     assert "127.0.0.1" in aliases
     assert "localhost" in aliases
 
@@ -165,7 +164,7 @@ def test_get_metric_service_registration_endpoint_uses_host_specific_route(
         )
 
 
-def test_get_metric_service_registration_endpoint_uses_localhost_for_core_host(
+def test_get_metric_service_registration_endpoint_uses_host_network_for_core_host(
     core_host: DockerHostSystem,
 ):
     with patch.dict("os.environ", {"EXTERNAL_FASTAPI_PORT": "8000"}):
@@ -173,6 +172,21 @@ def test_get_metric_service_registration_endpoint_uses_localhost_for_core_host(
             core_host.get_metric_service_registration_endpoint()
             == "http://127.0.0.1:8000/metric-services/register/1"
         )
+
+
+def test_get_metric_service_network_mode_uses_configured_mode_for_core_host(
+    core_host: DockerHostSystem,
+):
+    with patch.dict(
+        "os.environ", {"METRIC_SERVICE_DOCKER_NETWORK": "custom-bicep-network"}
+    ):
+        assert core_host.get_metric_service_network_mode() == "custom-bicep-network"
+
+
+def test_get_metric_service_network_mode_uses_host_for_remote_host(
+    remote_host: DockerHostSystem,
+):
+    assert remote_host.get_metric_service_network_mode() == "host"
 
 
 @pytest.mark.asyncio

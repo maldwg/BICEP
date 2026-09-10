@@ -1,16 +1,16 @@
-FROM node:latest as build
+FROM node:24.20.0-alpine3.23 AS build
 ARG PRODUCTION
 
 ENV PRODUCTION=${PRODUCTION}
 RUN mkdir /opt/frontend
 WORKDIR /opt/frontend
 COPY ./ .
-RUN npm install
-RUN  npm install -g @angular/cli@
-RUN if [ "$PRODUCTION" = "True" ]; then ng build --configuration=production; else ng build --configuration=development; fi
+RUN npm ci
+RUN npm install -g @angular/cli
+RUN if [ "$(printf '%s' "$PRODUCTION" | tr '[:upper:]' '[:lower:]')" = "true" ]; then ng build --configuration=production; else ng build --configuration=development; fi
 
 
-FROM nginx:latest
+FROM nginx:1.30.4-alpine3.24
 
 RUN mkdir /etc/nginx/logs
 

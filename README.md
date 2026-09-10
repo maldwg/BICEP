@@ -48,9 +48,11 @@ This fetches the newest version of the submodule for the backend code and is nec
 
 The project can be started by running 
 ```
-PRODUCTION=TRUE CORE_HOST_IP=127.0.0.1 docker compose up -d
+PRODUCTION=true CORE_HOST_IP=127.0.0.1 docker compose up -d --build
 ```
-. This will spin up all containers. To run the stack in dev mode, simply set `PRODUCTION` to `FALSE`. 
+Replace `127.0.0.1` with the server IP that remote Docker hosts can reach. Do
+not append `.` to the command: Compose treats it as a service name. This will
+spin up all containers. To run the stack in dev mode, set `PRODUCTION=false`.
 
 
 ## Use The Framework

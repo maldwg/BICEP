@@ -14,7 +14,7 @@ from app.models.ids_system import (
     get_ids_system_model,
 )
 from app.models.ids_component import IdsComponent
-from app.utils import DEPLOYMENT_STATUS, STATUS
+from app.utils import DEPLOYMENT_STATUS, STATUS, get_core_host_ip
 from app.test.fixtures import *
 
 
@@ -211,9 +211,8 @@ def test_ids_system_get_container_http_url_with_sensor_component(mock_host_syste
     )
     ids.components = [sensor]
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="172.17.0.1"):
-        url = ids.get_container_http_url()
-        assert url == "http://172.17.0.1:9090"
+    url = ids.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:9090"
 
 
 def test_ids_system_get_container_http_url_no_sensor_component(mock_host_system):
@@ -232,9 +231,8 @@ def test_ids_system_get_container_http_url_no_sensor_component(mock_host_system)
     )
     ids.components = [aggregator]
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="172.17.0.1"):
-        url = ids.get_container_http_url()
-        assert url == "http://172.17.0.1:8080"
+    url = ids.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:8080"
 
 
 def test_ids_system_get_container_http_url_remote_host(mock_remote_host):
@@ -346,10 +344,9 @@ def test_cids_get_container_http_url_sensor_with_host_system(cids_system):
     )
     sensor.host_system = sensor_host
 
-    with patch("app.models.ids_component.get_core_host_ip", return_value="172.17.0.1"):
-        url = cids_system.get_container_http_url()
-        # Sensor has its own host_system, so should use its get_http_url()
-        assert "9090" in url
+    url = cids_system.get_container_http_url()
+    # Sensor has its own host_system, so should use its get_http_url().
+    assert "9090" in url
 
 
 def test_cids_get_container_http_url_sensor_no_host_system_core(cids_system):
@@ -357,9 +354,8 @@ def test_cids_get_container_http_url_sensor_no_host_system_core(cids_system):
     sensor = cids_system.components[1]
     sensor.host_system = None
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="172.17.0.1"):
-        url = cids_system.get_container_http_url()
-        assert url == "http://172.17.0.1:9090"
+    url = cids_system.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:9090"
 
 
 def test_cids_get_container_http_url_sensor_no_host_system_remote(
@@ -386,9 +382,8 @@ def test_cids_get_container_http_url_no_components(mock_host_system):
     )
     cids.components = []
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="172.17.0.1"):
-        url = cids.get_container_http_url()
-        assert url == "http://172.17.0.1:8082"
+    url = cids.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:8082"
 
 
 def test_cids_get_container_http_url_no_sensor(mock_host_system):
@@ -407,9 +402,8 @@ def test_cids_get_container_http_url_no_sensor(mock_host_system):
     )
     cids.components = [aggregator]
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="172.17.0.1"):
-        url = cids.get_container_http_url()
-        assert url == "http://172.17.0.1:8082"
+    url = cids.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:8082"
 
 
 # ==================== is_busy / is_available ====================

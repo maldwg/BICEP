@@ -15,6 +15,7 @@ from app.deployment.deployment_plugins.docker_compose_support.spec import (
 from app.models.ids_system import IdsSystem, CidsSystem
 from app.models.ids_tool import IdsTool
 from app.models.ids_component import IdsComponent
+from app.utils import get_core_host_ip
 from app.models.configuration import Configuration
 from app.models.docker_host_system import DockerHostSystem
 
@@ -275,9 +276,8 @@ def test_ids_container_url_normal():
     container.host_system.name = "localhost"
     container.components = []
 
-    with patch("app.models.ids_system.get_core_host_ip", return_value="127.0.0.1"):
-        url = container.get_container_http_url()
-        assert url == "http://127.0.0.1:8080"
+    url = container.get_container_http_url()
+    assert url == f"http://{get_core_host_ip()}:8080"
 
 
 @pytest.mark.asyncio

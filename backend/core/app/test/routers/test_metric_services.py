@@ -9,6 +9,15 @@ from app.routers.metric_services import (
 )
 
 
+@pytest.fixture(autouse=True)
+def no_existing_metric_service_registration():
+    with patch(
+        "app.routers.metric_services.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=None),
+    ):
+        yield
+
+
 @pytest.mark.asyncio
 async def test_register_metric_service_success():
     async def run_immediately(func, *args, **kwargs):
@@ -18,6 +27,7 @@ async def test_register_metric_service_success():
     host.id = 1
     host.status = "unavailable"
     host.resolve_host_aliases.return_value = {"worker.example", "10.0.0.5"}
+    host.is_core_host.return_value = False
     host._metric_service_healthcheck = AsyncMock(return_value=True)
 
     metric_service = MagicMock()
@@ -36,7 +46,10 @@ async def test_register_metric_service_success():
 
     with patch(
         "app.routers.metric_services.get_all_hosts", new_callable=AsyncMock
-    ) as mock_get_hosts:
+    ) as mock_get_hosts, patch(
+        "app.routers.metric_services.get_host_by_id",
+        new=AsyncMock(return_value=host),
+    ):
         mock_get_hosts.return_value = [host]
 
         with patch(
@@ -72,9 +85,10 @@ async def test_register_metric_service_success():
 
 
 @pytest.mark.asyncio
-async def test_register_metric_service_for_host_rejects_mismatch():
+async def test_register_metric_service_for_core_host_rejects_mismatch():
     host = MagicMock()
     host.id = 1
+    host.is_core_host.return_value = True
     host.resolve_host_aliases.return_value = {"worker.example", "10.0.0.5"}
 
     payload = MetricServiceRegistrationRequest(
@@ -104,11 +118,38 @@ async def test_register_metric_service_for_host_rejects_mismatch():
 
 
 @pytest.mark.asyncio
+async def test_register_metric_service_rejects_superseded_port():
+    host = MagicMock()
+    host.id = 1
+    registration = MetricServiceRegistrationRequest(
+        name="bicep-metric-service", ip="127.0.0.1", port=41000
+    )
+    current_service = MagicMock()
+    current_service.port = 42000
+
+    with patch(
+        "app.routers.metric_services.get_metric_service_by_host_id",
+        new=AsyncMock(return_value=current_service),
+    ), patch(
+        "app.routers.metric_services.get_or_create_metric_service",
+        new=AsyncMock(),
+    ) as mock_get_or_create:
+        response = await metric_services_router._persist_metric_service_registration_unlocked(
+            host, registration, AsyncMock()
+        )
+
+    assert response.status_code == 409
+    assert b"superseded" in response.body
+    mock_get_or_create.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_register_metric_service_for_host_success():
     host = MagicMock()
     host.id = 2
     host.status = "unavailable"
     host.resolve_host_aliases.return_value = {"192.168.1.50", "remote-worker"}
+    host.is_core_host.return_value = False
     host._metric_service_healthcheck = AsyncMock(return_value=True)
 
     metric_service = MagicMock()
