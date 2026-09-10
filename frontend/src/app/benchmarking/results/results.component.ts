@@ -40,7 +40,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = [
-    'select', 'id', 'evaluation_mode', 'ids_name', 'dataset_name', 'ensembling_method',
+    'delete', 'select', 'id', 'evaluation_mode', 'ids_name', 'dataset_name', 'ensembling_method',
     'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
     'detection_rate', 'prec', 'f1_score', 'acc', 'fpr', 'fnr', 'fdr',
     'class_count', 'class_breakdown', 'macro_detection_rate', 'weighted_detection_rate',
@@ -53,6 +53,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   ];
 
   selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
+  deletingResultIds = new Set<number>();
   throughputSelection = new SelectionModel<ThroughputResultItem>(true, []);
   showComparison = false;
   comparisonTitle = '';
@@ -121,6 +122,41 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
     }
     return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.id}`;
+  }
+
+  isDeletingResult(resultId: number): boolean {
+    return this.deletingResultIds.has(resultId);
+  }
+
+  deleteResult(result: BenchmarkingResultsItem): void {
+    const confirmed = window.confirm(
+      'Permanently delete run #' + result.id + ' (' + result.ids_name + ' / '
+      + result.dataset_name + ')?\n\nThis removes all overall and per-class results and cannot be undone.'
+    );
+    if (!confirmed || this.isDeletingResult(result.id)) {
+      return;
+    }
+
+    const moveToPreviousPage = this.dataSource.data.length === 1
+      && this.paginator.pageIndex > 0;
+    this.deletingResultIds.add(result.id);
+
+    this.benchmarkingService.deleteBenchmarkingResult(result.id).subscribe({
+      next: () => {
+        this.deletingResultIds.delete(result.id);
+        this.selection.deselect(result);
+        if (moveToPreviousPage) {
+          this.paginator.previousPage();
+        } else {
+          this.dataSource.refresh();
+        }
+      },
+      error: error => {
+        this.deletingResultIds.delete(result.id);
+        console.error('Could not delete benchmarking result.', error);
+        window.alert('Could not delete run #' + result.id + '. Please try again.');
+      }
+    });
   }
 
   openResultComparison() {

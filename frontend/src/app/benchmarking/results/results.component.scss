@@ -105,6 +105,25 @@
   color: #fff !important;
 }
 
+.results-table .mat-column-delete {
+  width: 4.5rem;
+  min-width: 4.5rem;
+  padding-inline: 0.55rem;
+  text-align: center;
+}
+
+.delete-run-button {
+  color: #a12d35 !important;
+}
+
+.delete-run-button:hover:not(:disabled) {
+  background: rgba(161, 45, 53, 0.1);
+}
+
+.delete-run-button:disabled {
+  opacity: 0.5;
+}
+
 .spinner-container {
   margin-top: 2rem;
 }

@@ -183,6 +183,17 @@ async def get_benchmarking_result_by_id(db: AsyncSession, result_id: int):
     return result.scalar_one_or_none()
 
 
+async def remove_benchmarking_result_by_id(
+    db: AsyncSession, result_id: int
+) -> bool:
+    result = await get_benchmarking_result_by_id(db, result_id)
+    if result is None:
+        return False
+    await db.delete(result)
+    await db.commit()
+    return True
+
+
 class BenchmarkingJob(Base):
     __tablename__ = "benchmarking_job"
 

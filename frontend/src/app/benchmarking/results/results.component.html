@@ -57,6 +57,20 @@
       </p>
       <div class="results-table-wrap" *ngIf="dataSource; else loading">
       <table mat-table matSort class="results-table">
+      <!-- Delete Column -->
+      <ng-container matColumnDef="delete">
+        <th mat-header-cell *matHeaderCellDef>Delete</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button class="delete-run-button"
+            (click)="$event.stopPropagation(); deleteResult(row)"
+            [disabled]="isDeletingResult(row.id)"
+            [attr.aria-label]="'Permanently delete run ' + row.id"
+            title="Permanently delete this run">
+            <mat-icon>{{ isDeletingResult(row.id) ? 'hourglass_top' : 'delete_forever' }}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
       <!-- Checkbox Column -->
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>

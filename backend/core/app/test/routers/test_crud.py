@@ -464,3 +464,54 @@ async def test_delete_host(mock_remove_host, db_session_fixture: DatabaseSession
     response = await delete_host(id=host_id, db=db_session)
     assert response.status_code == 204
     mock_remove_host.assert_awaited_once_with(db_session, host_id)
+
+
+@patch("app.routers.crud.remove_benchmarking_result_by_id", new_callable=AsyncMock)
+@pytest.mark.asyncio
+async def test_delete_benchmarking_result(
+    mock_remove_result, db_session_fixture: DatabaseSessionFixture
+):
+    db_session = await db_session_fixture.get_db_session()
+    mock_remove_result.return_value = True
+
+    response = await remove_benchmarking_result(id=42, db=db_session)
+
+    assert response.status_code == 204
+    mock_remove_result.assert_awaited_once_with(db_session, 42)
+
+
+@patch("app.routers.crud.remove_benchmarking_result_by_id", new_callable=AsyncMock)
+@pytest.mark.asyncio
+async def test_delete_missing_benchmarking_result_returns_404(
+    mock_remove_result, db_session_fixture: DatabaseSessionFixture
+):
+    db_session = await db_session_fixture.get_db_session()
+    mock_remove_result.return_value = False
+
+    response = await remove_benchmarking_result(id=404, db=db_session)
+
+    assert response.status_code == 404
+    assert json.loads(response.body.decode()) == {
+        "error": "Benchmarking result not found"
+    }
+
+
+@patch(
+    "app.models.benchmarking.get_benchmarking_result_by_id",
+    new_callable=AsyncMock,
+)
+@pytest.mark.asyncio
+async def test_remove_benchmarking_result_deletes_parent_and_dependents(
+    mock_get_result,
+):
+    from app.models.benchmarking import remove_benchmarking_result_by_id
+
+    db_session = AsyncMock()
+    result = MagicMock()
+    mock_get_result.return_value = result
+
+    removed = await remove_benchmarking_result_by_id(db_session, 7)
+
+    assert removed is True
+    db_session.delete.assert_awaited_once_with(result)
+    db_session.commit.assert_awaited_once_with()

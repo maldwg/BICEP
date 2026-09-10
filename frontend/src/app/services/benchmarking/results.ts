@@ -1,7 +1,7 @@
 import { DataSource } from '@angular/cdk/collections';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { BehaviorSubject, merge, Observable, of as observableOf, of } from 'rxjs';
+import { BehaviorSubject, merge, Observable, of as observableOf, of, Subject } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { BenchmarkingResultsItem } from '../../models/benchmarking';
 import { BenchmarkingService } from './benchmarking.service';
@@ -16,6 +16,7 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
   sort: MatSort | undefined;
   // new subject that tracks the current search text
   private filter$ = new BehaviorSubject<string>('');
+  private refresh$ = new Subject<void>();
   private dataSubject = new BehaviorSubject<BenchmarkingResultsItem[]>([]);
 
   get data(): BenchmarkingResultsItem[] {
@@ -37,7 +38,7 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
     }
 
     // Merge all streams: initial data, paginator, sort, filter
-    return merge(this.paginator.page, this.sort.sortChange, this.filter$).pipe(
+    return merge(this.paginator.page, this.sort.sortChange, this.filter$, this.refresh$).pipe(
       startWith({}),
       switchMap(() =>
         this.benchmarkingService.getAllConfigurations().pipe(
@@ -63,10 +64,15 @@ export class ResultsDataSource extends DataSource<BenchmarkingResultsItem> {
   disconnect(): void {
     this.dataSubject.complete();
     this.filter$.complete();
+    this.refresh$.complete();
   }
   /** Called externally (from component) when user types in the searchbar */
   setFilter(value: string) {
     this.filter$.next(value.trim().toLowerCase());
+  }
+
+  refresh() {
+    this.refresh$.next();
   }
   /** Filter the data (client-side) */
   private getFilteredData(data: BenchmarkingResultsItem[]): BenchmarkingResultsItem[] {
