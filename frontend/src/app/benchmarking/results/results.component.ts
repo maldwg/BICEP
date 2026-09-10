@@ -42,8 +42,12 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = [
-    'select', 'id', 'ids_name', 'dataset_name', 'ensembling_method', 'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
-    'detection_rate', 'fpr', 'fnr', 'fdr', 'acc', 'prec', 'f1_score', 'avg_cpu_usage', 'avg_memory_usage'];
+    'select', 'id', 'evaluation_mode', 'ids_name', 'dataset_name', 'ensembling_method',
+    'configuration_name', 'ruleset_name', 'start_time', 'stop_time', 'runtime',
+    'detection_rate', 'prec', 'f1_score', 'acc', 'fpr', 'fnr', 'fdr',
+    'class_count', 'class_breakdown', 'macro_detection_rate', 'weighted_detection_rate',
+    'lowest_detection_rate', 'benign_false_detection_rate', 'avg_cpu_usage', 'avg_memory_usage'
+  ];
   throughputDisplayedColumns = [
     'throughput_select', 'job_id', 'target_name', 'traffic_mode', 'configuration_name', 'ruleset_name', 'repeat', 'packet_count',
     'bytes_sent', 'traffic_runtime', 'throughput_pps', 'throughput_mbps', 'avg_cpu_usage', 'avg_memory_usage',
@@ -51,7 +55,6 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   ];
 
   selection = new SelectionModel<BenchmarkingResultsItem>(true, []);
-  multiclassSelection = new SelectionModel<BenchmarkingResultsItem>(true, []);
   throughputSelection = new SelectionModel<ThroughputResultItem>(true, []);
   showComparison = false;
   comparisonTitle = '';
@@ -66,12 +69,20 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     { value: 'prec', viewValue: 'Precision', max: 1 },
     { value: 'fpr', viewValue: 'False-positive rate', max: 1 },
     { value: 'fnr', viewValue: 'False-negative rate', max: 1 },
+    { value: 'fdr', viewValue: 'False-discovery rate', max: 1 },
     { value: 'runtime', viewValue: 'Runtime (s)' },
     { value: 'avg_cpu_usage', viewValue: 'Average CPU (cores)' },
     { value: 'avg_memory_usage', viewValue: 'Average RAM (MB)' }
   ];
 
   readonly multiclassComparisonMetrics: ComparisonMetric[] = [
+    { value: 'detection_rate', viewValue: 'Overall detection rate', max: 1 },
+    { value: 'prec', viewValue: 'Overall precision', max: 1 },
+    { value: 'f1_score', viewValue: 'Overall F1 score', max: 1 },
+    { value: 'acc', viewValue: 'Overall accuracy', max: 1 },
+    { value: 'fpr', viewValue: 'Overall false-positive rate', max: 1 },
+    { value: 'fnr', viewValue: 'Overall false-negative rate', max: 1 },
+    { value: 'fdr', viewValue: 'Overall false-discovery rate', max: 1 },
     { value: 'macro_detection_rate', viewValue: 'Macro malicious detection rate', max: 1 },
     { value: 'weighted_detection_rate', viewValue: 'Weighted malicious detection rate', max: 1 },
     { value: 'lowest_detection_rate', viewValue: 'Lowest malicious-class detection rate', max: 1 },
@@ -114,28 +125,32 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.id}`;
   }
 
-  openBinaryComparison() {
-    this.openComparison(
-      'Binary Benchmark Comparison',
-      'Compare detection quality, runtime, and resource use across the selected binary benchmark results.',
-      this.binaryComparisonMetrics,
-      this.selection.selected.map(result => ({
-        id: result.id,
-        label: `${result.ids_name} · ${result.dataset_name} #${result.id}`,
-        metrics: this.binaryMetrics(result)
-      }))
-    );
-  }
+  openResultComparison() {
+    const selectedResults = this.selection.selected;
+    const multiclassOnly = selectedResults.length > 0
+      && selectedResults.every(result => this.isMulticlassResult(result));
+    const sameDataset = multiclassOnly
+      && new Set(selectedResults.map(result => result.dataset_name.trim().toLowerCase())).size === 1;
 
-  openMulticlassComparison() {
     this.openComparison(
-      'Multiclass Benchmark Comparison',
-      'Compare malicious-class coverage, benign false detections, runtime, and resource use across the selected multiclass results.',
-      this.multiclassComparisonMetrics,
-      this.multiclassSelection.selected.map(result => ({
+      multiclassOnly ? 'Multiclass Benchmark Comparison' : 'Benchmark Comparison',
+      sameDataset
+        ? 'Compare overall metrics and class-by-class performance across runs on the same dataset.'
+        : multiclassOnly
+          ? 'Compare aggregate multiclass performance. Select runs from the same dataset to enable the per-class chart.'
+          : 'Compare overall detection quality, runtime, and resource use. Select only multiclass rows from one dataset to enable class-specific plots.',
+      multiclassOnly ? this.multiclassComparisonMetrics : this.binaryComparisonMetrics,
+      selectedResults.map(result => ({
         id: result.id,
-        label: `${result.ids_name} · ${result.dataset_name} #${result.id}`,
-        metrics: this.multiclassMetrics(result)
+        label: result.ids_name + ' · ' + result.dataset_name + ' #' + result.id,
+        metrics: multiclassOnly ? this.multiclassMetrics(result) : this.binaryMetrics(result),
+        classPerformance: sameDataset
+          ? (result.class_results || []).map(classResult => ({
+              label: classResult.class_label,
+              isBenign: classResult.is_benign,
+              rate: classResult.detection_rate
+            }))
+          : undefined
       }))
     );
   }
@@ -334,44 +349,59 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   downloadMulticlassResultsAsCSV() {
-    const rows = this.filteredMulticlassResults.flatMap(result =>
-      (result.class_results || []).map(classResult => ({ result, classResult }))
-    );
-    if (rows.length === 0) {
+    if (this.filteredMulticlassResults.length === 0) {
       return;
     }
-    const csvRows = [
-      'Result ID,IDS Name,Dataset,Class,Class Type,Support,Outcome,Missed,Rate Type,Rate',
-      ...rows.map(({ result, classResult }) => [
+
+    const headers = [
+      "Result ID", "IDS Name", "Dataset", "Configuration", "Ruleset", "Runtime Seconds",
+      "Overall Detection Rate", "Overall Precision", "Overall F1 Score", "Overall Accuracy",
+      "Overall FPR", "Overall FNR", "Overall FDR", "Class Count",
+      "Macro Malicious Detection Rate", "Weighted Malicious Detection Rate",
+      "Lowest Malicious Class Detection Rate", "Benign False Detection Rate",
+      "Class", "Class Type", "Support", "Detected or Flagged", "Missed or Correct Benign",
+      "Class Rate Type", "Class Rate"
+    ];
+
+    const rows = this.filteredMulticlassResults.flatMap(result => {
+      const classResults = result.class_results?.length ? result.class_results : [undefined];
+      return classResults.map(classResult => [
         result.id,
         this.escapeCsvValue(result.ids_name),
         this.escapeCsvValue(result.dataset_name),
-        this.escapeCsvValue(classResult.class_label),
-        classResult.is_benign ? 'benign' : 'malicious',
-        classResult.support,
-        classResult.detected,
-        classResult.missed,
-        classResult.is_benign ? 'false detection rate' : 'detection rate',
-        classResult.detection_rate,
-      ].join(','))
-    ];
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+        this.escapeCsvValue(result.configuration_name),
+        this.escapeCsvValue(result.ruleset_name),
+        result.runtime,
+        result.detection_rate,
+        result.prec,
+        result.f1_score,
+        result.acc,
+        result.fpr,
+        result.fnr,
+        result.fdr,
+        result.class_results?.length || 0,
+        this.multiclassMacroDetectionRate(result),
+        this.multiclassWeightedDetectionRate(result),
+        this.multiclassLowestDetectionRate(result),
+        this.multiclassBenignFalseDetectionRate(result),
+        this.escapeCsvValue(classResult?.class_label),
+        classResult ? (classResult.is_benign ? "benign" : "malicious") : "",
+        classResult?.support ?? "",
+        classResult?.detected ?? "",
+        classResult?.missed ?? "",
+        classResult ? (classResult.is_benign ? "false detection rate" : "detection rate") : "",
+        classResult?.detection_rate ?? ""
+      ].join(","));
+    });
+
+    const csvRows = [headers.join(","), ...rows];
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.download = `multiclass_results_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = "multiclass_results_" + new Date().toISOString().split("T")[0] + ".csv";
     link.click();
     URL.revokeObjectURL(url);
-  }
-
-  isAllMulticlassSelected(): boolean {
-    return this.multiclassSelection.selected.length === this.filteredMulticlassResults.length;
-  }
-
-  toggleAllMulticlass(): void {
-    this.isAllMulticlassSelected()
-      ? this.multiclassSelection.clear()
-      : this.filteredMulticlassResults.forEach(result => this.multiclassSelection.select(result));
   }
 
   isAllThroughputSelected(): boolean {
@@ -382,6 +412,10 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
     this.isAllThroughputSelected()
       ? this.throughputSelection.clear()
       : this.filteredThroughputResults.forEach(result => this.throughputSelection.select(result));
+  }
+
+  isMulticlassResult(result: BenchmarkingResultsItem): boolean {
+    return (result.evaluation_mode || 'binary') === 'multiclass';
   }
 
   multiclassMacroDetectionRate(result: BenchmarkingResultsItem): number {
@@ -529,6 +563,7 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
       prec: result.prec,
       fpr: result.fpr,
       fnr: result.fnr,
+      fdr: result.fdr,
       runtime: result.runtime,
       avg_cpu_usage: result.avg_cpu_usage,
       avg_memory_usage: result.avg_memory_usage
@@ -537,14 +572,12 @@ export class ResultsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   private multiclassMetrics(result: BenchmarkingResultsItem): Record<string, number | undefined> {
     return {
+      ...this.binaryMetrics(result),
       macro_detection_rate: this.multiclassMacroDetectionRate(result),
       weighted_detection_rate: this.multiclassWeightedDetectionRate(result),
       lowest_detection_rate: this.multiclassLowestDetectionRate(result),
       benign_false_detection_rate: this.multiclassBenignFalseDetectionRate(result),
-      class_count: result.class_results?.length || 0,
-      runtime: result.runtime,
-      avg_cpu_usage: result.avg_cpu_usage,
-      avg_memory_usage: result.avg_memory_usage
+      class_count: result.class_results?.length || 0
     };
   }
 

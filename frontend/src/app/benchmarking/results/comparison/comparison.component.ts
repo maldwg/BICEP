@@ -16,10 +16,17 @@ export interface ComparisonMetric {
   max?: number;
 }
 
+export interface ComparisonClassPerformance {
+  label: string;
+  isBenign: boolean;
+  rate: number | null | undefined;
+}
+
 export interface ComparisonItem {
   id: number | string;
   label: string;
   metrics: Record<string, number | null | undefined>;
+  classPerformance?: ComparisonClassPerformance[];
 }
 
 @Component({
@@ -49,11 +56,14 @@ export class ComparisonComponent implements OnInit, OnChanges {
 
   chartOption: EChartsOption = {};
   chartInstance: any;
+  classChartOption: EChartsOption = {};
+  classChartInstance: any;
   selectedMetrics = new FormControl<string[]>([]);
   selectedChartType: 'bar' | 'radar' = 'bar';
 
   ngOnInit(): void {
     this.setDefaultMetrics();
+    this.updateClassChart();
     this.selectedMetrics.valueChanges.subscribe(() => this.updateChart());
   }
 
@@ -63,11 +73,20 @@ export class ComparisonComponent implements OnInit, OnChanges {
     }
     if (changes['items'] || changes['metrics']) {
       this.updateChart();
+      this.updateClassChart();
     }
   }
 
   onChartInit(instance: any): void {
     this.chartInstance = instance;
+  }
+
+  onClassChartInit(instance: any): void {
+    this.classChartInstance = instance;
+  }
+
+  get hasClassPerformanceComparison(): boolean {
+    return this.items.filter(item => item.classPerformance?.length).length >= 2;
   }
 
   updateChart(): void {
@@ -103,6 +122,85 @@ export class ComparisonComponent implements OnInit, OnChanges {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  downloadClassChart(): void {
+    if (!this.classChartInstance) {
+      return;
+    }
+    const link = document.createElement('a');
+    link.download = 'class_performance_comparison_' + Date.now() + '.svg';
+    link.href = this.classChartInstance.getDataURL({
+      type: 'svg',
+      pixelRatio: 2,
+      backgroundColor: '#fff'
+    });
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  private updateClassChart(): void {
+    if (!this.hasClassPerformanceComparison) {
+      this.classChartOption = {};
+      return;
+    }
+
+    const classes = this.classDescriptors();
+    const labels = classes.map(item =>
+      item.isBenign ? item.label + '\n(benign false detection)' : item.label
+    );
+
+    this.classChartOption = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        valueFormatter: (value: any) =>
+          typeof value === 'number' ? (value * 100).toFixed(2) + '%' : 'N/A'
+      },
+      legend: { type: 'scroll', top: 0 },
+      grid: { left: '3%', right: '4%', top: 72, bottom: classes.length > 8 ? 92 : 54, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLabel: { interval: 0, rotate: classes.length > 5 ? 24 : 0 }
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 1,
+        name: 'Rate',
+        axisLabel: { formatter: (value: number) => Math.round(value * 100) + '%' }
+      },
+      dataZoom: classes.length > 8
+        ? [
+            { type: 'inside', xAxisIndex: 0 },
+            { type: 'slider', xAxisIndex: 0, start: 0, end: Math.min(100, 800 / classes.length) }
+          ]
+        : [],
+      series: this.items
+        .filter(item => item.classPerformance?.length)
+        .map(item => ({
+          name: item.label,
+          type: 'bar',
+          data: classes.map(classItem =>
+            item.classPerformance?.find(value => value.label === classItem.label)?.rate ?? null
+          ),
+          emphasis: { focus: 'series' }
+        })) as any[]
+    };
+  }
+
+  private classDescriptors(): ComparisonClassPerformance[] {
+    const classes = new Map<string, ComparisonClassPerformance>();
+    this.items.forEach(item =>
+      item.classPerformance?.forEach(classItem => {
+        if (!classes.has(classItem.label)) {
+          classes.set(classItem.label, classItem);
+        }
+      })
+    );
+    return Array.from(classes.values());
   }
 
   private setDefaultMetrics(): void {

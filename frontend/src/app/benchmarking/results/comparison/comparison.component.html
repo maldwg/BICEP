@@ -49,4 +49,27 @@
       </ng-template>
     </mat-card-content>
   </mat-card>
+
+  <mat-card class="class-comparison-card" *ngIf="hasClassPerformanceComparison">
+    <mat-card-content>
+      <div class="class-comparison-header">
+        <div>
+          <span class="class-comparison-eyebrow">Same-dataset multiclass comparison</span>
+          <h2>Per-class performance</h2>
+          <p>Each series is one selected run. Attack classes show detection rate; benign classes show false-detection rate.</p>
+        </div>
+        <button class="download-button" (click)="downloadClassChart()" matFab extended>
+          <mat-icon>download</mat-icon>
+          Download class SVG
+        </button>
+      </div>
+      <div class="class-performance-chart" echarts [options]="classChartOption"
+        (chartInit)="$event && onClassChartInit($event)">
+      </div>
+      <div class="class-performance-guidance">
+        <span><strong>Attack classes:</strong> higher is better.</span>
+        <span><strong>Benign classes:</strong> lower is better.</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
 </section>
