@@ -24,8 +24,13 @@ export class BenchmarkingService {
   ) { }
 
     getAllConfigurations(): Observable<BenchmarkingResultsItem[]> {
-      let path = "/crud/benchmarking-results/all";
+      const path = "/crud/benchmarking-results/all";
       return this.http.get<BenchmarkingResultsItem[]>(environment.backendUrl + path);
+    }
+
+    deleteBenchmarkingResult(resultId: number): Observable<void> {
+      const path = "/crud/benchmarking-results/" + resultId;
+      return this.http.delete<void>(environment.backendUrl + path);
     }
 
     createBenchmarkingJob(job: BenchmarkJobCreate): Observable<BenchmarkingJobResponse> {

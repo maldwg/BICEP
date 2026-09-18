@@ -325,6 +325,49 @@ async def test_stop_analysis_successfully(db_session_fixture: DatabaseSessionFix
 
 
 @pytest.mark.asyncio
+async def test_stop_analysis_does_not_rewrite_status_after_finished_callback(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ids_container.status = STATUS.IDLE.value
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200
+    mock_ids_container.stop_analysis = mock_response
+
+    response = await stop_analysis(
+        stop_data=stop_analysisData(container_id=mock_ids_container.id),
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    db_session.rollback.assert_awaited_once()
+    db_session.commit.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_stop_analysis_sets_idle_when_finished_callback_was_missing(
+    db_session_fixture: DatabaseSessionFixture,
+):
+    db_session = await db_session_fixture.get_db_session()
+    mock_ids_container = await db_session_fixture.get_ids_container_model()
+    mock_ids_container.status = STATUS.ACTIVE.value
+    mock_response = AsyncMock(spec=HTTPResponse)
+    mock_response.return_value.status_code = 200
+    mock_ids_container.stop_analysis = mock_response
+
+    response = await stop_analysis(
+        stop_data=stop_analysisData(container_id=mock_ids_container.id),
+        db=db_session,
+    )
+
+    assert response.status_code == 200
+    assert mock_ids_container.status == STATUS.IDLE.value
+    db_session.rollback.assert_awaited_once()
+    db_session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_stop_analysis_unsuccessfully(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     stop_analysis_data: stop_analysisData = stop_analysisData(

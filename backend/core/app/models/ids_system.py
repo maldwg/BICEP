@@ -212,8 +212,7 @@ class IdsSystem(Base):
                     break
 
         if "Core" in self.host_system.name or self.host_system.host == "localhost":
-            core_host = get_core_host_ip()
-            return f"http://{core_host}:{target_port}"
+            return f"http://{get_core_host_ip()}:{target_port}"
         else:
             return f"http://{self.host_system.host}:{target_port}"
 

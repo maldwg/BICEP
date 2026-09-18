@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   angular:
     build:
@@ -9,7 +7,7 @@ services:
     ports:
       - 8080:80
     networks:
-      - bicep
+      - bicep-network
     environment:
       - PRODUCTION=${PRODUCTION:-False}
 
@@ -19,20 +17,27 @@ services:
     ports:
       - 9090:9090
     networks:
-      - bicep
+      - bicep-network
   prometheus-push-gateway:
-    image: prom/pushgateway
+    image: prom/pushgateway:v1.11.3
     ports:
       - 9091:9091
     networks:
-      - bicep
+      - bicep-network
   core:
     build:
       context: ./backend/core
     volumes:
       - ./backend/core/app:/opt/app
       - /var/run/docker.sock:/var/run/docker.sock
-    command: fastapi dev main.py --host 0.0.0.0 --port 8000
+    command:
+      - sh
+      - -c
+      - |
+        if [ "$$(printf '%s' "$${PRODUCTION:-false}" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+          exec fastapi run main.py --host 0.0.0.0 --port 8000
+        fi
+        exec fastapi dev main.py --host 0.0.0.0 --port 8000
     depends_on:
       database:
         condition: service_healthy
@@ -40,9 +45,9 @@ services:
     ports:
       - 8000:8000
     networks:
-      - bicep
+      - bicep-network
     environment:
-      - DATABASE_URL=bicep-database-1
+      - DATABASE_URL=database
       - DATABASE_USER=root
       - DATABASE_PASSWORD=root
       - DATABASE_NAME=bicep
@@ -67,25 +72,26 @@ services:
       context: ./database
     environment:
       - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_AUTO_UPGRADE=1
     ports:
       - 3306:3306
     volumes:
       - bicep_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mariadb -uroot -p$${MARIADB_ROOT_PASSWORD} -e 'SELECT 1'"]
-      start_period: 10s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 120s
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 6
     networks:
-      - bicep
+      - bicep-network
   loki:
     build:
       context: ./loki
     ports:
       - 3100:3100
     networks:
-      - bicep
+      - bicep-network
     command: -config.file=/mnt/config/loki-config.yaml
     volumes:
       - ./loki/loki:/mnt/config
@@ -94,7 +100,8 @@ services:
       - TZ=UTC
 
 networks:
-  bicep:
+  bicep-network:
+    name: ${BICEP_NETWORK_NAME:-bicep-network}
     driver: bridge
     ipam:
       driver: default

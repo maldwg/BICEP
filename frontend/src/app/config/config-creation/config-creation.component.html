@@ -91,6 +91,9 @@
               </button>
             </mat-form-field>
             <input type="file" hidden (change)="onFileSelected($event, 'labels')" #labelsFileInput [accept]="getAcceptType()">
+            <p class="labels-format-hint">
+              CICFlowMeter and NFStream column names are recognized; other CSV fields are inferred from names and sampled values. Timestamps may be formatted dates or Unix epoch values in seconds, milliseconds, microseconds, or nanoseconds.
+            </p>
           </div>
           @if (uploadProgress) {
             <div class="form-item progress-div">

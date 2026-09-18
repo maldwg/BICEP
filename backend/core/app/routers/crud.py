@@ -11,6 +11,7 @@ from app.models.ensemble_technique import get_all_ensemble_techniques
 from app.models.ensemble_ids import get_all_ensemble_container
 from app.models.benchmarking import (
     get_all_benchmarking_results,
+    remove_benchmarking_result_by_id,
     serialize_benchmarking_result,
 )
 from app.utils import DOCKER_HOST_STATUS, FILE_TYPES, calculate_and_add_dataset, file_type_is_accepted, create_directory, remove_directory
@@ -55,6 +56,16 @@ def serialize_host(host: DockerHostSystem) -> dict:
 async def get_benchmarking_results(db=Depends(get_db)):
     benchmarking_results = await get_all_benchmarking_results(db)
     return [serialize_benchmarking_result(result) for result in benchmarking_results]
+
+
+@router.delete("/benchmarking-results/{id}")
+async def remove_benchmarking_result(id: int, db=Depends(get_db)):
+    removed = await remove_benchmarking_result_by_id(db, id)
+    if not removed:
+        return JSONResponse(
+            {"error": "Benchmarking result not found"}, status_code=404
+        )
+    return Response(status_code=204)
 
 @router.get("/configuration/all")
 async def get_all_configs(db=Depends(get_db)):

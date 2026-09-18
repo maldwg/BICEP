@@ -20,7 +20,7 @@ from app.bicep_utils.models.ids_base import Alert
 from dateutil import parser
 import shutil
 from app.database import SessionLocal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.responses import JSONResponse
 from abc import ABC, abstractmethod
 from urllib.parse import urlparse
@@ -32,6 +32,7 @@ from app.prometheus import (
     serialize_resource_query_targets,
 )
 import json
+import re
 
 logger = logging.getLogger('bicep.utils')
 
@@ -482,6 +483,46 @@ def extract_ts_srcip_srcport_dstip_dstport_from_alert(
     return timestamp, source_ip, source_port, destination_ip, destination_port
 
 
+_NUMERIC_TIMESTAMP_PATTERN = re.compile(r'[+-]?\d+(?:\.\d+)?')
+
+
+def parse_datetime_timestamp(timestamp_value) -> datetime:
+    """Parse human-readable dates and Unix epochs into a naive UTC datetime."""
+    raw_value = str(timestamp_value).strip()
+    if not raw_value:
+        raise ValueError("Timestamp must not be empty.")
+
+    # Keep compact calendar dates such as 20260131 from being mistaken for epochs.
+    if re.fullmatch(r'\d{8}', raw_value):
+        try:
+            return datetime.strptime(raw_value, "%Y%m%d")
+        except ValueError:
+            pass
+
+    if _NUMERIC_TIMESTAMP_PATTERN.fullmatch(raw_value):
+        epoch_value = float(raw_value)
+        absolute_value = abs(epoch_value)
+        if absolute_value >= 1e17:
+            epoch_value /= 1e9
+        elif absolute_value >= 1e14:
+            epoch_value /= 1e6
+        elif absolute_value >= 1e11:
+            epoch_value /= 1e3
+        try:
+            return datetime.fromtimestamp(epoch_value, tz=timezone.utc).replace(
+                tzinfo=None
+            )
+        except (OverflowError, OSError, ValueError) as error:
+            raise ValueError(
+                "Timestamp is numeric but outside the supported Unix epoch range."
+            ) from error
+
+    parsed_timestamp = parser.parse(raw_value, dayfirst=False)
+    if parsed_timestamp.tzinfo is not None:
+        parsed_timestamp = parsed_timestamp.astimezone(timezone.utc)
+    return parsed_timestamp.replace(tzinfo=None)
+
+
 def normalize_and_parse_alert_timestamp(
     timestamp_str, precision: Precision = MilisecondPrecision()
 ) -> str:
@@ -490,7 +531,7 @@ def normalize_and_parse_alert_timestamp(
     Returns a normalized timestamp according to the ds precision
     """
 
-    timestamp = parser.parse(timestamp_str).replace(tzinfo=None)
+    timestamp = parse_datetime_timestamp(timestamp_str)
     parsed_timestamp_string = precision.trim_datetime_timestamp_to_str(timestamp)
     return parsed_timestamp_string
 

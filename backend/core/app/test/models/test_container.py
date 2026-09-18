@@ -40,16 +40,13 @@ async def test_is_not_busy(mock_ids_container: IdsSystem):
 
 def test_get_container_http_url_localhost(mock_ids_container: IdsSystem):
     docker_host = mock_ids_container.get_container_http_url()
-    core_host = get_core_host_ip()
-    docker_host = mock_ids_container.get_container_http_url()
-    assert docker_host == f"http://{core_host}:{mock_ids_container.port}"
+    assert docker_host == f"http://{get_core_host_ip()}:{mock_ids_container.port}"
 
 
 def test_get_container_http_url_core(mock_ids_container: IdsSystem):
     mock_ids_container.host_system.name = "Core"
-    core_host = get_core_host_ip()
     docker_host = mock_ids_container.get_container_http_url()
-    assert docker_host == f"http://{core_host}:{mock_ids_container.port}"
+    assert docker_host == f"http://{get_core_host_ip()}:{mock_ids_container.port}"
 
 
 def test_get_container_http_url_proper_host(mock_ids_container: IdsSystem):

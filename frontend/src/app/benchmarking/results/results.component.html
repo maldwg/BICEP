@@ -39,25 +39,38 @@
       </mat-form-field>
       <button class="download-button" (click)="downloadResultsAsCSV()" matFab extended>
         <mat-icon>download</mat-icon>
-        CSV
+        Results CSV
       </button>
       <button class="download-button" (click)="downloadThroughputResultsAsCSV()" [disabled]="throughputResults.length === 0" matFab extended>
         <mat-icon>speed</mat-icon>
         Throughput CSV
       </button>
-      <button class="download-button" (click)="downloadMulticlassResultsAsCSV()" [disabled]="multiclassResults.length === 0" matFab extended>
-        <mat-icon>category</mat-icon>
-        Per-class CSV
-      </button>
-      <button class="compare-button" (click)="openBinaryComparison()" [disabled]="selection.selected.length < 2" matFab
+      <button class="compare-button" (click)="openResultComparison()" [disabled]="selection.selected.length < 2" matFab
         extended color="accent">
         <mat-icon>bar_chart</mat-icon>
-        Compare binary
+        Compare runs
       </button>
     </div>
     <div class="flex-container">
+      <p class="unified-results-note">
+        Overall metrics compare malicious and benign traffic for every run. Multiclass-only columns show per-attack-class coverage and display an em dash for binary runs.
+      </p>
       <div class="results-table-wrap" *ngIf="dataSource; else loading">
       <table mat-table matSort class="results-table">
+      <!-- Delete Column -->
+      <ng-container matColumnDef="delete">
+        <th mat-header-cell *matHeaderCellDef>Delete</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button class="delete-run-button"
+            (click)="$event.stopPropagation(); deleteResult(row)"
+            [disabled]="isDeletingResult(row.id)"
+            [attr.aria-label]="'Permanently delete run ' + row.id"
+            title="Permanently delete this run">
+            <mat-icon>{{ isDeletingResult(row.id) ? 'hourglass_top' : 'delete_forever' }}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
       <!-- Checkbox Column -->
       <ng-container matColumnDef="select">
         <th mat-header-cell *matHeaderCellDef>
@@ -74,8 +87,17 @@
 
       <!-- Id Column -->
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Id</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
         <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="evaluation_mode">
+        <th mat-header-cell *matHeaderCellDef>Mode</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="result-mode" [class.result-mode--multiclass]="isMulticlassResult(row)">
+            {{ isMulticlassResult(row) ? 'Multiclass' : 'Binary' }}
+          </span>
+        </td>
       </ng-container>
 
       <!-- IDS Name Column -->
@@ -84,7 +106,7 @@
         <td mat-cell *matCellDef="let row">{{ row.ids_name }}</td>
       </ng-container>
       <ng-container matColumnDef="dataset_name">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Datset</th>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Dataset</th>
         <td mat-cell *matCellDef="let row">{{ row.dataset_name }}</td>
       </ng-container>
       <ng-container matColumnDef="ensembling_method">
@@ -99,6 +121,78 @@
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Ruleset</th>
         <td mat-cell *matCellDef="let row">{{ row.ruleset_name || '-' }}</td>
       </ng-container>
+      <ng-container matColumnDef="class_count">
+        <th mat-header-cell *matHeaderCellDef>Classes</th>
+        <td mat-cell *matCellDef="let row">{{ isMulticlassResult(row) ? (row.class_results?.length || 0) : '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="class_breakdown">
+        <th mat-header-cell *matHeaderCellDef>Class breakdown</th>
+        <td mat-cell *matCellDef="let row">
+          <ng-container *ngIf="isMulticlassResult(row); else binaryClassBreakdown">
+            <details class="class-coverage-details" *ngIf="row.class_results?.length; else emptyClassBreakdown">
+              <summary>View class rates</summary>
+              <table>
+                <thead>
+                  <tr><th>Class</th><th>Type</th><th>Support</th><th>Alerted rows</th><th>Not-alerted rows</th><th>Rate</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let classResult of row.class_results">
+                    <td>{{ classResult.class_label }}</td>
+                    <td>{{ classResult.is_benign ? 'Benign' : 'Malicious' }}</td>
+                    <td>{{ classResult.support }}</td>
+                    <td>
+                      {{ classResult.detected }}
+                      <span class="class-rate-label">{{ classResult.is_benign ? 'FP' : 'TP' }}</span>
+                    </td>
+                    <td>
+                      {{ classResult.missed }}
+                      <span class="class-rate-label">{{ classResult.is_benign ? 'TN' : 'FN' }}</span>
+                    </td>
+                    <td>
+                      {{ classResult.detection_rate | percent:'1.0-2' }}
+                      <span class="class-rate-label">
+                        {{ classResult.is_benign ? 'false-positive-rate' : 'detection-rate' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </details>
+            <ng-template #emptyClassBreakdown>No class data</ng-template>
+          </ng-container>
+          <ng-template #binaryClassBreakdown>—</ng-template>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="macro_detection_rate">
+        <th mat-header-cell *matHeaderCellDef>Macro DR</th>
+        <td mat-cell *matCellDef="let row" class="metric-value">
+          {{ isMulticlassResult(row) ? (multiclassMacroDetectionRate(row) | percent:'1.0-2') : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="weighted_detection_rate">
+        <th mat-header-cell *matHeaderCellDef>Weighted DR</th>
+        <td mat-cell *matCellDef="let row" class="metric-value">
+          {{ isMulticlassResult(row) ? (multiclassWeightedDetectionRate(row) | percent:'1.0-2') : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="lowest_detection_rate">
+        <th mat-header-cell *matHeaderCellDef>Lowest class DR</th>
+        <td mat-cell *matCellDef="let row" class="metric-value">
+          {{ isMulticlassResult(row) ? (multiclassLowestDetectionRate(row) | percent:'1.0-2') : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="benign_fpr">
+        <th mat-header-cell *matHeaderCellDef><abbr title="False-positive rate among benign rows: FP / (FP + TN)">Benign FPR</abbr></th>
+        <td mat-cell *matCellDef="let row" class="metric-value">
+          {{ isMulticlassResult(row) ? (multiclassBenignFpr(row) | percent:'1.0-2') : '—' }}
+        </td>
+      </ng-container>
+
       <ng-container matColumnDef="avg_cpu_usage">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Avg CPU (cores)</th>
         <td mat-cell *matCellDef="let row">{{ formatCpuUsage(row.avg_cpu_usage) }}</td>
@@ -109,32 +203,32 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="fpr">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>FPR</th>
-        <td mat-cell *matCellDef="let row">{{ row.fpr }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-positive rate: FP / (FP + TN)">FPR</abbr></th>
+        <td mat-cell *matCellDef="let row">{{ row.fpr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="fnr">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>FNR</th>
-        <td mat-cell *matCellDef="let row">{{ row.fnr }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-negative rate">FNR</abbr></th>
+        <td mat-cell *matCellDef="let row">{{ row.fnr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="fdr">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>FDR</th>
-        <td mat-cell *matCellDef="let row">{{ row.fdr }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall false-discovery rate: FP / (TP + FP)">FDR</abbr></th>
+        <td mat-cell *matCellDef="let row">{{ row.fdr | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="detection_rate">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>DR</th>
-        <td mat-cell *matCellDef="let row">{{ row.detection_rate }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header><abbr title="Overall detection rate">DR</abbr></th>
+        <td mat-cell *matCellDef="let row">{{ row.detection_rate | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="acc">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Acc</th>
-        <td mat-cell *matCellDef="let row">{{ row.acc }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Accuracy</th>
+        <td mat-cell *matCellDef="let row">{{ row.acc | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="prec">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Prec</th>
-        <td mat-cell *matCellDef="let row">{{ row.prec }}</td>
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Precision</th>
+        <td mat-cell *matCellDef="let row">{{ row.prec | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="f1_score">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>F1</th>
-        <td mat-cell *matCellDef="let row">{{ row.f1_score }}</td>
+        <td mat-cell *matCellDef="let row">{{ row.f1_score | percent:'1.0-2' }}</td>
       </ng-container>
       <ng-container matColumnDef="start_time">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Start (UTC)</th>
@@ -148,7 +242,7 @@
 
       <ng-container matColumnDef="runtime">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>Runtime</th>
-        <td mat-cell *matCellDef="let row">{{ row.runtime }}</td>
+        <td mat-cell *matCellDef="let row">{{ row.runtime | number:'1.2-2' }}s</td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -298,89 +392,6 @@
     </ng-template>
   </section>
 
-  <section class="throughput-results-panel" *ngIf="multiclassResults.length > 0">
-    <div class="throughput-results-panel__header">
-      <div>
-        <span class="throughput-results-panel__eyebrow">Multiclass</span>
-        <h2>Multiclass Result Summary</h2>
-      </div>
-      <div class="throughput-results-panel__actions">
-        <span class="throughput-results-panel__count">{{ filteredMulticlassResults.length }} rows</span>
-        <button class="compare-button" (click)="openMulticlassComparison()"
-          [disabled]="multiclassSelection.selected.length < 2" matFab extended color="accent">
-          <mat-icon>bar_chart</mat-icon>
-          Compare multiclass
-        </button>
-      </div>
-    </div>
-    <div class="results-table-wrap" *ngIf="filteredMulticlassResults.length; else noMulticlassResults">
-      <table class="class-results-table multiclass-summary-table">
-        <thead>
-          <tr>
-            <th>
-              <mat-checkbox (change)="toggleAllMulticlass()"
-                [checked]="multiclassSelection.hasValue() && isAllMulticlassSelected()"
-                [indeterminate]="multiclassSelection.hasValue() && !isAllMulticlassSelected()">
-              </mat-checkbox>
-            </th>
-            <th>Result</th><th>IDS</th><th>Dataset</th><th>Configuration</th><th>Classes</th><th>Per-class coverage</th>
-            <th>Macro malicious detection</th><th>Weighted malicious detection</th><th>Lowest malicious class</th><th>Benign false detections</th>
-            <th>Runtime</th><th>Avg CPU</th><th>Avg RAM</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let result of filteredMulticlassResults">
-            <td>
-              <mat-checkbox (click)="$event.stopPropagation()" (change)="multiclassSelection.toggle(result)"
-                [checked]="multiclassSelection.isSelected(result)">
-              </mat-checkbox>
-            </td>
-            <td>#{{ result.id }}</td>
-            <td>{{ result.ids_name }}</td>
-            <td>{{ result.dataset_name }}</td>
-            <td>{{ result.configuration_name || '-' }}</td>
-            <td>{{ result.class_results?.length || 0 }}</td>
-            <td>
-              <details class="class-coverage-details">
-                <summary>View classes</summary>
-                <table>
-                  <thead><tr><th>Class</th><th>Type</th><th>Outcome</th><th>Missed</th><th>Rate</th></tr></thead>
-                  <tbody>
-                    <tr *ngFor="let classResult of result.class_results">
-                      <td>{{ classResult.class_label }}</td>
-                      <td>{{ classResult.is_benign ? 'Benign' : 'Malicious' }}</td>
-                      <td>
-                        {{ classResult.is_benign ? 'False detections' : 'Detections' }}:
-                        {{ classResult.detected }}/{{ classResult.support }}
-                      </td>
-                      <td>{{ classResult.missed }}</td>
-                      <td>
-                        {{ classResult.detection_rate | percent:'1.0-2' }}
-                        {{ classResult.is_benign ? ' false' : '' }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </details>
-            </td>
-            <td>{{ multiclassMacroDetectionRate(result) | percent:'1.0-2' }}</td>
-            <td>{{ multiclassWeightedDetectionRate(result) | percent:'1.0-2' }}</td>
-            <td>{{ multiclassLowestDetectionRate(result) | percent:'1.0-2' }}</td>
-            <td>{{ multiclassBenignFalseDetectionRate(result) | percent:'1.0-2' }}</td>
-            <td>{{ result.runtime | number:'1.2-2' }}s</td>
-            <td>{{ formatCpuUsage(result.avg_cpu_usage) }}</td>
-            <td>{{ result.avg_memory_usage != null ? (result.avg_memory_usage | number:'1.2-2') + ' MB' : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <ng-template #noMulticlassResults>
-      <div class="throughput-empty">
-        <mat-icon>category</mat-icon>
-        <span>No multiclass results match the current filter.</span>
-      </div>
-    </ng-template>
-  </section>
 </section>
 
 <app-comparison *ngIf="showComparison" [title]="comparisonTitle" [subtitle]="comparisonSubtitle"

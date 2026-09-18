@@ -42,6 +42,7 @@ METRIC_SERVICE_DEFAULT_NAME = "bicep-metric-service"
 METRIC_SERVICE_DEFAULT_SCRAPE_INTERVAL = "5"
 METRIC_SERVICE_DEFAULT_BATCH_SIZE = "10"
 METRIC_SERVICE_DEFAULT_EXPORT_MODE = "prometheus"
+METRIC_SERVICE_DEFAULT_DOCKER_NETWORK = "host"
 METRIC_SERVICE_HEALTHCHECK_PATH = "/health"
 METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS = int(
     os.getenv("METRIC_SERVICE_REGISTRATION_STUCK_TIMEOUT_SECONDS", "45")
@@ -58,6 +59,12 @@ METRIC_SERVICE_DEPLOYMENT_FAILED = "failed"
 
 _metric_service_deployment_tasks: dict[int, asyncio.Task] = {}
 _metric_service_unhealthy_since: dict[int, datetime] = {}
+_metric_service_locks: dict[int, asyncio.Lock] = {}
+
+
+def get_metric_service_lock(host_id: int) -> asyncio.Lock:
+    """Serialize metric-service supervision, deployment, and registration per host."""
+    return _metric_service_locks.setdefault(host_id, asyncio.Lock())
 
 
 class DockerHostSystem(Base):
@@ -165,6 +172,14 @@ class DockerHostSystem(Base):
 
         return accessible_host
 
+    def get_metric_service_network_mode(self) -> str:
+        if self.is_core_host():
+            return os.getenv(
+                "METRIC_SERVICE_DOCKER_NETWORK",
+                METRIC_SERVICE_DEFAULT_DOCKER_NETWORK,
+            )
+        return "host"
+
     async def get_metric_service_registration_ip_async(self) -> str:
         return await asyncio.to_thread(self.get_metric_service_registration_ip)
 
@@ -235,7 +250,7 @@ class DockerHostSystem(Base):
                 client.containers.create,
                 image=image_name,
                 name=self.get_metric_service_container_name(),
-                network_mode="host",
+                network_mode=self.get_metric_service_network_mode(),
                 privileged=True,
                 cap_add=["SYS_ADMIN"],
                 detach=True,
@@ -265,8 +280,6 @@ class DockerHostSystem(Base):
                     "SERVICE_IP": registration_ip,
                 },
             )
-            await asyncio.to_thread(container.start)
-
             await update_metric_service(
                 db,
                 metric_service,
@@ -275,6 +288,7 @@ class DockerHostSystem(Base):
                 status=METRIC_SERVICE_STATUS.REGISTERING.value,
                 status_message="Metric service deployed. Waiting for registration.",
             )
+            await asyncio.to_thread(container.start)
         except Exception as exc:
             await update_metric_service(
                 db,
@@ -311,7 +325,8 @@ class DockerHostSystem(Base):
         async def run_deployment() -> None:
             db = SessionLocal()
             try:
-                await host_snapshot._deploy_metric_service(db)
+                async with get_metric_service_lock(self.id):
+                    await host_snapshot._deploy_metric_service(db)
             except Exception as exc:
                 logger.error(
                     "Background metric service deployment failed on %s: %s",
@@ -474,6 +489,10 @@ class DockerHostSystem(Base):
             )
 
     async def _check_metric_service_health(self, db: AsyncSession) -> bool:
+        async with get_metric_service_lock(self.id):
+            return await self._check_metric_service_health_unlocked(db)
+
+    async def _check_metric_service_health_unlocked(self, db: AsyncSession) -> bool:
 
 
         metric_service = await get_metric_service_by_host_id(db, self.id)

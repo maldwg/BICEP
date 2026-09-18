@@ -56,7 +56,59 @@ mat-card {
     color: var(--app-text-muted);
 }
 
+.class-comparison-card {
+    margin-top: 1.25rem;
+}
+
+.class-comparison-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.class-comparison-header h2 {
+    margin: 0.2rem 0 0.25rem;
+    color: var(--app-heading);
+    font-size: 1.3rem;
+}
+
+.class-comparison-header p {
+    margin: 0;
+    color: var(--app-text-muted);
+}
+
+.class-comparison-eyebrow {
+    color: var(--app-accent-strong);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.class-performance-chart {
+    width: 100%;
+    min-height: 34rem;
+}
+
+.class-performance-guidance {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    color: var(--app-text-muted);
+    font-size: 0.82rem;
+}
+
 @media (max-width: 60rem) {
+    .class-comparison-header {
+        flex-direction: column;
+    }
+
+    .class-comparison-header .download-button {
+        width: 100%;
+    }
+
     .comparison-download-button {
         margin-left: 0;
     }

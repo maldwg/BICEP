@@ -202,24 +202,34 @@ async def remove_docker_container(ids_container):
         raise
 
 
-async def check_container_health(ids_container, timeout=90, cleanup_on_failure=True):
+async def check_container_health(ids_container, timeout=90, cleanup_on_failure=False):
     start_time = time.time()
     container_url = ids_container.get_container_http_url()
     url = f"{container_url}/healthcheck"
-    response = Response()
-    response.status_code = 500
+    last_status = None
+    last_error = None
 
     while True:
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(url)
-        except Exception:
-            pass
-
-        if response.status_code == 200:
-            return True
+            last_status = response.status_code
+            last_error = None
+            if response.status_code == 200:
+                return True
+        except Exception as exc:
+            last_error = repr(exc)
 
         if time.time() - start_time > timeout:
+            logger.error(
+                "IDS healthcheck timed out: container=%s url=%s "
+                "last_status=%s last_error=%s timeout_seconds=%s",
+                ids_container.name,
+                url,
+                last_status,
+                last_error,
+                timeout,
+            )
             if cleanup_on_failure:
                 await remove_docker_container(ids_container)
             return False

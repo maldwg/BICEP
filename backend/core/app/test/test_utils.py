@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, AsyncMock, patch
+from datetime import datetime
 import os
 from pathlib import Path
 import shutil
@@ -58,6 +59,8 @@ async def test_start_static_analysis():
 async def test_calculate_and_add_dataset(db_session_fixture: DatabaseSessionFixture):
     db_session = await db_session_fixture.get_db_session()
     dataset_type = await db_session_fixture.get_dataset_type_model()
+    dataset_type.get_class_counts.return_value = {"benign": 899, "malicious": 100}
+    dataset_type.calculate_precision.return_value = MinutePrecision()
     labels_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.csv'
     data_file_path = f'{TESTS_BASE_DIR}/testfiles/sample_data.pcap'
 
@@ -609,3 +612,33 @@ async def test_stop_analysis():
         response = await utils_stop_analysis(container)
         assert response.status_code == 200
         mock_client.post.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    "timestamp_value",
+    [
+        "1704067200",
+        "1704067200000",
+        "1704067200000000",
+        "1704067200000000000",
+    ],
+)
+def test_parse_datetime_timestamp_accepts_unix_epoch_units(timestamp_value):
+    parsed = parse_datetime_timestamp(timestamp_value)
+    assert parsed.replace(microsecond=0) == datetime(2024, 1, 1, 0, 0, 0)
+
+
+def test_parse_datetime_timestamp_preserves_epoch_milliseconds():
+    parsed = parse_datetime_timestamp("1704067200123")
+    assert parsed == datetime(2024, 1, 1, 0, 0, 0, 123000)
+
+
+def test_normalize_timestamp_accepts_epoch_seconds():
+    assert normalize_and_parse_alert_timestamp(
+        "1704067201", precision=SecondPrecision()
+    ) == "2024-01-01T00:00:01"
+
+
+def test_parse_datetime_timestamp_normalizes_offsets_to_utc():
+    parsed = parse_datetime_timestamp("2024-01-01T01:00:00+01:00")
+    assert parsed == datetime(2024, 1, 1, 0, 0, 0)

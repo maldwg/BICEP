@@ -1,6 +1,13 @@
 import pytest
 from app.test.fixtures import *
 from app.models.dataset_types_implementation.network_traffic_data import *
+from app.models.dataset_types_implementation.network_traffic_data import (
+    _get_column_ids,
+    _get_column_ids_for_file,
+    _is_request_benign,
+    _COLUMN_NAME_PATTERNS,
+    _normalize_column_name,
+)
 from app.models.dataset_types import *
 from app.utils import Precision, SecondPrecision, MilisecondPrecision, MinutePrecision, HourPrecision
 import io
@@ -119,3 +126,143 @@ def test_normal_and_benign_labels_are_negative_traffic():
     assert _is_request_benign("Normal") is True
     assert _is_request_benign("normal_traffic") is True
     assert _is_request_benign("botnet") is False
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        [
+            "attack_cat",
+            "flow-start",
+            "IPV4_SRC_ADDR",
+            "src-port",
+            "IPV4_DST_ADDR",
+            "dst_port",
+        ],
+        ["Label", "Timestamp", "Src IP", "Src Port", "Dst IP", "Dst Port"],
+        [
+            "attack_category",
+            "bidirectional_first_seen_ms",
+            "src_ip",
+            "src_port",
+            "dst_ip",
+            "dst_port",
+        ],
+        [
+            "trafficClass",
+            "eventTimestamp",
+            "srcIp",
+            "sourcePort",
+            "dstIp",
+            "destinationPort",
+        ],
+        [
+            "groundTruthLabel",
+            "unixEpochTimestamp",
+            "srcIPAddress",
+            "srcPort",
+            "destinationIpAddr",
+            "destinationPort",
+        ],
+    ],
+)
+def test_column_inference_normalizes_common_header_variants(header):
+    rows = [["benign", "1704067200", "10.0.0.1", "1234", "10.0.0.2", "80"]]
+
+    assert _get_column_ids(header, rows) == (0, 1, 2, 3, 4, 5)
+
+
+def test_column_regexes_do_not_match_unrelated_flow_features():
+    unrelated_headers = [
+        "src_packets",
+        "destination_bytes",
+        "bidirectional_last_seen_ms",
+        "dst2src_first_seen_ms",
+    ]
+
+    for pattern in _COLUMN_NAME_PATTERNS.values():
+        assert not any(
+            pattern.fullmatch(_normalize_column_name(header))
+            for header in unrelated_headers
+        )
+
+
+def test_column_inference_uses_sample_values_and_epoch_timestamps(tmp_path):
+    labels_file = tmp_path / "inferred-columns.csv"
+    labels_file.write_text(
+        "truth,event_value,endpoint_a,number_a,endpoint_b,number_b\n"
+        "benign,1704067200,10.0.0.1,1234,10.0.0.2,80\n"
+        "scan,1704067201,10.0.0.3,2345,10.0.0.4,443\n",
+        encoding="utf-8",
+    )
+
+    assert _get_column_ids_for_file(str(labels_file)) == (0, 1, 2, 3, 4, 5)
+    assert isinstance(
+        network_traffic_data_calculate_precision(str(labels_file)),
+        SecondPrecision,
+    )
+
+    dataset = SimpleNamespace(
+        labels_file_path=str(labels_file), timestamp_precision="second"
+    )
+    alerts = [
+        Alert(
+            "2024-01-01T00:00:01",
+            "10.0.0.3",
+            "2345",
+            "10.0.0.4",
+            "443",
+            1,
+        )
+    ]
+    result = network_traffic_data_get_class_detection_statistics(dataset, alerts)
+    by_class = {row["class_label"]: row for row in result["classes"]}
+    assert by_class["scan"]["detected"] == 1
+
+
+def test_column_inference_rejects_ambiguous_values():
+    header = ["one", "two", "three", "four", "five", "six", "seven"]
+    rows = [["0", "1", "10.0.0.1", "1234", "10.0.0.2", "80", "443"]]
+
+    with pytest.raises(ValueError, match="Could not uniquely infer CSV columns"):
+        _get_column_ids(header, rows)
+
+
+def test_benign_multiclass_counts_equal_binary_false_positive_counts(tmp_path):
+    labels_file = tmp_path / "benign-fp.csv"
+    labels_file.write_text(
+        "Label,Timestamp,Source IP,Source Port,Destination IP,Destination Port\n"
+        "benign,2026-01-01T00:00:00,10.0.0.1,1000,10.0.0.2,80\n"
+        "scan,2026-01-01T00:00:01,10.0.0.3,1001,10.0.0.4,443\n",
+        encoding="utf-8",
+    )
+    dataset = SimpleNamespace(
+        labels_file_path=str(labels_file), timestamp_precision="second"
+    )
+    alerts = [
+        Alert(
+            "2026-01-01T00:00:00",
+            "10.0.0.1",
+            "1000",
+            "10.0.0.2",
+            "80",
+            1,
+        )
+    ]
+
+    tp, fp, tn, fn, _, _ = (
+        network_traffic_data_get_positives_and_negatives_from_dataset(
+            dataset, alerts
+        )
+    )
+    class_result = network_traffic_data_get_class_detection_statistics(
+        dataset, alerts
+    )
+    by_class = {row["class_label"]: row for row in class_result["classes"]}
+
+    assert (tp, fp, tn, fn) == (0, 1, 0, 1)
+    assert by_class["benign"]["detected"] == fp
+    assert by_class["benign"]["missed"] == tn
+    assert by_class["scan"]["detected"] == tp
+    assert by_class["scan"]["missed"] == fn
+    assert by_class["benign"]["detection_rate"] == 1.0
