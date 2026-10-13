@@ -30,7 +30,7 @@
     "ngx-echarts": "^20.0.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "uuid": "^11.0.5",
+    "uuid": "^13.0.0",
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
